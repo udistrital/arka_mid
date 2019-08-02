@@ -1,0 +1,34 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+#Bee api
+.DS_Store
+WebIM/WebIM
+shorturl/shorturl
+todo/todo
+custom.env
+lastupdate.*
+.vscode/
+plan_cuentas_mid
+main
+.scannerwork/
+swagger/*.png
+swagger/*.html
+swagger/*.js
+swagger/*.map
+swagger/*.css
+swagger/*.yml
+swagger/css/
+swagger/fonts/
+swagger/images/
+swagger/lang/
+swagger/lib/

@@ -1,0 +1,27 @@
+version: '3.4'
+
+services: 
+  api:
+    build: ./bee_build
+    image: ${SERVICE_NAME}
+    container_name: ${SERVICE_NAME}
+    volumes:
+      - gosrc:/go
+      - .:/go/src/${API_BASE_DIR}/${API_NAME}
+    ports: 
+      - "${PORT}:${PORT}"
+    env_file: 
+      - custom.env
+    environment:
+      - ARKA_MID_HTTP_PORT=${PORT}
+      - RUN_MODE=dev 
+      - SERVICE_TAGS=traefik.enable=true,traefik.frontend.entryPoints=http,traefik.frontend.rule=Host:${SERVICE_NAME}.localhost   
+    command: sh -c 'cd ${API_BASE_DIR}/${API_NAME};go get -v -u ./...; bee run -downdoc=true -gendoc=true'
+    networks: 
+      - back_end
+
+volumes:
+  gosrc:
+networks: 
+  back_end:
+    external: true
