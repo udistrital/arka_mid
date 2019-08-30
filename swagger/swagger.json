@@ -15,45 +15,86 @@
     },
     "basePath": "/v1",
     "paths": {
-        "/object/": {
+        "/acta_recibido/": {
             "get": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "get all objects",
-                "operationId": "ObjectController.GetAll",
+                "description": "get Acta_recibido",
+                "operationId": "ActaRecibidoController.GetAll",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "query",
+                        "description": "Filter. e.g. col1:v1,col2:v2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "description": "Fields returned. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Sorted-by fields. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "description": "Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "description": "Limit the size of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Object"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
                     },
                     "403": {
-                        "description": ":objectId is empty"
+                        "description": ""
                     }
                 }
             },
             "post": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "create object",
-                "operationId": "ObjectController.Create",
+                "description": "create Acta_recibido",
+                "operationId": "ActaRecibidoController.Create",
                 "parameters": [
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "The object content",
+                        "description": "body for Acta_recibido content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Object"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "{string} models.Object.Id"
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Acta_recibido"
+                        }
                     },
                     "403": {
                         "description": "body is empty"
@@ -61,196 +102,57 @@
                 }
             }
         },
-        "/object/{objectId}": {
+        "/acta_recibido/get_actas_recibido/": {
             "get": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "find object by objectid",
-                "operationId": "ObjectController.Get",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "objectId",
-                        "description": "the objectid you want to get",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
+                "description": "Devuelve las todas las actas de recibido",
+                "operationId": "ActaRecibidoController.GetAllActasRecibido",
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Object"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
                     },
                     "403": {
-                        "description": ":objectId is empty"
+                        "description": ""
                     }
                 }
-            },
-            "put": {
+            }
+        },
+        "/acta_recibido/get_actas_recibido_tipo/{id}": {
+            "get": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "update the object",
-                "operationId": "ObjectController.Update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "objectId",
-                        "description": "The objectid you want to update",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "The body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Object"
-                        }
-                    }
-                ],
+                "description": "Devuelve las todas las actas de recibido",
+                "operationId": "ActaRecibidoController.GetActasRecibidoTipo",
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Object"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
                     },
                     "403": {
-                        "description": ":objectId is empty"
+                        "description": ""
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/acta_recibido/{id}": {
+            "get": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "delete the object",
-                "operationId": "ObjectController.Delete",
+                "description": "get Acta_recibido by id",
+                "operationId": "ActaRecibidoController.GetOne",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "objectId",
-                        "description": "The objectId you want to delete",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} delete success!"
-                    },
-                    "403": {
-                        "description": "objectId is empty"
-                    }
-                }
-            }
-        },
-        "/user/": {
-            "get": {
-                "tags": [
-                    "user"
-                ],
-                "description": "get all Users",
-                "operationId": "UserController.GetAll",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "user"
-                ],
-                "description": "create users",
-                "operationId": "UserController.CreateUser",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for user content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{int} models.User.Id"
-                    },
-                    "403": {
-                        "description": "body is empty"
-                    }
-                }
-            }
-        },
-        "/user/login": {
-            "get": {
-                "tags": [
-                    "user"
-                ],
-                "description": "Logs user into the system",
-                "operationId": "UserController.Login",
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "username",
-                        "description": "The username for login",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "password",
-                        "description": "The password for login",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} login success"
-                    },
-                    "403": {
-                        "description": "user not exist"
-                    }
-                }
-            }
-        },
-        "/user/logout": {
-            "get": {
-                "tags": [
-                    "user"
-                ],
-                "description": "Logs out current logged in user session",
-                "operationId": "UserController.logout",
-                "responses": {
-                    "200": {
-                        "description": "{string} logout success"
-                    }
-                }
-            }
-        },
-        "/user/{uid}": {
-            "get": {
-                "tags": [
-                    "user"
-                ],
-                "description": "get user by uid",
-                "operationId": "UserController.Get",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "uid",
+                        "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -260,35 +162,35 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
                     },
                     "403": {
-                        "description": ":uid is empty"
+                        "description": ":id is empty"
                     }
                 }
             },
             "put": {
                 "tags": [
-                    "user"
+                    "acta_recibido"
                 ],
-                "description": "update the user",
-                "operationId": "UserController.Update",
+                "description": "update the Acta_recibido",
+                "operationId": "ActaRecibidoController.Put",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "uid",
-                        "description": "The uid you want to update",
+                        "name": "id",
+                        "description": "The id you want to update",
                         "required": true,
                         "type": "string"
                     },
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "body for user content",
+                        "description": "body for Acta_recibido content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
                     }
                 ],
@@ -296,25 +198,25 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
                     },
                     "403": {
-                        "description": ":uid is not int"
+                        "description": ":id is not int"
                     }
                 }
             },
             "delete": {
                 "tags": [
-                    "user"
+                    "acta_recibido"
                 ],
-                "description": "delete the user",
-                "operationId": "UserController.Delete",
+                "description": "delete the Acta_recibido",
+                "operationId": "ActaRecibidoController.Delete",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "uid",
-                        "description": "The uid you want to delete",
+                        "name": "id",
+                        "description": "The id you want to delete",
                         "required": true,
                         "type": "string"
                     }
@@ -324,79 +226,64 @@
                         "description": "{string} delete success!"
                     },
                     "403": {
-                        "description": "uid is empty"
+                        "description": "id is empty"
+                    }
+                }
+            }
+        },
+        "/entrada/": {
+            "post": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "create Entrada",
+                "operationId": "EntradaController.Post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Entrada content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Entrada"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Entrada"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    },
+                    "403": {
+                        "description": "body is empty"
                     }
                 }
             }
         }
     },
     "definitions": {
+        "models.Acta_recibido": {
+            "title": "Acta_recibido",
+            "type": "object"
+        },
         "models.Entrada": {
             "title": "Entrada",
             "type": "object"
-        },
-        "models.Object": {
-            "title": "Object",
-            "type": "object",
-            "properties": {
-                "ObjectId": {
-                    "type": "string"
-                },
-                "PlayerName": {
-                    "type": "string"
-                },
-                "Score": {
-                    "type": "integer",
-                    "format": "int64"
-                }
-            }
-        },
-        "models.Profile": {
-            "title": "Profile",
-            "type": "object",
-            "properties": {
-                "Address": {
-                    "type": "string"
-                },
-                "Age": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Email": {
-                    "type": "string"
-                },
-                "Gender": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.User": {
-            "title": "User",
-            "type": "object",
-            "properties": {
-                "Id": {
-                    "type": "string"
-                },
-                "Password": {
-                    "type": "string"
-                },
-                "Profile": {
-                    "$ref": "#/definitions/models.Profile"
-                },
-                "Username": {
-                    "type": "string"
-                }
-            }
         }
     },
     "tags": [
         {
-            "name": "object",
-            "description": "Operations about object\n"
+            "name": "acta_recibido",
+            "description": "ActaRecibidoController operations for ActaRecibido\n"
         },
         {
-            "name": "user",
-            "description": "Operations about Users\n"
+            "name": "entrada",
+            "description": "EntradaController operations for Entrada\n"
         }
     ]
 }

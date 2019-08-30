@@ -8,23 +8,23 @@
 package routers
 
 import (
-	"github.com/udistrital/arka_mid/controllers"
-
 	"github.com/astaxie/beego"
+	"github.com/udistrital/arka_mid/controllers"
 )
 
 func init() {
 	ns := beego.NewNamespace("/v1",
-		beego.NSNamespace("/object",
+		beego.NSNamespace("/acta_recibido",
 			beego.NSInclude(
-				&controllers.ObjectController{},
+				&controllers.ActaRecibidoController{},
 			),
 		),
-		beego.NSNamespace("/user",
+		beego.NSNamespace("/entrada",
 			beego.NSInclude(
-				&controllers.UserController{},
+				&controllers.EntradaController{},
 			),
 		),
 	)
+
 	beego.AddNamespace(ns)
 }

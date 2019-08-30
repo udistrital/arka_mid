@@ -5,11 +5,11 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/plugins/cors"
-	"github.com/udistrital/utils_oas/responseformat"
+	// "github.com/udistrital/utils_oas/responseformat"
 )
 
 func main() {
-	beego.BConfig.RecoverFunc = responseformat.GlobalResponseHandler
+	// beego.BConfig.RecoverFunc = responseformat.GlobalResponseHandler
 	if beego.BConfig.RunMode == "dev" {
 		beego.BConfig.WebConfig.DirectoryIndex = true
 		beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
