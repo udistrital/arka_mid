@@ -1,11 +1,16 @@
 package controllers
 
 import (
-	"strconv"
+	"fmt"
+
+	"github.com/astaxie/beego/logs"
+
+	"encoding/json"
 
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+
+	// "github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/models"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -16,50 +21,6 @@ type ActaRecibidoController struct {
 // URLMapping ...
 func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetAll", c.GetAll)
-	c.Mapping("Put", c.Put)
-	c.Mapping("Delete", c.Delete)
-}
-
-// GetAllActasRecibido ...
-// @Title GetAllActasRecibido
-// @Description Devuelve las todas las actas de recibido
-// @Success 200 {object} models.Acta_recibido
-// @Failure 403
-// @router /get_actas_recibido/ [get]
-func (c *ActaRecibidoController) GetAllActasRecibido() {
-	// idStr := c.Ctx.Input.Param(":id")
-	// id, _ := strconv.Atoi(idStr)
-	v, err := actaRecibido.GetAllActasRecibido()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
-	} else {
-		c.Data["json"] = v
-	}
-	c.ServeJSON()
-}
-
-// GetActasRecibidoTipo ...
-// @Title GetActasRecibidoTipo
-// @Description Devuelve las todas las actas de recibido
-// @Success 200 {object} models.Acta_recibido
-// @Failure 403
-// @router /get_actas_recibido_tipo/:id [get]
-func (c *ActaRecibidoController) GetActasRecibidoTipo() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := actaRecibido.GetActasRecibidoTipo(id)
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
-	} else {
-		c.Data["json"] = v
-	}
-	c.ServeJSON()
 }
 
 // Post ...
@@ -71,54 +32,50 @@ func (c *ActaRecibidoController) GetActasRecibidoTipo() {
 // @router / [post]
 func (c *ActaRecibidoController) Post() {
 
-}
+	var archivo map[string]interface{}
 
-// GetOne ...
-// @Title GetOne
-// @Description get Acta_recibido by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Acta_recibido
-// @Failure 403 :id is empty
-// @router /:id [get]
-func (c *ActaRecibidoController) GetOne() {
+	// Alertas
+	var alerta models.Alert
+	alertas := append([]interface{}{"Response:"})
 
-}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &archivo); err == nil {
+	} else {
+		fmt.Println("err reading multipartFile", err)
+		alerta.Type = "error"
+		alerta.Code = "400"
+		alertas = append(alertas, "err reading file")
+		alerta.Body = alertas
+		c.Data["json"] = alerta
+		c.ServeJSON()
+		return
+	}
 
-// GetAll ...
-// @Title GetAll
-// @Description get Acta_recibido
-// @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
-// @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
-// @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
-// @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
-// @Param	limit	query	string	false	"Limit the size of result set. Must be an integer"
-// @Param	offset	query	string	false	"Start position of result set. Must be an integer"
-// @Success 200 {object} models.Acta_recibido
-// @Failure 403
-// @router / [get]
-func (c *ActaRecibidoController) GetAll() {
+	b, _ := archivo["archivo"]
+	logs.Info(b)
 
-}
+	// Lectura del archivo
+	// xlFile, err := xlsx.OpenBinary(b)
 
-// Put ...
-// @Title Put
-// @Description update the Acta_recibido
-// @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.Acta_recibido	true		"body for Acta_recibido content"
-// @Success 200 {object} models.Acta_recibido
-// @Failure 403 :id is not int
-// @router /:id [put]
-func (c *ActaRecibidoController) Put() {
+	// if err != nil {
+	// 	fmt.Println("err reading file", err)
+	// 	alerta.Type = "error"
+	// 	alerta.Code = "400"
+	// 	alertas = append(alertas, "err reading file")
+	// 	alerta.Body = alertas
+	// 	c.Data["json"] = alerta
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-}
-
-// Delete ...
-// @Title Delete
-// @Description delete the Acta_recibido
-// @Param	id		path 	string	true		"The id you want to delete"
-// @Success 200 {string} delete success!
-// @Failure 403 id is empty
-// @router /:id [delete]
-func (c *ActaRecibidoController) Delete() {
-
+	// for _, sheet := range xlFile.Sheets {
+	// 	for _, row := range sheet.Rows {
+	// 		for _, cell := range row.Cells {
+	// 			text := cell.String()
+	// 			fmt.Printf("%s\n", text)
+	// 		}
+	// 	}
+	// }
+	c.Data["json"] = alertas
+	c.ServeJSON()
+	// }
 }

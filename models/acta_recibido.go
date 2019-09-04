@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"bytes"
+	"encoding/gob"
+	"time"
+)
 
 type ActaRecibido struct {
 	Id                int       `orm:"column(id);pk;auto"`
@@ -11,4 +15,14 @@ type ActaRecibido struct {
 	Activo            bool      `orm:"column(activo)"`
 	FechaCreacion     time.Time `orm:"column(fecha_creacion);type(timestamp without time zone)"`
 	FechaModificacion time.Time `orm:"column(fecha_modificacion);type(timestamp without time zone)"`
+}
+
+func GetBytes(key interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

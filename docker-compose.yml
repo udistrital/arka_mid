@@ -11,7 +11,7 @@ services:
     ports: 
       - "${PORT}:${PORT}"
     env_file: 
-      - custom.env
+      - .env
     environment:
       - ARKA_MID_HTTP_PORT=${PORT}
       - RUN_MODE=dev 
