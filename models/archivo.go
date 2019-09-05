@@ -1,5 +1,6 @@
 package models
 
 type Archivo struct {
-	archivo []byte
+	Campos    []string
+	Elementos []Elemento
 }
