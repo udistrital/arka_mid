@@ -38,21 +38,90 @@ func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]in
 }
 
 // GetActasRecibidoTipo ...
-func GetAllParametrosActa() (Parametros map[string]interface{}, outputError map[string]interface{}) {
+func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
-	if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta", &Parametros); err == nil { // (2) error servicio caido
-		if response.StatusCode == 200 { // (3) error estado de la solicitud
-			return Parametros, nil
-		} else {
-			logs.Info("Error (3) estado de la solicitud")
-			outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
-			return outputError, nil
-		}
+	var Proveedores interface{}
+	var Unidades interface{}
+	var Sedes interface{}
+	var IVA interface{}
+	var Ubicaciones interface{}
+	var TipoBien interface{}
+	var EstadoActa interface{}
+	var EstadoElemento interface{}
+	parametros := make([]map[string]interface{}, 0)
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"tipo_bien?limit=-1", &TipoBien); err == nil { // (2) error servicio caido
+
 	} else {
-		logs.Info("Error (2) servicio caido")
+		logs.Info("Error TipoBien servicio Acta caido")
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-		return outputError, nil
+		return nil, outputError
 	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"estado_acta?limit=-1", &EstadoActa); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error EstadoActa servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"estado_elemento?limit=-1", &EstadoElemento); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error EstadoElemento servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Unidades servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"informacion_proveedor?limit=-1", &Proveedores); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Proveedores servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Ubicaciones servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?limit=-1", &Sedes); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Sedes servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	parametros = append(parametros, map[string]interface{}{
+		"Proveedores":    Proveedores,
+		"Unidades":       Unidades,
+		"IVA":            IVA,
+		"Ubicaciones":    Ubicaciones,
+		"Sedes":          Sedes,
+		"TipoBien":       TipoBien,
+		"EstadoActa":     EstadoActa,
+		"EstadoElemento": EstadoElemento,
+	})
+
+	return parametros, nil
 }
 
 // "PostDecodeXlsx2Json ..."

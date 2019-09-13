@@ -1,7 +1,9 @@
 package controllers
 
 import (
-	"github.com/udistrital/acta_recibido_crud/models"
+	//"github.com/udistrital/acta_recibido_crud/models"
+	"fmt"
+
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 
 	"github.com/astaxie/beego"
@@ -53,7 +55,8 @@ func (c *ActaRecibidoController) Post() {
 // @router / [get]
 func (c *ActaRecibidoController) GetAll() {
 
-	l, err := models.GetAllParametrosActa()
+	fmt.Println("hola")
+	l, err := actaRecibido.GetAllParametrosActa()
 	if err != nil {
 		logs.Error(err)
 		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
