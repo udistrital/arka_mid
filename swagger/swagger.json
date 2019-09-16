@@ -97,6 +97,26 @@
                     }
                 }
             }
+        },
+        "/parametros_soporte/": {
+            "get": {
+                "tags": [
+                    "parametros_soporte"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "ParametrosController.Get All",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActaRecibido"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -153,6 +173,10 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
+        },
+        {
+            "name": "parametros_soporte",
+            "description": "ActaRecibidoController operations for ActaRecibido\n"
         }
     ]
 }
