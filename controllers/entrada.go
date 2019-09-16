@@ -30,7 +30,6 @@ func (c *EntradaController) URLMapping() {
 func (c *EntradaController) Post() {
 	var v models.EntradaElemento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		logs.Debug("faie:", err)
 		if err := entradaHelper.AddEntrada(v); err != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = v

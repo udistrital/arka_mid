@@ -46,6 +46,35 @@
                 }
             }
         },
+        "/acta_recibidoget_elementos_acta/{id}": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "get Elementos by id",
+                "operationId": "ActaRecibidoController.Get Elementos",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "id del acta",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Elemento"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/entrada/": {
             "post": {
                 "tags": [
@@ -82,13 +111,237 @@
         }
     },
     "definitions": {
+        "models.ActaRecibido": {
+            "title": "ActaRecibido",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaVistoBueno": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observaciones": {
+                    "type": "string"
+                },
+                "RevisorId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "UbicacionId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
         "models.Acta_recibido": {
             "title": "Acta_recibido",
             "type": "object"
         },
+        "models.Elemento": {
+            "title": "Elemento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Descuento": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "EstadoElementoId": {
+                    "$ref": "#/definitions/models.EstadoElemento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Placa": {
+                    "type": "string"
+                },
+                "PorcentajeIvaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SoporteActaId": {
+                    "$ref": "#/definitions/models.SoporteActa"
+                },
+                "SubgrupoCatalogoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Subtotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
+                },
+                "UnidadMedida": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorFinal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorIva": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Verificado": {
+                    "type": "boolean"
+                }
+            }
+        },
         "models.Entrada": {
             "title": "Entrada",
             "type": "object"
+        },
+        "models.EstadoElemento": {
+            "title": "EstadoElemento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.SoporteActa": {
+            "title": "SoporteActa",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "$ref": "#/definitions/models.ActaRecibido"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaSoporte": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProveedorId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.TipoBien": {
+            "title": "TipoBien",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
         }
     },
     "tags": [
