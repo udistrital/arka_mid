@@ -171,18 +171,18 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 // GetActasRecibidoTipo ...
 func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
-	// var Proveedores interface{}
+	var Dependencias interface{}
 	var Sedes interface{}
 	var Ubicaciones interface{}
 	parametros := make([]map[string]interface{}, 0)
 
-	// if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"informacion_proveedor?limit=-1", &Proveedores); err == nil { // (2) error servicio caido
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"dependencia?limit=-1", &Dependencias); err == nil { // (2) error servicio caido
 
-	// } else {
-	// 	logs.Info("Error Proveedores servicio caido")
-	// 	outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-	// 	return nil, outputError
-	// }
+	} else {
+		logs.Info("Error Dependencia servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
 
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
 
@@ -200,9 +200,9 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 	}
 
 	parametros = append(parametros, map[string]interface{}{
-		// "Proveedores": Proveedores,
-		"Ubicaciones": Ubicaciones,
-		"Sedes":       Sedes,
+		"Dependencias": Dependencias,
+		"Ubicaciones":  Ubicaciones,
+		"Sedes":        Sedes,
 	})
 
 	return parametros, nil
