@@ -16,7 +16,7 @@ arka_mid
 WebIM/WebIM
 shorturl/shorturl
 todo/todo
-.env
+*.env
 custom.env
 lastupdate.*
 .vscode/
