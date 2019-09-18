@@ -24,6 +24,11 @@ func init() {
 				&controllers.EntradaController{},
 			),
 		),
+		beego.NSNamespace("/parametros_soporte",
+			beego.NSInclude(
+				&controllers.ParametrosController{},
+			),
+		),
 	)
 
 	beego.AddNamespace(ns)

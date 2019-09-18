@@ -16,6 +16,24 @@
     "basePath": "/v1",
     "paths": {
         "/acta_recibido/": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "ActaRecibidoController.Get All",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActaRecibido"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "acta_recibido"
@@ -79,9 +97,65 @@
                     }
                 }
             }
+        },
+        "/parametros_soporte/": {
+            "get": {
+                "tags": [
+                    "parametros_soporte"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "ParametrosController.Get All",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActaRecibido"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "models.ActaRecibido": {
+            "title": "ActaRecibido",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaVistoBueno": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observaciones": {
+                    "type": "string"
+                },
+                "RevisorId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "UbicacionId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
         "models.Acta_recibido": {
             "title": "Acta_recibido",
             "type": "object"
@@ -99,6 +173,10 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
+        },
+        {
+            "name": "parametros_soporte",
+            "description": "ActaRecibidoController operations for ActaRecibido\n"
         }
     ]
 }
