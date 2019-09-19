@@ -3,8 +3,10 @@ package controllers
 import (
 	//"github.com/udistrital/acta_recibido_crud/models"
 	"fmt"
+	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -19,6 +21,7 @@ type ActaRecibidoController struct {
 func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetElementosActa", c.GetElementosActa)
 }
 
 // Post ...
@@ -64,6 +67,28 @@ func (c *ActaRecibidoController) GetAll() {
 		c.Abort("404")
 	} else {
 		c.Data["json"] = l
+	}
+	c.ServeJSON()
+}
+
+// GetElementosActa ...
+// @Title Get Elementos
+// @Description get Elementos by id
+// @Param	id		path 	string	true		"id del acta"
+// @Success 200 {object} models.Elemento
+// @Failure 404 not found resource
+// @router get_elementos_acta/:id [get]
+func (c *ActaRecibidoController) GetElementosActa() {
+	idStr := c.Ctx.Input.Param(":id")
+	id, _ := strconv.Atoi(idStr)
+	v, err := actaRecibidoHelper.GetElementos(id)
+	if err != nil {
+		logs.Error(err)
+		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
 	}
 	c.ServeJSON()
 }
