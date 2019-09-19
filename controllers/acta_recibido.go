@@ -1,13 +1,15 @@
 package controllers
 
 import (
+	//"github.com/udistrital/acta_recibido_crud/models"
 	"fmt"
-	"io/ioutil"
+	"strconv"
+
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
 
 	"github.com/astaxie/beego"
-	"github.com/tealeg/xlsx"
-	"github.com/udistrital/arka_mid/models"
-	// "github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/astaxie/beego/logs"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -18,6 +20,8 @@ type ActaRecibidoController struct {
 // URLMapping ...
 func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetElementosActa", c.GetElementosActa)
 }
 
 // Post ...
@@ -29,142 +33,62 @@ func (c *ActaRecibidoController) URLMapping() {
 // @router / [post]
 func (c *ActaRecibidoController) Post() {
 
-	// var archivo map[string]interface{}
-
-	// Alertas
-	var alerta models.Alert
-	alertas := append([]interface{}{"Response:"})
-
-	// if err := json.Unmarshal(c.Ctx.Input.RequestBody, &archivo); err == nil {
-	// } else {
-	// 	fmt.Println("err reading multipartFile", err)
-	// 	alerta.Type = "error"
-	// 	alerta.Code = "400"
-	// 	alertas = append(alertas, "err reading file")
-	// 	alerta.Body = alertas
-	// 	c.Data["json"] = alerta
-	// 	c.ServeJSON()
-	// 	return
-	// }
-
-	// b, _ := archivo["archivo"]
-
-	// Bytes, err := models.GetBytes(b)
-	// if err != nil {
-	// 	fmt.Println("no se pudo convertir")
-	// }
-	// fmt.Println(Bytes)
-
-	// Lectura del archivo
-	// xlFile, err := xlsx.OpenBinary(Bytes)
-
-	// if err != nil {
-	// 	fmt.Println("err reading file", err)
-	// 	alerta.Type = "error"
-	// 	alerta.Code = "400"
-	// 	alertas = append(alertas, "err reading file")
-	// 	alerta.Body = alertas
-	// 	c.Data["json"] = alerta
-	// 	c.ServeJSON()
-	// 	return
-	// }
-
-	// for _, sheet := range xlFile.Sheets {
-	// 	for _, row := range sheet.Rows {
-	// 		for _, cell := range row.Cells {
-	// 			text := cell.String()
-	// 			fmt.Printf("%s\n", text)
-	// 		}
-	// 	}
-	// }
-
-	multipartFile, _, err := c.GetFile("archivo")
-	if err != nil {
-		fmt.Println("err reading multipartFile", err)
-		alerta.Type = "error"
-		alerta.Code = "400"
-		alertas = append(alertas, "err reading file")
-		alerta.Body = alertas
-		c.Data["json"] = alerta
-		c.ServeJSON()
-		return
-	}
-	file, err := ioutil.ReadAll(multipartFile)
-	if err != nil {
-		fmt.Println("err reading file", err)
-		alerta.Type = "error"
-		alerta.Code = "400"
-		alertas = append(alertas, "err reading file")
-		alerta.Body = alertas
-		c.Data["json"] = alerta
-		c.ServeJSON()
-		return
-	}
-
-	xlFile, err := xlsx.OpenBinary(file)
-	if err != nil {
-		fmt.Println("err reading file", err)
-		alerta.Type = "error"
-		alerta.Code = "400"
-		alertas = append(alertas, "err reading file")
-		alerta.Body = alertas
-		c.Data["json"] = alerta
-		c.ServeJSON()
-		return
-	}
-
-	Respuesta := make([]map[string]interface{}, 0)
-	Elemento := make([]map[string]interface{}, 0)
-
-	var hojas []string
-	var campos []string
-	var elementos [14]string
-	for s, sheet := range xlFile.Sheets {
-
-		if s == 0 {
-			fmt.Println(sheet.Name)
-			hojas = append(hojas, sheet.Name)
-			for r, row := range sheet.Rows {
-				if r == 0 {
-					for _, cell := range row.Cells {
-						campos = append(campos, cell.String())
-					}
-				} else {
-					for i, cell := range row.Cells {
-						elementos[i] = cell.String()
-					}
-					fmt.Println(elementos)
-					if elementos[0] != "" {
-						Elemento = append(Elemento, map[string]interface{}{
-							"NivelInventariosId": elementos[0],
-							"TipoBienId":         elementos[1],
-							"SubgrupoCatalogoId": elementos[2],
-							"Descripcion":        elementos[3],
-							"Marca":              elementos[4],
-							"Serie":              elementos[5],
-							"Cantidad":           elementos[6],
-							"UnidadMedida":       elementos[7],
-							"ValorUnitario":      elementos[8],
-							"Subtotal":           elementos[9],
-							"Descuento":          elementos[10],
-							"PorcentajeIvaId":    elementos[11],
-							"ValorIva":           elementos[12],
-							"ValorTotal":         elementos[13],
-						})
-					}
-					for i := range row.Cells {
-						elementos[i] = ""
-					}
-					fmt.Println(elementos)
-				}
-			}
+	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
+		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = Archivo
+		} else {
+			c.Data["system"] = err
+			c.Abort("400")
 		}
+	} else {
+		logs.Error(err)
+		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
+		c.Data["system"] = err
+		c.Abort("400")
 	}
-	Respuesta = append(Respuesta, map[string]interface{}{
-		"Hoja":      hojas,
-		"Campos":    campos,
-		"Elementos": Elemento,
-	})
-	c.Data["json"] = append(Respuesta)
+	c.ServeJSON()
+}
+
+// GetAll ...
+// @Title Get All
+// @Description get ActaRecibido
+// @Success 200 {object} models.ActaRecibido
+// @Failure 404 not found resource
+// @router / [get]
+func (c *ActaRecibidoController) GetAll() {
+
+	fmt.Println("hola")
+	l, err := actaRecibido.GetAllParametrosActa()
+	if err != nil {
+		logs.Error(err)
+		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = l
+	}
+	c.ServeJSON()
+}
+
+// GetElementosActa ...
+// @Title Get Elementos
+// @Description get Elementos by id
+// @Param	id		path 	string	true		"id del acta"
+// @Success 200 {object} models.Elemento
+// @Failure 404 not found resource
+// @router get_elementos_acta/:id [get]
+func (c *ActaRecibidoController) GetElementosActa() {
+	idStr := c.Ctx.Input.Param(":id")
+	id, _ := strconv.Atoi(idStr)
+	v, err := actaRecibidoHelper.GetElementos(id)
+	if err != nil {
+		logs.Error(err)
+		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
+	}
 	c.ServeJSON()
 }
