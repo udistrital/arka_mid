@@ -81,7 +81,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 
 			logs.Debug(len(elementos))
 			// Solicita información unidad elemento
-			urlcrud = "http://" + beego.AppConfig.String("unidadService")
+			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
 
 			for _, elemento := range elementos {
 

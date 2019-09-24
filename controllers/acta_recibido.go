@@ -77,7 +77,7 @@ func (c *ActaRecibidoController) GetAll() {
 // @Param	id		path 	string	true		"id del acta"
 // @Success 200 {object} models.Elemento
 // @Failure 404 not found resource
-// @router get_elementos_acta/:id [get]
+// @router /get_elementos_acta/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)

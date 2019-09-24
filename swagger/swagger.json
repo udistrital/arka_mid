@@ -64,7 +64,7 @@
                 }
             }
         },
-        "/acta_recibidoget_elementos_acta/{id}": {
+        "/acta_recibido/get_elementos_acta/{id}": {
             "get": {
                 "tags": [
                     "acta_recibido"
