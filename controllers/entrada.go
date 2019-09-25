@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -42,6 +43,28 @@ func (c *EntradaController) Post() {
 		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
 		c.Data["system"] = err
 		c.Abort("400")
+	}
+	c.ServeJSON()
+}
+
+// GetEntrada ...
+// @Title Get User
+// @Description get Entrada by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.ConsultaEntrada
+// @Failure 404 not found resource
+// @router /:id [get]
+func (c *EntradaController) GetEntrada() {
+	idStr := c.Ctx.Input.Param(":id")
+	id, _ := strconv.Atoi(idStr)
+	v, err := entradaHelper.GetEntrada(id)
+	if err != nil {
+		logs.Error(err)
+		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
 	}
 	c.ServeJSON()
 }
