@@ -14,7 +14,7 @@ func GetUnidad(unidadId int) (unidad []*models.Unidad, outputError map[string]in
 	if unidadId != 0 { // (1) error parametro
 		var unidadAux *models.Unidad
 
-		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("unidadService")+strconv.Itoa(unidadId), &unidadAux); err == nil { // (2) error servicio caido
+		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("administrativaService")+"unidad/"+strconv.Itoa(unidadId), &unidadAux); err == nil { // (2) error servicio caido
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				unidad = append(unidad, unidadAux)
 				return unidad, nil

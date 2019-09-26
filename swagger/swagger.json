@@ -64,6 +64,26 @@
                 }
             }
         },
+        "/acta_recibido/get_actas_recibido_tipo/{tipo}": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "Devuelve las todas las actas de recibido",
+                "operationId": "ActaRecibidoController.GetActasRecibidoTipo",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Acta_recibido"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/acta_recibido/get_elementos_acta/{id}": {
             "get": {
                 "tags": [
