@@ -34,7 +34,7 @@ func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]in
 // GetActasRecibidoTipo ...
 func GetActasRecibidoTipo(tipoActa int) (historicoActa []*models.HistoricoActa, outputError map[string]interface{}) {
 	if tipoActa != 0 { // (1) error parametro
-		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=EstadoActaId.Id:"+strconv.Itoa(tipoActa)+",ActaRecibidoId.Activo:True&limit=-1", &historicoActa); err == nil { // (2) error servicio caido
+		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=EstadoActaId.Id:"+strconv.Itoa(tipoActa)+",Activo:True&limit=-1", &historicoActa); err == nil { // (2) error servicio caido
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				return historicoActa, nil
 			} else {
