@@ -16,11 +16,8 @@ import (
 
 // GetAllActasRecibido ...
 func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]interface{}) {
-	// if idUser != 0 { // (1) error parametro
 	if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=ActaRecibidoId.Activo:True", &historicoActa); err == nil { // (2) error servicio caido
 		if response.StatusCode == 200 { // (3) error estado de la solicitud
-			// c.Data["json"] = response
-			// c.ServeJSON()
 			return historicoActa, nil
 		} else {
 			logs.Info("Error (3) estado de la solicitud")
@@ -32,12 +29,6 @@ func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]in
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return outputError, nil
 	}
-	// c.ServeJSON()
-	// } else {
-	// 	logs.Info("Error (1) Parametro")
-	// 	outputError = map[string]interface{}{"Function": "FuncionalidadMidController:getUserAgora", "Error": "null parameter"}
-	// 	return nil, outputError
-	// }
 }
 
 // GetActasRecibidoTipo ...
@@ -76,26 +67,19 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		soporte   *models.SoporteActaProveedor
 	)
 	if actaId != 0 { // (1) error parametro
-
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=SoporteActaId.ActaRecibidoId.Id:" + strconv.Itoa(actaId) +
 			",SoporteActaId.ActaRecibidoId.Activo:True&limit=-1"
-
-		if response, err := request.GetJsonTest(urlcrud+strconv.Itoa(int(actaId)), &elementos); err == nil {
-
+		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil {
 			// Solicita información unidad elemento
 			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
-
 			for _, elemento := range elementos {
-
 				if response.StatusCode == 200 { // (3) error estado de la solicitud
-
 					auxE.Id = elemento.Id
 					auxE.Nombre = elemento.Nombre
 					auxE.Cantidad = elemento.Cantidad
 					auxE.Marca = elemento.Marca
 					auxE.Serie = elemento.Serie
-
 					// UNIDAD DEMEDIDA
 					unidad, outputError = unidadHelper.GetUnidad(elemento.UnidadMedida)
 					auxE.UnidadMedida = unidad[0]
@@ -104,7 +88,6 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 					auxE.Subtotal = elemento.Subtotal
 					auxE.Descuento = elemento.Descuento
 					auxE.ValorTotal = elemento.ValorTotal
-
 					// PORCENTAJE IVA
 					iva, outputError = parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId)
 					auxE.PorcentajeIvaId = iva[0]
@@ -115,7 +98,6 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 					auxE.Verificado = elemento.Verificado
 					auxE.TipoBienId = elemento.TipoBienId
 					auxE.EstadoElementoId = elemento.EstadoElementoId
-
 					// SOPORTE
 					proveedor, outputError = proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)
 					soporte = new(models.SoporteActaProveedor)
@@ -135,23 +117,70 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 					auxE.FechaModificacion = elemento.FechaModificacion
 
 					elementosActa = append(elementosActa, auxE)
-
 				} else {
-
 					logs.Info("Error (3) estado de la solicitud")
 					outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
 					return nil, outputError
-
 				}
-
 			}
-
 			return elementosActa, nil
 		} else {
+			logs.Info("Error (2) servicio caido")
+			outputError = map[string]interface{}{"Function": "GetIva", "Error": err}
 			return nil, outputError
 		}
 	} else {
+		logs.Info("Error (1) Parametro")
+		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetIva", "Error": "null parameter"}
 		return nil, outputError
 	}
+}
 
+// GetSoportes ...
+func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, outputError map[string]interface{}) {
+	var (
+		urlcrud   string
+		soportes  []models.SoporteActa
+		proveedor []*models.Proveedor
+		auxS      models.SoporteActaProveedor
+	)
+	if actaId != 0 { // (1) error parametro
+		// Solicita información elementos acta
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta?query=ActaRecibidoId:" + strconv.Itoa(actaId) + ",ActaRecibidoId.Activo:True&limit=-1"
+		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil {
+			// Solicita información unidad elemento
+			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
+			for _, soporte := range soportes {
+				if response.StatusCode == 200 { // (3) error estado de la solicitud
+					auxS.Id = soporte.Id
+					auxS.Consecutivo = soporte.Consecutivo
+					auxS.ActaRecibidoId = soporte.ActaRecibidoId
+					auxS.FechaSoporte = soporte.FechaSoporte
+					auxS.Activo = soporte.Activo
+					// SOPORTE
+					proveedor, outputError = proveedorHelper.GetProveedorById(soporte.ProveedorId)
+					//soporteAux = new(models.SoporteActaProveedor)
+					auxS.ProveedorId = proveedor[0]
+
+					auxS.FechaCreacion = soporte.FechaCreacion
+					auxS.FechaModificacion = soporte.FechaModificacion
+
+					soportesActa = append(soportesActa, auxS)
+				} else {
+					logs.Info("Error (3) estado de la solicitud")
+					outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
+					return nil, outputError
+				}
+			}
+			return soportesActa, nil
+		} else {
+			logs.Info("Error (2) servicio caido")
+			outputError = map[string]interface{}{"Function": "GetIva", "Error": err}
+			return nil, outputError
+		}
+	} else {
+		logs.Info("Error (1) Parametro")
+		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetIva", "Error": "null parameter"}
+		return nil, outputError
+	}
 }

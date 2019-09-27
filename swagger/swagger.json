@@ -113,6 +113,35 @@
                 }
             }
         },
+        "/acta_recibido/get_soportes_acta/{id}": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "get Soportes by id",
+                "operationId": "ActaRecibidoController.Get Soportes",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "id del acta",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.SoporteActaProveedor"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/entrada/": {
             "post": {
                 "tags": [
@@ -456,6 +485,28 @@
             "title": "Entrada",
             "type": "object"
         },
+        "models.Estado": {
+            "title": "Estado",
+            "type": "object",
+            "properties": {
+                "Abreviatura": {
+                    "type": "string"
+                },
+                "ClaseParametro": {
+                    "type": "string"
+                },
+                "DescripcionParametro": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorParametro": {
+                    "type": "string"
+                }
+            }
+        },
         "models.EstadoElemento": {
             "title": "EstadoElemento",
             "type": "object",
@@ -509,6 +560,82 @@
                 }
             }
         },
+        "models.Proveedor": {
+            "title": "Proveedor",
+            "type": "object",
+            "properties": {
+                "Anexorup": {
+                    "type": "string"
+                },
+                "Anexorut": {
+                    "type": "string"
+                },
+                "ClasificacionEvaluacion": {
+                    "type": "string"
+                },
+                "Correo": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Direccion": {
+                    "type": "string"
+                },
+                "Estado": {
+                    "$ref": "#/definitions/models.Estado"
+                },
+                "FechaRegistro": {
+                    "type": "string"
+                },
+                "FechaUltimaModificacion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdCiudadContacto": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdEntidadBancaria": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NomAsesor": {
+                    "type": "string"
+                },
+                "NomProveedor": {
+                    "type": "string"
+                },
+                "NumCuentaBancaria": {
+                    "type": "string"
+                },
+                "NumDocumento": {
+                    "type": "string"
+                },
+                "PuntajeEvaluacion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "RegimenContributivo": {
+                    "type": "string"
+                },
+                "TelAsesor": {
+                    "type": "string"
+                },
+                "TipoCuentaBancaria": {
+                    "type": "string"
+                },
+                "Tipopersona": {
+                    "type": "string"
+                },
+                "Web": {
+                    "type": "string"
+                }
+            }
+        },
         "models.SoporteActa": {
             "title": "SoporteActa",
             "type": "object",
@@ -541,6 +668,40 @@
                 "ProveedorId": {
                     "type": "integer",
                     "format": "int64"
+                }
+            }
+        },
+        "models.SoporteActaProveedor": {
+            "title": "SoporteActaProveedor",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "$ref": "#/definitions/models.ActaRecibido"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaSoporte": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProveedorId": {
+                    "$ref": "#/definitions/models.Proveedor"
                 }
             }
         },
