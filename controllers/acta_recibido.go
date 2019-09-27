@@ -71,6 +71,26 @@ func (c *ActaRecibidoController) GetAll() {
 	c.ServeJSON()
 }
 
+// GetActasByipo ...
+// @Title GetActasRecibidoTipo
+// @Description Devuelve las todas las actas de recibido
+// @Success 200 {object} models.Acta_recibido
+// @Failure 403
+// @router /get_actas_recibido_tipo/:tipo [get]
+func (c *ActaRecibidoController) GetActasByipo() {
+	tipoStr := c.Ctx.Input.Param(":tipo")
+	tipo, _ := strconv.Atoi(tipoStr)
+	v, err := actaRecibidoHelper.GetActasRecibidoTipo(tipo)
+	if err != nil {
+		logs.Error(err)
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
+	}
+	c.ServeJSON()
+}
+
 // GetElementosActa ...
 // @Title Get Elementos
 // @Description get Elementos by id

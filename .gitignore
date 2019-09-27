@@ -10,6 +10,7 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
 #Bee api
 arka_mid
 .DS_Store
@@ -20,7 +21,6 @@ todo/todo
 custom.env
 lastupdate.*
 .vscode/
-plan_cuentas_mid
 main
 .scannerwork/
 swagger/*.png
