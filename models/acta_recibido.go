@@ -17,6 +17,18 @@ type ActaRecibido struct {
 	FechaModificacion time.Time `orm:"column(fecha_modificacion);type(timestamp without time zone)"`
 }
 
+type ActaRecibidoUbicacion struct {
+	Id                int
+	UbicacionId       *EspacioFisico
+	FechaVistoBueno   time.Time
+	RevisorId         int
+	Observaciones     string
+	Activo            bool
+	EstadoActaId      *EstadoActa
+	FechaCreacion     time.Time
+	FechaModificacion time.Time
+}
+
 func GetBytes(key interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)

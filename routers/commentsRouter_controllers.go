@@ -27,7 +27,7 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"],
         beego.ControllerComments{
-            Method: "GetActasByipo",
+            Method: "GetActasByTipo",
             Router: `/get_actas_recibido_tipo/:tipo`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
