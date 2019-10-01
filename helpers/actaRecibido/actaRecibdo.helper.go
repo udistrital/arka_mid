@@ -27,6 +27,14 @@ type VigenciaImpuesto struct {
     ImpuestoId				Impuesto
 }
 
+type Unidad struct {
+	Id				int
+	Unidad			string
+    Tipo			string
+	Descripcion		string
+    Estado			bool
+}
+
 
 // GetAllActasRecibido ...
 func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]interface{}) {
@@ -116,6 +124,7 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, outputError map[string]interface{}) {
 
 	var IVA []VigenciaImpuesto
+	var Unidades []Unidad
 
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
 		logs.Info(IVA)
@@ -124,6 +133,13 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return nil, outputError
 	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
+
+		} else {
+			logs.Info("Error Unidades servicio caido")
+			outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+			return nil, outputError
+		}
 
 	file, err := ioutil.ReadAll(c)
 	if err != nil {
@@ -176,6 +192,19 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						} else {
 							logs.Info(err)
 						}
+
+						convertir2 := strings.ToUpper(elementos[7])
+						if err == nil {
+							logs.Info(convertir2) 
+								for _, unidad := range Unidades{
+									if convertir2 == unidad.Unidad {
+										elementos[7] = strconv.Itoa(unidad.Id)
+									}
+								}
+						} else {
+							logs.Info(err)
+						}
+
 						Elemento = append(Elemento, map[string]interface{}{
 							"NivelInventariosId": elementos[0],
 							"TipoBienId":         elementos[1],
