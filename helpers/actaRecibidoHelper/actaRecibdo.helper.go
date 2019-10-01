@@ -35,13 +35,8 @@ func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]in
 // GetActasRecibidoTipo ...
 func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbicacion, outputError map[string]interface{}) {
 	var (
-		urlcrud string
-		// elementos []models.Elemento
+		urlcrud       string
 		historicoActa []*models.HistoricoActa
-		//actaRecibidoAux *models.ActaRecibidoUbicacion
-		//ubicacion []*models.EspacioFisico
-		// auxE      models.ElementosActa
-		// soporte   *models.SoporteActaProveedor
 	)
 	if tipoActa != 0 { // (1) error parametro
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=EstadoActaId.Id:" + strconv.Itoa(tipoActa) + ",Activo:True&limit=-1"
