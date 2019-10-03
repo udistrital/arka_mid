@@ -3,13 +3,38 @@ package actaRecibido
 import (
 	"fmt"
 	"io/ioutil"
+	"strconv"
+	"strings"
 	"mime/multipart"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 	"github.com/udistrital/utils_oas/request"
 )
+type Impuesto struct {
+	Id						int
+    Nombre					string
+    Descripcion				string
+    CodigoAbreviacion		string
+    Activo					bool
+}
+
+type VigenciaImpuesto struct {
+	Id						int
+    Activo					bool
+    Tarifa					int64
+    PorcentajeAplicacion	int
+    ImpuestoId				Impuesto
+}
+
+type Unidad struct {
+	Id				int
+	Unidad			string
+    Tipo			string
+	Descripcion		string
+    Estado			bool
+}
+
 
 // GetAllActasRecibido ...
 func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]interface{}) {
@@ -98,6 +123,24 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 // "PostDecodeXlsx2Json ..."
 func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, outputError map[string]interface{}) {
 
+	var IVA []VigenciaImpuesto
+	var Unidades []Unidad
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
+		logs.Info(IVA)
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
+
+		} else {
+			logs.Info("Error Unidades servicio caido")
+			outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+			return nil, outputError
+		}
+
 	file, err := ioutil.ReadAll(c)
 	if err != nil {
 		fmt.Println("err reading file", err)
@@ -122,7 +165,6 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 	for s, sheet := range xlFile.Sheets {
 
 		if s == 0 {
-			fmt.Println(sheet.Name)
 			hojas = append(hojas, sheet.Name)
 			for r, row := range sheet.Rows {
 				if r == 0 {
@@ -133,13 +175,41 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 					for i, cell := range row.Cells {
 						elementos[i] = cell.String()
 					}
-					fmt.Println(elementos)
-					if elementos[0] != "" {
+					if elementos[0] != "Totales" {
+						convertir := strings.Split(elementos[11],".")
+						if err == nil {
+							logs.Info(convertir)
+							valor, err := strconv.ParseInt(convertir[0], 10, 64) 
+							if err == nil {
+								for _, valor_iva := range IVA{
+									if valor == valor_iva.Tarifa {
+										elementos[11] = strconv.Itoa(valor_iva.Id)
+									}
+								}
+							} else {
+								logs.Info(err)
+							}
+						} else {
+							logs.Info(err)
+						}
+
+						convertir2 := strings.ToUpper(elementos[7])
+						if err == nil {
+							logs.Info(convertir2) 
+								for _, unidad := range Unidades{
+									if convertir2 == unidad.Unidad {
+										elementos[7] = strconv.Itoa(unidad.Id)
+									}
+								}
+						} else {
+							logs.Info(err)
+						}
+
 						Elemento = append(Elemento, map[string]interface{}{
 							"NivelInventariosId": elementos[0],
 							"TipoBienId":         elementos[1],
 							"SubgrupoCatalogoId": elementos[2],
-							"Descripcion":        elementos[3],
+							"Nombre":        	  elementos[3],
 							"Marca":              elementos[4],
 							"Serie":              elementos[5],
 							"Cantidad":           elementos[6],
@@ -151,20 +221,18 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							"ValorIva":           elementos[12],
 							"ValorTotal":         elementos[13],
 						})
+					} else {
+						Respuesta = append(Respuesta, map[string]interface{}{
+							"Hoja":      hojas,
+							"Campos":    campos,
+							"Elementos": Elemento,
+						})
+						
 					}
-					for i := range row.Cells {
-						elementos[i] = ""
-					}
-					fmt.Println(elementos)
 				}
 			}
 		}
 	}
-	Respuesta = append(Respuesta, map[string]interface{}{
-		"Hoja":      hojas,
-		"Campos":    campos,
-		"Elementos": Elemento,
-	})
 	return Respuesta, nil
 }
 
