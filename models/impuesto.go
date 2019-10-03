@@ -13,3 +13,11 @@ type Impuesto struct {
 	FechaModificacion time.Time
 	TipoImpuestoId    *TipoImpuesto
 }
+
+type VigenciaImpuesto struct {
+	Id                   int
+	Activo               bool
+	Tarifa               int
+	PorcentajeAplicacion int
+	ImpuestoId           Impuesto
+}
