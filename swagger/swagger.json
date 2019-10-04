@@ -42,21 +42,16 @@
                 "operationId": "ActaRecibidoController.Create",
                 "parameters": [
                     {
-                        "in": "body",
+                        "in": "formData",
                         "name": "body",
                         "description": "body for Acta_recibido content",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Acta_recibido"
-                        }
+                        "type": "file"
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.Acta_recibido"
-                        }
+                        "description": "{}"
                     },
                     "403": {
                         "description": "body is empty"

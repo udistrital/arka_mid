@@ -27,12 +27,12 @@ func (c *ActaRecibidoController) URLMapping() {
 // Post ...
 // @Title Create
 // @Description create Acta_recibido
-// @Param	body		body 	models.Acta_recibido	true		"body for Acta_recibido content"
-// @Success 201 {object} models.Acta_recibido
+// @Param	body	formData  file	true	"body for Acta_recibido content"
+// @Success 201 {}
 // @Failure 403 body is empty
 // @router / [post]
 func (c *ActaRecibidoController) Post() {
-
+	fmt.Println(c.GetFile("archivo"))
 	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
 		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
 			c.Ctx.Output.SetStatus(201)
