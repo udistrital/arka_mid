@@ -27,7 +27,7 @@ func (c *ActaRecibidoController) URLMapping() {
 // Post ...
 // @Title Create
 // @Description create Acta_recibido
-// @Param	body	formData  file	true	"body for Acta_recibido content"
+// @Param	archivo	formData  file	true	"body for Acta_recibido content"
 // @Success 201 {}
 // @Failure 403 body is empty
 // @router / [post]

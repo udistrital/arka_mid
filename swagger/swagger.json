@@ -43,7 +43,7 @@
                 "parameters": [
                     {
                         "in": "formData",
-                        "name": "body",
+                        "name": "archivo",
                         "description": "body for Acta_recibido content",
                         "required": true,
                         "type": "file"
