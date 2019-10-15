@@ -137,6 +137,8 @@
                 }
             }
         },
+        "/catalogo_elementos/cuentas_contables/{id}": {},
+        "/catalogo_elementos/{id}": {},
         "/entrada/": {
             "post": {
                 "tags": [
@@ -260,6 +262,10 @@
         },
         "models.Acta_recibido": {
             "title": "Acta_recibido",
+            "type": "object"
+        },
+        "models.CatalogoElementos": {
+            "title": "CatalogoElementos",
             "type": "object"
         },
         "models.ConsultaEntrada": {
@@ -390,6 +396,10 @@
                     "format": "int64"
                 }
             }
+        },
+        "models.CuentasSubgrupo": {
+            "title": "CuentasSubgrupo",
+            "type": "object"
         },
         "models.Elemento": {
             "title": "Elemento",
@@ -809,7 +819,11 @@
         },
         {
             "name": "parametros_soporte",
-            "description": "ActaRecibidoController operations for ActaRecibido\n"
+            "description": "ParametrosController operations for Parametros\n"
+        },
+        {
+            "name": "catalogo_elementos",
+            "description": "CatalogoElementosController operations for CatalogoElementos\n"
         }
     ]
 }

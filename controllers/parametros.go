@@ -6,7 +6,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 )
 
-// ActaRecibidoController operations for ActaRecibido
+// ParametrosController operations for Parametros
 type ParametrosController struct {
 	beego.Controller
 }
@@ -23,7 +23,6 @@ func (c *ParametrosController) URLMapping() {
 // @Failure 404 not found resource
 // @router / [get]
 func (c *ParametrosController) GetAll() {
-	logs.Info("hola")
 	l, err := actaRecibido.GetAllParametrosSoporte()
 	if err != nil {
 		logs.Error(err)
