@@ -764,7 +764,7 @@
                 "Nombre": {
                     "type": "string"
                 },
-                "NumeroOrden": {
+                "Orden": {
                     "type": "number",
                     "format": "double"
                 }

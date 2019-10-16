@@ -10,6 +10,7 @@ type Subgrupo struct {
 	FechaModificacion time.Time
 	Activo            bool
 	Codigo            int
+	TipoBienId        *TipoBien
 }
 
 type SubgrupoTransaccion struct {

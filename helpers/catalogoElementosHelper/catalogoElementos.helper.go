@@ -45,7 +45,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []m
 		cuentaDebito    *models.CuentaContable
 	)
 
-	urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_grupo?query=SubgrupoId.Id:" + strconv.Itoa(int(subgrupoId)) + ",Activo:True&limit=-1"
+	urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?query=SubgrupoId.Id:" + strconv.Itoa(int(subgrupoId)) + ",Activo:True&limit=-1"
 
 	if response, err := request.GetJsonTest(urlcrud, &cuentasSubgrupo); err == nil { // (2) error servicio caido
 		if response.StatusCode == 200 { // (3) error estado de la solicitud
