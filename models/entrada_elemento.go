@@ -17,6 +17,7 @@ type EntradaElemento struct {
 	DocumentoContableId int          `orm:"column(documento_contable_id)"`
 	Consecutivo         string       `orm:"column(consecutivo)"`
 	Vigencia            string       `orm:"column(vigencia)"`
+	OrdenadorId         int          `orm:"column(ordenador_id);null"`
 }
 
 type ConsultaEntrada struct {
