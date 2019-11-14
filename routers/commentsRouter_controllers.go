@@ -54,7 +54,7 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:CatalogoElementosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:CatalogoElementosController"],
         beego.ControllerComments{
-            Method: "GetCatalogoById",
+            Method: "GetAll",
             Router: `/:id`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
@@ -63,7 +63,7 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:CatalogoElementosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:CatalogoElementosController"],
         beego.ControllerComments{
-            Method: "GetCuentasSubgrupoById",
+            Method: "GetOne",
             Router: `/cuentas_contables/:id`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),

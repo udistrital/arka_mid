@@ -137,8 +137,43 @@
                 }
             }
         },
-        "/catalogo_elementos/cuentas_contables/{id}": {},
-        "/catalogo_elementos/{id}": {},
+        "/catalogo_elementos/cuentas_contables/{id}": {
+            "get": {
+                "tags": [
+                    "catalogo_elementos"
+                ],
+                "description": "Devuelve las todas las actas de recibido",
+                "operationId": "CatalogoElementosController.GetCuentasSubgrupoById",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Acta_recibido"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/catalogo_elementos/{id}": {
+            "get": {
+                "tags": [
+                    "catalogo_elementos"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "CatalogoElementosController.GetCatalogoById",
+                "responses": {
+                    "200": {
+                        "description": "{}"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/entrada/": {
             "post": {
                 "tags": [
@@ -262,10 +297,6 @@
         },
         "models.Acta_recibido": {
             "title": "Acta_recibido",
-            "type": "object"
-        },
-        "models.CatalogoElementos": {
-            "title": "CatalogoElementos",
             "type": "object"
         },
         "models.ConsultaEntrada": {
@@ -396,10 +427,6 @@
                     "format": "int64"
                 }
             }
-        },
-        "models.CuentasSubgrupo": {
-            "title": "CuentasSubgrupo",
-            "type": "object"
         },
         "models.Elemento": {
             "title": "Elemento",
@@ -823,7 +850,7 @@
         },
         {
             "name": "catalogo_elementos",
-            "description": "CatalogoElementosController operations for CatalogoElementos\n"
+            "description": "CatalogoElementosController operations for Catalogo\n"
         }
     ]
 }
