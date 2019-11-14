@@ -29,7 +29,7 @@ func (c *EntradaController) URLMapping() {
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
-	var v models.EntradaElemento
+	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
 		if err := entradaHelper.AddEntrada(v); err != nil {
 			c.Ctx.Output.SetStatus(201)

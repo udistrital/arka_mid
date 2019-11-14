@@ -13,6 +13,7 @@ var parameters struct {
 	GetActasRecibidoTipo string
 	GetElementos         string
 	GetSoportes          string
+	ACTA_RECIBIDO_CRUD   string
 }
 
 func TestMain(m *testing.M) {
@@ -20,6 +21,7 @@ func TestMain(m *testing.M) {
 	parameters.GetActasRecibidoTipo = os.Getenv("GetActasRecibidoTipo")
 	parameters.GetElementos = os.Getenv("GetElementos")
 	parameters.GetSoportes = os.Getenv("GetSoportes")
+	parameters.ACTA_RECIBIDO_CRUD = os.Getenv("ACTA_RECIBIDO_CRUD")
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -78,4 +80,9 @@ func TestEndPointGetElementos(t *testing.T) {
 func TestEndPointGetSoportes(t *testing.T) {
 	t.Log("Testing EndPoint GetSoportes")
 	t.Log(parameters.GetSoportes)
+}
+
+func TestEndPointACTA_RECIBIDO_CRUD(t *testing.T) {
+	t.Log("Testing EndPoint ACTA_RECIBIDO_CRUD")
+	t.Log(parameters.ACTA_RECIBIDO_CRUD)
 }

@@ -1,57 +1,91 @@
 package entradaHelper
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
 // AddEntrada Transacción para registrar la información de una entrada
-func AddEntrada(data models.EntradaElemento) map[string]interface{} {
+func AddEntrada(data models.Movimiento) map[string]interface{} {
 	var (
 		urlcrud      string
-		res          interface{}
-		resA         interface{}
+		res          map[string]interface{}
+		resA         map[string]interface{}
+		resM         map[string]interface{}
+		resS         map[string]interface{}
 		actaRecibido []models.TransaccionActaRecibido
 		resultado    map[string]interface{}
 	)
 
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/"
 
+	detalleJSON := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
+		panic(err.Error())
+	}
+
 	// Solicita información acta
-	if err := request.GetJson(urlcrud+strconv.Itoa(int(data.ActaRecibidoId)), &actaRecibido); err == nil {
-		//Envia información entrada
-		urlcrud = "http://" + beego.AppConfig.String("entradaService") + "entrada_elemento"
+	actaRecibidoId, err := strconv.Atoi(detalleJSON["acta_recibido_id"].(string))
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if err := request.GetJson(urlcrud+strconv.Itoa(int(actaRecibidoId)), &actaRecibido); err == nil {
+		// Envia información entrada
+		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
 
 		if err = request.SendJson(urlcrud, "POST", &res, &data); err == nil {
-			// Cambia estado acta
-			switch res.(type) {
-			case map[string]interface{}:
-				urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(data.ActaRecibidoId))
+			// Si la entrada tiene soportes
+			if data.SoporteMovimientoId != 0 {
+				// Envia información soporte (Si tiene)
+				urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento"
+
+				idEntrada := int(res["Id"].(float64))
+
+				movimientoEntrada := models.Movimiento{Id: idEntrada}
+				soporteMovimiento := models.SoporteMovimiento{
+					DocumentoId:  data.SoporteMovimientoId,
+					Activo:       true,
+					MovimientoId: &movimientoEntrada,
+				}
+
+				if err = request.SendJson(urlcrud, "POST", &resS, &soporteMovimiento); err != nil {
+					panic(err.Error())
+				}
+			}
+
+			// Envia información movimientos Kronos
+			urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
+
+			procesoExterno := int64(res["Id"].(float64))
+			tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
+			movimientosKronos := models.MovimientoProcesoExterno{
+				TipoMovimientoId: &tipo,
+				ProcesoExterno:   procesoExterno,
+				Activo:           true,
+			}
+
+			if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
+				// Cambia estado acta
+				urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
 				actaRecibido[0].UltimoEstado.EstadoActaId.Id = 6
 				actaRecibido[0].UltimoEstado.Id = 0
 
 				if err = request.SendJson(urlcrud, "PUT", &resA, &actaRecibido[0]); err == nil {
-
-					switch resA.(type) {
-					case map[string]interface{}:
-						body := res.(map[string]interface{})
-						body["Acta"] = resA
-						resultado = body
-					default:
-						beego.Error("res acta", resA)
-						panic(helpers.ExternalAPIErrorMessage())
-					}
+					body := res
+					body["Acta"] = resA
+					resultado = body
 				} else {
 					panic(err.Error())
 				}
-			default:
-				beego.Error("res entrada", res)
-				panic(helpers.ExternalAPIErrorMessage())
+			} else {
+				panic(err.Error())
 			}
 
 		} else {
@@ -79,13 +113,7 @@ func GetEntrada(entradaId int) (consultaEntrada *models.ConsultaEntrada, outputE
 
 		if err := request.GetJson(urlcrud+strconv.Itoa(int(entradaId)), &entrada); err == nil {
 
-			logs.Debug(urlcrud)
-
-			logs.Debug(entrada)
-
 			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "informacion_contrato/" + strconv.Itoa(entrada.ContratoId) + "/" + entrada.Vigencia
-
-			logs.Debug(urlcrud)
 
 			if response, err := request.GetJsonTest(urlcrud, &contrato); err == nil { // (2) error servicio caido
 
