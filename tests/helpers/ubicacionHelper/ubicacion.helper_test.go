@@ -5,15 +5,19 @@ import (
 	"os"
 	"testing"
 
+	"github.com/astaxie/beego"
+
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 )
 
 var parameters struct {
-	GetUbicacion string
+	OIKOS_CRUD string
 }
 
 func TestMain(m *testing.M) {
-	parameters.GetUbicacion = os.Getenv("GetUbicacion")
+	// ACTA_RECIBIDO_CRUD=pruebasapi.intranetoas.udistrital.edu.co:8206/v1/ OIKOS_CRUD=pruebasapi.intranetoas.udistrital.edu.co:8087/v1/ ENTRADAS_CRUD=pruebasapi.intranetoas.udistrital.edu.co:8207/v1/ PARAMETROS_GOBIERNO_CRUD=pruebasapi.intranetoas.udistrital.edu.co:8205/v1/ OIKOS_CRUD=pruebasapi.intranetoas.udistrital.edu.co:8087/v1/ ADMINISTRATIVA_SERVICE=pruebasapi.intranetoas.udistrital.edu.co:8104/v1/ CUENTAS_CONTABLES_SERVICE=10.20.2.143:8089/v1/ go test ./... -v
+	parameters.OIKOS_CRUD = os.Getenv("OIKOS_CRUD")
+	beego.AppConfig.Set("oikosService", os.Getenv("OIKOS_CRUD"))
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -30,7 +34,7 @@ func TestGetUbicacion(t *testing.T) {
 	}
 }
 
-func TestEndPointGetUbicacion(t *testing.T) {
-	t.Log("Testing EndPoint GetUbicacion")
-	t.Log(parameters.GetUbicacion)
+func TestEndPointGetOikosService(t *testing.T) {
+	t.Log("Testing EndPoint OIKOS_CRUD")
+	t.Log(parameters.OIKOS_CRUD)
 }

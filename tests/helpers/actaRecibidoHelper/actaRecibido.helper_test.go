@@ -5,23 +5,17 @@ import (
 	"os"
 	"testing"
 
+	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
 )
 
 var parameters struct {
-	GetAllActasRecibido  string
-	GetActasRecibidoTipo string
-	GetElementos         string
-	GetSoportes          string
-	ACTA_RECIBIDO_CRUD   string
+	ACTA_RECIBIDO_CRUD string
 }
 
 func TestMain(m *testing.M) {
-	parameters.GetAllActasRecibido = os.Getenv("GetAllActasRecibido")
-	parameters.GetActasRecibidoTipo = os.Getenv("GetActasRecibidoTipo")
-	parameters.GetElementos = os.Getenv("GetElementos")
-	parameters.GetSoportes = os.Getenv("GetSoportes")
 	parameters.ACTA_RECIBIDO_CRUD = os.Getenv("ACTA_RECIBIDO_CRUD")
+	beego.AppConfig.Set("ActaRecibidoService", os.Getenv("ACTA_RECIBIDO_CRUD"))
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -60,26 +54,6 @@ func TestGetElementos(t *testing.T) {
 		t.Log(valor)
 		t.Log("TestGetElementos Finalizado Correctamente (OK)")
 	}
-}
-
-func TestEndPointGetAllActasRecibido(t *testing.T) {
-	t.Log("Testing EndPoint GetAllActasRecibido")
-	t.Log(parameters.GetAllActasRecibido)
-}
-
-func TestEndPointGetActasRecibidoTipo(t *testing.T) {
-	t.Log("Testing EndPoint GetActasRecibidoTipo")
-	t.Log(parameters.GetActasRecibidoTipo)
-}
-
-func TestEndPointGetElementos(t *testing.T) {
-	t.Log("Testing EndPoint GetElementos")
-	t.Log(parameters.GetElementos)
-}
-
-func TestEndPointGetSoportes(t *testing.T) {
-	t.Log("Testing EndPoint GetSoportes")
-	t.Log(parameters.GetSoportes)
 }
 
 func TestEndPointACTA_RECIBIDO_CRUD(t *testing.T) {

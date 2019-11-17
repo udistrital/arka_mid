@@ -5,15 +5,17 @@ import (
 	"os"
 	"testing"
 
+	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
 )
 
 var parameters struct {
-	GetIva string
+	PARAMETROS_GOBIERNO_CRUD string
 }
 
 func TestMain(m *testing.M) {
-	parameters.GetIva = os.Getenv("GetIva")
+	parameters.PARAMETROS_GOBIERNO_CRUD = os.Getenv("PARAMETROS_GOBIERNO_CRUD")
+	beego.AppConfig.Set("parametrosGobiernoService", os.Getenv("PARAMETROS_GOBIERNO_CRUD"))
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -30,7 +32,7 @@ func TestGetIva(t *testing.T) {
 	}
 }
 
-func TestEndPointGetIva(t *testing.T) {
-	t.Log("Testing EndPoint GetIva")
-	t.Log(parameters.GetIva)
+func TestEndPointGetParametrosGobiernoService(t *testing.T) {
+	t.Log("Testing EndPoint PARAMETROS_GOBIERNO_CRUD")
+	t.Log(parameters.PARAMETROS_GOBIERNO_CRUD)
 }
