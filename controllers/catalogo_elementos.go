@@ -19,6 +19,7 @@ type CatalogoElementosController struct {
 func (c *CatalogoElementosController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Get", c.GetAll)
+	c.Mapping("Get", c.GetAll2)
 	c.Mapping("GetOne", c.GetOne)
 }
 
@@ -62,3 +63,20 @@ func (c *CatalogoElementosController) GetOne() {
 	c.ServeJSON()
 }
 
+// GetAll2 ...
+// @Title GetMovimientosKronos
+// @Description get ActaRecibido
+// @Success 200 {}
+// @Failure 404 not found resource
+// @router /movimientos_kronos/
+func (c *CatalogoElementosController) GetAll2() {
+	v, err := catalogoElementosHelper.GetMovimientosKronos()
+	if err != nil {
+		logs.Error(err)
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
+	}
+	c.ServeJSON()
+}

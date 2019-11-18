@@ -162,16 +162,28 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 	var hojas []string
 	var campos []string
 	var elementos [14]string
+
+	validar_campos := []string{"Nivel Inventarios",	"Tipo de Bien", "Subgrupo Catalogo",	"Nombre",	"Marca", "Serie",	"Cantidad",	"Unidad de Medida", "Valor Unitario", "Subtotal",	"Descuento", "Tipo IVA", "Valor IVA",	"Valor Total",}
+
 	for s, sheet := range xlFile.Sheets {
 
 		if s == 0 {
 			hojas = append(hojas, sheet.Name)
 			for r, row := range sheet.Rows {
 				if r == 0 {
-					for _, cell := range row.Cells {
+					for i, cell := range row.Cells {
 						campos = append(campos, cell.String())
+						if campos[i] != validar_campos[i] {
+							logs.Info("Error Dependencia servicio caido")
+							outputError = map[string]interface{}{"Function": "GetAllActasRecibido","Error": 403}
+							Respuesta2 := append(Respuesta, map[string]interface{}{
+								"Mensaje": "El formato no corresponde a las columnas necesarias",
+							})
+							return Respuesta2, outputError
+						}
 					}
 				} else {
+					
 					for i, cell := range row.Cells {
 						elementos[i] = cell.String()
 					}
