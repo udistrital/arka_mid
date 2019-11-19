@@ -5,17 +5,17 @@ import (
 	"os"
 	"testing"
 
+	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 )
 
 var parameters struct {
-	GetCatalogoById          string
-	GetCuentasContablesGrupo string
+	CATALOGO_ELEMENTOS_SERVICE string
 }
 
 func TestMain(m *testing.M) {
-	parameters.GetCatalogoById = os.Getenv("GetCatalogoById")
-	parameters.GetCuentasContablesGrupo = os.Getenv("GetCuentasContablesGrupo")
+	parameters.CATALOGO_ELEMENTOS_SERVICE = os.Getenv("CATALOGO_ELEMENTOS_SERVICE")
+	beego.AppConfig.Set("catalogoElementosService", os.Getenv("CATALOGO_ELEMENTOS_SERVICE"))
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -44,12 +44,7 @@ func TestGetCuentasContablesGrupo(t *testing.T) {
 	}
 }
 
-func TestEndPointGetCatalogoById(t *testing.T) {
-	t.Log("Testing EndPoint GetCatalogoById")
-	t.Log(parameters.GetCatalogoById)
-}
-
-func TestEndPointGetCuentasContablesSubgrupo(t *testing.T) {
-	t.Log("Testing EndPoint GetCuentasContablesSubgrupo")
-	t.Log(parameters.GetCuentasContablesGrupo)
+func TestEndPointGetCatalogoElementosCrud(t *testing.T) {
+	t.Log("Testing EndPoint CATALOGO_ELEMENTOS_SERVICE")
+	t.Log(parameters.CATALOGO_ELEMENTOS_SERVICE)
 }

@@ -5,15 +5,17 @@ import (
 	"os"
 	"testing"
 
+	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 )
 
 var parameters struct {
-	GetCuentaContable string
+	CUENTAS_CONTABLES_SERVICE string
 }
 
 func TestMain(m *testing.M) {
-	parameters.GetCuentaContable = os.Getenv("GetCuentaContable")
+	parameters.CUENTAS_CONTABLES_SERVICE = os.Getenv("CUENTAS_CONTABLES_SERVICE")
+	beego.AppConfig.Set("cuentasContablesService", os.Getenv("CUENTAS_CONTABLES_SERVICE"))
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -30,7 +32,7 @@ func TestGetCuentaContable(t *testing.T) {
 	}
 }
 
-func TestEndPointGetCuentaContableo(t *testing.T) {
-	t.Log("Testing EndPoint GetCuentaContable")
-	t.Log(parameters.GetCuentaContable)
+func TestEndPointGetCuentasContablesService(t *testing.T) {
+	t.Log("Testing EndPoint cuentasContablesService")
+	t.Log(parameters.CUENTAS_CONTABLES_SERVICE)
 }

@@ -5,15 +5,17 @@ import (
 	"os"
 	"testing"
 
+	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 )
 
 var parameters struct {
-	GetUnidad string
+	OIKOS_CRUD string
 }
 
 func TestMain(m *testing.M) {
-	parameters.GetUnidad = os.Getenv("GetUnidad")
+	parameters.OIKOS_CRUD = os.Getenv("OIKOS_CRUD")
+	beego.AppConfig.Set("oikosService", os.Getenv("OIKOS_CRUD"))
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -30,7 +32,7 @@ func TestGetUnidad(t *testing.T) {
 	}
 }
 
-func TestEndPointGetUnidad(t *testing.T) {
-	t.Log("Testing EndPoint GetUnidad")
-	t.Log(parameters.GetUnidad)
+func TestEndPointGetOikosService(t *testing.T) {
+	t.Log("Testing EndPoint OikosService")
+	t.Log(parameters.OIKOS_CRUD)
 }
