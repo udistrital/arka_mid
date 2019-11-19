@@ -23,3 +23,14 @@ type CuentasGrupoTransaccion struct {
 	Activo              bool
 	SubgrupoId          *Subgrupo
 }
+
+type Movimientos_Kronos struct {
+	Id					int
+    Nombre				string
+    Descripcion			string
+    Acronimo			string
+    Activo				bool
+    FechaCreacion		time.Time
+    FechaModificacion	time.Time
+    Parametros			string
+}
