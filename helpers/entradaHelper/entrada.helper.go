@@ -30,17 +30,14 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 	}
 
 	// Solicita información acta
-	actaRecibidoId, err := strconv.Atoi(detalleJSON["acta_recibido_id"].(string))
-
-	if err != nil {
-		panic(err.Error())
-	}
+	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
 
 	if err := request.GetJson(urlcrud+strconv.Itoa(int(actaRecibidoId)), &actaRecibido); err == nil {
 		// Envia información entrada
 		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
 
 		if err = request.SendJson(urlcrud, "POST", &res, &data); err == nil {
+			logs.Info(res)
 			// Si la entrada tiene soportes
 			if data.SoporteMovimientoId != 0 {
 				// Envia información soporte (Si tiene)
@@ -100,43 +97,37 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 }
 
 // GetEntrada ...
-func GetEntrada(entradaId int) (consultaEntrada *models.ConsultaEntrada, outputError map[string]interface{}) {
+func GetEntrada(entradaId int) (consultaEntrada map[string]interface{}, outputError map[string]interface{}) {
 	var (
-		urlcrud  string
-		entrada  models.EntradaElemento
-		contrato models.Contrato
+		urlcrud        string
+		tipoMovimiento map[string]interface{}
+		movimientoArka map[string]interface{}
 	)
 
 	if entradaId != 0 { // (1) error parametro
-		// Solicita información elementos acta
-		urlcrud = "http://" + beego.AppConfig.String("entradaService") + "entrada_elemento/" + strconv.Itoa(entradaId)
+		// Solicita información Movimientos KRONOS
+		urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(entradaId) + ",TipoMovimientoId.Acronimo:e_arka,Activo:true"
 
-		if err := request.GetJson(urlcrud+strconv.Itoa(int(entradaId)), &entrada); err == nil {
+		if err := request.GetJson(urlcrud, &tipoMovimiento); err == nil {
+			// Solicita información movimientos ARKA de acuedo a la información consultada por movimientos kronos
+			var data []map[string]interface{}
+			var movimientoId int
 
-			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "informacion_contrato/" + strconv.Itoa(entrada.ContratoId) + "/" + entrada.Vigencia
+			if jsonString, err := json.Marshal(tipoMovimiento["Body"]); err == nil {
+				if err := json.Unmarshal(jsonString, &data); err == nil {
+					for _, movimiento := range data {
+						movimientoId = int(movimiento["ProcesoExterno"].(float64))
+					}
+				}
+			}
 
-			if response, err := request.GetJsonTest(urlcrud, &contrato); err == nil { // (2) error servicio caido
+			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(movimientoId)
+
+			if response, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil { // (2) error servicio caido
 
 				if response.StatusCode == 200 { // (3) error estado de la solicitud
-
-					consultaEntrada.Id = entrada.Id
-					consultaEntrada.Solicitante = entrada.Solicitante
-					consultaEntrada.Observacion = entrada.Observacion
-					consultaEntrada.Importacion = entrada.Importacion
-					consultaEntrada.FechaCreacion = entrada.FechaCreacion
-					consultaEntrada.FechaModificacion = entrada.FechaModificacion
-					consultaEntrada.Activo = entrada.Activo
-					consultaEntrada.TipoEntradaId = entrada.TipoEntradaId
-					// CONTRATO
-					consultaEntrada.ContratoId.NumeroContratoSuscrito = contrato.NumeroContratoSuscrito
-					consultaEntrada.ContratoId.OrdenadorGasto = contrato.OrdenadorGasto
-					consultaEntrada.ContratoId.Supervisor = contrato.Supervisor
-
-					consultaEntrada.ElementoId = entrada.ElementoId
-					consultaEntrada.DocumentoContableId = entrada.DocumentoContableId
-					consultaEntrada.Consecutivo = entrada.Consecutivo
-					consultaEntrada.Vigencia = entrada.Vigencia
-
+					consultaEntrada = make(map[string]interface{})
+					consultaEntrada = map[string]interface{}{"TipoMovimiento": data[0], "Movimiento": movimientoArka}
 					return consultaEntrada, nil
 
 				} else {
@@ -153,6 +144,66 @@ func GetEntrada(entradaId int) (consultaEntrada *models.ConsultaEntrada, outputE
 		} else {
 			return nil, outputError
 		}
+	} else {
+		return nil, outputError
+	}
+}
+
+// GetEntradas
+func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[string]interface{}) {
+	var (
+		urlcrud                  string
+		tipoMovimiento           map[string]interface{}
+		movimientosId            []int
+		tipoMovimientoEspecifico []interface{}
+	)
+
+	// Solicita información Movimientos KRONOS
+	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=TipoMovimientoId.Acronimo:e_arka,Activo:true&limit=-1"
+
+	if err := request.GetJson(urlcrud, &tipoMovimiento); err == nil {
+		// Solicita información movimientos ARKA de acuedo a la información consultada por movimientos kronos
+		var data []map[string]interface{}
+
+		if jsonString, err := json.Marshal(tipoMovimiento["Body"]); err == nil {
+			if err := json.Unmarshal(jsonString, &data); err == nil {
+				for _, movimiento := range data {
+					movimientosId = append(movimientosId, int(movimiento["ProcesoExterno"].(float64)))
+					tipoMovimientoEspecifico = append(tipoMovimientoEspecifico, movimiento["TipoMovimientoId"])
+				}
+			}
+		}
+
+		// Solicita información a movimientos ARKA
+		var contador = 0
+		for _, i := range movimientosId {
+
+			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(i)
+
+			var movimientoArka map[string]interface{}
+			var aux map[string]interface{}
+
+			if response, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil { // (2) error servicio caido
+
+				if response.StatusCode == 200 { // (3) error estado de la solicitud
+					aux = make(map[string]interface{})
+					aux = map[string]interface{}{"TipoMovimiento": tipoMovimientoEspecifico[contador], "Movimiento": movimientoArka}
+					consultaEntradas = append(consultaEntradas, aux)
+					//logs.Info(movimientoArka)
+				} else {
+					logs.Info("Error (3) estado de la solicitud")
+					outputError = map[string]interface{}{"Function": "GetEntrada:GetEntrada", "Error": response.Status}
+				}
+			} else {
+				logs.Info("Error (2) servicio caido")
+				logs.Debug(err)
+				outputError = map[string]interface{}{"Function": "GetEntrada", "Error": err}
+			}
+			contador++
+		}
+	}
+	if consultaEntradas != nil {
+		return consultaEntradas, nil
 	} else {
 		return nil, outputError
 	}
