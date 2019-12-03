@@ -196,6 +196,24 @@
             }
         },
         "/entrada/": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "get Entradas",
+                "operationId": "EntradaController.Get User",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ConsultaEntrada"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "entrada"
@@ -311,6 +329,37 @@
                     },
                     "404": {
                         "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/salida/": {
+            "post": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "create Salida",
+                "operationId": "SalidaController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Salida content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
                     }
                 }
             }
@@ -696,6 +745,10 @@
                 }
             }
         },
+        "models.Salida": {
+            "title": "Salida",
+            "type": "object"
+        },
         "models.SoporteActa": {
             "title": "SoporteActa",
             "type": "object",
@@ -862,6 +915,10 @@
         {
             "name": "catalogo_elementos",
             "description": "CatalogoElementosController operations for Catalogo\n"
+        },
+        {
+            "name": "salida",
+            "description": "SalidaController operations for Salida\n"
         }
     ]
 }
