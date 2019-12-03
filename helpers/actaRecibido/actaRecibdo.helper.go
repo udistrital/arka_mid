@@ -5,11 +5,13 @@ import (
 	"io/ioutil"
 	"strconv"
 	"strings"
+	"encoding/json"
 	"mime/multipart"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/models"
 )
 type Impuesto struct {
 	Id						int
@@ -286,4 +288,57 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 	})
 
 	return parametros, nil
+}
+
+// GetActasRecibidoTipo ...
+func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros []map[string]interface{}, outputError map[string]interface{}) {
+
+	var Ubicaciones []map[string]interface{}
+	var Parametros2 []map[string]interface{}
+	fmt.Println(Datos.Sede)
+	fmt.Println(Datos.Dependencia)
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService") +
+		"asignacion_espacio_fisico_dependencia?query=DependenciaId.Id:" + strconv.Itoa(Datos.Dependencia.Id) +
+		"&limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+			fmt.Println(Ubicaciones)
+		for _, relacion := range Ubicaciones {
+			var data map[string]interface{}
+			if jsonString, err := json.Marshal(relacion["EspacioFisicoId"]); err == nil {
+				if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
+						if number := strings.Index(fmt.Sprintf("%v",data["Codigo"]), Datos.Sede.Codigo); number != -1 {
+							Parametros2 = append( Parametros2,  map[string]interface{}{
+								"Id":					relacion["Id"],
+								"DependenciaId":		relacion["DependenciaId"],
+								"EspacioFisicoId":		relacion["EspacioFisicoId"],
+								"Estado":				relacion["Estado"],
+								"FechaFin":				relacion["FechaFin"],
+								"FechaInicio":			relacion["FechaInicio"],
+								"Nombre":				data["Nombre"],
+							})
+						}
+						Parametros = append( Parametros,  map[string]interface{}{
+							"Relaciones":	Parametros2,
+						})
+					
+				} else {
+					logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+					outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err2}
+					return nil, outputError
+				}
+			} else {
+				logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+				outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err}
+				return nil, outputError
+			}
+		}
+	
+		return Parametros, nil
+
+	} else {
+		logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err}
+		return nil, outputError
+	}
+	
+	
 }

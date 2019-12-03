@@ -116,8 +116,8 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // GetSoportesActa ...
 // @Title Get Soportes
 // @Description get Soportes by id
-// @Param	id		path 	string	true		"id del acta"
-// @Success 200 {object} models.SoporteActaProveedor
+// @Param	body	body 	models.Entrada	true
+// @Success 200 {object} []models.AsignacionEspacioFisicoDependencia
 // @Failure 404 not found resource
 // @router /get_soportes_acta/:id [get]
 func (c *ActaRecibidoController) GetSoportesActa() {
@@ -134,3 +134,4 @@ func (c *ActaRecibidoController) GetSoportesActa() {
 	}
 	c.ServeJSON()
 }
+
