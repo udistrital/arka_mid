@@ -117,18 +117,22 @@
                 "operationId": "ActaRecibidoController.Get Soportes",
                 "parameters": [
                     {
-                        "in": "path",
-                        "name": "id",
-                        "description": "id del acta",
-                        "required": true,
-                        "type": "string"
+                        "in": "body",
+                        "name": "body",
+                        "description": "true",
+                        "schema": {
+                            "$ref": "#/definitions/models.Entrada"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.SoporteActaProveedor"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                            }
                         }
                     },
                     "404": {
@@ -273,6 +277,43 @@
                     }
                 }
             }
+        },
+        "/parametros_soporte/post_asignacion_espacio_fisico_dependencia/": {
+            "post": {
+                "tags": [
+                    "parametros_soporte"
+                ],
+                "description": "get Soportes by id",
+                "operationId": "ParametrosController.Post Soportes",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -315,6 +356,33 @@
         "models.Acta_recibido": {
             "title": "Acta_recibido",
             "type": "object"
+        },
+        "models.AsignacionEspacioFisicoDependencia": {
+            "title": "AsignacionEspacioFisicoDependencia",
+            "type": "object",
+            "properties": {
+                "DependenciaId": {
+                    "$ref": "#/definitions/models.Dependencia"
+                },
+                "EspacioFisicoId": {
+                    "$ref": "#/definitions/models.EspacioFisico"
+                },
+                "Estado": {
+                    "type": "string"
+                },
+                "FechaFin": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaInicio": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
         },
         "models.ConsultaEntrada": {
             "title": "ConsultaEntrada",
@@ -445,6 +513,25 @@
                 }
             }
         },
+        "models.Dependencia": {
+            "title": "Dependencia",
+            "type": "object",
+            "properties": {
+                "CorreoElectronico": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "TelefonoDependencia": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Elemento": {
             "title": "Elemento",
             "type": "object",
@@ -534,25 +621,25 @@
             "title": "Entrada",
             "type": "object"
         },
-        "models.Estado": {
-            "title": "Estado",
+        "models.EspacioFisico": {
+            "title": "EspacioFisico",
             "type": "object",
             "properties": {
-                "Abreviatura": {
+                "Codigo": {
                     "type": "string"
                 },
-                "ClaseParametro": {
-                    "type": "string"
-                },
-                "DescripcionParametro": {
+                "Estado": {
                     "type": "string"
                 },
                 "Id": {
                     "type": "integer",
                     "format": "int64"
                 },
-                "ValorParametro": {
+                "Nombre": {
                     "type": "string"
+                },
+                "TipoEspacio": {
+                    "$ref": "#/definitions/models.TipoEspacio"
                 }
             }
         },
@@ -609,82 +696,6 @@
                 }
             }
         },
-        "models.Proveedor": {
-            "title": "Proveedor",
-            "type": "object",
-            "properties": {
-                "Anexorup": {
-                    "type": "string"
-                },
-                "Anexorut": {
-                    "type": "string"
-                },
-                "ClasificacionEvaluacion": {
-                    "type": "string"
-                },
-                "Correo": {
-                    "type": "string"
-                },
-                "Descripcion": {
-                    "type": "string"
-                },
-                "Direccion": {
-                    "type": "string"
-                },
-                "Estado": {
-                    "$ref": "#/definitions/models.Estado"
-                },
-                "FechaRegistro": {
-                    "type": "string"
-                },
-                "FechaUltimaModificacion": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "IdCiudadContacto": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "IdEntidadBancaria": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "NomAsesor": {
-                    "type": "string"
-                },
-                "NomProveedor": {
-                    "type": "string"
-                },
-                "NumCuentaBancaria": {
-                    "type": "string"
-                },
-                "NumDocumento": {
-                    "type": "string"
-                },
-                "PuntajeEvaluacion": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "RegimenContributivo": {
-                    "type": "string"
-                },
-                "TelAsesor": {
-                    "type": "string"
-                },
-                "TipoCuentaBancaria": {
-                    "type": "string"
-                },
-                "Tipopersona": {
-                    "type": "string"
-                },
-                "Web": {
-                    "type": "string"
-                }
-            }
-        },
         "models.SoporteActa": {
             "title": "SoporteActa",
             "type": "object",
@@ -717,40 +728,6 @@
                 "ProveedorId": {
                     "type": "integer",
                     "format": "int64"
-                }
-            }
-        },
-        "models.SoporteActaProveedor": {
-            "title": "SoporteActaProveedor",
-            "type": "object",
-            "properties": {
-                "ActaRecibidoId": {
-                    "$ref": "#/definitions/models.ActaRecibido"
-                },
-                "Activo": {
-                    "type": "boolean"
-                },
-                "Consecutivo": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaSoporte": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "ProveedorId": {
-                    "$ref": "#/definitions/models.Proveedor"
                 }
             }
         },
@@ -850,6 +827,23 @@
                     "format": "double"
                 }
             }
+        },
+        "models.TipoEspacio": {
+            "title": "TipoEspacio",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "{}": {
+            "title": "{}",
+            "type": "object"
         }
     },
     "tags": [
