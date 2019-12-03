@@ -33,7 +33,7 @@ func (c *EntradaController) Post() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
 		if respuesta := entradaHelper.AddEntrada(v); respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = v
+			c.Data["json"] = respuesta
 		} else {
 			c.Data["system"] = respuesta
 			c.Abort("400")

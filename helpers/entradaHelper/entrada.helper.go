@@ -37,7 +37,6 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
 
 		if err = request.SendJson(urlcrud, "POST", &res, &data); err == nil {
-			logs.Info(res)
 			// Si la entrada tiene soportes
 			if data.SoporteMovimientoId != 0 {
 				// Envia información soporte (Si tiene)
