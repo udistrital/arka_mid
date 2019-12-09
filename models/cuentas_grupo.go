@@ -12,6 +12,27 @@ type CuentasGrupo struct {
 	Activo              bool      `orm:"column(activo)"`
 	SubgrupoId          *Subgrupo `orm:"column(subgrupo_id);rel(fk)"`
 }
+type CuentasGrupoModelo struct {
+	Id                  int             `orm:"column(id);pk;auto"`
+	CuentaCreditoId     int             `orm:"column(cuenta_credito_id)"`
+	CuentaDebitoId      int             `orm:"column(cuenta_debito_id)"`
+	SubtipoMovimientoId int             `orm:"column(subtipo_movimiento_id)"`
+	FechaCreacion       time.Time       `orm:"auto_now;column(fecha_creacion);type(date)"`
+	FechaModificacion   time.Time       `orm:"auto_now;column(fecha_modificacion);type(date)"`
+	Activo              bool            `orm:"column(activo)"`
+	SubgrupoId          *SubgrupoModelo `orm:"column(subgrupo_id);rel(fk)"`
+}
+
+type CuentasGrupoMovimiento struct {
+	Id                  int
+	CuentaCreditoId     int
+	CuentaDebitoId      int
+	SubtipoMovimientoId *TipoMovimiento
+	FechaCreacion       time.Time
+	FechaModificacion   time.Time
+	Activo              bool
+	SubgrupoId          *SubgrupoModelo
+}
 
 type CuentasGrupoTransaccion struct {
 	Id                  int
@@ -25,12 +46,12 @@ type CuentasGrupoTransaccion struct {
 }
 
 type Movimientos_Kronos struct {
-	Id					int
-    Nombre				string
-    Descripcion			string
-    Acronimo			string
-    Activo				bool
-    FechaCreacion		time.Time
-    FechaModificacion	time.Time
-    Parametros			string
+	Id                int
+	Nombre            string
+	Descripcion       string
+	Acronimo          string
+	Activo            bool
+	FechaCreacion     time.Time
+	FechaModificacion time.Time
+	Parametros        string
 }
