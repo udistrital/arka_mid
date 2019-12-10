@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -134,67 +133,98 @@ func GetMovimientosKronos() (Movimientos_Arka []map[string]interface{}, outputEr
 	}
 }
 
-func GetTipoMovimiento(arreglosubgrupos []interface{}) (subgrupos []models.SubgrupoCuentasMovimiento, outputError map[string]interface{}) {
-	var urlcrud, urlcatalogo string
-	urlcatalogo = "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_cuentas_subgrupo"
-	var cuentasasociadas []models.SubgrupoCuentasModelo
+//GetTipoMovimiento funcion para traer cuenta asociadas a subgrupos por lo tanto crea sus propias estructuras como subgrupoCuentasModelo
+func GetTipoMovimiento(arreglosubgrupos []models.SubgrupoCuentasModelo) (subgrupos []models.SubgrupoCuentasMovimiento, outputError map[string]interface{}) {
+	var urlcatalogo, urlcuenta string
 	var arreglocuentas []models.CuentasGrupoMovimiento
-	var tipomovimiento map[string]interface{}
+	var subgrupocatalogo models.SubgrupoCuentasModelo
+	var cuentareal map[string]interface{}
+	for _, subgrupocuentas := range arreglosubgrupos {
+		urlcatalogo = "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_cuentas_subgrupo/" + strconv.Itoa(subgrupocuentas.Id)
+		if response, outputError := request.GetJsonTest(urlcatalogo, &subgrupocatalogo); outputError == nil {
 
-	if outputError := request.SendJson(urlcatalogo, "POST", &cuentasasociadas, arreglosubgrupos); outputError == nil {
-		for _, subgrupocuentas := range cuentasasociadas {
+			if response.StatusCode == 200 {
 
-			for _, cuenta := range subgrupocuentas.CuentasAsociadas {
-				cuentaaso := models.CuentasGrupoMovimiento{
-					Id:                cuenta.Id,
-					CuentaCreditoId:   cuenta.CuentaCreditoId,
-					CuentaDebitoId:    cuenta.CuentaDebitoId,
-					FechaCreacion:     cuenta.FechaCreacion,
-					FechaModificacion: cuenta.FechaModificacion,
-					Activo:            cuenta.Activo,
-					SubgrupoId:        cuenta.SubgrupoId,
-				}
-				urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento/" + strconv.Itoa(cuenta.SubtipoMovimientoId)
-				if response, outputError := request.GetJsonTest(urlcrud, &tipomovimiento); outputError == nil {
-					if response.StatusCode == 200 {
-						//fmt.Println("tipo movimiento", tipomovimiento.Id, "  ", tipomovimiento.Nombre)
-						tipomov := tipomovimiento["Body"].(map[string]interface{})
-						layout := "2006-01-02T15:04:05.000Z"
-						a, _ := time.Parse(layout, tipomov["FechaCreacion"].(string))
-						b, _ := time.Parse(layout, tipomov["FechaModificacion"].(string))
+				for _, cuenta := range subgrupocatalogo.CuentasAsociadas {
 
-						cuentaaso.SubtipoMovimientoId = &models.TipoMovimiento{
-							Id:                int(tipomov["Id"].(float64)),
-							Nombre:            tipomov["Nombre"].(string),
-							Descripcion:       tipomov["Descripcion"].(string),
-							Acronimo:          tipomov["Acronimo"].(string),
-							Activo:            tipomov["Activo"].(bool),
-							FechaCreacion:     a,
-							FechaModificacion: b,
-							Parametros:        tipomov["Parametros"].(string),
-						}
-
+					cuentaaso := models.CuentasGrupoMovimiento{
+						Id:                  cuenta.Id,
+						FechaCreacion:       cuenta.FechaCreacion,
+						FechaModificacion:   cuenta.FechaModificacion,
+						Activo:              cuenta.Activo,
+						SubgrupoId:          cuenta.SubgrupoId,
+						SubtipoMovimientoId: cuenta.SubtipoMovimientoId,
 					}
-				} else {
-					return nil, map[string]interface{}{"Function": "GetTipoMovimiento", "Error": outputError}
-				}
-				arreglocuentas = append(arreglocuentas, cuentaaso)
-			}
-			subgrupos = append(subgrupos, models.SubgrupoCuentasMovimiento{
-				Id:                subgrupocuentas.Id,
-				Nombre:            subgrupocuentas.Nombre,
-				Descripcion:       subgrupocuentas.Descripcion,
-				FechaCreacion:     subgrupocuentas.FechaCreacion,
-				FechaModificacion: subgrupocuentas.FechaModificacion,
-				Activo:            subgrupocuentas.Activo,
-				Codigo:            subgrupocuentas.Codigo,
-				CuentasAsociadas:  arreglocuentas,
-			})
+					urlcuenta = "http://" + beego.AppConfig.String("financiera") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
+					if response, outputError := request.GetJsonTest(urlcuenta, &cuentareal); outputError == nil {
+						//if outputError := request.SendJson(urlcatalogo, "POST", &cuentasasociadas, subgrupocuentas); outputError == nil {
+						if response.StatusCode == 200 {
+							//fmt.Println("Credito  ", cuentareal)
+							cuentaaso.CuentaCreditoId = cuentareal["Codigo"].(string)
+						}
+					} else {
+						fmt.Println("error: ", outputError)
+						return nil, map[string]interface{}{"Function": "GetTipoMovimiento", "Error": outputError}
+					}
 
+					urlcuenta = "http://" + beego.AppConfig.String("financiera") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
+					if response, outputError := request.GetJsonTest(urlcuenta, &cuentareal); outputError == nil {
+						//if outputError := request.SendJson(urlcatalogo, "POST", &cuentasasociadas, subgrupocuentas); outputError == nil {
+						if response.StatusCode == 200 {
+							cuentaaso.CuentaCreditoId = cuentareal["Codigo"].(string)
+						}
+					} else {
+						fmt.Println("error: ", outputError)
+						return nil, map[string]interface{}{"Function": "GetTipoMovimiento", "Error": outputError}
+					}
+					// //esto consume muchos recursos entonces no va desde aca
+					// urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento/" + strconv.Itoa(cuenta.SubtipoMovimientoId)
+					// if response, outputError := request.GetJsonTest(urlcrud, &tipomovimiento); outputError == nil {
+					// 	if response.StatusCode == 200 {
+					// 		//fmt.Println("tipo movimiento", tipomovimiento.Id, "  ", tipomovimiento.Nombre)
+					// 		tipomov := tipomovimiento["Body"].(map[string]interface{})
+					// 		layout := "2006-01-02T15:04:05.000Z"
+					// 		a, _ := time.Parse(layout, tipomov["FechaCreacion"].(string))
+					// 		b, _ := time.Parse(layout, tipomov["FechaModificacion"].(string))
+
+					// 		cuentaaso.SubtipoMovimientoId = &models.TipoMovimiento{
+					// 			Id:                int(tipomov["Id"].(float64)),
+					// 			Nombre:            tipomov["Nombre"].(string),
+					// 			Descripcion:       tipomov["Descripcion"].(string),
+					// 			Acronimo:          tipomov["Acronimo"].(string),
+					// 			Activo:            tipomov["Activo"].(bool),
+					// 			FechaCreacion:     a,
+					// 			FechaModificacion: b,
+					// 			Parametros:        tipomov["Parametros"].(string),
+					// 		}
+
+					// 	}
+					// } else {
+					// 	return nil, map[string]interface{}{"Function": "GetTipoMovimiento", "Error": outputError}
+					// }
+					// //hasta aca se elimina
+					arreglocuentas = append(arreglocuentas, cuentaaso)
+
+				}
+
+			}
+		} else {
+			return nil, map[string]interface{}{"Function": "GetTipoMovimiento", "Error": outputError}
 		}
-	} else {
-		return nil, map[string]interface{}{"Function": "GetTipoMovimiento", "Error": outputError}
-	}
+
+		subgrupos = append(subgrupos, models.SubgrupoCuentasMovimiento{
+			Id:                subgrupocuentas.Id,
+			Nombre:            subgrupocuentas.Nombre,
+			Descripcion:       subgrupocuentas.Descripcion,
+			FechaCreacion:     subgrupocuentas.FechaCreacion,
+			FechaModificacion: subgrupocuentas.FechaModificacion,
+			Activo:            subgrupocuentas.Activo,
+			Codigo:            subgrupocuentas.Codigo,
+			CuentasAsociadas:  arreglocuentas,
+		})
+
+	} //hasta aca va forr
+
 	return subgrupos, outputError
 	//}
 

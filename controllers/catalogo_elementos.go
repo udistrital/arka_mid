@@ -9,6 +9,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/models"
 )
 
 // CatalogoElementosController operations for Catalogo
@@ -92,7 +93,7 @@ func (c *CatalogoElementosController) GetAll2() {
 func (c *CatalogoElementosController) Post() {
 	//esto deberia ser un get ya que es una consulta y recibir de a un id
 	//var arreglosubgrupos []models.Subgrupo
-	var arreglosubgrupos []interface{}
+	var arreglosubgrupos []models.SubgrupoCuentasModelo
 	fmt.Println("entra al post")
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &arreglosubgrupos); err == nil {
 		if data, err := catalogoElementosHelper.GetTipoMovimiento(arreglosubgrupos); err == nil {

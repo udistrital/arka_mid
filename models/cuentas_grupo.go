@@ -24,10 +24,11 @@ type CuentasGrupoModelo struct {
 }
 
 type CuentasGrupoMovimiento struct {
-	Id                  int
-	CuentaCreditoId     int
-	CuentaDebitoId      int
-	SubtipoMovimientoId *TipoMovimiento
+	Id              int
+	CuentaCreditoId string
+	CuentaDebitoId  string
+	//SubtipoMovimientoId *TipoMovimiento
+	SubtipoMovimientoId int
 	FechaCreacion       time.Time
 	FechaModificacion   time.Time
 	Activo              bool
