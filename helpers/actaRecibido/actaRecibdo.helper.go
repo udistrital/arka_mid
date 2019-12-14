@@ -266,7 +266,7 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"asignacion_espacio_fisico_dependencia?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
 
 	} else {
 		logs.Info("Error Ubicaciones servicio caido")
