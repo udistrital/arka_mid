@@ -1,42 +1,56 @@
 package actaRecibido
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"mime/multipart"
 	"strconv"
 	"strings"
-	"encoding/json"
-	"mime/multipart"
+	"time"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
-	"github.com/udistrital/utils_oas/request"
+
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/request"
 )
+
 type Impuesto struct {
-	Id						int
-    Nombre					string
-    Descripcion				string
-    CodigoAbreviacion		string
-    Activo					bool
+	Id                int
+	Nombre            string
+	Descripcion       string
+	CodigoAbreviacion string
+	Activo            bool
 }
 
 type VigenciaImpuesto struct {
-	Id						int
-    Activo					bool
-    Tarifa					int64
-    PorcentajeAplicacion	int
-    ImpuestoId				Impuesto
+	Id                   int
+	Activo               bool
+	Tarifa               int64
+	PorcentajeAplicacion int
+	ImpuestoId           Impuesto
 }
 
 type Unidad struct {
-	Id				int
-	Unidad			string
-    Tipo			string
-	Descripcion		string
-    Estado			bool
+	Id          int
+	Unidad      string
+	Tipo        string
+	Descripcion string
+	Estado      bool
 }
 
+type Subgrupo struct {
+	Id                int
+	Nombre            string
+	Descripcion       string
+	Activo            bool
+	Codigo            string
+	Estado            bool
+	FechaCreacion     time.Time
+	FechaModificacion time.Time
+}
 
 // GetAllActasRecibido ...
 func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]interface{}) {
@@ -127,9 +141,35 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 
 	var IVA []VigenciaImpuesto
 	var Unidades []Unidad
+	var SubgruposConsumo []map[string]interface{}
+	var SubgruposConsumoControlado []map[string]interface{}
+	var SubgruposDevolutivo []map[string]interface{}
 
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
-		logs.Info(IVA)
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/1", &SubgruposConsumo); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/2", &SubgruposConsumoControlado); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/3", &SubgruposDevolutivo); err == nil { // (2) error servicio caido
+
 	} else {
 		logs.Info("Error IVA servicio caido")
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
@@ -137,11 +177,11 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 	}
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
 
-		} else {
-			logs.Info("Error Unidades servicio caido")
-			outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-			return nil, outputError
-		}
+	} else {
+		logs.Info("Error Unidades servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
 
 	file, err := ioutil.ReadAll(c)
 	if err != nil {
@@ -165,7 +205,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 	var campos []string
 	var elementos [14]string
 
-	validar_campos := []string{"Nivel Inventarios",	"Tipo de Bien", "Subgrupo Catalogo",	"Nombre",	"Marca", "Serie",	"Cantidad",	"Unidad de Medida", "Valor Unitario", "Subtotal",	"Descuento", "Tipo IVA", "Valor IVA",	"Valor Total",}
+	validar_campos := []string{"Nivel Inventarios", "Tipo de Bien", "Subgrupo Catalogo", "Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Tipo IVA", "Valor IVA", "Valor Total"}
 
 	for s, sheet := range xlFile.Sheets {
 
@@ -177,7 +217,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						campos = append(campos, cell.String())
 						if campos[i] != validar_campos[i] {
 							logs.Info("Error Dependencia servicio caido")
-							outputError = map[string]interface{}{"Function": "GetAllActasRecibido","Error": 403}
+							outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": 403}
 							Respuesta2 := append(Respuesta, map[string]interface{}{
 								"Mensaje": "El formato no corresponde a las columnas necesarias",
 							})
@@ -185,17 +225,17 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						}
 					}
 				} else {
-					
+
 					for i, cell := range row.Cells {
 						elementos[i] = cell.String()
 					}
 					if elementos[0] != "Totales" {
-						convertir := strings.Split(elementos[11],".")
+						convertir := strings.Split(elementos[11], ".")
 						if err == nil {
 							logs.Info(convertir)
-							valor, err := strconv.ParseInt(convertir[0], 10, 64) 
+							valor, err := strconv.ParseInt(convertir[0], 10, 64)
 							if err == nil {
-								for _, valor_iva := range IVA{
+								for _, valor_iva := range IVA {
 									if valor == valor_iva.Tarifa {
 										elementos[11] = strconv.Itoa(valor_iva.Id)
 									}
@@ -209,12 +249,36 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 
 						convertir2 := strings.ToUpper(elementos[7])
 						if err == nil {
-							logs.Info(convertir2) 
-								for _, unidad := range Unidades{
-									if convertir2 == unidad.Unidad {
-										elementos[7] = strconv.Itoa(unidad.Id)
-									}
+							logs.Info(convertir2)
+							for _, unidad := range Unidades {
+								if convertir2 == unidad.Unidad {
+									elementos[7] = strconv.Itoa(unidad.Id)
 								}
+							}
+						} else {
+							logs.Info(err)
+						}
+						convertir3 := elementos[2]
+						if err == nil {
+							logs.Info(convertir3)
+							for _, consumo := range SubgruposConsumo {
+								if convertir3 == consumo["Nombre"] {
+									elementos[2] = fmt.Sprintf("%v", consumo["Id"])
+									elementos[1] = strconv.Itoa(1)
+								}
+							}
+							for _, consumoC := range SubgruposConsumoControlado {
+								if convertir3 == consumoC["Nombre"] {
+									elementos[2] = fmt.Sprintf("%v", consumoC["Id"])
+									elementos[1] = strconv.Itoa(2)
+								}
+							}
+							for _, devolutivo := range SubgruposDevolutivo {
+								if convertir3 == devolutivo["Nombre"] {
+									elementos[2] = fmt.Sprintf("%v", devolutivo["Id"])
+									elementos[1] = strconv.Itoa(3)
+								}
+							}
 						} else {
 							logs.Info(err)
 						}
@@ -223,7 +287,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							"NivelInventariosId": elementos[0],
 							"TipoBienId":         elementos[1],
 							"SubgrupoCatalogoId": elementos[2],
-							"Nombre":        	  elementos[3],
+							"Nombre":             elementos[3],
 							"Marca":              elementos[4],
 							"Serie":              elementos[5],
 							"Cantidad":           elementos[6],
@@ -241,7 +305,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							"Campos":    campos,
 							"Elementos": Elemento,
 						})
-						
+
 					}
 				}
 			}
@@ -266,7 +330,7 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"asignacion_espacio_fisico_dependencia?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
 
 	} else {
 		logs.Info("Error Ubicaciones servicio caido")
@@ -297,29 +361,29 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 	var Parametros2 []map[string]interface{}
 	fmt.Println(Datos.Sede)
 	fmt.Println(Datos.Dependencia)
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService") +
-		"asignacion_espacio_fisico_dependencia?query=DependenciaId.Id:" + strconv.Itoa(Datos.Dependencia.Id) +
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+
+		"asignacion_espacio_fisico_dependencia?query=DependenciaId.Id:"+strconv.Itoa(Datos.Dependencia.Id)+
 		"&limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
-			fmt.Println(Ubicaciones)
+		fmt.Println(Ubicaciones)
 		for _, relacion := range Ubicaciones {
 			var data map[string]interface{}
 			if jsonString, err := json.Marshal(relacion["EspacioFisicoId"]); err == nil {
 				if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
-						if number := strings.Index(fmt.Sprintf("%v",data["Codigo"]), Datos.Sede.Codigo); number != -1 {
-							Parametros2 = append( Parametros2,  map[string]interface{}{
-								"Id":					relacion["Id"],
-								"DependenciaId":		relacion["DependenciaId"],
-								"EspacioFisicoId":		relacion["EspacioFisicoId"],
-								"Estado":				relacion["Estado"],
-								"FechaFin":				relacion["FechaFin"],
-								"FechaInicio":			relacion["FechaInicio"],
-								"Nombre":				data["Nombre"],
-							})
-						}
-						Parametros = append( Parametros,  map[string]interface{}{
-							"Relaciones":	Parametros2,
+					if number := strings.Index(fmt.Sprintf("%v", data["Codigo"]), Datos.Sede.Codigo); number != -1 {
+						Parametros2 = append(Parametros2, map[string]interface{}{
+							"Id":              relacion["Id"],
+							"DependenciaId":   relacion["DependenciaId"],
+							"EspacioFisicoId": relacion["EspacioFisicoId"],
+							"Estado":          relacion["Estado"],
+							"FechaFin":        relacion["FechaFin"],
+							"FechaInicio":     relacion["FechaInicio"],
+							"Nombre":          data["Nombre"],
 						})
-					
+					}
+					Parametros = append(Parametros, map[string]interface{}{
+						"Relaciones": Parametros2,
+					})
+
 				} else {
 					logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
 					outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err2}
@@ -331,7 +395,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 				return nil, outputError
 			}
 		}
-	
+
 		return Parametros, nil
 
 	} else {
@@ -339,6 +403,5 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 		outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err}
 		return nil, outputError
 	}
-	
-	
+
 }
