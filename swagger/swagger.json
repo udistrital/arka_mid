@@ -141,6 +141,37 @@
                 }
             }
         },
+        "/catalogo_elementos/": {
+            "post": {
+                "tags": [
+                    "catalogo_elementos"
+                ],
+                "description": "Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas asociadas a subgrupos",
+                "operationId": "CatalogoElementosController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos, cada subgrupo debe llevar un Id definido)",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Tr_cuentas_subgrupo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tr_cuentas_subgrupo"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
         "/catalogo_elementos/cuentas_contables/{id}": {
             "get": {
                 "tags": [
@@ -893,6 +924,10 @@
                     "type": "string"
                 }
             }
+        },
+        "models.Tr_cuentas_subgrupo": {
+            "title": "Tr_cuentas_subgrupo",
+            "type": "object"
         },
         "{}": {
             "title": "{}",
