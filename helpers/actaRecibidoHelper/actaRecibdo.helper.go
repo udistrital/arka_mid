@@ -216,3 +216,26 @@ func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, output
 		return nil, outputError
 	}
 }
+
+// GetIdElementoPlaca Busca el id de un elemento a partir de su placa
+func GetIdElementoPlaca(placa string) (idElemento string, err error) {
+	var urlelemento string
+	var elemento []map[string]interface{}
+	urlelemento = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/?query=Placa:" + placa + "&fields=Id&limit=1"
+	if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
+
+		if response.StatusCode == 200 {
+			for _, element := range elemento {
+				if len(element) == 0 {
+					return "", nil
+				} else {
+					return strconv.Itoa(int((element["Id"]).(float64))), nil
+				}
+
+			}
+		}
+	} else {
+		return "", err
+	}
+	return
+}

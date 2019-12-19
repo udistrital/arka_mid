@@ -18,6 +18,7 @@ type EntradaController struct {
 // URLMapping ...
 func (c *EntradaController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("Get", c.GetEncargadoElemento)
 }
 
 // Post ...
@@ -84,6 +85,30 @@ func (c *EntradaController) GetEntradas() {
 		c.Abort("404")
 	} else {
 		c.Data["json"] = v
+	}
+	c.ServeJSON()
+}
+
+// GetEncargadoElemento ...
+// @Title Get User
+// @Description get Entradas
+// @Param	placa		path 	string	true		"The key for staticblock"
+// @Success 200  {"funcionario": "string"}
+// @Failure 404 not found resource
+// @router /encargado/:placa [get]
+func (c *EntradaController) GetEncargadoElemento() {
+	placa := c.Ctx.Input.Param(":placa")
+	if funcionario, err := entradaHelper.GetEncargadoElemento(placa); err == nil {
+		if funcionario == nil {
+			c.Data["json"] = map[string]interface{}{}
+
+		} else {
+			c.Data["json"] = funcionario
+		}
+
+	} else {
+		c.Data["system"] = err
+		c.Abort("404")
 	}
 	c.ServeJSON()
 }
