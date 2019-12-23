@@ -212,27 +212,35 @@ func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[s
 }
 
 // GetEncargado busca al encargado de un elemento
-func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, err error) {
+func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outputError map[string]interface{}) {
 	var urlelemento string
 	var elemento map[string]interface{}
 	if id, err := actaRecibidoHelper.GetIdElementoPlaca(placa); err == nil {
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_encargado_elemento/" + id
 		if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
+			fmt.Println("status: ", response.StatusCode)
 			if response.StatusCode == 200 {
 				if response, err := tercerosHelper.GetNombreTerceroById(elemento); err == nil {
 					elemento["funcionario"] = response["NombreCompleto"].(string)
-					return elemento, nil
+					idElemento = elemento
+					return
+				} else {
+					outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "Error": err}
+					return
 				}
 
-			} else if response.StatusCode == 400 {
-				return nil, err
+			} else {
+				outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "status": int(response.StatusCode), "Error": response.Status}
+				return
 			}
 		} else {
-			fmt.Println("error: ", err)
-			return nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "status": int(response.StatusCode), "Error": err}
+			return nil, outputError
 		}
 	} else {
-		return nil, err
+		outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "status": "404", "Error": err}
+		return nil, outputError
 	}
 	return
 }
