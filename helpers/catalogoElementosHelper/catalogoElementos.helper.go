@@ -155,7 +155,7 @@ func GetTipoMovimiento(arreglosubgrupos []models.SubgrupoCuentasModelo) (subgrup
 						SubgrupoId:          cuenta.SubgrupoId,
 						SubtipoMovimientoId: cuenta.SubtipoMovimientoId,
 					}
-					urlcuenta = "http://" + beego.AppConfig.String("financiera") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
+					urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
 					if response, outputError := request.GetJsonTest(urlcuenta, &cuentareal); outputError == nil {
 						//if outputError := request.SendJson(urlcatalogo, "POST", &cuentasasociadas, subgrupocuentas); outputError == nil {
 						if response.StatusCode == 200 {
@@ -167,7 +167,7 @@ func GetTipoMovimiento(arreglosubgrupos []models.SubgrupoCuentasModelo) (subgrup
 						return nil, map[string]interface{}{"Function": "GetTipoMovimiento", "Error": outputError}
 					}
 
-					urlcuenta = "http://" + beego.AppConfig.String("financiera") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
+					urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
 					if response, outputError := request.GetJsonTest(urlcuenta, &cuentareal); outputError == nil {
 						//if outputError := request.SendJson(urlcatalogo, "POST", &cuentasasociadas, subgrupocuentas); outputError == nil {
 						if response.StatusCode == 200 {
