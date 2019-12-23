@@ -2,10 +2,13 @@ package entradaHelper
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
+	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -206,4 +209,30 @@ func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[s
 	} else {
 		return nil, outputError
 	}
+}
+
+// GetEncargado busca al encargado de un elemento
+func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, err error) {
+	var urlelemento string
+	var elemento map[string]interface{}
+	if id, err := actaRecibidoHelper.GetIdElementoPlaca(placa); err == nil {
+		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_encargado_elemento/" + id
+		if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
+			if response.StatusCode == 200 {
+				if response, err := tercerosHelper.GetNombreTerceroById(elemento); err == nil {
+					elemento["funcionario"] = response["NombreCompleto"].(string)
+					return elemento, nil
+				}
+
+			} else if response.StatusCode == 400 {
+				return nil, err
+			}
+		} else {
+			fmt.Println("error: ", err)
+			return nil, err
+		}
+	} else {
+		return nil, err
+	}
+	return
 }
