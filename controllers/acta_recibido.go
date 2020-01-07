@@ -22,6 +22,7 @@ func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
+	c.Mapping("GetElementosConsumo", c.GetAllElementosConsumo)
 }
 
 // Post ...
@@ -135,3 +136,23 @@ func (c *ActaRecibidoController) GetSoportesActa() {
 	c.ServeJSON()
 }
 
+// GetAllElementosConsumo ...
+// @Title GetAllElementosConsumo
+// @Description Trae todos los elementos de consumo
+// @Success 200 {object} models.Elemento
+// @Failure 404 not found resource
+// @router /elementosconsumo/ [get]
+func (c *ActaRecibidoController) GetAllElementosConsumo() {
+
+	fmt.Println("hola hola")
+	l, err := actaRecibido.GetAllElementosConsumo()
+	if err != nil {
+		logs.Error(err)
+		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = l
+	}
+	c.ServeJSON()
+}

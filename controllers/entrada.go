@@ -107,7 +107,7 @@ func (c *EntradaController) GetEncargadoElemento() {
 		}
 
 	} else {
-		c.Data["system"] = err
+		c.Data["json"] = err
 		c.Abort("404")
 	}
 	c.ServeJSON()
