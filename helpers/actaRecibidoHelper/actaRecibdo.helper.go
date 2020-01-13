@@ -1,6 +1,7 @@
 package actaRecibidoHelper
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
@@ -103,8 +104,9 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=SoporteActaId.ActaRecibidoId.Id:" + strconv.Itoa(actaId) +
 			",Activo:True&limit=-1"
 		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil {
+			fmt.Println("elementos:   ", elementos)
 			// Solicita información unidad elemento
-			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
+			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "unidad/"
 			for _, elemento := range elementos {
 				if response.StatusCode == 200 { // (3) error estado de la solicitud
 					auxE.Id = elemento.Id
@@ -123,7 +125,6 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 					// PORCENTAJE IVA
 					iva, outputError = parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId)
 					auxE.PorcentajeIvaId = iva[0]
-
 					auxE.ValorIva = elemento.ValorIva
 					auxE.ValorFinal = elemento.ValorFinal
 					auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
@@ -236,6 +237,28 @@ func GetIdElementoPlaca(placa string) (idElemento string, err error) {
 		}
 	} else {
 		return "", err
+	}
+	return
+}
+
+func GetElementoById(Id string) (Elemento map[string]interface{}, outputError map[string]interface{}) {
+	var urlelemento string
+	var elemento []map[string]interface{}
+	urlelemento = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/?query=Id:" + Id + "&limit=1"
+	if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
+
+		if response.StatusCode == 200 {
+			for _, element := range elemento {
+				if len(element) == 0 {
+					return nil, map[string]interface{}{"Function": "GetElementoById", "Error": "Sin Elementos"}
+				} else {
+					return element, nil
+				}
+
+			}
+		}
+	} else {
+		return nil, map[string]interface{}{"Function": "GetElementoById", "Error": err}
 	}
 	return
 }
