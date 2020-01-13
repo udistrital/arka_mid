@@ -27,7 +27,6 @@ func (c *BodegaConsumoController) URLMapping() {
 // @Failure 403 :id is empty
 // @router /solicitud/:id [get]
 func (c *BodegaConsumoController) GetOneSolicitud() {
-	fmt.Println("id: ")
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
 	fmt.Println("id: ", id)
