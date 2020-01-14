@@ -218,9 +218,9 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 	if id, err := actaRecibidoHelper.GetIdElementoPlaca(placa); err == nil {
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_encargado_elemento/" + id
 		if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
-			fmt.Println("status: ", response.StatusCode)
+			fmt.Println("status: ", elemento)
 			if response.StatusCode == 200 {
-				if response, err := tercerosHelper.GetNombreTerceroById(elemento); err == nil {
+				if response, err := tercerosHelper.GetNombreTerceroById("elemento"); err == nil {
 					elemento["funcionario"] = response["NombreCompleto"].(string)
 					idElemento = elemento
 					return

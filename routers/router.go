@@ -39,6 +39,16 @@ func init() {
 				&controllers.SalidaController{},
 			),
 		),
+		beego.NSNamespace("/terceros",
+			beego.NSInclude(
+				&controllers.TercerosController{},
+			),
+		),
+		beego.NSNamespace("/bodega_consumo",
+			beego.NSInclude(
+				&controllers.BodegaConsumoController{},
+			),
+		),
 	)
 
 	beego.AddNamespace(ns)

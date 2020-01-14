@@ -59,6 +59,26 @@
                 }
             }
         },
+        "/acta_recibido/elementosconsumo/": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "Trae todos los elementos de consumo",
+                "operationId": "ActaRecibidoController.GetAllElementosConsumo",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Elemento"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/acta_recibido/get_actas_recibido_tipo/{tipo}": {
             "get": {
                 "tags": [
@@ -137,6 +157,152 @@
                     },
                     "404": {
                         "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo",
+                "operationId": "BodegaConsumoController.GetAll",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "query",
+                        "description": "Filter. e.g. col1:v1,col2:v2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "description": "Fields returned. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Sorted-by fields. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "description": "Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "description": "Limit the size of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/solicitud/{id}": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo by id",
+                "operationId": "BodegaConsumoController.GetOneSolicitud",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{object}{\"Id\": int,\"FechaCreacion\": date,\"Observacion\": string,\"Elementos\": {\"Id\": int,\"Nombre\":string,\"Marca\": string,\"Serie\": string,\"CantidadDisponible\": int,\"CantidadSolicitada\": int,\t\"ValorUnitario\": float,} }"
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/{id}": {
+            "put": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "update the Bodega-Consumo",
+                "operationId": "BodegaConsumoController.Put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to update",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Bodega-Consumo content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is not int"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "delete the Bodega-Consumo",
+                "operationId": "BodegaConsumoController.Delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to delete",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} delete success!"
+                    },
+                    "403": {
+                        "description": "id is empty"
                     }
                 }
             }
@@ -278,6 +444,32 @@
                 }
             }
         },
+        "/entrada/encargado/{placa}": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "get Entradas",
+                "operationId": "EntradaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "placa",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"funcionario\": \"string\"}"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/entrada/{id}": {
             "get": {
                 "tags": [
@@ -394,6 +586,153 @@
                     }
                 }
             }
+        },
+        "/terceros/": {
+            "get": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "get Terceros",
+                "operationId": "TercerosController.GetAll",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "query",
+                        "description": "Filter. e.g. col1:v1,col2:v2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "description": "Fields returned. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Sorted-by fields. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "description": "Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "description": "Limit the size of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/terceros/{id}": {
+            "get": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "get Terceros by id",
+                "operationId": "TercerosController.GetOne",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "update the Terceros",
+                "operationId": "TercerosController.Put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to update",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Terceros content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is not int"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "delete the Terceros",
+                "operationId": "TercerosController.Delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to delete",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} delete success!"
+                    },
+                    "403": {
+                        "description": "id is empty"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -463,6 +802,10 @@
                     "format": "int64"
                 }
             }
+        },
+        "models.Bodega-Consumo": {
+            "title": "Bodega-Consumo",
+            "type": "object"
         },
         "models.ConsultaEntrada": {
             "title": "ConsultaEntrada",
@@ -841,6 +1184,10 @@
                 }
             }
         },
+        "models.Terceros": {
+            "title": "Terceros",
+            "type": "object"
+        },
         "models.TipoBien": {
             "title": "TipoBien",
             "type": "object",
@@ -954,6 +1301,14 @@
         {
             "name": "salida",
             "description": "SalidaController operations for Salida\n"
+        },
+        {
+            "name": "terceros",
+            "description": "TercerosController operations for Terceros\n"
+        },
+        {
+            "name": "bodega_consumo",
+            "description": "BodegaConsumoController operations for Bodega-Consumo\n"
         }
     ]
 }
