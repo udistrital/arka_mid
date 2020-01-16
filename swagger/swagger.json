@@ -334,6 +334,24 @@
             }
         },
         "/salida/": {
+            "get": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "get Entradas",
+                "operationId": "SalidaController.Get User",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "salida"
@@ -360,6 +378,35 @@
                     },
                     "403": {
                         "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/salida/{id}": {
+            "get": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "get Salida by id",
+                "operationId": "SalidaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
