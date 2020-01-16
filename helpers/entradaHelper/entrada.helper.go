@@ -9,6 +9,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -63,11 +64,25 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 			urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
 
 			procesoExterno := int64(res["Id"].(float64))
+
+			var formato_arka map[string]interface{}
+			var id_mov_arka int
+
+			if jsonString, err := json.Marshal(res["FormatoTipoMovimientoId"]); err == nil {
+				if err := json.Unmarshal(jsonString, &formato_arka); err != nil {
+					panic(err.Error())
+				}
+				id_mov_arka = int(formato_arka["Id"].(float64))
+			} else {
+				panic(err.Error())
+			}
+
 			tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
 			movimientosKronos := models.MovimientoProcesoExterno{
-				TipoMovimientoId: &tipo,
-				ProcesoExterno:   procesoExterno,
-				Activo:           true,
+				TipoMovimientoId:         &tipo,
+				ProcesoExterno:           procesoExterno,
+				Activo:                   true,
+				MovimientoProcesoExterno: id_mov_arka,
 			}
 
 			if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {

@@ -1,8 +1,16 @@
-package actaRecibidoHelper
+package actaRecibido
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"mime/multipart"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/tealeg/xlsx"
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 
@@ -14,6 +22,41 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
+
+type Impuesto struct {
+	Id                int
+	Nombre            string
+	Descripcion       string
+	CodigoAbreviacion string
+	Activo            bool
+}
+
+type VigenciaImpuesto struct {
+	Id                   int
+	Activo               bool
+	Tarifa               int64
+	PorcentajeAplicacion int
+	ImpuestoId           Impuesto
+}
+
+type Unidad struct {
+	Id          int
+	Unidad      string
+	Tipo        string
+	Descripcion string
+	Estado      bool
+}
+
+type Subgrupo struct {
+	Id                int
+	Nombre            string
+	Descripcion       string
+	Activo            bool
+	Codigo            string
+	Estado            bool
+	FechaCreacion     time.Time
+	FechaModificacion time.Time
+}
 
 // GetAllActasRecibido ...
 func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]interface{}) {
@@ -30,6 +73,334 @@ func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]in
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return outputError, nil
 	}
+}
+
+// GetAllParametrosActa ...
+func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
+
+	var Unidades interface{}
+	var IVA interface{}
+	var TipoBien interface{}
+	var EstadoActa interface{}
+	var EstadoElemento interface{}
+	parametros := make([]map[string]interface{}, 0)
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"tipo_bien?limit=-1", &TipoBien); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error TipoBien servicio Acta caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"estado_acta?limit=-1", &EstadoActa); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error EstadoActa servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"estado_elemento?limit=-1", &EstadoElemento); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error EstadoElemento servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Unidades servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	parametros = append(parametros, map[string]interface{}{
+		"Unidades":       Unidades,
+		"IVA":            IVA,
+		"TipoBien":       TipoBien,
+		"EstadoActa":     EstadoActa,
+		"EstadoElemento": EstadoElemento,
+	})
+
+	return parametros, nil
+}
+
+// "DecodeXlsx2Json ..."
+func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, outputError map[string]interface{}) {
+
+	var IVA []VigenciaImpuesto
+	var Unidades []Unidad
+	var SubgruposConsumo []map[string]interface{}
+	var SubgruposConsumoControlado []map[string]interface{}
+	var SubgruposDevolutivo []map[string]interface{}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/1", &SubgruposConsumo); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/2", &SubgruposConsumoControlado); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/3", &SubgruposDevolutivo); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Unidades servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	file, err := ioutil.ReadAll(c)
+	if err != nil {
+		fmt.Println("err reading file", err)
+		logs.Info("Error (1) error de recepcion")
+		outputError = map[string]interface{}{"Function": "PostDecodeXlsx2Json", "Error": 400}
+		return nil, outputError
+	}
+	xlFile, err := xlsx.OpenBinary(file)
+	if err != nil {
+		fmt.Println("err reading file", err)
+		logs.Info("Error (1) error de recepcion")
+		outputError = map[string]interface{}{"Function": "PostDecodeXlsx2Json", "Error": 400}
+		return nil, outputError
+	}
+
+	Respuesta := make([]map[string]interface{}, 0)
+	Elemento := make([]map[string]interface{}, 0)
+
+	var hojas []string
+	var campos []string
+	var elementos [14]string
+
+	validar_campos := []string{"Nivel Inventarios", "Tipo de Bien", "Subgrupo Catalogo", "Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Tipo IVA", "Valor IVA", "Valor Total"}
+
+	for s, sheet := range xlFile.Sheets {
+
+		if s == 0 {
+			hojas = append(hojas, sheet.Name)
+			for r, row := range sheet.Rows {
+				if r == 0 {
+					for i, cell := range row.Cells {
+						campos = append(campos, cell.String())
+						if campos[i] != validar_campos[i] {
+							logs.Info("Error Dependencia servicio caido")
+							outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": 403}
+							Respuesta2 := append(Respuesta, map[string]interface{}{
+								"Mensaje": "El formato no corresponde a las columnas necesarias",
+							})
+							return Respuesta2, outputError
+						}
+					}
+				} else {
+
+					for i, cell := range row.Cells {
+						elementos[i] = cell.String()
+					}
+					if elementos[0] != "Totales" {
+						convertir := strings.Split(elementos[11], ".")
+						if err == nil {
+							logs.Info(convertir)
+							valor, err := strconv.ParseInt(convertir[0], 10, 64)
+							if err == nil {
+								for _, valor_iva := range IVA {
+									if valor == valor_iva.Tarifa {
+										elementos[11] = strconv.Itoa(valor_iva.Id)
+									}
+								}
+							} else {
+								logs.Info(err)
+							}
+						} else {
+							logs.Info(err)
+						}
+
+						convertir2 := strings.ToUpper(elementos[7])
+						if err == nil {
+							logs.Info(convertir2)
+							for _, unidad := range Unidades {
+								if convertir2 == unidad.Unidad {
+									elementos[7] = strconv.Itoa(unidad.Id)
+								}
+							}
+						} else {
+							logs.Info(err)
+						}
+						convertir3 := elementos[2]
+						if err == nil {
+							logs.Info(convertir3)
+							for _, consumo := range SubgruposConsumo {
+								if convertir3 == consumo["Nombre"] {
+									elementos[2] = fmt.Sprintf("%v", consumo["Id"])
+									elementos[1] = strconv.Itoa(1)
+								}
+							}
+							for _, consumoC := range SubgruposConsumoControlado {
+								if convertir3 == consumoC["Nombre"] {
+									elementos[2] = fmt.Sprintf("%v", consumoC["Id"])
+									elementos[1] = strconv.Itoa(2)
+								}
+							}
+							for _, devolutivo := range SubgruposDevolutivo {
+								if convertir3 == devolutivo["Nombre"] {
+									elementos[2] = fmt.Sprintf("%v", devolutivo["Id"])
+									elementos[1] = strconv.Itoa(3)
+								}
+							}
+						} else {
+							logs.Info(err)
+						}
+
+						Elemento = append(Elemento, map[string]interface{}{
+							"NivelInventariosId": elementos[0],
+							"TipoBienId":         elementos[1],
+							"SubgrupoCatalogoId": elementos[2],
+							"Nombre":             elementos[3],
+							"Marca":              elementos[4],
+							"Serie":              elementos[5],
+							"Cantidad":           elementos[6],
+							"UnidadMedida":       elementos[7],
+							"ValorUnitario":      elementos[8],
+							"Subtotal":           elementos[9],
+							"Descuento":          elementos[10],
+							"PorcentajeIvaId":    elementos[11],
+							"ValorIva":           elementos[12],
+							"ValorTotal":         elementos[13],
+						})
+					} else {
+						Respuesta = append(Respuesta, map[string]interface{}{
+							"Hoja":      hojas,
+							"Campos":    campos,
+							"Elementos": Elemento,
+						})
+
+					}
+				}
+			}
+		}
+	}
+	return Respuesta, nil
+}
+
+// GetAllParametrosSoporte ...
+func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
+
+	var Dependencias interface{}
+	var Sedes interface{}
+	var Ubicaciones interface{}
+	parametros := make([]map[string]interface{}, 0)
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"dependencia?limit=-1", &Dependencias); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Dependencia servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"asignacion_espacio_fisico_dependencia?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Ubicaciones servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?query=TipoEspacio.Id:1&limit=-1", &Sedes); err == nil { // (2) error servicio caido
+
+	} else {
+		logs.Info("Error Sedes servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
+	parametros = append(parametros, map[string]interface{}{
+		"Dependencias": Dependencias,
+		"Ubicaciones":  Ubicaciones,
+		"Sedes":        Sedes,
+	})
+
+	return parametros, nil
+}
+
+// GetAsignacionSedeDependencia ...
+func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros []map[string]interface{}, outputError map[string]interface{}) {
+
+	var Ubicaciones []map[string]interface{}
+	var Parametros2 []map[string]interface{}
+	fmt.Println(Datos.Sede)
+	fmt.Println(Datos.Dependencia)
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+
+		"asignacion_espacio_fisico_dependencia?query=DependenciaId.Id:"+strconv.Itoa(Datos.Dependencia.Id)+
+		"&limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+		fmt.Println(Ubicaciones)
+		for _, relacion := range Ubicaciones {
+			var data map[string]interface{}
+			if jsonString, err := json.Marshal(relacion["EspacioFisicoId"]); err == nil {
+				if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
+					if number := strings.Index(fmt.Sprintf("%v", data["Codigo"]), Datos.Sede.Codigo); number != -1 {
+						Parametros2 = append(Parametros2, map[string]interface{}{
+							"Id":              relacion["Id"],
+							"DependenciaId":   relacion["DependenciaId"],
+							"EspacioFisicoId": relacion["EspacioFisicoId"],
+							"Estado":          relacion["Estado"],
+							"FechaFin":        relacion["FechaFin"],
+							"FechaInicio":     relacion["FechaInicio"],
+							"Nombre":          data["Nombre"],
+						})
+					}
+					Parametros = append(Parametros, map[string]interface{}{
+						"Relaciones": Parametros2,
+					})
+
+				} else {
+					logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+					outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err2}
+					return nil, outputError
+				}
+			} else {
+				logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+				outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err}
+				return nil, outputError
+			}
+		}
+
+		return Parametros, nil
+
+	} else {
+		logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err}
+		return nil, outputError
+	}
+
 }
 
 // GetActasRecibidoTipo ...
@@ -237,5 +608,28 @@ func GetIdElementoPlaca(placa string) (idElemento string, err error) {
 	} else {
 		return "", err
 	}
+	return
+}
+
+// GetAllElementosConsumo obtiene todos los elementos de consumo
+func GetAllElementosConsumo() (elementos []map[string]interface{}, outputError map[string]interface{}) {
+	var url string
+	url = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/?query=TipoBienId:1,Activo:true"
+	if response, err := request.GetJsonTest(url, &elementos); err == nil {
+		if response.StatusCode == 200 {
+			if len(elementos) == 0 {
+				return nil, map[string]interface{}{"Function": "GetAllElementosConsumo", "Error": errors.New("No se encontro registro")}
+			} else {
+				return elementos, nil
+			}
+
+		} else if response.StatusCode == 400 {
+			return nil, map[string]interface{}{"Function": "GetAllElementosConsumo", "Error": errors.New("No se encontro registro")}
+		}
+	} else {
+		fmt.Println("error: ", err)
+		return nil, map[string]interface{}{"Function": "GetAllElementosConsumo", "Error": err}
+	}
+
 	return
 }

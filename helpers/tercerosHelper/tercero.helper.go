@@ -13,7 +13,7 @@ func GetNombreTerceroById(idTercero string) (tercero map[string]interface{}, err
 	var urltercero string
 	var personas []map[string]interface{}
 
-	urltercero = beego.AppConfig.String("terceros") + "datos_identificacion/?query=TerceroId__Id:" + idTercero + ",Activo:true"
+	urltercero = beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=TerceroId__Id:" + idTercero + ",Activo:true"
 	if response, err := request.GetJsonTest(urltercero, &personas); err == nil {
 		if response.StatusCode == 200 {
 			for _, element := range personas {
