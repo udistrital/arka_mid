@@ -6,6 +6,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/arka_mid/helpers/bodegaConsumoHelper"
 )
 
@@ -17,6 +18,9 @@ type BodegaConsumoController struct {
 // URLMapping ...
 func (c *BodegaConsumoController) URLMapping() {
 	c.Mapping("GetOne", c.GetOneSolicitud)
+	c.Mapping("GetAll", c.GetAll)
+	
+
 }
 
 // GetOneSolicitud ...
@@ -44,16 +48,40 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 // GetAll ...
 // @Title GetAll
 // @Description get Bodega-Consumo
-// @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
-// @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
-// @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
-// @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
-// @Param	limit	query	string	false	"Limit the size of result set. Must be an integer"
-// @Param	offset	query	string	false	"Start position of result set. Must be an integer"
 // @Success 200 {object} models.Bodega-Consumo
 // @Failure 403
-// @router / [get]
+// @router /elementos_sin_asignar/ [get]
 func (c *BodegaConsumoController) GetAll() {
+
+	v, err := bodegaConsumoHelper.GetElementosSinAsignar()
+	if err != nil {
+		logs.Error(err)
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
+	}
+	c.ServeJSON()
+}
+
+// GetAll ...
+// @Title GetAll
+// @Description get Bodega-Consumo
+// @Success 200 {object} models.Bodega-Consumo
+// @Failure 403
+// @router /aperturas_kardex/ [get]
+func (c *BodegaConsumoController) GetAperturasKardex() {
+
+	v, err := bodegaConsumoHelper.GetAperturasKardex()
+	if err != nil {
+		logs.Error(err)
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
+	}
+	c.ServeJSON()
+
 
 }
 
