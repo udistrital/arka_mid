@@ -161,51 +161,33 @@
                 }
             }
         },
-        "/bodega_consumo/": {
+        "/bodega_consumo/aperturas_kardex/": {
             "get": {
                 "tags": [
                     "bodega_consumo"
                 ],
                 "description": "get Bodega-Consumo",
                 "operationId": "BodegaConsumoController.GetAll",
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "query",
-                        "description": "Filter. e.g. col1:v1,col2:v2 ...",
-                        "type": "string"
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
                     },
-                    {
-                        "in": "query",
-                        "name": "fields",
-                        "description": "Fields returned. e.g. col1,col2 ...",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "sortby",
-                        "description": "Sorted-by fields. e.g. col1,col2 ...",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "order",
-                        "description": "Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "limit",
-                        "description": "Limit the size of result set. Must be an integer",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "offset",
-                        "description": "Start position of result set. Must be an integer",
-                        "type": "string"
+                    "403": {
+                        "description": ""
                     }
+                }
+            }
+        },
+        "/bodega_consumo/elementos_sin_asignar/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
                 ],
+                "description": "get Bodega-Consumo",
+                "operationId": "BodegaConsumoController.GetAll",
                 "responses": {
                     "200": {
                         "description": "",
