@@ -18,7 +18,8 @@ type BodegaConsumoController struct {
 // URLMapping ...
 func (c *BodegaConsumoController) URLMapping() {
 	c.Mapping("GetOne", c.GetOneSolicitud)
-	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetAll", c.GetElementos)
+	c.Mapping("Get", c.GetAllExistencias)
 	
 
 }
@@ -51,7 +52,7 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 // @Success 200 {object} models.Bodega-Consumo
 // @Failure 403
 // @router /elementos_sin_asignar/ [get]
-func (c *BodegaConsumoController) GetAll() {
+func (c *BodegaConsumoController) GetElementos() {
 
 	v, err := bodegaConsumoHelper.GetElementosSinAsignar()
 	if err != nil {
@@ -64,7 +65,7 @@ func (c *BodegaConsumoController) GetAll() {
 	c.ServeJSON()
 }
 
-// GetAll ...
+// GetAperturasKardex ...
 // @Title GetAll
 // @Description get Bodega-Consumo
 // @Success 200 {object} models.Bodega-Consumo
@@ -83,6 +84,25 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 	c.ServeJSON()
 
 
+}
+
+// GetAll ...
+// @Title GetAll
+// @Description get Bodega-Consumo
+// @Success 200 {object} models.Bodega-Consumo
+// @Failure 403
+// @router /existencias_kardex/ [get]
+func (c *BodegaConsumoController) GetAllExistencias() {
+
+	v, err := bodegaConsumoHelper.GetExistenciasKardex()
+	if err != nil {
+		logs.Error(err)
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = v
+	}
+	c.ServeJSON()
 }
 
 // Put ...

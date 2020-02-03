@@ -201,6 +201,26 @@
                 }
             }
         },
+        "/bodega_consumo/existencias_kardex/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo",
+                "operationId": "BodegaConsumoController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/bodega_consumo/solicitud/{id}": {
             "get": {
                 "tags": [
