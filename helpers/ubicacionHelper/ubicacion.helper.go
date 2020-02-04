@@ -12,7 +12,7 @@ import (
 // GetUbicacion ...
 func GetUbicacion(espacioFisicoId int) (espacioFisico []*models.EspacioFisico, outputError map[string]interface{}) {
 	if espacioFisicoId != 0 { // (1) error parametro
-		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?query=Id:"+strconv.Itoa(int(espacioFisicoId)), &espacioFisico); err == nil { // (2) error servicio caido
+		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+"espacio_fisico?query=Id:"+strconv.Itoa(int(espacioFisicoId)), &espacioFisico); err == nil { // (2) error servicio caido
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				return espacioFisico, nil
 			} else {

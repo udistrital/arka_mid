@@ -1,15 +1,15 @@
 package controllers
 
 import (
-	//"github.com/udistrital/acta_recibido_crud/models"
 	"fmt"
 	"strconv"
 
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
+	//"github.com/udistrital/acta_recibido_crud/models"
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -75,6 +75,7 @@ func (c *ActaRecibidoController) GetAll() {
 // GetActasByTipo ...
 // @Title GetActasRecibidoTipo
 // @Description Devuelve las todas las actas de recibido
+// @Param	id		path 	string	true		"id del acta"
 // @Success 200 {object} models.Acta_recibido
 // @Failure 403
 // @router /get_actas_recibido_tipo/:tipo [get]

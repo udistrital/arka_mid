@@ -11,14 +11,13 @@ import (
 	"time"
 
 	"github.com/tealeg/xlsx"
-	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
-
-	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
-	"github.com/udistrital/arka_mid/helpers/unidadHelper"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
+	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
+	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
+	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -319,7 +318,7 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 	var Ubicaciones interface{}
 	parametros := make([]map[string]interface{}, 0)
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"dependencia?limit=-1", &Dependencias); err == nil { // (2) error servicio caido
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+"dependencia?limit=-1", &Dependencias); err == nil { // (2) error servicio caido
 
 	} else {
 		logs.Info("Error Dependencia servicio caido")
@@ -327,14 +326,14 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"asignacion_espacio_fisico_dependencia?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+"asignacion_espacio_fisico_dependencia?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
 
 	} else {
 		logs.Info("Error Ubicaciones servicio caido")
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return nil, outputError
 	}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+"espacio_fisico?query=TipoEspacio.Id:1&limit=-1", &Sedes); err == nil { // (2) error servicio caido
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+"espacio_fisico?query=TipoEspacioFisicoId.Id:1&limit=-1", &Sedes); err == nil { // (2) error servicio caido
 
 	} else {
 		logs.Info("Error Sedes servicio caido")
@@ -358,7 +357,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 	var Parametros2 []map[string]interface{}
 	fmt.Println(Datos.Sede)
 	fmt.Println(Datos.Dependencia)
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikosService")+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+
 		"asignacion_espacio_fisico_dependencia?query=DependenciaId.Id:"+strconv.Itoa(Datos.Dependencia.Id)+
 		"&limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
 		fmt.Println(Ubicaciones)
