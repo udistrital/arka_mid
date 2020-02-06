@@ -8,6 +8,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -42,8 +43,8 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []m
 
 	var urlcrud string
 	var cuentasSubgrupo []*models.CuentasGrupo
-	var cuentaCredito *models.CuentaContable
-	var cuentaDebito *models.CuentaContable
+	var cuentaCredito map[string]interface{}
+	var cuentaDebito map[string]interface{}
 
 	urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?query=SubgrupoId.Id:" + strconv.Itoa(int(subgrupoId)) + ",Activo:True&limit=-1"
 
@@ -54,6 +55,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []m
 				for _, cuenta := range cuentasSubgrupo {
 					cuentaCredito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
 					cuentaDebito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaDebitoId)
+					
 
 					cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{
 						"Id":                  cuenta.Id,
