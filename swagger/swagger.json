@@ -86,6 +86,15 @@
                 ],
                 "description": "Devuelve las todas las actas de recibido",
                 "operationId": "ActaRecibidoController.GetActasRecibidoTipo",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "id del acta",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
@@ -182,6 +191,26 @@
             }
         },
         "/bodega_consumo/elementos_sin_asignar/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo",
+                "operationId": "BodegaConsumoController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/existencias_kardex/": {
             "get": {
                 "tags": [
                     "bodega_consumo"
