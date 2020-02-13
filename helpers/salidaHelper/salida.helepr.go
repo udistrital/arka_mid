@@ -15,44 +15,56 @@ import (
 )
 
 // AddEntrada Transacción para registrar la información de una salida
-func AddSalida(data *models.TrSalida) map[string]interface{} {
+func AddSalida(m *models.SalidaGeneral) map[string]interface{} {
 	var (
 		urlcrud   string
 		res       map[string]interface{}
 		resM      map[string]interface{}
 		resultado map[string]interface{}
 	)
+	fmt.Println("Salidas: ",m)
+	for _, data := range m.Salidas {
+		fmt.Println("Salida",data)
+		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/"
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/"
+		// Inserta salida en Movimientos ARKA
+		if err := request.SendJson(urlcrud, "POST", &res, &data); err == nil {
+			// Inserta salida en Movimientos KRONOS
+			urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
+	
+			var salidaId int
+			fmt.Println("Respuesta Salida: ",res)
+			dataSalida := res["Salida"].(map[string]interface{})
+			salidaId = int(dataSalida["Id"].(float64))
+	
+			procesoExterno := int64(salidaId)
+			logs.Debug(procesoExterno)
 
-	// Inserta salida en Movimientos ARKA
-	if err := request.SendJson(urlcrud, "POST", &res, &data); err == nil {
-		// Inserta salida en Movimientos KRONOS
-		urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
-
-		var salidaId int
-
-		dataSalida := res["Salida"].(map[string]interface{})
-		salidaId = int(dataSalida["Id"].(float64))
-
-		procesoExterno := int64(salidaId)
-		logs.Debug(procesoExterno)
-		tipo := models.TipoMovimiento{Id: 16}
-		movimientosKronos := models.MovimientoProcesoExterno{
-			TipoMovimientoId: &tipo,
-			ProcesoExterno:   procesoExterno,
-			Activo:           true,
-		}
-
-		if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
-			body := res
-			body["MovimientosKronos"] = resM["Body"]
-			resultado = body
+			var tipo models.TipoMovimiento
+			
+			if int(dataSalida["Id"].(float64)) == 9 {
+				tipo.Id = 16
+			} else {
+				tipo.Id = 22
+			}
+			
+			movimientosKronos := models.MovimientoProcesoExterno{
+				TipoMovimientoId: &tipo,
+				ProcesoExterno:   procesoExterno,
+				Activo:           true,
+			}
+	
+			if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
+				body := res
+				body["MovimientosKronos"] = resM["Body"]
+				resultado = body
+			} else {
+				panic(err.Error())
+			}
 		} else {
 			panic(err.Error())
 		}
-	} else {
-		panic(err.Error())
+
 	}
 
 	return resultado
@@ -135,15 +147,15 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 func GetSalidas() (Salidas []map[string]interface{}, err error) {
 
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,Activo:true"
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,FormatoTipoMovimientoId.Descripcion__contains:guardar,Activo:true"
 
 	
 
 	var salidas_ []map[string]interface{}
 	if _, err := request.GetJsonTest(urlcrud, &salidas_); err == nil {
-	
+		
 		for _, salida := range salidas_ {
-			
+			fmt.Println("Salidas: ", salida)
 			if salida__, err := TraerDetalle(salida); err == nil {
 
 				Salidas = append(Salidas, salida__)
@@ -167,13 +179,13 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 	var data map[string]interface{}
 	if jsonString, err := json.Marshal(salida); err == nil {
 		if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
-
+			fmt.Println("Salida: ",data)
 			str := fmt.Sprintf("%v", data["Detalle"])
 
 			var data2 map[string]interface{}
 
 			if err := json.Unmarshal([]byte(str), &data2); err == nil {
-
+				fmt.Println("Detalle Salida: ", data2)
 				urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + fmt.Sprintf("%v", data2["ubicacion"])
 
 				var tercero []map[string]interface{}
