@@ -157,3 +157,25 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 	}
 	c.ServeJSON()
 }
+
+// GetAllActas ...
+// @Title Get All Actas
+// @Description get ActaRecibido
+// @Success 200 {object} []models.HistoricoActa
+// @Failure 404 not found resource
+// @router /get_all_actas/ [get]
+func (c *ActaRecibidoController) GetAllActas() {
+
+	//fmt.Println("hola")
+	l, err := actaRecibido.GetAllActasRecibidoActivas()
+	if err != nil {
+		logs.Error(err)
+		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
+		c.Data["system"] = err
+		c.Abort("404")
+	} else {
+		c.Data["json"] = l
+	}
+	c.ServeJSON()
+}
+

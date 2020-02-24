@@ -5,8 +5,10 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
+	// "github.com/udistrital/arka_mid/helpers/utilsHelper"
 )
 
 // GetUbicacion ...
@@ -31,4 +33,27 @@ func GetUbicacion(espacioFisicoId int) (espacioFisico []*models.EspacioFisico, o
 		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetUbicacion", "Error": "null parameter"}
 		return nil, outputError
 	}
+}
+
+func GetAsignacionSedeDependencia(Id string) (Relacion map[string]interface{}, err error) {
+
+	var ubicacion []map[string]interface{}
+	relacion := make(map[string]interface{}, 0)
+
+	url2 := "http://"+beego.AppConfig.String("oikos2Service")+"asignacion_espacio_fisico_dependencia?query=Id:" + Id
+			
+	if _, err := request.GetJsonTest(url2, &ubicacion); err == nil { // (2) error servicio caido
+		
+		if keys := len(ubicacion[0]); keys != 0 {
+
+			return ubicacion[0], nil
+
+		} else {
+			return relacion, nil
+		}
+	} else {
+		panic(err.Error())
+		return nil, err
+	}
+	return ubicacion[0], nil
 }
