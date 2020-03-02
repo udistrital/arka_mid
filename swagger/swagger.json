@@ -193,6 +193,35 @@
                 }
             }
         },
+        "/bajas_elementos/elemento/{id}": {
+            "get": {
+                "tags": [
+                    "bajas_elementos"
+                ],
+                "description": "get Salida by id",
+                "operationId": "BajaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/bodega_consumo/aperturas_kardex/": {
             "get": {
                 "tags": [
@@ -1451,6 +1480,10 @@
         {
             "name": "bodega_consumo",
             "description": "BodegaConsumoController operations for Bodega-Consumo\n"
+        },
+        {
+            "name": "bajas_elementos",
+            "description": "BajaController operations for Salida\n"
         }
     ]
 }
