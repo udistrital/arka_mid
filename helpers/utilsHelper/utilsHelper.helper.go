@@ -1,6 +1,7 @@
 package utilsHelper
 
 import (
+	"fmt"
 	"encoding/json"
 )
 
@@ -20,7 +21,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, e
 }
 // ConvertirInterfaceArrayMap
 func ConvertirInterfaceArrayMap(Objeto_ interface{}) (Salida []map[string]interface{}, err error) {
-
+	fmt.Println(Objeto_)
 	if jsonString, err := json.Marshal(Objeto_); err == nil {
 		if err2 := json.Unmarshal(jsonString, &Salida); err2 != nil {
 			panic(err.Error())
@@ -31,6 +32,18 @@ func ConvertirInterfaceArrayMap(Objeto_ interface{}) (Salida []map[string]interf
 		return nil, err
 	}
 	return Salida, nil
+}
+
+// ConvertirStringJson
+func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, err error) {
+
+	str := fmt.Sprintf("%v", Objeto_)
+	if err := json.Unmarshal([]byte(str), &Salida); err != nil {
+		panic(err.Error())
+		return nil, err
+	}
+	return Salida, nil
+
 }
 
 
