@@ -59,6 +59,12 @@ paths:
       - acta_recibido
       description: Devuelve las todas las actas de recibido
       operationId: ActaRecibidoController.GetActasRecibidoTipo
+      parameters:
+      - in: path
+        name: id
+        description: id del acta
+        required: true
+        type: string
       responses:
         "200":
           description: ""
@@ -66,6 +72,21 @@ paths:
             $ref: '#/definitions/models.Acta_recibido'
         "403":
           description: ""
+  /acta_recibido/get_all_actas/:
+    get:
+      tags:
+      - acta_recibido
+      description: get ActaRecibido
+      operationId: ActaRecibidoController.Get All Actas
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.HistoricoActa'
+        "404":
+          description: not found resource
   /acta_recibido/get_elementos_acta/{id}:
     get:
       tags:
@@ -106,45 +127,57 @@ paths:
               $ref: '#/definitions/models.AsignacionEspacioFisicoDependencia'
         "404":
           description: not found resource
-  /bodega_consumo/:
+  /bajas_elementos/elemento/{id}:
     get:
       tags:
-      - bodega_consumo
-      description: get Bodega-Consumo
-      operationId: BodegaConsumoController.GetAll
+      - bajas_elementos
+      description: get Salida by id
+      operationId: BajaController.Get User
       parameters:
-      - in: query
-        name: query
-        description: Filter. e.g. col1:v1,col2:v2 ...
-        type: string
-      - in: query
-        name: fields
-        description: Fields returned. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: sortby
-        description: Sorted-by fields. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
-        type: string
-      - in: query
-        name: limit
-        description: Limit the size of result set. Must be an integer
-        type: string
-      - in: query
-        name: offset
-        description: Start position of result set. Must be an integer
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
         type: string
       responses:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
-        "403":
+            $ref: '#/definitions/models.Salida'
+        "404":
+          description: not found resource
+  /bajas_elementos/solicitud/:
+    get:
+      tags:
+      - bajas_elementos
+      description: get Baja
+      operationId: BajaController.Get All
+      responses:
+        "200":
           description: ""
+          schema:
+            $ref: '#/definitions/models.Baja'
+        "404":
+          description: not found resource
+  /bajas_elementos/solicitud/{id}:
+    get:
+      tags:
+      - bajas_elementos
+      description: get Salida by id
+      operationId: BajaController.Get User
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Salida'
+        "404":
+          description: not found resource
   /bodega_consumo/{id}:
     put:
       tags:
@@ -186,6 +219,45 @@ paths:
           description: '{string} delete success!'
         "403":
           description: id is empty
+  /bodega_consumo/aperturas_kardex/:
+    get:
+      tags:
+      - bodega_consumo
+      description: get Bodega-Consumo
+      operationId: BodegaConsumoController.GetAll
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Bodega-Consumo'
+        "403":
+          description: ""
+  /bodega_consumo/elementos_sin_asignar/:
+    get:
+      tags:
+      - bodega_consumo
+      description: get Bodega-Consumo
+      operationId: BodegaConsumoController.GetAll
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Bodega-Consumo'
+        "403":
+          description: ""
+  /bodega_consumo/existencias_kardex/:
+    get:
+      tags:
+      - bodega_consumo
+      description: get Bodega-Consumo
+      operationId: BodegaConsumoController.GetAll
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Bodega-Consumo'
+        "403":
+          description: ""
   /bodega_consumo/solicitud/{id}:
     get:
       tags:
@@ -571,6 +643,9 @@ definitions:
       Id:
         type: integer
         format: int64
+  models.Baja:
+    title: Baja
+    type: object
   models.Bodega-Consumo:
     title: Bodega-Consumo
     type: object
@@ -758,6 +833,30 @@ definitions:
         type: string
       TipoEspacio:
         $ref: '#/definitions/models.TipoEspacio'
+  models.EstadoActa:
+    title: EstadoActa
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      NumeroOrden:
+        type: number
+        format: double
   models.EstadoElemento:
     title: EstadoElemento
     type: object
@@ -782,6 +881,25 @@ definitions:
       NumeroOrden:
         type: number
         format: double
+  models.HistoricoActa:
+    title: HistoricoActa
+    type: object
+    properties:
+      ActaRecibidoId:
+        $ref: '#/definitions/models.ActaRecibido'
+      Activo:
+        type: boolean
+      EstadoActaId:
+        $ref: '#/definitions/models.EstadoActa'
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
   models.OrdenadorGasto:
     title: OrdenadorGasto
     type: object
@@ -928,3 +1046,6 @@ tags:
 - name: bodega_consumo
   description: |
     BodegaConsumoController operations for Bodega-Consumo
+- name: bajas_elementos
+  description: |
+    BajaController operations for Salida

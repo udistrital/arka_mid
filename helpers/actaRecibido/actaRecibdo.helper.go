@@ -18,6 +18,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
 	"github.com/udistrital/arka_mid/helpers/unidadHelper"
+	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -57,20 +59,157 @@ type Subgrupo struct {
 	FechaModificacion time.Time
 }
 
+
 // GetAllActasRecibido ...
-func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]interface{}) {
-	if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=ActaRecibidoId.Activo:True", &historicoActa); err == nil { // (2) error servicio caido
-		if response.StatusCode == 200 { // (3) error estado de la solicitud
-			return historicoActa, nil
-		} else {
-			logs.Info("Error (3) estado de la solicitud")
-			outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
-			return outputError, nil
+func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err error) {
+
+	var Historico []map[string]interface{}
+	var Terceros []map[string]interface{}
+	var Ubicaciones []map[string]interface{}
+
+	url := "http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=Activo:true&limit=-1"
+
+	if _, err := request.GetJsonTest(url, &Historico); err == nil { // (2) error servicio caido
+
+		for _, historicos := range Historico {
+
+			var data_ map[string]interface{}
+			var data2_ map[string]interface{}
+			var data3_ map[string]interface{}
+			var Tercero_ map[string]interface{}
+			var Ubicacion_ map[string]interface{}
+
+			Ubicacion_ = nil
+
+			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
+				data_ = data
+			} else {
+				panic(err.Error())
+				return nil, err
+			}
+			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
+				data2_ = data
+			} else {
+				panic(err.Error())
+				return nil, err
+			}
+			if Terceros == nil {
+				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
+					Tercero_ = Tercero
+					Terceros = append(Terceros, Tercero)
+				} else {
+					panic(err.Error())
+					return nil, err
+				}
+			} else {
+				if keys := len(Terceros[0]); keys != 0 {
+					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
+						if keys := len(Tercero); keys == 0 {
+							if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
+								Tercero_ = Tercero
+								Terceros = append(Terceros, Tercero)
+							} else {
+								panic(err.Error())
+								return nil, err
+							}
+						} else {
+							Tercero_ = Tercero
+						}
+					} else {
+						panic(err.Error())
+						return nil, err
+					}
+				} else {
+					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
+						Tercero_ = Tercero
+						Terceros = append(Terceros, Tercero)
+					} else {
+						panic(err.Error())
+						return nil, err
+					} 
+				}
+			}
+			
+
+			if Ubicaciones == nil {
+				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+					fmt.Println(ubicacion)
+					if keys := len(ubicacion); keys != 0 {
+						Ubicacion_ = ubicacion
+						Ubicaciones = append(Ubicaciones, ubicacion)
+					}
+					
+				} else {
+					panic(err.Error())
+					return nil, err
+				}
+			} else {
+				if keys := len(Ubicaciones[0]); keys != 0 {
+					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+						if keys := len(ubicacion); keys == 0 {
+							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+								fmt.Println(ubicacion)
+								if keys := len(ubicacion); keys != 0 {
+									Ubicacion_ = ubicacion
+									Ubicaciones = append(Ubicaciones, ubicacion)
+								}
+							} else {
+								panic(err.Error())
+								return nil, err
+							}
+						} else {
+							Ubicacion_ = ubicacion
+						}
+					} else {
+						panic(err.Error())
+						return nil, err
+					}
+				} else {
+					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+						fmt.Println(ubicacion)
+						if keys := len(ubicacion); keys != 0 {
+							Ubicacion_ = ubicacion
+							Ubicaciones = append(Ubicaciones, ubicacion)
+						}
+					} else {
+						panic(err.Error())
+						return nil, err
+					}
+				}
+			}
+			
+			
+			if Ubicacion_ != nil {
+				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
+					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
+						panic(err.Error())
+						return nil, err
+					}
+				}
+			} else {
+				data3_ = map[string]interface{}{
+					"Nombre": "Ubicacion No Especificada",
+				}
+			}
+			fmt.Println(data3_)
+			Acta := map[string]interface{}{
+				"UbicacionId":			data3_["Nombre"],
+				"Activo":				data_["Activo"],
+				"FechaCreacion":		data_["FechaCreacion"],
+				"FechaVistoBueno":		data_["FechaVistoBueno"],
+				"FechaModificacion":	data_["FechaModificacion"],
+				"Id":					data_["Id"],
+				"Observaciones":		data_["Observaciones"],
+				"RevisorId":			Tercero_["NombreCompleto"],
+				"Estado":				data2_["Nombre"],
+			}
+			historicoActa = append(historicoActa, Acta)
 		}
+		return historicoActa, nil
+			
 	} else {
-		logs.Info("Error (2) servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-		return outputError, nil
+		panic(err.Error())
+		return nil, err
 	}
 }
 

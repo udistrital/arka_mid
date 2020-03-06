@@ -31,7 +31,7 @@ func (c *SalidaController) URLMapping() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *SalidaController) Post() {
-	var v models.TrSalida
+	var v models.SalidaGeneral
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
 		if respuesta := salidaHelper.AddSalida(&v); respuesta != nil {
 			c.Ctx.Output.SetStatus(201)

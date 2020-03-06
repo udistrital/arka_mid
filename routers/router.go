@@ -9,6 +9,7 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
+
 	"github.com/udistrital/arka_mid/controllers"
 )
 
@@ -47,6 +48,11 @@ func init() {
 		beego.NSNamespace("/bodega_consumo",
 			beego.NSInclude(
 				&controllers.BodegaConsumoController{},
+			),
+		),
+		beego.NSNamespace("/bajas_elementos",
+			beego.NSInclude(
+				&controllers.BajaController{},
 			),
 		),
 	)
