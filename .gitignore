@@ -21,6 +21,7 @@ todo/todo
 custom.env
 lastupdate.*
 .vscode/
+arka_mid
 main
 .scannerwork/
 swagger/*.png
