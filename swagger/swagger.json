@@ -15,45 +15,43 @@
     },
     "basePath": "/v1",
     "paths": {
-        "/object/": {
+        "/acta_recibido/": {
             "get": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "get all objects",
-                "operationId": "ObjectController.GetAll",
+                "description": "get ActaRecibido",
+                "operationId": "ActaRecibidoController.Get All",
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Object"
+                            "$ref": "#/definitions/models.ActaRecibido"
                         }
                     },
-                    "403": {
-                        "description": ":objectId is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             },
             "post": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "create object",
-                "operationId": "ObjectController.Create",
+                "description": "create Acta_recibido",
+                "operationId": "ActaRecibidoController.Create",
                 "parameters": [
                     {
-                        "in": "body",
-                        "name": "body",
-                        "description": "The object content",
+                        "in": "formData",
+                        "name": "archivo",
+                        "description": "body for Acta_recibido content",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Object"
-                        }
+                        "type": "file"
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "{string} models.Object.Id"
+                    "201": {
+                        "description": "{}"
                     },
                     "403": {
                         "description": "body is empty"
@@ -61,196 +59,151 @@
                 }
             }
         },
-        "/object/{objectId}": {
+        "/acta_recibido/elementosconsumo/": {
             "get": {
                 "tags": [
-                    "object"
+                    "acta_recibido"
                 ],
-                "description": "find object by objectid",
-                "operationId": "ObjectController.Get",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "objectId",
-                        "description": "the objectid you want to get",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
+                "description": "Trae todos los elementos de consumo",
+                "operationId": "ActaRecibidoController.GetAllElementosConsumo",
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Object"
+                            "$ref": "#/definitions/models.Elemento"
                         }
                     },
-                    "403": {
-                        "description": ":objectId is empty"
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "object"
-                ],
-                "description": "update the object",
-                "operationId": "ObjectController.Update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "objectId",
-                        "description": "The objectid you want to update",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "The body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.Object"
-                        }
-                    },
-                    "403": {
-                        "description": ":objectId is empty"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "object"
-                ],
-                "description": "delete the object",
-                "operationId": "ObjectController.Delete",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "objectId",
-                        "description": "The objectId you want to delete",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} delete success!"
-                    },
-                    "403": {
-                        "description": "objectId is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
         },
-        "/user/": {
+        "/acta_recibido/get_actas_recibido_tipo/{tipo}": {
             "get": {
                 "tags": [
-                    "user"
+                    "acta_recibido"
                 ],
-                "description": "get all Users",
-                "operationId": "UserController.GetAll",
+                "description": "Devuelve las todas las actas de recibido",
+                "operationId": "ActaRecibidoController.GetActasRecibidoTipo",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "id del acta",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Acta_recibido"
                         }
+                    },
+                    "403": {
+                        "description": ""
                     }
                 }
-            },
-            "post": {
+            }
+        },
+        "/acta_recibido/get_all_actas/": {
+            "get": {
                 "tags": [
-                    "user"
+                    "acta_recibido"
                 ],
-                "description": "create users",
-                "operationId": "UserController.CreateUser",
+                "description": "get ActaRecibido",
+                "operationId": "ActaRecibidoController.Get All Actas",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.HistoricoActa"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/acta_recibido/get_elementos_acta/{id}": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "get Elementos by id",
+                "operationId": "ActaRecibidoController.Get Elementos",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "id del acta",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Elemento"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/acta_recibido/get_soportes_acta/{id}": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "get Soportes by id",
+                "operationId": "ActaRecibidoController.Get Soportes",
                 "parameters": [
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "body for user content",
-                        "required": true,
+                        "description": "true",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Entrada"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{int} models.User.Id"
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                            }
+                        }
                     },
-                    "403": {
-                        "description": "body is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
         },
-        "/user/login": {
+        "/bajas_elementos/elemento/{id}": {
             "get": {
                 "tags": [
-                    "user"
+                    "bajas_elementos"
                 ],
-                "description": "Logs user into the system",
-                "operationId": "UserController.Login",
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "username",
-                        "description": "The username for login",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "password",
-                        "description": "The password for login",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} login success"
-                    },
-                    "403": {
-                        "description": "user not exist"
-                    }
-                }
-            }
-        },
-        "/user/logout": {
-            "get": {
-                "tags": [
-                    "user"
-                ],
-                "description": "Logs out current logged in user session",
-                "operationId": "UserController.logout",
-                "responses": {
-                    "200": {
-                        "description": "{string} logout success"
-                    }
-                }
-            }
-        },
-        "/user/{uid}": {
-            "get": {
-                "tags": [
-                    "user"
-                ],
-                "description": "get user by uid",
-                "operationId": "UserController.Get",
+                "description": "get Salida by id",
+                "operationId": "BajaController.Get User",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "uid",
+                        "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -260,35 +213,172 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Salida"
                         }
                     },
-                    "403": {
-                        "description": ":uid is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
-            },
-            "put": {
+            }
+        },
+        "/bajas_elementos/solicitud/": {
+            "get": {
                 "tags": [
-                    "user"
+                    "bajas_elementos"
                 ],
-                "description": "update the user",
-                "operationId": "UserController.Update",
+                "description": "get Baja",
+                "operationId": "BajaController.Get All",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Baja"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/bajas_elementos/solicitud/{id}": {
+            "get": {
+                "tags": [
+                    "bajas_elementos"
+                ],
+                "description": "get Salida by id",
+                "operationId": "BajaController.Get User",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "uid",
-                        "description": "The uid you want to update",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/aperturas_kardex/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo",
+                "operationId": "BodegaConsumoController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/elementos_sin_asignar/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo",
+                "operationId": "BodegaConsumoController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/existencias_kardex/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo",
+                "operationId": "BodegaConsumoController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Bodega-Consumo"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/solicitud/{id}": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Bodega-Consumo by id",
+                "operationId": "BodegaConsumoController.GetOneSolicitud",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{object}{\"Id\": int,\"FechaCreacion\": date,\"Observacion\": string,\"Elementos\": {\"Id\": int,\"Nombre\":string,\"Marca\": string,\"Serie\": string,\"CantidadDisponible\": int,\"CantidadSolicitada\": int,\t\"ValorUnitario\": float,} }"
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/{id}": {
+            "put": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "update the Bodega-Consumo",
+                "operationId": "BodegaConsumoController.Put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to update",
                         "required": true,
                         "type": "string"
                     },
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "body for user content",
+                        "description": "body for Bodega-Consumo content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Bodega-Consumo"
                         }
                     }
                 ],
@@ -296,25 +386,25 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.Bodega-Consumo"
                         }
                     },
                     "403": {
-                        "description": ":uid is not int"
+                        "description": ":id is not int"
                     }
                 }
             },
             "delete": {
                 "tags": [
-                    "user"
+                    "bodega_consumo"
                 ],
-                "description": "delete the user",
-                "operationId": "UserController.Delete",
+                "description": "delete the Bodega-Consumo",
+                "operationId": "BodegaConsumoController.Delete",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "uid",
-                        "description": "The uid you want to delete",
+                        "name": "id",
+                        "description": "The id you want to delete",
                         "required": true,
                         "type": "string"
                     }
@@ -324,79 +414,1129 @@
                         "description": "{string} delete success!"
                     },
                     "403": {
-                        "description": "uid is empty"
+                        "description": "id is empty"
+                    }
+                }
+            }
+        },
+        "/catalogo_elementos/": {
+            "post": {
+                "tags": [
+                    "catalogo_elementos"
+                ],
+                "description": "Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas asociadas a subgrupos",
+                "operationId": "CatalogoElementosController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos, cada subgrupo debe llevar un Id definido)",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Tr_cuentas_subgrupo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tr_cuentas_subgrupo"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/catalogo_elementos/cuentas_contables/{id}": {
+            "get": {
+                "tags": [
+                    "catalogo_elementos"
+                ],
+                "description": "Devuelve las todas las actas de recibido",
+                "operationId": "CatalogoElementosController.GetCuentasSubgrupoById",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Acta_recibido"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/catalogo_elementos/movimientos_kronos/": {
+            "get": {
+                "tags": [
+                    "catalogo_elementos"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "CatalogoElementosController.GetMovimientosKronos",
+                "responses": {
+                    "200": {
+                        "description": "{}"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/catalogo_elementos/{id}": {
+            "get": {
+                "tags": [
+                    "catalogo_elementos"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "CatalogoElementosController.GetCatalogoById",
+                "responses": {
+                    "200": {
+                        "description": "{}"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/entrada/": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "get Entradas",
+                "operationId": "EntradaController.Get User",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ConsultaEntrada"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "create Entrada",
+                "operationId": "EntradaController.Post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Entrada content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Entrada"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Entrada"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/entrada/encargado/{placa}": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "get Entradas",
+                "operationId": "EntradaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "placa",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"funcionario\": \"string\"}"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/entrada/{id}": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "get Entrada by id",
+                "operationId": "EntradaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ConsultaEntrada"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/parametros_soporte/": {
+            "get": {
+                "tags": [
+                    "parametros_soporte"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "ParametrosController.Get All",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActaRecibido"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/parametros_soporte/post_asignacion_espacio_fisico_dependencia/": {
+            "post": {
+                "tags": [
+                    "parametros_soporte"
+                ],
+                "description": "get Soportes by id",
+                "operationId": "ParametrosController.Post Soportes",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/salida/": {
+            "get": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "get Entradas",
+                "operationId": "SalidaController.Get User",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "create Salida",
+                "operationId": "SalidaController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Salida content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/salida/{id}": {
+            "get": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "get Salida by id",
+                "operationId": "SalidaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/terceros/": {
+            "get": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "get Terceros",
+                "operationId": "TercerosController.GetAll",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "query",
+                        "description": "Filter. e.g. col1:v1,col2:v2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "description": "Fields returned. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Sorted-by fields. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "description": "Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "description": "Limit the size of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/terceros/{id}": {
+            "get": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "get Terceros by id",
+                "operationId": "TercerosController.GetOne",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "update the Terceros",
+                "operationId": "TercerosController.Put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to update",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Terceros content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Terceros"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is not int"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "delete the Terceros",
+                "operationId": "TercerosController.Delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to delete",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} delete success!"
+                    },
+                    "403": {
+                        "description": "id is empty"
                     }
                 }
             }
         }
     },
     "definitions": {
+        "models.ActaRecibido": {
+            "title": "ActaRecibido",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaVistoBueno": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observaciones": {
+                    "type": "string"
+                },
+                "RevisorId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "UbicacionId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.Acta_recibido": {
+            "title": "Acta_recibido",
+            "type": "object"
+        },
+        "models.AsignacionEspacioFisicoDependencia": {
+            "title": "AsignacionEspacioFisicoDependencia",
+            "type": "object",
+            "properties": {
+                "DependenciaId": {
+                    "$ref": "#/definitions/models.Dependencia"
+                },
+                "EspacioFisicoId": {
+                    "$ref": "#/definitions/models.EspacioFisico"
+                },
+                "Estado": {
+                    "type": "string"
+                },
+                "FechaFin": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaInicio": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.Baja": {
+            "title": "Baja",
+            "type": "object"
+        },
+        "models.Bodega-Consumo": {
+            "title": "Bodega-Consumo",
+            "type": "object"
+        },
+        "models.ConsultaEntrada": {
+            "title": "ConsultaEntrada",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "ContratoId": {
+                    "$ref": "#/definitions/models.Contrato"
+                },
+                "DocumentoContableId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ElementoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Importacion": {
+                    "type": "boolean"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "Solicitante": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoEntradaId": {
+                    "$ref": "#/definitions/models.TipoEntrada"
+                },
+                "Vigencia": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Contrato": {
+            "title": "Contrato",
+            "type": "object",
+            "properties": {
+                "Actividades": {
+                    "type": "string"
+                },
+                "Contratista": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "DescripcionFormaPago": {
+                    "type": "string"
+                },
+                "FechaRegistro": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaSuscripcion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Justificacion": {
+                    "type": "string"
+                },
+                "LugarEjecucion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NumeroContrato": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NumeroContratoSuscrito": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ObjetoContrato": {
+                    "type": "string"
+                },
+                "Observaciones": {
+                    "type": "string"
+                },
+                "OrdenadorGasto": {
+                    "$ref": "#/definitions/models.OrdenadorGasto"
+                },
+                "PlazoEjecucion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Rubro": {
+                    "type": "string"
+                },
+                "Supervisor": {
+                    "$ref": "#/definitions/models.Supervisor"
+                },
+                "TipoContrato": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "UnidadEjecucion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "UnidadEjecutora": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorContrato": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.Dependencia": {
+            "title": "Dependencia",
+            "type": "object",
+            "properties": {
+                "CorreoElectronico": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "TelefonoDependencia": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Elemento": {
+            "title": "Elemento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Descuento": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "EstadoElementoId": {
+                    "$ref": "#/definitions/models.EstadoElemento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Placa": {
+                    "type": "string"
+                },
+                "PorcentajeIvaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SoporteActaId": {
+                    "$ref": "#/definitions/models.SoporteActa"
+                },
+                "SubgrupoCatalogoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Subtotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
+                },
+                "UnidadMedida": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorFinal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorIva": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Verificado": {
+                    "type": "boolean"
+                }
+            }
+        },
         "models.Entrada": {
             "title": "Entrada",
             "type": "object"
         },
-        "models.Object": {
-            "title": "Object",
+        "models.EspacioFisico": {
+            "title": "EspacioFisico",
             "type": "object",
             "properties": {
-                "ObjectId": {
+                "Codigo": {
                     "type": "string"
                 },
-                "PlayerName": {
+                "Estado": {
                     "type": "string"
                 },
-                "Score": {
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "TipoEspacio": {
+                    "$ref": "#/definitions/models.TipoEspacio"
+                }
+            }
+        },
+        "models.EstadoActa": {
+            "title": "EstadoActa",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.EstadoElemento": {
+            "title": "EstadoElemento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.HistoricoActa": {
+            "title": "HistoricoActa",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "$ref": "#/definitions/models.ActaRecibido"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "EstadoActaId": {
+                    "$ref": "#/definitions/models.EstadoActa"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
                     "type": "integer",
                     "format": "int64"
                 }
             }
         },
-        "models.Profile": {
-            "title": "Profile",
-            "type": "object",
-            "properties": {
-                "Address": {
-                    "type": "string"
-                },
-                "Age": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Email": {
-                    "type": "string"
-                },
-                "Gender": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.User": {
-            "title": "User",
+        "models.OrdenadorGasto": {
+            "title": "OrdenadorGasto",
             "type": "object",
             "properties": {
                 "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NombreOrdenador": {
                     "type": "string"
                 },
-                "Password": {
+                "ObjetoContrato": {
                     "type": "string"
                 },
-                "Profile": {
-                    "$ref": "#/definitions/models.Profile"
-                },
-                "Username": {
+                "RolOrdenadorGasto": {
                     "type": "string"
                 }
             }
+        },
+        "models.Salida": {
+            "title": "Salida",
+            "type": "object"
+        },
+        "models.SoporteActa": {
+            "title": "SoporteActa",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "$ref": "#/definitions/models.ActaRecibido"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaSoporte": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProveedorId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.Supervisor": {
+            "title": "Supervisor",
+            "type": "object",
+            "properties": {
+                "Cargo": {
+                    "type": "string"
+                },
+                "Dependencia": {
+                    "type": "string"
+                },
+                "DocumentoIdentificacion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Sede": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Terceros": {
+            "title": "Terceros",
+            "type": "object"
+        },
+        "models.TipoBien": {
+            "title": "TipoBien",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Orden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.TipoEntrada": {
+            "title": "TipoEntrada",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Clasificacion": {
+                    "type": "string"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.TipoEspacio": {
+            "title": "TipoEspacio",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Tr_cuentas_subgrupo": {
+            "title": "Tr_cuentas_subgrupo",
+            "type": "object"
+        },
+        "{}": {
+            "title": "{}",
+            "type": "object"
         }
     },
     "tags": [
         {
-            "name": "object",
-            "description": "Operations about object\n"
+            "name": "acta_recibido",
+            "description": "ActaRecibidoController operations for ActaRecibido\n"
         },
         {
-            "name": "user",
-            "description": "Operations about Users\n"
+            "name": "entrada",
+            "description": "EntradaController operations for Entrada\n"
+        },
+        {
+            "name": "parametros_soporte",
+            "description": "ParametrosController operations for Parametros\n"
+        },
+        {
+            "name": "catalogo_elementos",
+            "description": "CatalogoElementosController operations for Catalogo\n"
+        },
+        {
+            "name": "salida",
+            "description": "SalidaController operations for Salida\n"
+        },
+        {
+            "name": "terceros",
+            "description": "TercerosController operations for Terceros\n"
+        },
+        {
+            "name": "bodega_consumo",
+            "description": "BodegaConsumoController operations for Bodega-Consumo\n"
+        },
+        {
+            "name": "bajas_elementos",
+            "description": "BajaController operations for Salida\n"
         }
     ]
 }
