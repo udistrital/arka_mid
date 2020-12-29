@@ -66,6 +66,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 	var Historico []map[string]interface{}
 	var Terceros []map[string]interface{}
 	var Ubicaciones []map[string]interface{}
+	var asignado []*models.Proveedor
 
 	url := "http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=Activo:true&limit=-1"
 
@@ -78,6 +79,8 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 			var data3_ map[string]interface{}
 			var Tercero_ map[string]interface{}
 			var Ubicacion_ map[string]interface{}
+            var outputError map[string]interface{}
+            var nombreAsignado string
 
 			Ubicacion_ = nil
 
@@ -131,6 +134,13 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 			}
 			
 
+
+
+
+
+
+
+
 			if Ubicaciones == nil {
 				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
 					fmt.Println(ubicacion)
@@ -177,6 +187,14 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 					}
 				}
 			}
+
+            var tmpAsignadoId = int(data_["PersonaAsignada"].(float64))
+			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
+            if (outputError == nil) { 
+			nombreAsignado = asignado[0].NomProveedor
+			fmt.Println(outputError)
+            }
+
 			
 			
 			if Ubicacion_ != nil {
@@ -201,8 +219,11 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 				"Id":					data_["Id"],
 				"Observaciones":		data_["Observaciones"],
 				"RevisorId":			Tercero_["NombreCompleto"],
+				"PersonaAsignada":		nombreAsignado,
 				"Estado":				data2_["Nombre"],
 			}
+			fmt.Println("Es esto")
+			fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
 		}
 		return historicoActa, nil
