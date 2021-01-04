@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tealeg/xlsx"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/tealeg/xlsx"
 
-	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
-	"github.com/udistrital/arka_mid/helpers/unidadHelper"
+	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -59,7 +59,6 @@ type Subgrupo struct {
 	FechaModificacion time.Time
 }
 
-
 // GetAllActasRecibido ...
 func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err error) {
 
@@ -68,7 +67,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 	var Ubicaciones []map[string]interface{}
 	var asignado []*models.Proveedor
 
-	url := "http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=Activo:true&limit=-1"
+	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=Activo:true&limit=-1"
 
 	if _, err := request.GetJsonTest(url, &Historico); err == nil { // (2) error servicio caido
 
@@ -79,8 +78,8 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 			var data3_ map[string]interface{}
 			var Tercero_ map[string]interface{}
 			var Ubicacion_ map[string]interface{}
-            var outputError map[string]interface{}
-            var nombreAsignado string
+			var outputError map[string]interface{}
+			var nombreAsignado string
 
 			Ubicacion_ = nil
 
@@ -129,17 +128,9 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 					} else {
 						panic(err.Error())
 						return nil, err
-					} 
+					}
 				}
 			}
-			
-
-
-
-
-
-
-
 
 			if Ubicaciones == nil {
 				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
@@ -148,7 +139,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 						Ubicacion_ = ubicacion
 						Ubicaciones = append(Ubicaciones, ubicacion)
 					}
-					
+
 				} else {
 					panic(err.Error())
 					return nil, err
@@ -188,15 +179,13 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 				}
 			}
 
-            var tmpAsignadoId = int(data_["PersonaAsignada"].(float64))
+			var tmpAsignadoId = int(data_["PersonaAsignada"].(float64))
 			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
-            if (outputError == nil) { 
-			nombreAsignado = asignado[0].NomProveedor
-			fmt.Println(outputError)
-            }
+			if outputError == nil {
+				nombreAsignado = asignado[0].NomProveedor
+				fmt.Println(outputError)
+			}
 
-			
-			
 			if Ubicacion_ != nil {
 				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
 					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
@@ -211,23 +200,23 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 			}
 			fmt.Println(data3_)
 			Acta := map[string]interface{}{
-				"UbicacionId":			data3_["Nombre"],
-				"Activo":				data_["Activo"],
-				"FechaCreacion":		data_["FechaCreacion"],
-				"FechaVistoBueno":		data_["FechaVistoBueno"],
-				"FechaModificacion":	data_["FechaModificacion"],
-				"Id":					data_["Id"],
-				"Observaciones":		data_["Observaciones"],
-				"RevisorId":			Tercero_["NombreCompleto"],
-				"PersonaAsignada":		nombreAsignado,
-				"Estado":				data2_["Nombre"],
+				"UbicacionId":       data3_["Nombre"],
+				"Activo":            data_["Activo"],
+				"FechaCreacion":     data_["FechaCreacion"],
+				"FechaVistoBueno":   data_["FechaVistoBueno"],
+				"FechaModificacion": data_["FechaModificacion"],
+				"Id":                data_["Id"],
+				"Observaciones":     data_["Observaciones"],
+				"RevisorId":         Tercero_["NombreCompleto"],
+				"PersonaAsignada":   nombreAsignado,
+				"Estado":            data2_["Nombre"],
 			}
 			fmt.Println("Es esto")
 			fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
 		}
 		return historicoActa, nil
-			
+
 	} else {
 		panic(err.Error())
 		return nil, err
