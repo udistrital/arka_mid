@@ -87,13 +87,13 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 				data_ = data
 			} else {
 				panic(err.Error())
-				return nil, err
+				// return nil, err
 			}
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
 				panic(err.Error())
-				return nil, err
+				// return nil, err
 			}
 			if Terceros == nil {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
@@ -101,7 +101,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 					Terceros = append(Terceros, Tercero)
 				} else {
 					panic(err.Error())
-					return nil, err
+					// return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -112,14 +112,14 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 								Terceros = append(Terceros, Tercero)
 							} else {
 								panic(err.Error())
-								return nil, err
+								// return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
 						}
 					} else {
 						panic(err.Error())
-						return nil, err
+						// return nil, err
 					}
 				} else {
 					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
@@ -127,7 +127,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 						Terceros = append(Terceros, Tercero)
 					} else {
 						panic(err.Error())
-						return nil, err
+						// return nil, err
 					}
 				}
 			}
@@ -142,7 +142,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 
 				} else {
 					panic(err.Error())
-					return nil, err
+					// return nil, err
 				}
 			} else {
 				if keys := len(Ubicaciones[0]); keys != 0 {
@@ -156,14 +156,14 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 								}
 							} else {
 								panic(err.Error())
-								return nil, err
+								// return nil, err
 							}
 						} else {
 							Ubicacion_ = ubicacion
 						}
 					} else {
 						panic(err.Error())
-						return nil, err
+						// return nil, err
 					}
 				} else {
 					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
@@ -174,7 +174,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 						}
 					} else {
 						panic(err.Error())
-						return nil, err
+						// return nil, err
 					}
 				}
 			}
@@ -190,7 +190,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
 					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
 						panic(err.Error())
-						return nil, err
+						// return nil, err
 					}
 				}
 			} else {
@@ -219,7 +219,7 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 
 	} else {
 		panic(err.Error())
-		return nil, err
+		// return nil, err
 	}
 }
 
