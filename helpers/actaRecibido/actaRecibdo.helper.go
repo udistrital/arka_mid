@@ -228,22 +228,23 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 		}
 
 		if len(states) > 0 {
-			var res []map[string]interface{}
-
-			for _, acta := range historicoActa {
+			fin := len(historicoActa)
+			for i := 0; i < fin; {
 				dejar := false
 				for _, reqState := range states {
-					if acta["Estado"] == reqState {
+					if historicoActa[i]["Estado"] == reqState {
 						dejar = true
+						break
 					}
 				}
 				if dejar {
-					res = append(res, acta)
+					i++
+				} else {
+					historicoActa[i] = historicoActa[fin-1]
+					fin--
 				}
 			}
-			// fmt.Print("RES_FILTRADO: ")
-			// fmt.Println(res)
-			return res, nil
+			historicoActa = historicoActa[:fin]
 		}
 
 		return historicoActa, nil
