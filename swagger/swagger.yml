@@ -78,6 +78,12 @@ paths:
       - acta_recibido
       description: get ActaRecibido
       operationId: ActaRecibidoController.Get All Actas
+      parameters:
+      - in: query
+        name: states
+        description: If specified, returns only acts with the specified state(s) from
+          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        type: string
       responses:
         "200":
           description: ""

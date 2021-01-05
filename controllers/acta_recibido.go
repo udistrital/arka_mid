@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -161,21 +162,30 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // GetAllActas ...
 // @Title Get All Actas
 // @Description get ActaRecibido
+// @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Success 200 {object} []models.HistoricoActa
 // @Failure 404 not found resource
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
 
-	//fmt.Println("hola")
-	l, err := actaRecibido.GetAllActasRecibidoActivas()
+	var reqStates []string
+
+	if v := c.GetString("states"); v != "" {
+		reqStates = strings.Split(v, ",")
+	}
+	// fmt.Print("ESTADOS SOLICITADOS: ")
+	// fmt.Println(reqStates)
+
+	l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates)
 	if err != nil {
 		logs.Error(err)
 		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
 		c.Data["system"] = err
 		c.Abort("404")
 	} else {
+		// fmt.Print("DATA FINAL: ")
+		// fmt.Println(l)
 		c.Data["json"] = l
 	}
 	c.ServeJSON()
 }
-

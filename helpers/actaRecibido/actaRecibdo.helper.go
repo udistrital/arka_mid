@@ -60,16 +60,27 @@ type Subgrupo struct {
 }
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err error) {
+func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]interface{}, err error) {
 
 	var Historico []map[string]interface{}
 	var Terceros []map[string]interface{}
 	var Ubicaciones []map[string]interface{}
 	var asignado []*models.Proveedor
 
-	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=Activo:true&limit=-1"
+	// fmt.Print("Estados Solicitados: ")
+	// fmt.Println(states)
+
+	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&query=Activo:true"
+	// url += ",EstadoActaId__Id:3"
+	// TODO: Por rendimiento, TODO lo relacionado a ...
+	// - buscar el historico_acta mas reciente
+	// - Filtrar por estados
+	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 
 	if _, err := request.GetJsonTest(url, &Historico); err == nil { // (2) error servicio caido
+
+		// fmt.Print("historicos:")
+		// fmt.Println(len(Historico))
 
 		for _, historicos := range Historico {
 
@@ -215,6 +226,26 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 			fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
 		}
+
+		if len(states) > 0 {
+			var res []map[string]interface{}
+
+			for _, acta := range historicoActa {
+				dejar := false
+				for _, reqState := range states {
+					if acta["Estado"] == reqState {
+						dejar = true
+					}
+				}
+				if dejar {
+					res = append(res, acta)
+				}
+			}
+			// fmt.Print("RES_FILTRADO: ")
+			// fmt.Println(res)
+			return res, nil
+		}
+
 		return historicoActa, nil
 
 	} else {
