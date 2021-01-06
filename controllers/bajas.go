@@ -2,8 +2,8 @@ package controllers
 
 import (
 	// "encoding/json"
-	"strconv"
 	"fmt"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -21,7 +21,6 @@ type BajaController struct {
 func (c *BajaController) URLMapping() {
 	c.Mapping("Get", c.GetElemento)
 }
-
 
 // GetElemento ...
 // @Title Get User
@@ -45,6 +44,7 @@ func (c *BajaController) GetElemento() {
 	}
 	c.ServeJSON()
 }
+
 // Getsolicitud...
 // @Title Get User
 // @Description get Salida by id
@@ -67,6 +67,7 @@ func (c *BajaController) GetSolicitud() {
 	}
 	c.ServeJSON()
 }
+
 // GetAll ...
 // @Title Get All
 // @Description get Baja

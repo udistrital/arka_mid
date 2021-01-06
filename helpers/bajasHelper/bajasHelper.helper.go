@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+
 	// "strings"
 	// "reflect"
 
 	"github.com/astaxie/beego"
 
+	"github.com/udistrital/arka_mid/helpers/salidaHelper"
+	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
-	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -21,10 +22,9 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, err error) {
 	var elemento_movimiento_ []map[string]interface{}
 	// var movimiento_ map[string]interface{}
 
-	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:"+ fmt.Sprintf("%v", id) + ",Activo:true"
+	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:" + fmt.Sprintf("%v", id) + ",Activo:true"
 	if _, err := request.GetJsonTest(url, &elemento_movimiento_); err == nil {
 
-		
 		if v, err := salidaHelper.TraerDetalle(elemento_movimiento_[0]["MovimientoId"]); err == nil {
 
 			fmt.Println("Elemento Movimiento: ", elemento_movimiento_)
@@ -35,7 +35,6 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, err error) {
 					movimiento_["MovimientoPadreId"] = nil
 				}
 			}
-
 
 			var elemento_ []map[string]interface{}
 
@@ -48,21 +47,20 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, err error) {
 				urlcrud_2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + fmt.Sprintf("%v", elemento_[0]["SubgrupoCatalogoId"])
 				if _, err := request.GetJsonTest(urlcrud_2, &subgrupo_); err == nil {
 					Elemento := map[string]interface{}{
-						"Id":						elemento_[0]["Id"],
-						"Placa":					elemento_[0]["Placa"],
-						"Nombre":					elemento_[0]["Nombre"],
-						"TipoBienId":				elemento_[0]["TipoBienId"],
-						"Entrada":					v["MovimientoPadreId"],
-						"Salida":					movimiento_,
-						"SubgrupoCatalogoId":		subgrupo_,
-						"Marca":					elemento_[0]["Marca"],
-						"Serie":					elemento_[0]["Serie"],
-						"Funcionario":				v["Funcionario"],
-						"Sede":						v["Sede"],
-						"Dependencia":				v["Dependencia"],
-						"Ubicacion":				v["Ubicacion"],
+						"Id":                 elemento_[0]["Id"],
+						"Placa":              elemento_[0]["Placa"],
+						"Nombre":             elemento_[0]["Nombre"],
+						"TipoBienId":         elemento_[0]["TipoBienId"],
+						"Entrada":            v["MovimientoPadreId"],
+						"Salida":             movimiento_,
+						"SubgrupoCatalogoId": subgrupo_,
+						"Marca":              elemento_[0]["Marca"],
+						"Serie":              elemento_[0]["Serie"],
+						"Funcionario":        v["Funcionario"],
+						"Sede":               v["Sede"],
+						"Dependencia":        v["Dependencia"],
+						"Ubicacion":          v["Ubicacion"],
 					}
-
 
 					// elemento_[0]["SubgrupoCatalogoId"] = subgrupo_
 					// elemento_movimiento_[0]["ElementoActaId"] = elemento_[0]
@@ -80,7 +78,7 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, err error) {
 		} else {
 			panic(err.Error())
 			return nil, err
-		}	
+		}
 	} else {
 		panic(err.Error())
 		return nil, err
@@ -93,10 +91,10 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 	var Terceros []map[string]interface{}
 	var Ubicaciones []map[string]interface{}
 
-	url := "http://"+beego.AppConfig.String("movimientosArkaService")+"movimiento?query=FormatotipoMovimientoId.CodigoAbreviacion:SOL_BAJA,Activo:true&limit=-1"
+	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatotipoMovimientoId.CodigoAbreviacion:SOL_BAJA,Activo:true&limit=-1"
 
 	if _, err := request.GetJsonTest(url, &Solicitudes); err == nil { // (2) error servicio caido
-		fmt.Println("solicitudes: ",Solicitudes)
+		fmt.Println("solicitudes: ", Solicitudes)
 		for _, solicitud := range Solicitudes {
 
 			var data_ map[string]interface{}
@@ -154,10 +152,10 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 					} else {
 						panic(err.Error())
 						return nil, err
-					} 
+					}
 				}
 			}
-			
+
 			if Terceros == nil {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 					Revisor_ = Tercero
@@ -191,7 +189,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 					} else {
 						panic(err.Error())
 						return nil, err
-					} 
+					}
 				}
 			}
 
@@ -202,7 +200,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 						Ubicacion_ = ubicacion
 						Ubicaciones = append(Ubicaciones, ubicacion)
 					}
-					
+
 				} else {
 					panic(err.Error())
 					return nil, err
@@ -241,7 +239,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 					}
 				}
 			}
-			
+
 			if Ubicacion_ != nil {
 				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
 					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
@@ -257,21 +255,21 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 
 			fmt.Println(data3_)
 			Acta := map[string]interface{}{
-				"Ubicacion":			data3_["Nombre"],
-				"Activo":				solicitud["Activo"],
-				"FechaCreacion":		solicitud["FechaCreacion"],
-				"FechaVistoBueno":		data_["FechaVistoBueno"],
-				"FechaModificacion":	solicitud["FechaModificacion"],
-				"Id":					solicitud["Id"],
-				"Observaciones":		solicitud["Observacion"],
-				"Funcionario":			Tercero_["NombreCompleto"],
-				"Revisor":				Revisor_["NombreCompleto"],
-				"Estado":				data2_["Nombre"],
+				"Ubicacion":         data3_["Nombre"],
+				"Activo":            solicitud["Activo"],
+				"FechaCreacion":     solicitud["FechaCreacion"],
+				"FechaVistoBueno":   data_["FechaVistoBueno"],
+				"FechaModificacion": solicitud["FechaModificacion"],
+				"Id":                solicitud["Id"],
+				"Observaciones":     solicitud["Observacion"],
+				"Funcionario":       Tercero_["NombreCompleto"],
+				"Revisor":           Revisor_["NombreCompleto"],
+				"Estado":            data2_["Nombre"],
 			}
 			historicoActa = append(historicoActa, Acta)
 		}
 		return historicoActa, nil
-			
+
 	} else {
 		panic(err.Error())
 		return nil, err
@@ -295,8 +293,8 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, err error) {
 					if Revisor, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						if Elementos, err := utilsHelper.ConvertirInterfaceArrayMap(data_["Elementos"]); err == nil {
 							for _, elemento := range Elementos {
-								id_, _ := strconv.Atoi(fmt.Sprintf("%v",elemento["Id"]))
-								
+								id_, _ := strconv.Atoi(fmt.Sprintf("%v", elemento["Id"]))
+
 								if Elemento_, err := TraerDatosElemento(id_); err == nil {
 
 									Elemento_["Observaciones"] = elemento["Observaciones"]
@@ -304,22 +302,21 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, err error) {
 									Elemento_["TipoBaja"] = elemento["TipoBaja"]
 									Elementos__ = append(Elementos__, Elemento_)
 								}
-							
+
 							}
 							Solicitud = map[string]interface{}{
-								"Id":					data["Id"],
-								"Sede":					Sede,
-								"Dependencia":			Dependencia,
-								"Ubicacion":			Ubicacion,
-								"Funcionario":			Funcionario,
-								"Revisor":				Revisor,
-								"FechaCreacion":		data["FechaCreacion"],
-								"FechaModificacion":    data["FechaModificacion"],
-								"FechaVistoBueno":		data_["FechaVistoBueno"],
-								"Estado":				data["FechaCreacion"],
-								"Activo":				data["FechaCreacion"],
-								"Elementos":			Elementos__,
-								
+								"Id":                data["Id"],
+								"Sede":              Sede,
+								"Dependencia":       Dependencia,
+								"Ubicacion":         Ubicacion,
+								"Funcionario":       Funcionario,
+								"Revisor":           Revisor,
+								"FechaCreacion":     data["FechaCreacion"],
+								"FechaModificacion": data["FechaModificacion"],
+								"FechaVistoBueno":   data_["FechaVistoBueno"],
+								"Estado":            data["FechaCreacion"],
+								"Activo":            data["FechaCreacion"],
+								"Elementos":         Elementos__,
 							}
 							return Solicitud, nil
 
