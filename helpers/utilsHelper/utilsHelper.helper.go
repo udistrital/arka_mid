@@ -3,17 +3,42 @@ package utilsHelper
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/astaxie/beego/logs"
 )
 
 // ConvertirInterfaceMap
-func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, err error) {
+func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/ConvertirInterfaceMap",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	if jsonString, err := json.Marshal(Objeto); err == nil {
 		if err2 := json.Unmarshal(jsonString, &Salida); err2 != nil {
-			panic(err.Error())
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/ConvertirInterfaceMap",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, outputError
 		}
 	} else {
-		panic(err.Error())
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/ConvertirInterfaceMap",
+			"err":     err,
+			"status":  "500",
+		}
+		return nil, outputError
 	}
 	return Salida, nil
 }

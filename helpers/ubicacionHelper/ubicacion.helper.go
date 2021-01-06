@@ -60,7 +60,18 @@ func GetAsignacionSedeDependencia(Id string) (Relacion map[string]interface{}, e
 	return ubicacion[0], nil
 }
 
-func GetSedeDependenciaUbicacion(Id string) (Sede map[string]interface{}, Dependencia map[string]interface{}, Ubicacion map[string]interface{}, err error) {
+func GetSedeDependenciaUbicacion(Id string) (Sede map[string]interface{}, Dependencia map[string]interface{}, Ubicacion map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetSedeDependenciaUbicacion",
+				"err":     err,
+				"status":  "404",
+			}
+			panic(outputError)
+		}
+	}()
 
 	var Ubicacion_ []map[string]interface{}
 
@@ -71,9 +82,15 @@ func GetSedeDependenciaUbicacion(Id string) (Sede map[string]interface{}, Depend
 		if data, err := utilsHelper.ConvertirInterfaceMap(Ubicacion_[0]["DependenciaId"]); err == nil {
 			Dependencia = data
 		} else {
-			panic(err.Error())
-			return nil, nil, nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSedeDependenciaUbicacion",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, nil, nil, outputError
 		}
+
 		if data, err := utilsHelper.ConvertirInterfaceMap(Ubicacion_[0]["EspacioFisicoId"]); err == nil {
 			Ubicacion = data
 
@@ -85,17 +102,31 @@ func GetSedeDependenciaUbicacion(Id string) (Sede map[string]interface{}, Depend
 			if _, err := request.GetJsonTest(urlcrud4, &sede); err == nil {
 				Sede = sede[0]
 			} else {
-				panic(err.Error())
-				return nil, nil, nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSedeDependenciaUbicacion",
+					"err":     err,
+					"status":  "404",
+				}
+				return nil, nil, nil, outputError
 			}
-
 		} else {
-			panic(err.Error())
-			return nil, nil, nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSedeDependenciaUbicacion",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, nil, nil, outputError
 		}
 	} else {
-		panic(err.Error())
-		return nil, nil, nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSedeDependenciaUbicacion",
+			"err":     err,
+			"status":  "404",
+		}
+		return nil, nil, nil, outputError
 	}
 	return Sede, Dependencia, Ubicacion, nil
 

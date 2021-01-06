@@ -9,6 +9,7 @@ import (
 	// "reflect"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
@@ -85,7 +86,18 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, err error) {
 	}
 }
 
-func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
+func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllSolicitudes",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	var Solicitudes []map[string]interface{}
 	var Terceros []map[string]interface{}
@@ -109,14 +121,24 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 			if data, err := utilsHelper.ConvertirStringJson(solicitud["Detalle"]); err == nil {
 				data_ = data
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetAllSolicitudes",
+					"err":     err,
+					"status":  "500",
+				}
+				return nil, outputError
 			}
 			if data, err := utilsHelper.ConvertirInterfaceMap(solicitud["EstadoMovimientoId"]); err == nil {
 				data2_ = data
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetAllSolicitudes",
+					"err":     err,
+					"status":  "500",
+				}
+				return nil, outputError
 			}
 
 			if Terceros == nil {
@@ -124,8 +146,13 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetAllSolicitudes",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -135,23 +162,38 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 								Tercero_ = Tercero
 								Terceros = append(Terceros, Tercero)
 							} else {
-								panic(err.Error())
-								return nil, err
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "/GetAllSolicitudes",
+									"err":     err,
+									"status":  "502",
+								}
+								return nil, outputError
 							}
 						} else {
 							Tercero_ = Tercero
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllSolicitudes",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
 					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						Tercero_ = Tercero
 						Terceros = append(Terceros, Tercero)
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllSolicitudes",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				}
 			}
@@ -161,8 +203,13 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 					Revisor_ = Tercero
 					Terceros = append(Terceros, Tercero)
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetAllSolicitudes",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -172,23 +219,38 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 								Revisor_ = Tercero
 								Terceros = append(Terceros, Tercero)
 							} else {
-								panic(err.Error())
-								return nil, err
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "/GetAllSolicitudes",
+									"err":     err,
+									"status":  "502",
+								}
+								return nil, outputError
 							}
 						} else {
 							Revisor_ = Tercero
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllSolicitudes",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
 					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						Revisor_ = Tercero
 						Terceros = append(Terceros, Tercero)
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllSolicitudes",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				}
 			}
@@ -202,8 +264,13 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 					}
 
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetAllSolicitudes",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			} else {
 				if keys := len(Ubicaciones[0]); keys != 0 {
@@ -216,15 +283,25 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 									Ubicaciones = append(Ubicaciones, ubicacion)
 								}
 							} else {
-								panic(err.Error())
-								return nil, err
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "/GetAllSolicitudes",
+									"err":     err,
+									"status":  "502",
+								}
+								return nil, outputError
 							}
 						} else {
 							Ubicacion_ = ubicacion
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllSolicitudes",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
 					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["Ubicacion"])); err == nil {
@@ -234,8 +311,13 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 							Ubicaciones = append(Ubicaciones, ubicacion)
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllSolicitudes",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				}
 			}
@@ -243,8 +325,13 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 			if Ubicacion_ != nil {
 				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
 					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllSolicitudes",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				}
 			} else {
@@ -271,12 +358,28 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, err error) {
 		return historicoActa, nil
 
 	} else {
-		panic(err.Error())
-		return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetAllSolicitudes",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 
-func TraerDetalle(id int) (Solicitud map[string]interface{}, err error) {
+func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/TraerDetalle",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	var Elementos__ []map[string]interface{}
 
@@ -321,25 +424,58 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, err error) {
 							return Solicitud, nil
 
 						} else {
-							panic(err.Error())
-							return nil, err
+							logs.Error(err)
+							outputError = map[string]interface{}{
+								"funcion": "/TraerDetalle",
+								"err":     err,
+								"status":  "500",
+							}
+							return nil, outputError
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/TraerDetalle",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/TraerDetalle",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
+			} else {
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/TraerDetalle",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 		} else {
-			panic(err.Error())
-			return nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/TraerDetalle",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, outputError
 		}
 	} else {
-		panic(err.Error())
-		return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/TraerDetalle",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 	return Solicitud, nil
 }

@@ -92,7 +92,11 @@ paths:
             items:
               $ref: '#/definitions/models.HistoricoActa'
         "404":
-          description: not found resource
+          description: '"not found resource"'
+        "500":
+          description: '"Unknown API Error"'
+        "502":
+          description: '"External API Error"'
   /acta_recibido/get_elementos_acta/{id}:
     get:
       tags:
@@ -183,7 +187,11 @@ paths:
           schema:
             $ref: '#/definitions/models.Salida'
         "404":
-          description: not found resource
+          description: '"not found resource"'
+        "500":
+          description: '"Unknown API Error"'
+        "502":
+          description: '"External API Error"'
   /bodega_consumo/{id}:
     put:
       tags:

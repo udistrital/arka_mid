@@ -134,7 +134,13 @@
                         }
                     },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -274,7 +280,13 @@
                         }
                     },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }

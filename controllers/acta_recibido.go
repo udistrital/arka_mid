@@ -164,9 +164,25 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Success 200 {object} []models.HistoricoActa
-// @Failure 404 not found resource
+// @Failure 404 "not found resource"
+// @Failure 500 "Unknown API Error"
+// @Failure 502 "External API Error"
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 
 	var reqStates []string
 
@@ -176,16 +192,13 @@ func (c *ActaRecibidoController) GetAllActas() {
 	// fmt.Print("ESTADOS SOLICITADOS: ")
 	// fmt.Println(reqStates)
 
-	l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates)
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
-	} else {
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates); err == nil {
 		// fmt.Print("DATA FINAL: ")
 		// fmt.Println(l)
 		c.Data["json"] = l
+	} else {
+		panic(err)
 	}
+
 	c.ServeJSON()
 }

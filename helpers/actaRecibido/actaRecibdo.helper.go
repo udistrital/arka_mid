@@ -60,7 +60,18 @@ type Subgrupo struct {
 }
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]interface{}, err error) {
+func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	var Historico []map[string]interface{}
 	var Terceros []map[string]interface{}
@@ -97,22 +108,37 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
 				data_ = data
 			} else {
-				panic(err.Error())
-				// return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetAllActasRecibidoActivas",
+					"err":     err,
+					"status":  "500",
+				}
+				return nil, outputError
 			}
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
-				panic(err.Error())
-				// return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetAllActasRecibidoActivas",
+					"err":     err,
+					"status":  "500",
+				}
+				return nil, outputError
 			}
 			if Terceros == nil {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
 				} else {
-					panic(err.Error())
-					// return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetAllActasRecibidoActivas",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -122,23 +148,38 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 								Tercero_ = Tercero
 								Terceros = append(Terceros, Tercero)
 							} else {
-								panic(err.Error())
-								// return nil, err
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "/GetAllActasRecibidoActivas",
+									"err":     err,
+									"status":  "502",
+								}
+								return nil, outputError
 							}
 						} else {
 							Tercero_ = Tercero
 						}
 					} else {
-						panic(err.Error())
-						// return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
 					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 						Tercero_ = Tercero
 						Terceros = append(Terceros, Tercero)
 					} else {
-						panic(err.Error())
-						// return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				}
 			}
@@ -152,8 +193,13 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 					}
 
 				} else {
-					panic(err.Error())
-					// return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetAllActasRecibidoActivas",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			} else {
 				if keys := len(Ubicaciones[0]); keys != 0 {
@@ -166,15 +212,25 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 									Ubicaciones = append(Ubicaciones, ubicacion)
 								}
 							} else {
-								panic(err.Error())
-								// return nil, err
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "/GetAllActasRecibidoActivas",
+									"err":     err,
+									"status":  "502",
+								}
+								return nil, outputError
 							}
 						} else {
 							Ubicacion_ = ubicacion
 						}
 					} else {
-						panic(err.Error())
-						// return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
 					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
@@ -184,8 +240,13 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 							Ubicaciones = append(Ubicaciones, ubicacion)
 						}
 					} else {
-						panic(err.Error())
-						// return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				}
 			}
@@ -200,8 +261,13 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 			if Ubicacion_ != nil {
 				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
 					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
-						panic(err.Error())
-						// return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				}
 			} else {
@@ -250,8 +316,13 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 		return historicoActa, nil
 
 	} else {
-		panic(err.Error())
-		// return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetAllActasRecibidoActivas",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 
