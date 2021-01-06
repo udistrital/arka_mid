@@ -11,11 +11,9 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, e
 	if jsonString, err := json.Marshal(Objeto); err == nil {
 		if err2 := json.Unmarshal(jsonString, &Salida); err2 != nil {
 			panic(err.Error())
-			return nil, err2
 		}
 	} else {
 		panic(err.Error())
-		return nil, err
 	}
 	return Salida, nil
 }
@@ -26,11 +24,9 @@ func ConvertirInterfaceArrayMap(Objeto_ interface{}) (Salida []map[string]interf
 	if jsonString, err := json.Marshal(Objeto_); err == nil {
 		if err2 := json.Unmarshal(jsonString, &Salida); err2 != nil {
 			panic(err.Error())
-			return nil, err2
 		}
 	} else {
 		panic(err.Error())
-		return nil, err
 	}
 	return Salida, nil
 }
@@ -41,7 +37,6 @@ func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, er
 	str := fmt.Sprintf("%v", Objeto_)
 	if err := json.Unmarshal([]byte(str), &Salida); err != nil {
 		panic(err.Error())
-		return nil, err
 	}
 	return Salida, nil
 
@@ -62,7 +57,6 @@ func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) (B
 
 	} else {
 		panic(err.Error())
-		return nil, err
 	}
 
 	return Busqueda_, nil
