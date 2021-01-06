@@ -1,8 +1,8 @@
 package utilsHelper
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 )
 
 // ConvertirInterfaceMap
@@ -19,6 +19,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, e
 	}
 	return Salida, nil
 }
+
 // ConvertirInterfaceArrayMap
 func ConvertirInterfaceArrayMap(Objeto_ interface{}) (Salida []map[string]interface{}, err error) {
 	fmt.Println(Objeto_)
@@ -46,16 +47,15 @@ func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, er
 
 }
 
-
 // ArrayFind
-func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) ( Busqueda map[string]interface{}, err error) {
+func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) (Busqueda map[string]interface{}, err error) {
 
 	Busqueda_ := make(map[string]interface{}, 0)
 	if keys := len(Objeto__[0]); keys != 0 {
-		
+
 		for _, value := range Objeto__ {
 			if value[campo] == valor {
-				Busqueda_ = value;
+				Busqueda_ = value
 				return Busqueda_, nil
 			}
 		}
@@ -64,7 +64,6 @@ func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) ( 
 		panic(err.Error())
 		return nil, err
 	}
-	
+
 	return Busqueda_, nil
 }
-
