@@ -60,7 +60,7 @@ type Subgrupo struct {
 }
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -311,6 +311,20 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 				}
 			}
 			historicoActa = historicoActa[:fin]
+		}
+
+		// TODO: Manejar concurrencia en las peticiones a otras APIS
+		// Referencia: https://www.golang-book.com/books/intro/10
+		if v, err := filtrarActas(historicoActa, usrWSO2); err == nil {
+			historicoActa = v
+		} else {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 
 		return historicoActa, nil

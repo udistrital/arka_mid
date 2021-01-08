@@ -163,6 +163,7 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Title Get All Actas
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
+// @Param u query string false "WSO2 User"
 // @Success 200 {object} []models.HistoricoActa
 // @Failure 404 "not found resource"
 // @Failure 500 "Unknown API Error"
@@ -179,12 +180,13 @@ func (c *ActaRecibidoController) GetAllActas() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("400")
 			}
 		}
 	}()
 
 	var reqStates []string
+	var WSO2user string
 
 	if v := c.GetString("states"); v != "" {
 		reqStates = strings.Split(v, ",")
@@ -192,7 +194,11 @@ func (c *ActaRecibidoController) GetAllActas() {
 	// fmt.Print("ESTADOS SOLICITADOS: ")
 	// fmt.Println(reqStates)
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates); err == nil {
+	if v := c.GetString("u"); v != "" {
+		WSO2user = v
+	}
+
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
 		// fmt.Print("DATA FINAL: ")
 		// fmt.Println(l)
 		c.Data["json"] = l

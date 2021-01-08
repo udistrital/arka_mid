@@ -121,6 +121,12 @@
                         "name": "states",
                         "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
                         "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "u",
+                        "description": "WSO2 User",
+                        "type": "string"
                     }
                 ],
                 "responses": {
