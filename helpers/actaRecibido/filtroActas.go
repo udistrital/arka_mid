@@ -3,11 +3,9 @@ package actaRecibido
 import (
 	"fmt"
 
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/helpers/autenticacion"
 )
 
 func filtrarActas(actas []map[string]interface{}, usuarioWSO2 string) (filtradas []map[string]interface{}, outputError map[string]interface{}) {
@@ -23,16 +21,9 @@ func filtrarActas(actas []map[string]interface{}, usuarioWSO2 string) (filtradas
 		}
 	}()
 
-	url := "http://" + beego.AppConfig.String("autenticacionService") + "token/userRol"
-
-	var dataUsuario models.UsuarioAutenticacion
-	req := models.UsuarioDataRequest{User: usuarioWSO2}
-	fmt.Print("\nREQUEST_USUARIO: ")
-	fmt.Println(req)
-
-	if err := request.SendJson(url, "POST", &dataUsuario, &req); err == nil {
+	if data, err := autenticacion.DataUsuario(usuarioWSO2); err == nil {
 		fmt.Print("\nDATA_USUARIO: ")
-		fmt.Println(dataUsuario)
+		fmt.Println(data)
 		return actas, nil
 	} else {
 		logs.Error(err)
