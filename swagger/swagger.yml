@@ -78,6 +78,12 @@ paths:
       - acta_recibido
       description: get ActaRecibido
       operationId: ActaRecibidoController.Get All Actas
+      parameters:
+      - in: query
+        name: states
+        description: If specified, returns only acts with the specified state(s) from
+          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        type: string
       responses:
         "200":
           description: ""
@@ -86,7 +92,11 @@ paths:
             items:
               $ref: '#/definitions/models.HistoricoActa'
         "404":
-          description: not found resource
+          description: '"not found resource"'
+        "500":
+          description: '"Unknown API Error"'
+        "502":
+          description: '"External API Error"'
   /acta_recibido/get_elementos_acta/{id}:
     get:
       tags:
@@ -177,7 +187,11 @@ paths:
           schema:
             $ref: '#/definitions/models.Salida'
         "404":
-          description: not found resource
+          description: '"not found resource"'
+        "500":
+          description: '"Unknown API Error"'
+        "502":
+          description: '"External API Error"'
   /bodega_consumo/{id}:
     put:
       tags:
