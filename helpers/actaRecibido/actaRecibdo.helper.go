@@ -100,7 +100,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var data3_ map[string]interface{}
 			var Tercero_ map[string]interface{}
 			var Ubicacion_ map[string]interface{}
-			var outputError map[string]interface{}
 			var nombreAsignado string
 
 			Ubicacion_ = nil
@@ -116,6 +115,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 				return nil, outputError
 			}
+
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
@@ -127,6 +127,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 				return nil, outputError
 			}
+
 			if Terceros == nil {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
@@ -186,7 +187,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			if Ubicaciones == nil {
 				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-					fmt.Println(ubicacion)
+					// fmt.Println(ubicacion)
 					if keys := len(ubicacion); keys != 0 {
 						Ubicacion_ = ubicacion
 						Ubicaciones = append(Ubicaciones, ubicacion)
@@ -206,7 +207,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
 						if keys := len(ubicacion); keys == 0 {
 							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-								fmt.Println(ubicacion)
+								// fmt.Println(ubicacion)
 								if keys := len(ubicacion); keys != 0 {
 									Ubicacion_ = ubicacion
 									Ubicaciones = append(Ubicaciones, ubicacion)
@@ -234,7 +235,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					}
 				} else {
 					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-						fmt.Println(ubicacion)
+						// fmt.Println(ubicacion)
 						if keys := len(ubicacion); keys != 0 {
 							Ubicacion_ = ubicacion
 							Ubicaciones = append(Ubicaciones, ubicacion)
@@ -255,7 +256,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
 			if outputError == nil {
 				nombreAsignado = asignado[0].NomProveedor
-				fmt.Println(outputError)
+				// fmt.Println(outputError)
 			}
 
 			if Ubicacion_ != nil {
@@ -275,7 +276,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					"Nombre": "Ubicacion No Especificada",
 				}
 			}
-			fmt.Println(data3_)
+			// fmt.Println(data3_)
 			Acta := map[string]interface{}{
 				"UbicacionId":       data3_["Nombre"],
 				"Activo":            data_["Activo"],
@@ -288,8 +289,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				"PersonaAsignada":   nombreAsignado,
 				"Estado":            data2_["Nombre"],
 			}
-			fmt.Println("Es esto")
-			fmt.Println(Acta)
+			// fmt.Println("Es esto")
+			// fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
 		}
 

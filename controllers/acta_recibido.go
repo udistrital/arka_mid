@@ -164,7 +164,7 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Param u query string false "WSO2 User"
-// @Success 200 {object} []models.HistoricoActa
+// @Success 200 {object} []models.ActaRecibido
 // @Failure 404 "not found resource"
 // @Failure 500 "Unknown API Error"
 // @Failure 502 "External API Error"

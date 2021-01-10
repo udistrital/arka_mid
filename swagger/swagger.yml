@@ -94,7 +94,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.HistoricoActa'
+              $ref: '#/definitions/models.ActaRecibido'
         "404":
           description: '"not found resource"'
         "500":
@@ -851,30 +851,6 @@ definitions:
         type: string
       TipoEspacio:
         $ref: '#/definitions/models.TipoEspacio'
-  models.EstadoActa:
-    title: EstadoActa
-    type: object
-    properties:
-      Activo:
-        type: boolean
-      CodigoAbreviacion:
-        type: string
-      Descripcion:
-        type: string
-      FechaCreacion:
-        type: string
-        format: datetime
-      FechaModificacion:
-        type: string
-        format: datetime
-      Id:
-        type: integer
-        format: int64
-      Nombre:
-        type: string
-      NumeroOrden:
-        type: number
-        format: double
   models.EstadoElemento:
     title: EstadoElemento
     type: object
@@ -899,25 +875,6 @@ definitions:
       NumeroOrden:
         type: number
         format: double
-  models.HistoricoActa:
-    title: HistoricoActa
-    type: object
-    properties:
-      ActaRecibidoId:
-        $ref: '#/definitions/models.ActaRecibido'
-      Activo:
-        type: boolean
-      EstadoActaId:
-        $ref: '#/definitions/models.EstadoActa'
-      FechaCreacion:
-        type: string
-        format: datetime
-      FechaModificacion:
-        type: string
-        format: datetime
-      Id:
-        type: integer
-        format: int64
   models.OrdenadorGasto:
     title: OrdenadorGasto
     type: object
