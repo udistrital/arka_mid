@@ -89,7 +89,7 @@ func filtrarActasSegunRoles(actas []map[string]interface{}, usuarioWSO2 string,
 		fin := len(actas)
 		for i := 0; i < fin; {
 			actaID := actas[i]["Id"]
-			actaAsig := actas[i]["PersonaAsignada"]
+			actaAsig := actas[i]["PersonaAsignadaId"]
 			estado := actas[i]["Estado"]
 			// fmt.Printf("actaId: %#v - asignada: %v\n", actaID, actaAsig)
 

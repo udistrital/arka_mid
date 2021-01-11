@@ -287,6 +287,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, contratista int
 				"Observaciones":     data_["Observaciones"],
 				"RevisorId":         Tercero_["NombreCompleto"],
 				"PersonaAsignada":   nombreAsignado,
+				"PersonaAsignadaId": int(data_["PersonaAsignada"].(float64)),
 				"Estado":            data2_["Nombre"],
 			}
 			// fmt.Println("Es esto")
