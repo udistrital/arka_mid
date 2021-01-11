@@ -131,14 +131,14 @@
                     {
                         "in": "query",
                         "name": "provId",
-                        "description": "Proveedor Id",
+                        "description": "Proveedor Id - Use with WSO2 User",
                         "type": "integer",
                         "format": "int64"
                     },
                     {
                         "in": "query",
                         "name": "contrId",
-                        "description": "Contratista Id",
+                        "description": "Contratista Id - Use with WSO2 User",
                         "type": "integer",
                         "format": "int64"
                     }

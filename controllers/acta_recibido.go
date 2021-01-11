@@ -164,8 +164,8 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Param u query string false "WSO2 User"
-// @Param provId query int false "Proveedor Id"
-// @Param contrId query int false "Contratista Id"
+// @Param provId query int false "Proveedor Id - Use with WSO2 User"
+// @Param contrId query int false "Contratista Id - Use with WSO2 User"
 // @Success 200 {object} []models.ActaRecibido
 // @Failure 400 "Wrong IDs"
 // @Failure 404 "not found resource"
