@@ -88,6 +88,16 @@ paths:
         name: u
         description: WSO2 User
         type: string
+      - in: query
+        name: provId
+        description: Proveedor Id
+        type: integer
+        format: int64
+      - in: query
+        name: contrId
+        description: Contratista Id
+        type: integer
+        format: int64
       responses:
         "200":
           description: ""
@@ -95,6 +105,8 @@ paths:
             type: array
             items:
               $ref: '#/definitions/models.ActaRecibido'
+        "400":
+          description: '"Wrong IDs"'
         "404":
           description: '"not found resource"'
         "500":
