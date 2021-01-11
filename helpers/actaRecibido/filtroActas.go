@@ -35,3 +35,25 @@ func filtrarActasSegunRoles(actas *[]map[string]interface{}, usuarioWSO2 string)
 		return outputError
 	}
 }
+
+func filtrarActasPorEstados(actas []map[string]interface{}, states []string) []map[string]interface{} {
+	fin := len(actas)
+	for i := 0; i < fin; {
+		dejar := false
+		for _, reqState := range states {
+			if actas[i]["Estado"] == reqState {
+				dejar = true
+				break
+			}
+		}
+		if dejar {
+			i++
+		} else {
+			actas[i] = actas[fin-1]
+			fin--
+		}
+	}
+	actas = actas[:fin]
+
+	return actas
+}

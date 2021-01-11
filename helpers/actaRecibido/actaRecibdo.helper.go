@@ -295,23 +295,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, contratista int
 		}
 
 		if len(states) > 0 {
-			fin := len(historicoActa)
-			for i := 0; i < fin; {
-				dejar := false
-				for _, reqState := range states {
-					if historicoActa[i]["Estado"] == reqState {
-						dejar = true
-						break
-					}
-				}
-				if dejar {
-					i++
-				} else {
-					historicoActa[i] = historicoActa[fin-1]
-					fin--
-				}
-			}
-			historicoActa = historicoActa[:fin]
+			historicoActa = filtrarActasPorEstados(historicoActa, states)
 		}
 
 		// TODO: Manejar concurrencia en las peticiones a otras APIS
