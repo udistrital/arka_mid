@@ -300,14 +300,21 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, contratista int
 
 		// TODO: Manejar concurrencia en las peticiones a otras APIS
 		// Referencia: https://www.golang-book.com/books/intro/10
-		if err := filtrarActasSegunRoles(&historicoActa, usrWSO2); err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas",
-				"err":     err,
-				"status":  "502",
+		// TODO: Quitar los parámetros de ID de Proveedor y Contratista
+		// de la siguiente función, una vez sea uniforme el espacio de
+		// usuarios
+		if usrWSO2 != "" {
+			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2, contratista, proveedor); err == nil {
+				historicoActa = actas
+			} else {
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetAllActasRecibidoActivas",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
-			return nil, outputError
 		}
 
 		return historicoActa, nil

@@ -1,8 +1,5 @@
 package models
 
-// Los modelos en este archivo no se meten en la carpeta de
-// modelos por tener miembros "privados" (en minuscula la primer letra)
-
 // UsuarioAutenticacion Modelo retornado por
 // la MID API de Autenticacion
 //
@@ -22,4 +19,14 @@ type UsuarioAutenticacion struct {
 // de la MID API de Autenticación
 type UsuarioDataRequest struct {
 	User string `json:"user"`
+}
+
+// RolesArka subconjunto de roles que retorna WSO2
+// en uso específico de ARKA
+var RolesArka = map[string]string{
+	"Admin":       "ADMIN_ARKA",
+	"Revisor":     "REVISOR",
+	"Contratista": "CONTRATISTA",
+	"Proveedor":   "PROVEEDOR",
+	"Secretaria":  "SECRETARIA_ALMACEN",
 }
