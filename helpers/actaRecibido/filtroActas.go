@@ -8,7 +8,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/autenticacion"
 )
 
-func filtrarActas(actas []map[string]interface{}, usuarioWSO2 string) (filtradas []map[string]interface{}, outputError map[string]interface{}) {
+func filtrarActasSegunRoles(actas *[]map[string]interface{}, usuarioWSO2 string) (outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -24,7 +24,7 @@ func filtrarActas(actas []map[string]interface{}, usuarioWSO2 string) (filtradas
 	if data, err := autenticacion.DataUsuario(usuarioWSO2); err == nil {
 		fmt.Print("\nDATA_USUARIO: ")
 		fmt.Println(data)
-		return actas, nil
+		return nil
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -32,6 +32,6 @@ func filtrarActas(actas []map[string]interface{}, usuarioWSO2 string) (filtradas
 			"err":     err,
 			"status":  "502",
 		}
-		return nil, outputError
+		return outputError
 	}
 }

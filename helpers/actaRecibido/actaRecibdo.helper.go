@@ -316,9 +316,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, contratista int
 
 		// TODO: Manejar concurrencia en las peticiones a otras APIS
 		// Referencia: https://www.golang-book.com/books/intro/10
-		if v, err := filtrarActas(historicoActa, usrWSO2); err == nil {
-			historicoActa = v
-		} else {
+		if err := filtrarActasSegunRoles(&historicoActa, usrWSO2); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "/GetAllActasRecibidoActivas",
