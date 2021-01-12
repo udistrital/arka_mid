@@ -181,7 +181,8 @@
                         "name": "id",
                         "description": "id del acta",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {

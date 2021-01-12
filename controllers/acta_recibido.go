@@ -97,21 +97,39 @@ func (c *ActaRecibidoController) GetActasByTipo() {
 // GetElementosActa ...
 // @Title Get Elementos
 // @Description get Elementos by id
-// @Param	id		path 	string	true		"id del acta"
+// @Param	id		path 	int	true		"id del acta"
 // @Success 200 {object} models.Elemento
 // @Failure 404 not found resource
 // @router /get_elementos_acta/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := actaRecibidoHelper.GetElementos(id)
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+	var id int
+	if idTest, err := strconv.Atoi(idStr); err == nil {
+		id = idTest
 	} else {
+		panic(err)
+	}
+	// fmt.Printf("id: %v\n", id)
+
+	if v, err := actaRecibido.GetElementos(id); err == nil {
 		c.Data["json"] = v
+	} else {
+		panic(err)
 	}
 	c.ServeJSON()
 }
