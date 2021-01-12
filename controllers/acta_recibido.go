@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -96,21 +97,39 @@ func (c *ActaRecibidoController) GetActasByTipo() {
 // GetElementosActa ...
 // @Title Get Elementos
 // @Description get Elementos by id
-// @Param	id		path 	string	true		"id del acta"
+// @Param	id		path 	int	true		"id del acta"
 // @Success 200 {object} models.Elemento
 // @Failure 404 not found resource
 // @router /get_elementos_acta/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := actaRecibidoHelper.GetElementos(id)
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+	var id int
+	if idTest, err := strconv.Atoi(idStr); err == nil {
+		id = idTest
 	} else {
+		panic(err)
+	}
+	// fmt.Printf("id: %v\n", id)
+
+	if v, err := actaRecibido.GetElementos(id); err == nil {
 		c.Data["json"] = v
+	} else {
+		panic(err)
 	}
 	c.ServeJSON()
 }
@@ -161,21 +180,78 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // GetAllActas ...
 // @Title Get All Actas
 // @Description get ActaRecibido
-// @Success 200 {object} []models.HistoricoActa
-// @Failure 404 not found resource
+// @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
+// @Param u query string false "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
+// @Success 200 {object} []models.ActaRecibido
+// @Failure 400 "Wrong IDs"
+// @Failure 404 "not found resource"
+// @Failure 500 "Unknown API Error"
+// @Failure 502 "External API Error"
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
 
-	//fmt.Println("hola")
-	l, err := actaRecibido.GetAllActasRecibidoActivas()
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
-	} else {
-		c.Data["json"] = l
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("400")
+			}
+		}
+	}()
+
+	var reqStates []string
+	var WSO2user string
+	var idProveedor int
+	var idContratista int
+
+	if v := c.GetString("states"); v != "" {
+		reqStates = strings.Split(v, ",")
 	}
+	// fmt.Print("ESTADOS SOLICITADOS: ")
+	// fmt.Println(reqStates)
+
+	if v := c.GetString("u"); v != "" {
+		WSO2user = v
+	}
+
+	if v, err := c.GetInt("provId", 0); err == nil {
+		// fmt.Printf("ProveedorID: %d\n", v)
+		idProveedor = v
+	} else {
+		// fmt.Print("Error proveedor: ")
+		// fmt.Println(err)
+		panic(err)
+	}
+
+	if v, err := c.GetInt("contrId", 0); err == nil {
+		// fmt.Printf("ContratistaID: %d\n", v)
+		idContratista = v
+	} else {
+		// fmt.Print("Error contratista: ")
+		// fmt.Println(err)
+		panic(err)
+	}
+
+	if idProveedor < 0 || idContratista < 0 {
+		panic(map[string]interface{}{
+			"funcion": "GetAllActas",
+			"err":     "IDs MUST be positive (or 0 for no filter)",
+			"status":  "400",
+		})
+	}
+
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
+		// fmt.Print("DATA FINAL: ")
+		// fmt.Println(l)
+		c.Data["json"] = l
+	} else {
+		panic(err)
+	}
+
 	c.ServeJSON()
 }
-

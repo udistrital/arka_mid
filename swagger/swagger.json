@@ -115,18 +115,41 @@
                 ],
                 "description": "get ActaRecibido",
                 "operationId": "ActaRecibidoController.Get All Actas",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "states",
+                        "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "u",
+                        "description": "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user",
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.HistoricoActa"
+                                "$ref": "#/definitions/models.ActaRecibido"
                             }
                         }
                     },
+                    "400": {
+                        "description": "\"Wrong IDs\""
+                    },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -144,7 +167,8 @@
                         "name": "id",
                         "description": "id del acta",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
@@ -266,7 +290,13 @@
                         }
                     },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -1229,40 +1259,6 @@
                 }
             }
         },
-        "models.EstadoActa": {
-            "title": "EstadoActa",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "CodigoAbreviacion": {
-                    "type": "string"
-                },
-                "Descripcion": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                },
-                "NumeroOrden": {
-                    "type": "number",
-                    "format": "double"
-                }
-            }
-        },
         "models.EstadoElemento": {
             "title": "EstadoElemento",
             "type": "object",
@@ -1294,33 +1290,6 @@
                 "NumeroOrden": {
                     "type": "number",
                     "format": "double"
-                }
-            }
-        },
-        "models.HistoricoActa": {
-            "title": "HistoricoActa",
-            "type": "object",
-            "properties": {
-                "ActaRecibidoId": {
-                    "$ref": "#/definitions/models.ActaRecibido"
-                },
-                "Activo": {
-                    "type": "boolean"
-                },
-                "EstadoActaId": {
-                    "$ref": "#/definitions/models.EstadoActa"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
                 }
             }
         },

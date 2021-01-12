@@ -132,6 +132,7 @@ github.com/tealeg/xlsx v1.0.5 h1:+f8oFmvY8Gw1iUXzPk+kz+4GpbDZPK1FhPiQRd+ypgE=
 github.com/tealeg/xlsx v1.0.5/go.mod h1:btRS8dz54TDnvKNosuAqxrM1QgN1udgk9O34bDCnORM=
 github.com/udistrital/utils_oas v0.0.0-20191109214056-11e30cddc4f9 h1:ewGuiYxJ+tz3HEyMMPdbTYfRSXfwAPShzbG0PlZjdWE=
 github.com/udistrital/utils_oas v0.0.0-20191109214056-11e30cddc4f9/go.mod h1:cAempbkjyiJIy04wWta6iDcYwtwHNITWcNA6oKtkXPM=
+github.com/udistrital/utils_oas v0.0.0-20201230194626-bf49441f7130 h1:nvOpT2EYq1UCPdp2C+HhhKWAQmrp/GelhJJXHdDfG1M=
 github.com/ugorji/go v0.0.0-20171122102828-84cb69a8af83/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=
 github.com/wendal/errors v0.0.0-20130201093226-f66c77a7882b/go.mod h1:Q12BUT7DqIlHRmgv3RskH+UCM/4eqVMgI0EMmlSpAXc=
 github.com/yuin/gopher-lua v0.0.0-20171031051903-609c9cd26973/go.mod h1:aEV29XrmTYFr3CiRxZeGHpkvbwq+prZduBqMaascyCU=
