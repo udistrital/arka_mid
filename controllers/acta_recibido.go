@@ -181,9 +181,7 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Title Get All Actas
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
-// @Param u query string false "WSO2 User"
-// @Param provId query int false "Proveedor Id - Use with WSO2 User"
-// @Param contrId query int false "Contratista Id - Use with WSO2 User"
+// @Param u query string false "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
 // @Success 200 {object} []models.ActaRecibido
 // @Failure 400 "Wrong IDs"
 // @Failure 404 "not found resource"
@@ -247,7 +245,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		})
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, idContratista, idProveedor); err == nil {
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
 		// fmt.Print("DATA FINAL: ")
 		// fmt.Println(l)
 		c.Data["json"] = l

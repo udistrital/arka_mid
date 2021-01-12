@@ -60,7 +60,7 @@ type Subgrupo struct {
 }
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string, contratista int, proveedor int) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -305,7 +305,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, contratista int
 		// de la siguiente función, una vez sea uniforme el espacio de
 		// usuarios
 		if usrWSO2 != "" {
-			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2, contratista, proveedor); err == nil {
+			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
 				historicoActa = actas
 			} else {
 				logs.Error(err)

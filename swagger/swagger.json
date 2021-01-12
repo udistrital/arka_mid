@@ -125,22 +125,8 @@
                     {
                         "in": "query",
                         "name": "u",
-                        "description": "WSO2 User",
+                        "description": "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user",
                         "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "provId",
-                        "description": "Proveedor Id - Use with WSO2 User",
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    {
-                        "in": "query",
-                        "name": "contrId",
-                        "description": "Contratista Id - Use with WSO2 User",
-                        "type": "integer",
-                        "format": "int64"
                     }
                 ],
                 "responses": {
