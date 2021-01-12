@@ -60,7 +60,7 @@ type Subgrupo struct {
 }
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string, contratista int, proveedor int) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -100,7 +100,6 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 			var data3_ map[string]interface{}
 			var Tercero_ map[string]interface{}
 			var Ubicacion_ map[string]interface{}
-			var outputError map[string]interface{}
 			var nombreAsignado string
 
 			Ubicacion_ = nil
@@ -116,6 +115,7 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 				}
 				return nil, outputError
 			}
+
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
@@ -127,6 +127,7 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 				}
 				return nil, outputError
 			}
+
 			if Terceros == nil {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
@@ -186,7 +187,7 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 
 			if Ubicaciones == nil {
 				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-					fmt.Println(ubicacion)
+					// fmt.Println(ubicacion)
 					if keys := len(ubicacion); keys != 0 {
 						Ubicacion_ = ubicacion
 						Ubicaciones = append(Ubicaciones, ubicacion)
@@ -206,7 +207,7 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
 						if keys := len(ubicacion); keys == 0 {
 							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-								fmt.Println(ubicacion)
+								// fmt.Println(ubicacion)
 								if keys := len(ubicacion); keys != 0 {
 									Ubicacion_ = ubicacion
 									Ubicaciones = append(Ubicaciones, ubicacion)
@@ -234,7 +235,7 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 					}
 				} else {
 					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-						fmt.Println(ubicacion)
+						// fmt.Println(ubicacion)
 						if keys := len(ubicacion); keys != 0 {
 							Ubicacion_ = ubicacion
 							Ubicaciones = append(Ubicaciones, ubicacion)
@@ -255,7 +256,7 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
 			if outputError == nil {
 				nombreAsignado = asignado[0].NomProveedor
-				fmt.Println(outputError)
+				// fmt.Println(outputError)
 			}
 
 			if Ubicacion_ != nil {
@@ -275,7 +276,7 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 					"Nombre": "Ubicacion No Especificada",
 				}
 			}
-			fmt.Println(data3_)
+			// fmt.Println(data3_)
 			Acta := map[string]interface{}{
 				"UbicacionId":       data3_["Nombre"],
 				"Activo":            data_["Activo"],
@@ -286,31 +287,35 @@ func GetAllActasRecibidoActivas(states []string) (historicoActa []map[string]int
 				"Observaciones":     data_["Observaciones"],
 				"RevisorId":         Tercero_["NombreCompleto"],
 				"PersonaAsignada":   nombreAsignado,
+				"PersonaAsignadaId": int(data_["PersonaAsignada"].(float64)),
 				"Estado":            data2_["Nombre"],
 			}
-			fmt.Println("Es esto")
-			fmt.Println(Acta)
+			// fmt.Println("Es esto")
+			// fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
 		}
 
 		if len(states) > 0 {
-			fin := len(historicoActa)
-			for i := 0; i < fin; {
-				dejar := false
-				for _, reqState := range states {
-					if historicoActa[i]["Estado"] == reqState {
-						dejar = true
-						break
-					}
+			historicoActa = filtrarActasPorEstados(historicoActa, states)
+		}
+
+		// TODO: Manejar concurrencia en las peticiones a otras APIS
+		// Referencia: https://www.golang-book.com/books/intro/10
+		// TODO: Quitar los parámetros de ID de Proveedor y Contratista
+		// de la siguiente función, una vez sea uniforme el espacio de
+		// usuarios
+		if usrWSO2 != "" {
+			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2, contratista, proveedor); err == nil {
+				historicoActa = actas
+			} else {
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetAllActasRecibidoActivas",
+					"err":     err,
+					"status":  "502",
 				}
-				if dejar {
-					i++
-				} else {
-					historicoActa[i] = historicoActa[fin-1]
-					fin--
-				}
+				return nil, outputError
 			}
-			historicoActa = historicoActa[:fin]
 		}
 
 		return historicoActa, nil
@@ -711,12 +716,21 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 
 // GetElementos ...
 func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos",
+				"err":     err,
+				"status":  "502",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud   string
 		elementos []models.Elemento
-		unidad    []*models.Unidad
-		iva       []*models.ParametrosGobierno
-		proveedor []*models.Proveedor
 		auxE      models.ElementosActa
 		soporte   *models.SoporteActaProveedor
 	)
@@ -724,68 +738,108 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=SoporteActaId.ActaRecibidoId.Id:" + strconv.Itoa(actaId) +
 			",Activo:True&limit=-1"
-		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil {
+		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
 			// Solicita información unidad elemento
-			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
-			for _, elemento := range elementos {
-				if response.StatusCode == 200 { // (3) error estado de la solicitud
-					auxE.Id = elemento.Id
-					auxE.Nombre = elemento.Nombre
-					auxE.Cantidad = elemento.Cantidad
-					auxE.Marca = elemento.Marca
-					auxE.Serie = elemento.Serie
-					// UNIDAD DEMEDIDA
-					unidad, outputError = unidadHelper.GetUnidad(elemento.UnidadMedida)
+			// urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
+			// fmt.Printf("#Elementos: %v\n", len(elementos))
+			for k, elemento := range elementos {
+				fmt.Printf("#Elemento: %v\n", k)
+
+				auxE.Id = elemento.Id
+				auxE.Nombre = elemento.Nombre
+				auxE.Cantidad = elemento.Cantidad
+				auxE.Marca = elemento.Marca
+				auxE.Serie = elemento.Serie
+				// UNIDAD DEMEDIDA
+				if unidad, err2 := unidadHelper.GetUnidad(elemento.UnidadMedida); err2 == nil && len(unidad) > 0 {
 					auxE.UnidadMedida = unidad[0]
-
-					auxE.ValorUnitario = elemento.ValorUnitario
-					auxE.Subtotal = elemento.Subtotal
-					auxE.Descuento = elemento.Descuento
-					auxE.ValorTotal = elemento.ValorTotal
-					// PORCENTAJE IVA
-					iva, outputError = parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId)
-					auxE.PorcentajeIvaId = iva[0]
-
-					auxE.ValorIva = elemento.ValorIva
-					auxE.ValorFinal = elemento.ValorFinal
-					auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
-					auxE.Verificado = elemento.Verificado
-					auxE.TipoBienId = elemento.TipoBienId
-					auxE.EstadoElementoId = elemento.EstadoElementoId
-					// SOPORTE
-					proveedor, outputError = proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)
-					soporte = new(models.SoporteActaProveedor)
-					soporte.Id = elemento.SoporteActaId.Id
-					soporte.ActaRecibidoId = elemento.SoporteActaId.ActaRecibidoId
-					soporte.Consecutivo = elemento.SoporteActaId.Consecutivo
-					soporte.Activo = elemento.SoporteActaId.Activo
-					soporte.FechaCreacion = elemento.SoporteActaId.FechaCreacion
-					soporte.FechaModificacion = elemento.SoporteActaId.FechaModificacion
-					soporte.FechaSoporte = elemento.SoporteActaId.FechaSoporte
-					soporte.ProveedorId = proveedor[0]
-					auxE.SoporteActaId = soporte
-
-					auxE.Placa = elemento.Placa
-					auxE.Activo = elemento.Activo
-					auxE.FechaCreacion = elemento.FechaCreacion
-					auxE.FechaModificacion = elemento.FechaModificacion
-
-					elementosActa = append(elementosActa, auxE)
+				} else if err2 != nil {
+					return nil, err2
 				} else {
-					logs.Info("Error (3) estado de la solicitud")
-					outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
+					outputError = map[string]interface{}{
+						"funcion": "/GetElementos",
+						"err":     err2,
+						"status":  "502",
+					}
+					logs.Error(outputError)
 					return nil, outputError
 				}
+
+				auxE.ValorUnitario = elemento.ValorUnitario
+				auxE.Subtotal = elemento.Subtotal
+				auxE.Descuento = elemento.Descuento
+				auxE.ValorTotal = elemento.ValorTotal
+				// PORCENTAJE IVA
+				if iva, err2 := parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId); err2 == nil && len(iva) > 0 {
+					auxE.PorcentajeIvaId = iva[0]
+				} else if err2 != nil {
+					return nil, err2
+				} else {
+					outputError = map[string]interface{}{
+						"funcion": "/GetElementos",
+						"err":     err2,
+						"status":  "502",
+					}
+					logs.Error(outputError)
+					return nil, outputError
+				}
+
+				auxE.ValorIva = elemento.ValorIva
+				auxE.ValorFinal = elemento.ValorFinal
+				auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
+				auxE.Verificado = elemento.Verificado
+				auxE.TipoBienId = elemento.TipoBienId
+				auxE.EstadoElementoId = elemento.EstadoElementoId
+				// SOPORTE
+				soporte = new(models.SoporteActaProveedor)
+				if elemento.SoporteActaId.ProveedorId > 0 {
+					if proveedor, err2 := proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId); err2 == nil && len(proveedor) > 0 {
+						fmt.Printf("proveedor: %#v\n", proveedor[0])
+						soporte.ProveedorId = proveedor[0]
+					} else if err2 != nil {
+						return nil, err2
+					} else {
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos",
+							"err":     err2,
+							"status":  "502",
+						}
+						logs.Error(outputError)
+						return nil, outputError
+					}
+				}
+				soporte.Id = elemento.SoporteActaId.Id
+				soporte.ActaRecibidoId = elemento.SoporteActaId.ActaRecibidoId
+				soporte.Consecutivo = elemento.SoporteActaId.Consecutivo
+				soporte.Activo = elemento.SoporteActaId.Activo
+				soporte.FechaCreacion = elemento.SoporteActaId.FechaCreacion
+				soporte.FechaModificacion = elemento.SoporteActaId.FechaModificacion
+				soporte.FechaSoporte = elemento.SoporteActaId.FechaSoporte
+				auxE.SoporteActaId = soporte
+
+				auxE.Placa = elemento.Placa
+				auxE.Activo = elemento.Activo
+				auxE.FechaCreacion = elemento.FechaCreacion
+				auxE.FechaModificacion = elemento.FechaModificacion
+
+				elementosActa = append(elementosActa, auxE)
+
 			}
+
 			return elementosActa, nil
 		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetIva", "Error": err}
+			// logs.Info("Error (2) servicio caido")
+			logs.Error(err)
+			outputError = map[string]interface{}{"funcion": "/GetElementos", "err": err, "status": "502"}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetIva", "Error": "null parameter"}
+		// logs.Info("Error (1) Parametro")
+		outputError = map[string]interface{}{
+			"funcion": "/GetElementos",
+			"err":     "Error (1) Parametro",
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 }

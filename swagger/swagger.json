@@ -121,6 +121,26 @@
                         "name": "states",
                         "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
                         "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "u",
+                        "description": "WSO2 User",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "provId",
+                        "description": "Proveedor Id - Use with WSO2 User",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "contrId",
+                        "description": "Contratista Id - Use with WSO2 User",
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
@@ -129,9 +149,12 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.HistoricoActa"
+                                "$ref": "#/definitions/models.ActaRecibido"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "\"Wrong IDs\""
                     },
                     "404": {
                         "description": "\"not found resource\""
@@ -158,7 +181,8 @@
                         "name": "id",
                         "description": "id del acta",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
@@ -1249,40 +1273,6 @@
                 }
             }
         },
-        "models.EstadoActa": {
-            "title": "EstadoActa",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "CodigoAbreviacion": {
-                    "type": "string"
-                },
-                "Descripcion": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                },
-                "NumeroOrden": {
-                    "type": "number",
-                    "format": "double"
-                }
-            }
-        },
         "models.EstadoElemento": {
             "title": "EstadoElemento",
             "type": "object",
@@ -1314,33 +1304,6 @@
                 "NumeroOrden": {
                     "type": "number",
                     "format": "double"
-                }
-            }
-        },
-        "models.HistoricoActa": {
-            "title": "HistoricoActa",
-            "type": "object",
-            "properties": {
-                "ActaRecibidoId": {
-                    "$ref": "#/definitions/models.ActaRecibido"
-                },
-                "Activo": {
-                    "type": "boolean"
-                },
-                "EstadoActaId": {
-                    "$ref": "#/definitions/models.EstadoActa"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
                 }
             }
         },
