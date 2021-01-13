@@ -709,7 +709,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Movimiento"
+                            }
                         }
                     },
                     "404": {
@@ -730,15 +733,18 @@
                         "description": "body for Salida content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.SalidaGeneral"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TrSalida2"
+                            }
                         }
                     },
                     "403": {
@@ -760,14 +766,15 @@
                         "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.TrSalida"
                         }
                     },
                     "404": {
@@ -1233,6 +1240,54 @@
                 }
             }
         },
+        "models.ElementosMovimiento": {
+            "title": "ElementosMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "ElementoActaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "SaldoCantidad": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "SaldoValor": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Unidad": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.Entrada": {
             "title": "Entrada",
             "type": "object"
@@ -1293,6 +1348,146 @@
                 }
             }
         },
+        "models.EstadoMovimiento": {
+            "title": "EstadoMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.FormatoTipoMovimiento": {
+            "title": "FormatoTipoMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Formato": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.Movimiento": {
+            "title": "Movimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Detalle": {
+                    "type": "string"
+                },
+                "EstadoMovimientoId": {
+                    "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FormatoTipoMovimientoId": {
+                    "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdTipoMovimiento": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoPadreId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.MovimientoProcesoExterno": {
+            "title": "MovimientoProcesoExterno",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoMovimientoId": {
+                    "$ref": "#/definitions/models.TipoMovimiento"
+                }
+            }
+        },
         "models.OrdenadorGasto": {
             "title": "OrdenadorGasto",
             "type": "object",
@@ -1315,6 +1510,18 @@
         "models.Salida": {
             "title": "Salida",
             "type": "object"
+        },
+        "models.SalidaGeneral": {
+            "title": "SalidaGeneral",
+            "type": "object",
+            "properties": {
+                "Salidas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TrSalida"
+                    }
+                }
+            }
         },
         "models.SoporteActa": {
             "title": "SoporteActa",
@@ -1462,6 +1669,72 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TipoMovimiento": {
+            "title": "TipoMovimiento",
+            "type": "object",
+            "properties": {
+                "Acronimo": {
+                    "type": "string"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Parametros": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TrSalida": {
+            "title": "TrSalida",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementosMovimiento"
+                    }
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
+                }
+            }
+        },
+        "models.TrSalida2": {
+            "title": "TrSalida2",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementosMovimiento"
+                    }
+                },
+                "MovimientosKronos": {
+                    "$ref": "#/definitions/models.MovimientoProcesoExterno"
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
                 }
             }
         },

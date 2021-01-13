@@ -18,7 +18,14 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-func TraerDatosElemento(id int) (Elemento map[string]interface{}, err error) {
+func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/TraerDatosElemento", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
 
 	var elemento_movimiento_ []map[string]interface{}
 	// var movimiento_ map[string]interface{}
@@ -69,20 +76,40 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, err error) {
 					return Elemento, nil
 
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/TraerDatosElemento - request.GetJsonTest(urlcrud_2, &subgrupo_)",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/TraerDatosElemento - request.GetJsonTest(urlcrud_, &elemento_)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 		} else {
-			panic(err.Error())
-			return nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/TraerDatosElemento - salidaHelper.TraerDetalle(elemento_movimiento_[0][\"MovimientoId\"])",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 	} else {
-		panic(err.Error())
-		return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/TraerDatosElemento - request.GetJsonTest(url, &elemento_movimiento_)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 
@@ -477,5 +504,4 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 		}
 		return nil, outputError
 	}
-	return Solicitud, nil
 }
