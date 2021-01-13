@@ -2,13 +2,14 @@ package salidaHelper
 
 import (
 	"encoding/json"
-	"strconv"
 	"fmt"
+	"strconv"
+
 	// "reflect"
 	"strings"
 
-	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -22,38 +23,38 @@ func AddSalida(m *models.SalidaGeneral) map[string]interface{} {
 		resM      map[string]interface{}
 		resultado map[string]interface{}
 	)
-	fmt.Println("Salidas: ",m)
+	fmt.Println("Salidas: ", m)
 	for _, data := range m.Salidas {
-		fmt.Println("Salida",data)
+		fmt.Println("Salida", data)
 		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/"
 
 		// Inserta salida en Movimientos ARKA
 		if err := request.SendJson(urlcrud, "POST", &res, &data); err == nil {
 			// Inserta salida en Movimientos KRONOS
 			urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
-	
+
 			var salidaId int
-			fmt.Println("Respuesta Salida: ",res)
+			fmt.Println("Respuesta Salida: ", res)
 			dataSalida := res["Salida"].(map[string]interface{})
 			salidaId = int(dataSalida["Id"].(float64))
-	
+
 			procesoExterno := int64(salidaId)
 			logs.Debug(procesoExterno)
 
 			var tipo models.TipoMovimiento
-			
+
 			if int(dataSalida["Id"].(float64)) == 9 {
 				tipo.Id = 16
 			} else {
 				tipo.Id = 22
 			}
-			
+
 			movimientosKronos := models.MovimientoProcesoExterno{
 				TipoMovimientoId: &tipo,
 				ProcesoExterno:   procesoExterno,
 				Activo:           true,
 			}
-	
+
 			if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
 				body := res
 				body["MovimientosKronos"] = resM["Body"]
@@ -72,7 +73,6 @@ func AddSalida(m *models.SalidaGeneral) map[string]interface{} {
 
 func GetSalida(id int) (Salida map[string]interface{}, err error) {
 
-	
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/" + strconv.Itoa(id)
 	var salida_ map[string]interface{}
 	if _, err := request.GetJsonTest(urlcrud, &salida_); err == nil {
@@ -95,7 +95,7 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 							data_[i]["Marca"] = elemento_[0]["Marca"]
 							data_[i]["Serie"] = elemento_[0]["Serie"]
 							data_[i]["Placa"] = elemento_[0]["Placa"]
-							
+
 						} else {
 							panic(err.Error())
 							return nil, err
@@ -106,15 +106,13 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 					}
 
 					if _, err := request.GetJsonTest(urlcrud, &salida_); err == nil {
-					
+
 					} else {
 						panic(err.Error())
 						return nil, err
 					}
-					
 
-				} 
-
+				}
 
 			} else {
 				panic(err.Error())
@@ -128,8 +126,8 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 		if salida__, err := TraerDetalle(salida_["Salida"]); err == nil {
 
 			Salida_final := map[string]interface{}{
-				"Elementos":	data_,
-				"Salida":		salida__,
+				"Elementos": data_,
+				"Salida":    salida__,
 			}
 			return Salida_final, nil
 
@@ -137,7 +135,7 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 			panic(err.Error())
 			return nil, err
 		}
-		
+
 	} else {
 		panic(err.Error())
 		return nil, err
@@ -146,28 +144,24 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 
 func GetSalidas() (Salidas []map[string]interface{}, err error) {
 
-
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,FormatoTipoMovimientoId.Descripcion__contains:guardar,Activo:true"
-
-	
 
 	var salidas_ []map[string]interface{}
 	if _, err := request.GetJsonTest(urlcrud, &salidas_); err == nil {
-		
+
 		for _, salida := range salidas_ {
 			fmt.Println("Salidas: ", salida)
 			if salida__, err := TraerDetalle(salida); err == nil {
 
 				Salidas = append(Salidas, salida__)
-				
-	
+
 			} else {
 				panic(err.Error())
 				return nil, err
 			}
 		}
 		return Salidas, nil
-	
+
 	} else {
 		panic(err.Error())
 		return nil, err
@@ -179,7 +173,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 	var data map[string]interface{}
 	if jsonString, err := json.Marshal(salida); err == nil {
 		if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
-			fmt.Println("Salida: ",data)
+			fmt.Println("Salida: ", data)
 			str := fmt.Sprintf("%v", data["Detalle"])
 
 			var data2 map[string]interface{}
@@ -191,19 +185,18 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 				var tercero []map[string]interface{}
 				var ubicacion []map[string]interface{}
 				var sede []map[string]interface{}
-				
 
 				if _, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil {
-					
+
 					var ubicacion2 map[string]interface{}
 					if jsonString3, err := json.Marshal(ubicacion[0]["EspacioFisicoId"]); err == nil {
 						if err2 := json.Unmarshal(jsonString3, &ubicacion2); err2 == nil {
 							str2 := fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"])
-							
+
 							z := strings.Split(str2, "")
 
 							urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
-							
+
 							if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
 								panic(err.Error())
 								return nil, err
@@ -217,7 +210,6 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 						panic(err.Error())
 						return nil, err
 					}
-					
 
 				} else {
 					panic(err.Error())
@@ -226,45 +218,43 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 
 				if data2["funcionario"] != nil {
 
-					urlcrud2 := "http://" + beego.AppConfig.String("tercerosService") + "tercero/?query=Id:" + fmt.Sprintf("%v", data2["funcionario"]) + "&fields=Id,NombreCompleto" 
+					urlcrud2 := "http://" + beego.AppConfig.String("tercerosService") + "tercero/?query=Id:" + fmt.Sprintf("%v", data2["funcionario"]) + "&fields=Id,NombreCompleto"
 					if _, err := request.GetJsonTest(urlcrud2, &tercero); err != nil {
 						panic(err.Error())
 						return nil, err
 					}
 
 					Salida2 := map[string]interface{}{
-						"Id":							data["Id"],
-						"Observacion":					data["Observacion"],
-						"Funcionario":					tercero[0],
-						"Sede":							sede[0],
-						"Dependencia":					ubicacion[0]["DependenciaId"],
-						"Ubicacion":					ubicacion[0]["EspacioFisicoId"],
-						"FechaCreacion":				data["FechaCreacion"],
-						"FechaModificacion":			data["FechaModificacion"],
-						"Activo":						data["Activo"],
-						"MovimientoPadreId":			data["MovimientoPadreId"],
-						"FormatoTipoMovimientoId":		data["FormatoTipoMovimientoId"],
-						"EstadoMovimientoId":			data["EstadoMovimientoId"],
-
+						"Id":                      data["Id"],
+						"Observacion":             data["Observacion"],
+						"Funcionario":             tercero[0],
+						"Sede":                    sede[0],
+						"Dependencia":             ubicacion[0]["DependenciaId"],
+						"Ubicacion":               ubicacion[0]["EspacioFisicoId"],
+						"FechaCreacion":           data["FechaCreacion"],
+						"FechaModificacion":       data["FechaModificacion"],
+						"Activo":                  data["Activo"],
+						"MovimientoPadreId":       data["MovimientoPadreId"],
+						"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
+						"EstadoMovimientoId":      data["EstadoMovimientoId"],
 					}
-					
+
 					return Salida2, nil
-					
+
 				} else {
 
 					Salida2 := map[string]interface{}{
-						"Id":							data["Id"],
-						"Observacion":					data["Observacion"],
-						"Sede":							sede[0],
-						"Dependencia":					ubicacion[0]["DependenciaId"],
-						"Ubicacion":					ubicacion[0]["EspacioFisicoId"],
-						"FechaCreacion":				data["FechaCreacion"],
-						"FechaModificacion":			data["FechaModificacion"],
-						"Activo":						data["Activo"],
-						"MovimientoPadreId":			data["MovimientoPadreId"],
-						"FormatoTipoMovimientoId":		data["FormatoTipoMovimientoId"],
-						"EstadoMovimientoId":			data["EstadoMovimientoId"],
-
+						"Id":                      data["Id"],
+						"Observacion":             data["Observacion"],
+						"Sede":                    sede[0],
+						"Dependencia":             ubicacion[0]["DependenciaId"],
+						"Ubicacion":               ubicacion[0]["EspacioFisicoId"],
+						"FechaCreacion":           data["FechaCreacion"],
+						"FechaModificacion":       data["FechaModificacion"],
+						"Activo":                  data["Activo"],
+						"MovimientoPadreId":       data["MovimientoPadreId"],
+						"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
+						"EstadoMovimientoId":      data["EstadoMovimientoId"],
 					}
 					return Salida2, nil
 				}
@@ -273,7 +263,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 				panic(err.Error())
 				return nil, err
 			}
-			
+
 		} else {
 			panic(err.Error())
 			return nil, err
