@@ -13,62 +13,98 @@ import (
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
+	// "github.com/udistrital/utils_oas/formatdata"
 )
 
 // AddEntrada Transacción para registrar la información de una salida
-func AddSalida(m *models.SalidaGeneral) map[string]interface{} {
+func AddSalida(m *models.SalidaGeneral) (resultado []map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/AddSalida", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
+
 	var (
-		urlcrud   string
-		res       map[string]interface{}
-		resM      map[string]interface{}
-		resultado map[string]interface{}
+		res map[string][](map[string]interface{}) // models.SalidaGeneral
+		// resM map[string]interface{}
 	)
-	fmt.Println("Salidas: ", m)
-	for _, data := range m.Salidas {
-		fmt.Println("Salida", data)
-		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/"
 
-		// Inserta salida en Movimientos ARKA
-		if err := request.SendJson(urlcrud, "POST", &res, &data); err == nil {
-			// Inserta salida en Movimientos KRONOS
-			urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
+	movArka := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida"
+	// movKronos := "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
 
-			var salidaId int
-			fmt.Println("Respuesta Salida: ", res)
-			dataSalida := res["Salida"].(map[string]interface{})
-			salidaId = int(dataSalida["Id"].(float64))
+	// Inserta salida en Movimientos ARKA
+	if err := request.SendJson(movArka, "POST", &res, &m); err == nil {
 
-			procesoExterno := int64(salidaId)
-			logs.Debug(procesoExterno)
+		fmt.Printf("len(res): %v - len(res[\"Salidas\"]) %v\n", len(res), len(res["Salidas"]))
+		// formatdata.JsonPrint(res["Salidas"])
 
-			var tipo models.TipoMovimiento
+		for _, salidaTr := range res["Salidas"] {
 
-			if int(dataSalida["Id"].(float64)) == 9 {
-				tipo.Id = 16
+			fmt.Printf("salidaTr[\"Elementos\"] T: %T -- salidaTr[\"Salida\"] T: %T\n", salidaTr["Elementos"], salidaTr["Salida"])
+			// formatdata.JsonPrint(salidaTr["Elementos"])
+			// formatdata.JsonPrint(salidaTr)
+
+			if dataSalida, ok := salidaTr["Salida"].(map[string]interface{}); ok {
+				if salidaID, ok := dataSalida["Id"].(float64); ok {
+					procesoExterno := int64(salidaID)
+					logs.Debug(procesoExterno)
+
+					var tipo models.TipoMovimiento
+
+					if procesoExterno == 9 {
+						tipo.Id = 16
+					} else {
+						tipo.Id = 22
+					}
+					movimientosKronos := models.MovimientoProcesoExterno{
+						TipoMovimientoId: &tipo,
+						ProcesoExterno:   procesoExterno,
+						Activo:           true,
+					}
+					fmt.Printf("movimientosKronos (%T): %v\n", movimientosKronos, movimientosKronos)
+
+					// formatdata.JsonPrint(movimientosKronos)
+
+					// Inserta salida en Movimientos KRONOS
+					/*
+						if err2 := request.SendJson(movKronos, "POST", &resM, &movimientosKronos); err2 == nil {
+							body := res
+							body["MovimientosKronos"] = resM["Body"]
+							resultado = append(resultado, body)
+						} else {
+							logs.Error(err2)
+							outputError = map[string]interface{}{
+								"funcion": "/AddSalida",
+								"err":     err2,
+								"status":  "502",
+							}
+							return nil, outputError
+						}
+						// */
+
+				} else {
+					logs.Error("carajo5")
+				}
+
 			} else {
-				tipo.Id = 22
+				logs.Error("carajo4")
 			}
 
-			movimientosKronos := models.MovimientoProcesoExterno{
-				TipoMovimientoId: &tipo,
-				ProcesoExterno:   procesoExterno,
-				Activo:           true,
-			}
-
-			if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
-				body := res
-				body["MovimientosKronos"] = resM["Body"]
-				resultado = body
-			} else {
-				panic(err.Error())
-			}
-		} else {
-			panic(err.Error())
 		}
 
+	} else {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/AddSalida",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 
-	return resultado
+	return resultado, nil
 }
 
 func GetSalida(id int) (Salida map[string]interface{}, err error) {

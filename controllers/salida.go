@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strconv"
 
+	// "github.com/udistrital/utils_oas/formatdata"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
@@ -26,27 +28,49 @@ func (c *SalidaController) URLMapping() {
 // Post ...
 // @Title Create
 // @Description create Salida
-// @Param	body		body 	models.Salida	true		"body for Salida content"
+// @Param	body		body 	models.SalidaGeneral	true		"body for Salida content"
 // @Success 201 {object} models.Salida
 // @Failure 403 body is empty
 // @router / [post]
 func (c *SalidaController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	// fmt.Printf("body: %v\n", c.Ctx.Input.RequestBody)
 	var v models.SalidaGeneral
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if respuesta := salidaHelper.AddSalida(&v); respuesta != nil {
+		// fmt.Printf("valores: %#v\n", v)
+		// formatdata.JsonPrint(v)
+		if respuesta, err := salidaHelper.AddSalida(&v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
+		} else if err != nil {
+			panic(err)
 		} else {
-			logs.Error(respuesta)
-			//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-			c.Data["system"] = err
-			c.Abort("400")
+			panic(map[string]interface{}{
+				"funcion": "Post",
+				"err":     "No hubo respuesta",
+				"status":  "404",
+			})
 		}
 	} else {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("400")
+		panic(map[string]interface{}{
+			"funcion": "Post",
+			"err":     "JSON mal estructurado",
+			"status":  "400",
+		})
 	}
 	c.ServeJSON()
 }

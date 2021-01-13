@@ -488,7 +488,7 @@ paths:
         description: body for Salida content
         required: true
         schema:
-          $ref: '#/definitions/models.Salida'
+          $ref: '#/definitions/models.SalidaGeneral'
       responses:
         "201":
           description: ""
@@ -837,6 +837,41 @@ definitions:
         format: double
       Verificado:
         type: boolean
+  models.ElementosMovimiento:
+    title: ElementosMovimiento
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      ElementoActaId:
+        type: integer
+        format: int64
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      MovimientoId:
+        $ref: '#/definitions/models.Movimiento'
+      SaldoCantidad:
+        type: number
+        format: double
+      SaldoValor:
+        type: number
+        format: double
+      Unidad:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
   models.Entrada:
     title: Entrada
     type: object
@@ -879,6 +914,82 @@ definitions:
       NumeroOrden:
         type: number
         format: double
+  models.EstadoMovimiento:
+    title: EstadoMovimiento
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      Descripcion:
+        type: string
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+  models.FormatoTipoMovimiento:
+    title: FormatoTipoMovimiento
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Formato:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      NumeroOrden:
+        type: number
+        format: double
+  models.Movimiento:
+    title: Movimiento
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      Detalle:
+        type: string
+      EstadoMovimientoId:
+        $ref: '#/definitions/models.EstadoMovimiento'
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      FormatoTipoMovimientoId:
+        $ref: '#/definitions/models.FormatoTipoMovimiento'
+      Id:
+        type: integer
+        format: int64
+      IdTipoMovimiento:
+        type: integer
+        format: int64
+      MovimientoPadreId:
+        $ref: '#/definitions/models.Movimiento'
+      Observacion:
+        type: string
+      SoporteMovimientoId:
+        type: integer
+        format: int64
   models.OrdenadorGasto:
     title: OrdenadorGasto
     type: object
@@ -895,6 +1006,14 @@ definitions:
   models.Salida:
     title: Salida
     type: object
+  models.SalidaGeneral:
+    title: SalidaGeneral
+    type: object
+    properties:
+      Salidas:
+        type: array
+        items:
+          $ref: '#/definitions/models.TrSalida'
   models.SoporteActa:
     title: SoporteActa
     type: object
@@ -1003,6 +1122,16 @@ definitions:
   models.Tr_cuentas_subgrupo:
     title: Tr_cuentas_subgrupo
     type: object
+  models.TrSalida:
+    title: TrSalida
+    type: object
+    properties:
+      Elementos:
+        type: array
+        items:
+          $ref: '#/definitions/models.ElementosMovimiento'
+      Salida:
+        $ref: '#/definitions/models.Movimiento'
 tags:
 - name: acta_recibido
   description: |
