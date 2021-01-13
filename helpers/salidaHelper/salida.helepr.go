@@ -12,8 +12,8 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/request"
 	// "github.com/udistrital/utils_oas/formatdata"
+	"github.com/udistrital/utils_oas/request"
 )
 
 // AddEntrada Transacción para registrar la información de una salida
@@ -27,29 +27,29 @@ func AddSalida(m *models.SalidaGeneral) (resultado []map[string]interface{}, out
 	}()
 
 	var (
-		res map[string][](map[string]interface{}) // models.SalidaGeneral
-		// resM map[string]interface{}
+		res  map[string][](map[string]interface{}) // models.SalidaGeneral
+		resM map[string]interface{}
 	)
 
 	movArka := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida"
-	// movKronos := "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
+	movKronos := "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
 
 	// Inserta salida en Movimientos ARKA
 	if err := request.SendJson(movArka, "POST", &res, &m); err == nil {
 
-		fmt.Printf("len(res): %v - len(res[\"Salidas\"]) %v\n", len(res), len(res["Salidas"]))
+		// fmt.Printf("len(res): %v - len(res[\"Salidas\"]) %v\n", len(res), len(res["Salidas"]))
 		// formatdata.JsonPrint(res["Salidas"])
 
 		for _, salidaTr := range res["Salidas"] {
 
-			fmt.Printf("salidaTr[\"Elementos\"] T: %T -- salidaTr[\"Salida\"] T: %T\n", salidaTr["Elementos"], salidaTr["Salida"])
+			// fmt.Printf("salidaTr[\"Elementos\"] T: %T -- salidaTr[\"Salida\"] T: %T\n", salidaTr["Elementos"], salidaTr["Salida"])
 			// formatdata.JsonPrint(salidaTr["Elementos"])
 			// formatdata.JsonPrint(salidaTr)
 
 			if dataSalida, ok := salidaTr["Salida"].(map[string]interface{}); ok {
 				if salidaID, ok := dataSalida["Id"].(float64); ok {
 					procesoExterno := int64(salidaID)
-					logs.Debug(procesoExterno)
+					// logs.Debug(procesoExterno)
 
 					var tipo models.TipoMovimiento
 
@@ -63,26 +63,25 @@ func AddSalida(m *models.SalidaGeneral) (resultado []map[string]interface{}, out
 						ProcesoExterno:   procesoExterno,
 						Activo:           true,
 					}
-					fmt.Printf("movimientosKronos (%T): %v\n", movimientosKronos, movimientosKronos)
+					// fmt.Printf("movimientosKronos (%T): %v\n", movimientosKronos, movimientosKronos)
 
 					// formatdata.JsonPrint(movimientosKronos)
 
 					// Inserta salida en Movimientos KRONOS
-					/*
-						if err2 := request.SendJson(movKronos, "POST", &resM, &movimientosKronos); err2 == nil {
-							body := res
-							body["MovimientosKronos"] = resM["Body"]
-							resultado = append(resultado, body)
-						} else {
-							logs.Error(err2)
-							outputError = map[string]interface{}{
-								"funcion": "/AddSalida",
-								"err":     err2,
-								"status":  "502",
-							}
-							return nil, outputError
+					//*
+					if err2 := request.SendJson(movKronos, "POST", &resM, &movimientosKronos); err2 == nil {
+						salidaTr["MovimientosKronos"] = resM["Body"]
+						resultado = append(resultado, salidaTr)
+					} else {
+						logs.Error(err2)
+						outputError = map[string]interface{}{
+							"funcion": "/AddSalida",
+							"err":     err2,
+							"status":  "502",
 						}
-						// */
+						return nil, outputError
+					}
+					// */
 
 				} else {
 					logs.Error("carajo5")
@@ -180,13 +179,14 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 
 func GetSalidas() (Salidas []map[string]interface{}, err error) {
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,FormatoTipoMovimientoId.Descripcion__contains:guardar,Activo:true"
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,FormatoTipoMovimientoId.Descripcion__contains:guardar,Activo:true&limit=-1"
 
 	var salidas_ []map[string]interface{}
 	if _, err := request.GetJsonTest(urlcrud, &salidas_); err == nil {
+		logs.Info(fmt.Sprintf("#Salidas: %v", len(salidas_)))
 
 		for _, salida := range salidas_ {
-			fmt.Println("Salidas: ", salida)
+			// fmt.Println("Salidas: ", salida)
 			if salida__, err := TraerDetalle(salida); err == nil {
 
 				Salidas = append(Salidas, salida__)
@@ -209,13 +209,13 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 	var data map[string]interface{}
 	if jsonString, err := json.Marshal(salida); err == nil {
 		if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
-			fmt.Println("Salida: ", data)
+			// fmt.Println("Salida: ", data)
 			str := fmt.Sprintf("%v", data["Detalle"])
 
 			var data2 map[string]interface{}
 
 			if err := json.Unmarshal([]byte(str), &data2); err == nil {
-				fmt.Println("Detalle Salida: ", data2)
+				// fmt.Println("Detalle Salida: ", data2)
 				urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + fmt.Sprintf("%v", data2["ubicacion"])
 
 				var tercero []map[string]interface{}
