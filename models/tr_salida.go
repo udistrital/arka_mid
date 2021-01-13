@@ -7,3 +7,8 @@ type TrSalida struct {
 type SalidaGeneral struct {
 	Salidas []*TrSalida
 }
+
+type TrSalida2 struct {
+	TrSalida
+	MovimientosKronos *MovimientoProcesoExterno
+}

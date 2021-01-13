@@ -106,7 +106,14 @@ func AddSalida(m *models.SalidaGeneral) (resultado []map[string]interface{}, out
 	return resultado, nil
 }
 
-func GetSalida(id int) (Salida map[string]interface{}, err error) {
+func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetSalidas", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
 
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/" + strconv.Itoa(id)
 	var salida_ map[string]interface{}
@@ -114,6 +121,7 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 
 		var data_ []map[string]interface{}
 		if jsonString, err := json.Marshal(salida_["Elementos"]); err == nil {
+
 			if err2 := json.Unmarshal(jsonString, &data_); err2 == nil {
 
 				for i, elemento := range data_ {
@@ -132,30 +140,53 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 							data_[i]["Placa"] = elemento_[0]["Placa"]
 
 						} else {
-							panic(err.Error())
-							return nil, err
+							logs.Error(err)
+							outputError = map[string]interface{}{
+								"funcion": "/GetSalida - request.GetJsonTest(urlcrud_2, &subgrupo_)",
+								"err":     err,
+								"status":  "502",
+							}
+							return nil, outputError
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetSalida - request.GetJsonTest(urlcrud_, &elemento_)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 
-					if _, err := request.GetJsonTest(urlcrud, &salida_); err == nil {
-
-					} else {
-						panic(err.Error())
-						return nil, err
+					if _, err := request.GetJsonTest(urlcrud, &salida_); err != nil {
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetSalida - request.GetJsonTest(urlcrud, &salida_)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 
 				}
 
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err2)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSalida - json.Unmarshal(jsonString, &data_)",
+					"err":     err2,
+					"status":  "500",
+				}
+				return nil, outputError
 			}
 		} else {
-			panic(err.Error())
-			return nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSalida - json.Marshal(salida_[\"Elementos\"])",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, outputError
 		}
 
 		if salida__, err := TraerDetalle(salida_["Salida"]); err == nil {
@@ -167,17 +198,34 @@ func GetSalida(id int) (Salida map[string]interface{}, err error) {
 			return Salida_final, nil
 
 		} else {
-			panic(err.Error())
-			return nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSalida - TraerDetalle(salida_[\"Salida\"])",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, outputError
 		}
 
 	} else {
-		panic(err.Error())
-		return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSalida - request.GetJsonTest(urlcrud, &salida_)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 
-func GetSalidas() (Salidas []map[string]interface{}, err error) {
+func GetSalidas() (Salidas []map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetSalidas", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
 
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,FormatoTipoMovimientoId.Descripcion__contains:guardar,Activo:true&limit=-1"
 
@@ -192,28 +240,45 @@ func GetSalidas() (Salidas []map[string]interface{}, err error) {
 				Salidas = append(Salidas, salida__)
 
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSalidas",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 		}
 		return Salidas, nil
 
 	} else {
-		panic(err.Error())
-		return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSalidas",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 
-func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error) {
+func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
-	var data map[string]interface{}
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/TraerDetalle", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
+
 	if jsonString, err := json.Marshal(salida); err == nil {
+
+		var data map[string]interface{}
 		if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
 			// fmt.Println("Salida: ", data)
 			str := fmt.Sprintf("%v", data["Detalle"])
 
 			var data2 map[string]interface{}
-
 			if err := json.Unmarshal([]byte(str), &data2); err == nil {
 				// fmt.Println("Detalle Salida: ", data2)
 				urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + fmt.Sprintf("%v", data2["ubicacion"])
@@ -234,78 +299,103 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, err error
 							urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
 
 							if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
-								panic(err.Error())
-								return nil, err
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "/TraerDetalle - request.GetJsonTest(urlcrud4, &sede)",
+									"err":     err,
+									"status":  "502",
+								}
+								return nil, outputError
 							}
 
 						} else {
-							panic(err.Error())
-							return nil, err
+							logs.Error(err2)
+							outputError = map[string]interface{}{
+								"funcion": "/TraerDetalle - json.Unmarshal(jsonString3, &ubicacion2)",
+								"err":     err2,
+								"status":  "500",
+							}
+							return nil, outputError
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/TraerDetalle - json.Marshal(ubicacion[0][\"EspacioFisicoId\"])",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
+				}
+
+				Salida2 := map[string]interface{}{
+					"Id":                      data["Id"],
+					"Observacion":             data["Observacion"],
+					"Sede":                    sede[0],
+					"Dependencia":             ubicacion[0]["DependenciaId"],
+					"Ubicacion":               ubicacion[0]["EspacioFisicoId"],
+					"FechaCreacion":           data["FechaCreacion"],
+					"FechaModificacion":       data["FechaModificacion"],
+					"Activo":                  data["Activo"],
+					"MovimientoPadreId":       data["MovimientoPadreId"],
+					"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
+					"EstadoMovimientoId":      data["EstadoMovimientoId"],
 				}
 
 				if data2["funcionario"] != nil {
 
 					urlcrud2 := "http://" + beego.AppConfig.String("tercerosService") + "tercero/?query=Id:" + fmt.Sprintf("%v", data2["funcionario"]) + "&fields=Id,NombreCompleto"
 					if _, err := request.GetJsonTest(urlcrud2, &tercero); err != nil {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 
-					Salida2 := map[string]interface{}{
-						"Id":                      data["Id"],
-						"Observacion":             data["Observacion"],
-						"Funcionario":             tercero[0],
-						"Sede":                    sede[0],
-						"Dependencia":             ubicacion[0]["DependenciaId"],
-						"Ubicacion":               ubicacion[0]["EspacioFisicoId"],
-						"FechaCreacion":           data["FechaCreacion"],
-						"FechaModificacion":       data["FechaModificacion"],
-						"Activo":                  data["Activo"],
-						"MovimientoPadreId":       data["MovimientoPadreId"],
-						"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
-						"EstadoMovimientoId":      data["EstadoMovimientoId"],
-					}
+					Salida2["Funcionario"] = tercero[0]
 
-					return Salida2, nil
-
-				} else {
-
-					Salida2 := map[string]interface{}{
-						"Id":                      data["Id"],
-						"Observacion":             data["Observacion"],
-						"Sede":                    sede[0],
-						"Dependencia":             ubicacion[0]["DependenciaId"],
-						"Ubicacion":               ubicacion[0]["EspacioFisicoId"],
-						"FechaCreacion":           data["FechaCreacion"],
-						"FechaModificacion":       data["FechaModificacion"],
-						"Activo":                  data["Activo"],
-						"MovimientoPadreId":       data["MovimientoPadreId"],
-						"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
-						"EstadoMovimientoId":      data["EstadoMovimientoId"],
-					}
-					return Salida2, nil
 				}
 
+				return Salida2, nil
+
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/TraerDetalle - json.Unmarshal([]byte(str), &data2)",
+					"err":     err,
+					"status":  "500",
+				}
+				return nil, outputError
 			}
 
 		} else {
-			panic(err.Error())
-			return nil, err
+			logs.Error(err2)
+			outputError = map[string]interface{}{
+				"funcion": "/TraerDetalle - json.Unmarshal(jsonString, &data)",
+				"err":     err2,
+				"status":  "500",
+			}
+			return nil, outputError
 		}
 	} else {
-		panic(err.Error())
-		return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/TraerDetalle - json.Marshal(salida)",
+			"err":     err,
+			"status":  "500",
+		}
+		return nil, outputError
 	}
 }

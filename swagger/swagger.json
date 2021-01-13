@@ -709,7 +709,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Movimiento"
+                            }
                         }
                     },
                     "404": {
@@ -735,10 +738,13 @@
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TrSalida2"
+                            }
                         }
                     },
                     "403": {
@@ -760,14 +766,15 @@
                         "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.TrSalida"
                         }
                     },
                     "404": {
@@ -1449,6 +1456,38 @@
                 }
             }
         },
+        "models.MovimientoProcesoExterno": {
+            "title": "MovimientoProcesoExterno",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoMovimientoId": {
+                    "$ref": "#/definitions/models.TipoMovimiento"
+                }
+            }
+        },
         "models.OrdenadorGasto": {
             "title": "OrdenadorGasto",
             "type": "object",
@@ -1633,6 +1672,39 @@
                 }
             }
         },
+        "models.TipoMovimiento": {
+            "title": "TipoMovimiento",
+            "type": "object",
+            "properties": {
+                "Acronimo": {
+                    "type": "string"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Parametros": {
+                    "type": "string"
+                }
+            }
+        },
         "models.TrSalida": {
             "title": "TrSalida",
             "type": "object",
@@ -1642,6 +1714,24 @@
                     "items": {
                         "$ref": "#/definitions/models.ElementosMovimiento"
                     }
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
+                }
+            }
+        },
+        "models.TrSalida2": {
+            "title": "TrSalida2",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementosMovimiento"
+                    }
+                },
+                "MovimientosKronos": {
+                    "$ref": "#/definitions/models.MovimientoProcesoExterno"
                 },
                 "Salida": {
                     "$ref": "#/definitions/models.Movimiento"
