@@ -30,17 +30,40 @@ func (c *BajaController) URLMapping() {
 // @Failure 404 not found resource
 // @router /elemento/:id [get]
 func (c *BajaController) GetElemento() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	fmt.Println(idStr)
-	v, err := bajasHelper.TraerDatosElemento(id)
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+	logs.Info(idStr)
+	var id int
+	if idConv, err := strconv.Atoi(idStr); err == nil && id > 0 {
+		id = idConv
+	} else if err != nil {
+		panic(err)
 	} else {
+		panic(map[string]interface{}{
+			"funcion": "GetElemento",
+			"err":     "El ID debe ser mayor a 0",
+			"status":  "400",
+		})
+	}
+
+	if v, err := bajasHelper.TraerDatosElemento(id); err == nil {
 		c.Data["json"] = v
+	} else {
+		panic(err)
 	}
 	c.ServeJSON()
 }
