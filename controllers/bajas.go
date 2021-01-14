@@ -48,7 +48,7 @@ func (c *BajaController) GetElemento() {
 	idStr := c.Ctx.Input.Param(":id")
 	logs.Info(idStr)
 	var id int
-	if idConv, err := strconv.Atoi(idStr); err == nil && id > 0 {
+	if idConv, err := strconv.Atoi(idStr); err == nil && idConv > 0 {
 		id = idConv
 	} else if err != nil {
 		panic(err)
