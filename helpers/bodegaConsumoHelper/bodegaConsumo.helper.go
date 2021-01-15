@@ -33,8 +33,9 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 	logs.Debug(url)
 	if res, err := request.GetJsonTest(url, &solicitud_); err == nil && res.StatusCode == 200 {
 
-		// TO-DO: Arreglar el CRUD! No debería retornar un arreglo con un elemento vacío
-		// Por máximo debería retornar el arreglo vacío!
+		// TO-DO: Arreglar el CRUD! No debería retornar un arreglo con un elemento vacío ([{}])
+		// Por máximo debería retornar el arreglo vacío! (sin el objeto vacío, [])
+		// (Y uno de los siguientes estados: 204 o 404)
 		if len(solicitud_) == 0 || len(solicitud_[0]) == 0 {
 			err := fmt.Errorf("Movimiento %d no encontrado", id)
 			logs.Error(err)

@@ -25,9 +25,12 @@ func (c *BodegaConsumoController) URLMapping() {
 // GetOneSolicitud ...
 // @Title GetOneSolicitud
 // @Description get Bodega-Consumo by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object}{"Id": int,"FechaCreacion": date,"Observacion": string,"Elementos": {"Id": int,"Nombre":string,"Marca": string,"Serie": string,"CantidadDisponible": int,"CantidadSolicitada": int,	"ValorUnitario": float,} }
-// @Failure 403 :id is empty
+// @Param	id		path 	uint	true		"MovimientoId from Movimientos Arka CRUD"
+// @Success 200 {object} models.BodegaConsumoSolicitud
+// @Failure 400 "Wrong parameter (ID MUST be > 0)"
+// @Failure 404 "Not found"
+// @Failure 500 "Internal Error"
+// @Failure 502 "Error with external API"
 // @router /solicitud/:id [get]
 func (c *BodegaConsumoController) GetOneSolicitud() {
 

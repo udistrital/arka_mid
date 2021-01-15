@@ -289,17 +289,23 @@ paths:
       parameters:
       - in: path
         name: id
-        description: The key for staticblock
+        description: MovimientoId from Movimientos Arka CRUD
         required: true
-        type: string
+        type: integer
+        format: int32
       responses:
         "200":
-          description: "{object}{\"Id\": int,\"FechaCreacion\": date,\"Observacion\":
-            string,\"Elementos\": {\"Id\": int,\"Nombre\":string,\"Marca\": string,\"Serie\":
-            string,\"CantidadDisponible\": int,\"CantidadSolicitada\": int,\t\"ValorUnitario\":
-            float,} }"
-        "403":
-          description: :id is empty
+          description: ""
+          schema:
+            $ref: '#/definitions/models.BodegaConsumoSolicitud'
+        "400":
+          description: '"Wrong parameter (ID MUST be > 0)"'
+        "404":
+          description: '"Not found"'
+        "500":
+          description: '"Internal Error"'
+        "502":
+          description: '"Error with external API"'
   /catalogo_elementos/:
     post:
       tags:
@@ -676,6 +682,14 @@ definitions:
   models.Bodega-Consumo:
     title: Bodega-Consumo
     type: object
+  models.BodegaConsumoSolicitud:
+    title: BodegaConsumoSolicitud
+    type: object
+    properties:
+      Elementos:
+        $ref: '#/definitions/models.ElementoSolicitud'
+      Solicitud:
+        $ref: '#/definitions/models.Movimiento'
   models.ConsultaEntrada:
     title: ConsultaEntrada
     type: object
@@ -842,6 +856,48 @@ definitions:
         format: double
       Verificado:
         type: boolean
+  models.ElementoCatalogo:
+    title: ElementoCatalogo
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      Descripcion:
+        type: string
+      Id:
+        type: integer
+        format: int32
+      Nombre:
+        type: string
+  models.ElementoSolicitud:
+    title: ElementoSolicitud
+    type: object
+    properties:
+      Cantidad:
+        type: integer
+        format: int32
+      CantidadAprobada:
+        type: integer
+        format: int32
+      Dependencia:
+        $ref: '#/definitions/models.Dependencia'
+      ElementoCatalogoId:
+        $ref: '#/definitions/models.ElementoCatalogo'
+      Id:
+        type: integer
+        format: int32
+      Nombre:
+        type: string
+      SaldoCantidad:
+        type: integer
+        format: int32
+      SaldoValor:
+        type: integer
+        format: int32
+      Sede:
+        $ref: '#/definitions/models.EspacioFisico'
+      Ubicacion:
+        $ref: '#/definitions/models.AsignacionEspacioFisicoDependencia'
   models.ElementosMovimiento:
     title: ElementosMovimiento
     type: object
