@@ -9,31 +9,59 @@ import (
 	// "reflect"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/utils_oas/request"
 )
 
 //GetTerceroById trae el nombre de un encargado por su id
-func GetSolicitudById(id int) (Solicitud map[string]interface{}, err error) {
+func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetSolicitudById", "err": err, "status": "500"}
+			panic(outputError)
+		}
+	}()
 
 	var solicitud_ []map[string]interface{}
 	var elementos___ []map[string]interface{}
 
+	// url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + fmt.Sprintf("%v", id) + ""
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + fmt.Sprintf("%v", id) + ""
-	if _, err := request.GetJsonTest(url, &solicitud_); err == nil {
+	logs.Debug(url)
+	if res, err := request.GetJsonTest(url, &solicitud_); err == nil && res.StatusCode == 200 {
+
+		// TO-DO: Arreglar el CRUD! No debería retornar un arreglo con un elemento vacío
+		// Por máximo debería retornar el arreglo vacío!
+		if len(solicitud_) == 0 || len(solicitud_[0]) == 0 {
+			err := fmt.Errorf("Movimiento %d no encontrado", id)
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSolicitudById",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
+		}
 
 		str := fmt.Sprintf("%v", solicitud_[0]["Detalle"])
+		logs.Debug(fmt.Sprintf("str: %s", str))
 		var data map[string]interface{}
 		if err := json.Unmarshal([]byte(str), &data); err == nil {
 
 			fmt.Println(data)
 			if tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data["Funcionario"])); err == nil {
 				solicitud_[0]["Funcionario"] = tercero
-
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSolicitudById - tercerosHelper.GetNombreTerceroById(fmt.Sprintf(\"%v\", data[\"Funcionario\"]))",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 			var data_ []map[string]interface{}
 			if jsonString, err := json.Marshal(data["Elementos"]); err == nil {
@@ -52,8 +80,13 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, err error) {
 
 							elementos___ = append(elementos___, Elemento__)
 						} else {
-							panic(err.Error())
-							return nil, err
+							logs.Error(err)
+							outputError = map[string]interface{}{
+								"funcion": "/GetSolicitudById - request.GetJsonTest(url, &solicitud_)",
+								"err":     err,
+								"status":  "502",
+							}
+							return nil, outputError
 						}
 					}
 					Solicitud = map[string]interface{}{
@@ -64,20 +97,43 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, err error) {
 					return Solicitud, nil
 
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err2)
+					outputError = map[string]interface{}{
+						"funcion": "/GetSolicitudById - json.Marshal(data[\"Elementos\"])",
+						"err":     err2,
+						"status":  "500",
+					}
+					return nil, outputError
 				}
+
 			} else {
-				panic(err.Error())
-				return nil, err
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSolicitudById - json.Marshal(data[\"Elementos\"])",
+					"err":     err,
+					"status":  "500",
+				}
+				return nil, outputError
 			}
+
 		} else {
-			panic(err.Error())
-			return nil, err
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSolicitudById - json.Unmarshal([]byte(str), &data)",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, outputError
 		}
+
 	} else {
-		panic(err.Error())
-		return nil, err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSolicitudById - request.GetJsonTest(url, &solicitud_)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 
