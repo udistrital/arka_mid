@@ -20,8 +20,6 @@ func (c *BodegaConsumoController) URLMapping() {
 	c.Mapping("GetOne", c.GetOneSolicitud)
 	c.Mapping("GetAll", c.GetElementos)
 	c.Mapping("Get", c.GetAllExistencias)
-	
-
 }
 
 // GetOneSolicitud ...
@@ -82,7 +80,6 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 		c.Data["json"] = v
 	}
 	c.ServeJSON()
-
 
 }
 

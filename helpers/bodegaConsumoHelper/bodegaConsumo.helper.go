@@ -3,6 +3,7 @@ package bodegaConsumoHelper
 import (
 	"encoding/json"
 	"fmt"
+
 	// "strconv"
 	"strings"
 	// "reflect"
@@ -19,14 +20,13 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, err error) {
 	var solicitud_ []map[string]interface{}
 	var elementos___ []map[string]interface{}
 
-	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:"+ fmt.Sprintf("%v", id) + ""
+	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + fmt.Sprintf("%v", id) + ""
 	if _, err := request.GetJsonTest(url, &solicitud_); err == nil {
 
-			
 		str := fmt.Sprintf("%v", solicitud_[0]["Detalle"])
 		var data map[string]interface{}
 		if err := json.Unmarshal([]byte(str), &data); err == nil {
-		
+
 			fmt.Println(data)
 			if tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data["Funcionario"])); err == nil {
 				solicitud_[0]["Funcionario"] = tercero
@@ -49,7 +49,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, err error) {
 							} else {
 								Elemento__["CantidadAprobada"] = 0
 							}
-							
+
 							elementos___ = append(elementos___, Elemento__)
 						} else {
 							panic(err.Error())
@@ -60,7 +60,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, err error) {
 						"Solicitud": solicitud_,
 						"Elementos": elementos___,
 					}
-		
+
 					return Solicitud, nil
 
 				} else {
@@ -89,11 +89,11 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 	var sede []map[string]interface{}
 
 	fmt.Println("elemento asdasdadasdfasd: ", Elemento)
-	
+
 	if _, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil {
-		
+
 		ubicacion2 := ubicacion[0]["EspacioFisicoId"].(map[string]interface{})
-		
+
 		z := strings.Split(fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"]), "")
 
 		urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
@@ -117,13 +117,12 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 			panic(err.Error())
 			return nil, err
 		}
-	
+
 	} else {
 		panic(err.Error())
 		return nil, err
 	}
-	
-	
+
 }
 
 func GetElementosSinAsignar() (Elementos []map[string]interface{}, err error) {
@@ -137,16 +136,16 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, err error) {
 				var detalle []map[string]interface{}
 				url2 := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Id:" + fmt.Sprintf("%v", elemento["ElementoActaId"]) + "&fields=Id,Nombre,Marca,Serie,SubgrupoCatalogoId"
 				if _, err := request.GetJsonTest(url2, &detalle); err == nil {
-	
+
 					var subgrupo []map[string]interface{}
 					url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo?query=Id:" + fmt.Sprintf("%v", detalle[0]["SubgrupoCatalogoId"])
 					if _, err := request.GetJsonTest(url3, &subgrupo); err == nil {
-					
+
 						Elementos[i]["Nombre"] = detalle[0]["Nombre"]
 						Elementos[i]["Marca"] = detalle[0]["Marca"]
 						Elementos[i]["Serie"] = detalle[0]["Serie"]
 						Elementos[i]["SubgrupoCatalogoId"] = subgrupo[0]
-						
+
 					} else {
 						panic(err.Error())
 						return nil, err
@@ -156,7 +155,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, err error) {
 					return nil, err
 				}
 			}
-	
+
 			return Elementos, nil
 		} else {
 			return Elementos, nil
@@ -173,8 +172,7 @@ func GetAperturasKardex() (Elementos []map[string]interface{}, err error) {
 	var Elementos___ []map[string]interface{}
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?query=MovimientoId.FormatoTipoMovimientoId.CodigoAbreviacion:AP_KDX&limit=-1"
 	if _, err := request.GetJsonTest(url, &Elementos___); err == nil {
-		fmt.Println("Elementos___",Elementos___)
-
+		fmt.Println("Elementos___", Elementos___)
 
 		if keys := len(Elementos___[0]); keys != 0 {
 			for _, elemento := range Elementos___ {
@@ -182,39 +180,38 @@ func GetAperturasKardex() (Elementos []map[string]interface{}, err error) {
 				fmt.Println("Elemento", elemento)
 				var data map[string]interface{}
 				if jsonString, err := json.Marshal(elemento["MovimientoId"]); err == nil {
-					fmt.Println("Movimiento",jsonString)
-	
+					fmt.Println("Movimiento", jsonString)
+
 					if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
 						fmt.Println("DetalleMovimiento", data)
-	
+
 						str := fmt.Sprintf("%v", data["Detalle"])
 						var data2 map[string]interface{}
 						if err := json.Unmarshal([]byte(str), &data2); err == nil {
-							fmt.Println("Detalle",data2)
-	
-							
+							fmt.Println("Detalle", data2)
+
 							var elemento_catalogo []map[string]interface{}
 							url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "elemento?query=Id:" + fmt.Sprintf("%v", elemento["ElementoCatalogoId"])
 							if _, err := request.GetJsonTest(url3, &elemento_catalogo); err == nil {
-	
+
 								Elemento := map[string]interface{}{
-									"MetodoValoracion":		data2["Metodo_Valoracion"],
-									"CantidadMinima":		data2["Cantidad_Minima"],
-									"CantidadMaxima": 		data2["Cantidad_Maxima"],
-									"FechaCreacion":		elemento["FechaCreacion"],
-									"Observaciones":		data["Observacion"],
-									"Id":					data["Id"],
-									"MovimientoPadreId":	data["MovimientoPadreId"],
-									"ElementoCatalogoId":	elemento_catalogo[0],
+									"MetodoValoracion":   data2["Metodo_Valoracion"],
+									"CantidadMinima":     data2["Cantidad_Minima"],
+									"CantidadMaxima":     data2["Cantidad_Maxima"],
+									"FechaCreacion":      elemento["FechaCreacion"],
+									"Observaciones":      data["Observacion"],
+									"Id":                 data["Id"],
+									"MovimientoPadreId":  data["MovimientoPadreId"],
+									"ElementoCatalogoId": elemento_catalogo[0],
 								}
-								
+
 								Elementos = append(Elementos, Elemento)
-	
+
 							} else {
 								panic(err.Error())
 								return nil, err
 							}
-							
+
 						} else {
 							panic(err.Error())
 							return nil, err
@@ -227,15 +224,14 @@ func GetAperturasKardex() (Elementos []map[string]interface{}, err error) {
 					panic(err.Error())
 					return nil, err
 				}
-				
+
 			}
-	
+
 			return Elementos, nil
 		} else {
 			return Elementos___, nil
-		} 
+		}
 
-		
 	} else {
 		panic(err.Error())
 		return nil, err
@@ -247,11 +243,10 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, err error) {
 	var Elementos___ []map[string]interface{}
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?query=MovimientoId.FormatoTipoMovimientoId.CodigoAbreviacion:AP_KDX,Activo:true&limit=-1&fields=ElementoCatalogoId"
 	if _, err := request.GetJsonTest(url, &Elementos___); err == nil {
-		fmt.Println("Elementos",Elementos___[0])
-
+		fmt.Println("Elementos", Elementos___[0])
 
 		if keys := len(Elementos___[0]); keys != 0 {
-			
+
 			for _, elemento := range Elementos___ {
 
 				if Elemento, err := UltimoMovimientoKardex(fmt.Sprintf("%v", elemento["ElementoCatalogoId"])); err == nil {
@@ -259,16 +254,14 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, err error) {
 				} else {
 					panic(err.Error())
 					return nil, err
-				}	
+				}
 			}
-	
+
 			return Elementos, nil
-		} else  {
-			
+		} else {
+
 			return Elementos___, nil
 		}
-
-		
 
 	} else {
 		panic(err.Error())
@@ -276,7 +269,7 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, err error) {
 	}
 }
 
-func UltimoMovimientoKardex(id_catalogo string)(Elemento_Movimiento map[string]interface{}, err error) {
+func UltimoMovimientoKardex(id_catalogo string) (Elemento_Movimiento map[string]interface{}, err error) {
 
 	var elemento_catalogo []map[string]interface{}
 
