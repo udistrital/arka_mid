@@ -20,28 +20,53 @@ func (c *BodegaConsumoController) URLMapping() {
 	c.Mapping("GetOne", c.GetOneSolicitud)
 	c.Mapping("GetAll", c.GetElementos)
 	c.Mapping("Get", c.GetAllExistencias)
-	
-
 }
 
 // GetOneSolicitud ...
 // @Title GetOneSolicitud
 // @Description get Bodega-Consumo by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object}{"Id": int,"FechaCreacion": date,"Observacion": string,"Elementos": {"Id": int,"Nombre":string,"Marca": string,"Serie": string,"CantidadDisponible": int,"CantidadSolicitada": int,	"ValorUnitario": float,} }
-// @Failure 403 :id is empty
+// @Param	id		path 	uint	true		"MovimientoId from Movimientos Arka CRUD"
+// @Success 200 {object} models.BodegaConsumoSolicitud
+// @Failure 400 "Wrong parameter (ID MUST be > 0)"
+// @Failure 404 "Not found"
+// @Failure 500 "Internal Error"
+// @Failure 502 "Error with external API"
 // @router /solicitud/:id [get]
 func (c *BodegaConsumoController) GetOneSolicitud() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BodegaConsumoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	fmt.Println("id: ", id)
-	v, err := bodegaConsumoHelper.GetSolicitudById(id)
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	var id int
+	if idConv, err := strconv.Atoi(idStr); err == nil && idConv > 0 {
+		id = idConv
+	} else if err != nil {
+		panic(err)
 	} else {
+		panic(map[string]interface{}{
+			"funcion": "GetOneSolicitud",
+			"err":     "ID MUST be positive",
+			"status":  "400",
+		})
+	}
+	logs.Info(fmt.Sprintf("id: %d", id))
+
+	if v, err := bodegaConsumoHelper.GetSolicitudById(id); err == nil {
 		c.Data["json"] = v
+	} else {
+		panic(err)
 	}
 	c.ServeJSON()
 }
@@ -82,7 +107,6 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 		c.Data["json"] = v
 	}
 	c.ServeJSON()
-
 
 }
 

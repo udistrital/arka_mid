@@ -55,9 +55,9 @@ func GetNombreTerceroById2(idTercero string) (tercero map[string]interface{}, er
 				} else {
 					fmt.Println("encargado: ", element)
 					return map[string]interface{}{
-						"Id":				idTercero,
-						"Numero":         	element["Numero"],
-						"NombreCompleto": 	element["TerceroId"].(map[string]interface{})["NombreCompleto"],
+						"Id":             idTercero,
+						"Numero":         element["Numero"],
+						"NombreCompleto": element["TerceroId"].(map[string]interface{})["NombreCompleto"],
 					}, nil
 				}
 
