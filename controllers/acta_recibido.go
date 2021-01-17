@@ -107,7 +107,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -119,10 +119,16 @@ func (c *ActaRecibidoController) GetElementosActa() {
 
 	idStr := c.Ctx.Input.Param(":id")
 	var id int
-	if idTest, err := strconv.Atoi(idStr); err == nil {
+	if idTest, err := strconv.Atoi(idStr); err == nil && idTest > 0 {
 		id = idTest
-	} else {
+	} else if err != nil {
 		panic(err)
+	} else {
+		panic(map[string]interface{}{
+			"funcion": "GetElementosActa",
+			"err":     "The Id MUST be > 0",
+			"status":  "400",
+		})
 	}
 	// fmt.Printf("id: %v\n", id)
 
