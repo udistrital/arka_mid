@@ -742,6 +742,19 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			// Solicita información unidad elemento
 			// urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
 			// fmt.Printf("#Elementos: %v\n", len(elementos))
+
+			if len(elementos) == 0 || elementos[0].Id == 0 {
+				err := fmt.Errorf("No elements for Act #%d", actaId)
+				logs.Warn(err)
+				// outputError = map[string]interface{}{
+				// 	"funcion": "/GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
+				// 	"err":     err,
+				// 	"status":  "204",
+				// }
+				// return nil, outputError
+				return elementosActa, nil
+			}
+
 			for k, elemento := range elementos {
 				fmt.Printf("#Elemento: %v\n", k)
 
