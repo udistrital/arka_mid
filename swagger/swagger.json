@@ -115,18 +115,41 @@
                 ],
                 "description": "get ActaRecibido",
                 "operationId": "ActaRecibidoController.Get All Actas",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "states",
+                        "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "u",
+                        "description": "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user",
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.HistoricoActa"
+                                "$ref": "#/definitions/models.ActaRecibido"
                             }
                         }
                     },
+                    "400": {
+                        "description": "\"Wrong IDs\""
+                    },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -144,7 +167,8 @@
                         "name": "id",
                         "description": "id del acta",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
@@ -266,7 +290,13 @@
                         }
                     },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -342,17 +372,30 @@
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "The key for staticblock",
+                        "description": "MovimientoId from Movimientos Arka CRUD",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int32"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{object}{\"Id\": int,\"FechaCreacion\": date,\"Observacion\": string,\"Elementos\": {\"Id\": int,\"Nombre\":string,\"Marca\": string,\"Serie\": string,\"CantidadDisponible\": int,\"CantidadSolicitada\": int,\t\"ValorUnitario\": float,} }"
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.BodegaConsumoSolicitud"
+                        }
                     },
-                    "403": {
-                        "description": ":id is empty"
+                    "400": {
+                        "description": "\"Wrong parameter (ID MUST be \u003e 0)\""
+                    },
+                    "404": {
+                        "description": "\"Not found\""
+                    },
+                    "500": {
+                        "description": "\"Internal Error\""
+                    },
+                    "502": {
+                        "description": "\"Error with external API\""
                     }
                 }
             }
@@ -679,7 +722,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Movimiento"
+                            }
                         }
                     },
                     "404": {
@@ -700,15 +746,18 @@
                         "description": "body for Salida content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.SalidaGeneral"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TrSalida2"
+                            }
                         }
                     },
                     "403": {
@@ -730,14 +779,15 @@
                         "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.TrSalida"
                         }
                     },
                     "404": {
@@ -969,6 +1019,18 @@
         "models.Bodega-Consumo": {
             "title": "Bodega-Consumo",
             "type": "object"
+        },
+        "models.BodegaConsumoSolicitud": {
+            "title": "BodegaConsumoSolicitud",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "$ref": "#/definitions/models.ElementoSolicitud"
+                },
+                "Solicitud": {
+                    "$ref": "#/definitions/models.Movimiento"
+                }
+            }
         },
         "models.ConsultaEntrada": {
             "title": "ConsultaEntrada",
@@ -1203,6 +1265,114 @@
                 }
             }
         },
+        "models.ElementoCatalogo": {
+            "title": "ElementoCatalogo",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ElementoSolicitud": {
+            "title": "ElementoSolicitud",
+            "type": "object",
+            "properties": {
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "CantidadAprobada": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Dependencia": {
+                    "$ref": "#/definitions/models.Dependencia"
+                },
+                "ElementoCatalogoId": {
+                    "$ref": "#/definitions/models.ElementoCatalogo"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "SaldoCantidad": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "SaldoValor": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Sede": {
+                    "$ref": "#/definitions/models.EspacioFisico"
+                },
+                "Ubicacion": {
+                    "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                }
+            }
+        },
+        "models.ElementosMovimiento": {
+            "title": "ElementosMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "ElementoActaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "SaldoCantidad": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "SaldoValor": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Unidad": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.Entrada": {
             "title": "Entrada",
             "type": "object"
@@ -1226,40 +1396,6 @@
                 },
                 "TipoEspacio": {
                     "$ref": "#/definitions/models.TipoEspacio"
-                }
-            }
-        },
-        "models.EstadoActa": {
-            "title": "EstadoActa",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "CodigoAbreviacion": {
-                    "type": "string"
-                },
-                "Descripcion": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                },
-                "NumeroOrden": {
-                    "type": "number",
-                    "format": "double"
                 }
             }
         },
@@ -1297,18 +1433,15 @@
                 }
             }
         },
-        "models.HistoricoActa": {
-            "title": "HistoricoActa",
+        "models.EstadoMovimiento": {
+            "title": "EstadoMovimiento",
             "type": "object",
             "properties": {
-                "ActaRecibidoId": {
-                    "$ref": "#/definitions/models.ActaRecibido"
-                },
                 "Activo": {
                     "type": "boolean"
                 },
-                "EstadoActaId": {
-                    "$ref": "#/definitions/models.EstadoActa"
+                "Descripcion": {
+                    "type": "string"
                 },
                 "FechaCreacion": {
                     "type": "string",
@@ -1321,6 +1454,122 @@
                 "Id": {
                     "type": "integer",
                     "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.FormatoTipoMovimiento": {
+            "title": "FormatoTipoMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Formato": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.Movimiento": {
+            "title": "Movimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Detalle": {
+                    "type": "string"
+                },
+                "EstadoMovimientoId": {
+                    "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FormatoTipoMovimientoId": {
+                    "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdTipoMovimiento": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoPadreId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.MovimientoProcesoExterno": {
+            "title": "MovimientoProcesoExterno",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoMovimientoId": {
+                    "$ref": "#/definitions/models.TipoMovimiento"
                 }
             }
         },
@@ -1346,6 +1595,18 @@
         "models.Salida": {
             "title": "Salida",
             "type": "object"
+        },
+        "models.SalidaGeneral": {
+            "title": "SalidaGeneral",
+            "type": "object",
+            "properties": {
+                "Salidas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TrSalida"
+                    }
+                }
+            }
         },
         "models.SoporteActa": {
             "title": "SoporteActa",
@@ -1493,6 +1754,72 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TipoMovimiento": {
+            "title": "TipoMovimiento",
+            "type": "object",
+            "properties": {
+                "Acronimo": {
+                    "type": "string"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Parametros": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TrSalida": {
+            "title": "TrSalida",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementosMovimiento"
+                    }
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
+                }
+            }
+        },
+        "models.TrSalida2": {
+            "title": "TrSalida2",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementosMovimiento"
+                    }
+                },
+                "MovimientosKronos": {
+                    "$ref": "#/definitions/models.MovimientoProcesoExterno"
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
                 }
             }
         },
