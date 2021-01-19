@@ -98,8 +98,12 @@ func (c *ActaRecibidoController) GetActasByTipo() {
 // @Title Get Elementos
 // @Description get Elementos by id
 // @Param	id		path 	int	true		"id del acta"
-// @Success 200 {object} models.Elemento
+// @Success 200 {object} []models.Elemento
+// @Success 204 Empty response (Due to Act not found or without elements)
+// @Failure 400 Wrong ID (MUST be greater than 0)
 // @Failure 404 not found resource
+// @Failure 500 Internal Error
+// @Failure 502 Error with external API
 // @router /get_elementos_acta/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 
@@ -112,7 +116,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
@@ -122,11 +126,15 @@ func (c *ActaRecibidoController) GetElementosActa() {
 	if idTest, err := strconv.Atoi(idStr); err == nil && idTest > 0 {
 		id = idTest
 	} else if err != nil {
-		panic(err)
+		panic(map[string]interface{}{
+			"funcion": "GetElementosActa",
+			"err":     err,
+			"status":  "400",
+		})
 	} else {
 		panic(map[string]interface{}{
 			"funcion": "GetElementosActa",
-			"err":     "The Id MUST be > 0",
+			"err":     "The Id MUST be greater than 0",
 			"status":  "400",
 		})
 	}

@@ -744,14 +744,14 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			// fmt.Printf("#Elementos: %v\n", len(elementos))
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
-				err := fmt.Errorf("No elements for Act #%d", actaId)
+				err := fmt.Errorf("No elements for Act #%d (or Act not found)", actaId)
 				logs.Warn(err)
-				// outputError = map[string]interface{}{
-				// 	"funcion": "/GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
-				// 	"err":     err,
-				// 	"status":  "204",
-				// }
-				// return nil, outputError
+				outputError = map[string]interface{}{
+					"funcion": "/GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
+					"err":     err,
+					"status":  "204",
+				}
+				return nil, outputError
 				return elementosActa, nil
 			}
 
