@@ -752,7 +752,6 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 					"status":  "204",
 				}
 				return nil, outputError
-				return elementosActa, nil
 			}
 
 			for k, elemento := range elementos {
