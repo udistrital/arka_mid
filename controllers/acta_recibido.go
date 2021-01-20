@@ -206,8 +206,6 @@ func (c *ActaRecibidoController) GetAllActas() {
 
 	var reqStates []string
 	var WSO2user string
-	var idProveedor int
-	var idContratista int
 
 	if v := c.GetString("states"); v != "" {
 		reqStates = strings.Split(v, ",")
@@ -217,32 +215,6 @@ func (c *ActaRecibidoController) GetAllActas() {
 
 	if v := c.GetString("u"); v != "" {
 		WSO2user = v
-	}
-
-	if v, err := c.GetInt("provId", 0); err == nil {
-		// fmt.Printf("ProveedorID: %d\n", v)
-		idProveedor = v
-	} else {
-		// fmt.Print("Error proveedor: ")
-		// fmt.Println(err)
-		panic(err)
-	}
-
-	if v, err := c.GetInt("contrId", 0); err == nil {
-		// fmt.Printf("ContratistaID: %d\n", v)
-		idContratista = v
-	} else {
-		// fmt.Print("Error contratista: ")
-		// fmt.Println(err)
-		panic(err)
-	}
-
-	if idProveedor < 0 || idContratista < 0 {
-		panic(map[string]interface{}{
-			"funcion": "GetAllActas",
-			"err":     "IDs MUST be positive (or 0 for no filter)",
-			"status":  "400",
-		})
 	}
 
 	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
