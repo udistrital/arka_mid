@@ -57,12 +57,8 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 		logs.Debug(urlcrud)
 		if response, err := request.GetJsonTest(urlcrud, &historicoActa); err == nil && response.StatusCode == 200 { // (2) error servicio caido
 			logs.Debug(historicoActa[0].EstadoActaId)
-			fmt.Println(historicoActa[0].Id)
-			fmt.Printf("[%T] %+v\n", historicoActa, historicoActa)
 
-			fmt.Println("ddee")
 			if len(historicoActa) == 0 || historicoActa[0].Id == 0 {
-				fmt.Println("dd")
 				err := errors.New("There's currently no act records")
 				logs.Warn(err)
 				outputError = map[string]interface{}{
