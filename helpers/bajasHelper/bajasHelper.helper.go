@@ -134,6 +134,21 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 
 	if _, err := request.GetJsonTest(url, &Solicitudes); err == nil { // (2) error servicio caido
 		fmt.Println("solicitudes: ", Solicitudes)
+
+		if len(Solicitudes) == 0 || len(Solicitudes[0]) == 0 {
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllSolicitudes",
+				"err":     "sin",
+				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+			}
+			return nil, outputError
+		}
+	
+
+
+
+
 		for _, solicitud := range Solicitudes {
 
 			var data_ map[string]interface{}
