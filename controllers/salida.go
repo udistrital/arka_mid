@@ -113,7 +113,7 @@ func (c *SalidaController) GetSalidas() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -126,11 +126,7 @@ func (c *SalidaController) GetSalidas() {
 	if v, err := salidaHelper.GetSalidas(); err == nil {
 		c.Data["json"] = v
 	} else {
-		panic(map[string]interface{}{
-			"funcion": "GetSalidas",
-			"err":     err,
-			"status":  "502",
-		})
+		panic(err)
 	}
 	c.ServeJSON()
 

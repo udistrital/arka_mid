@@ -114,13 +114,24 @@ func (c *BajaController) GetSolicitud() {
 // @router /solicitud/ [get]
 func (c *BajaController) GetAll() {
 
-	fmt.Println("hola")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500")
+			}
+		}
+	}()
+
+	fmt.Println("hola en el controlador")
 	l, err := bajasHelper.GetAllSolicitudes()
 	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+		panic(err)
 	} else {
 		c.Data["json"] = l
 	}
