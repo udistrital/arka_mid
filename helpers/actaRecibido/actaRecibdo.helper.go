@@ -65,7 +65,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas",
+				"funcion": "/GetAllActasRecibidoActivas - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -107,25 +107,13 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
 				data_ = data
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
+				return nil, err
 			}
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
+				return nil, err
 			}
 
 			// findAndAddTercero trae la información de un tercero y la agrega
@@ -291,20 +279,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		// TODO: Manejar concurrencia en las peticiones a otras APIS
 		// Referencia: https://www.golang-book.com/books/intro/10
-		// TODO: Quitar los parámetros de ID de Proveedor y Contratista
-		// de la siguiente función, una vez sea uniforme el espacio de
-		// usuarios
 		if usrWSO2 != "" {
 			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
 				historicoActa = actas
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
+				return nil, err
 			}
 		}
 
@@ -313,9 +292,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetAllActasRecibidoActivas",
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
 			"err":     err,
-			"status":  "502",
+			"status":  "502", // (2) error servicio caido
 		}
 		return nil, outputError
 	}
