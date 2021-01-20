@@ -1,6 +1,7 @@
 package actaRecibidoHelper
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -35,6 +36,18 @@ func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]in
 
 // GetActasRecibidoTipo ...
 func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbicacion, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetActasRecibidoTipo - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud       string
 		historicoActa []*models.HistoricoActa
@@ -42,8 +55,24 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 	if tipoActa != 0 { // (1) error parametro
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=EstadoActaId.Id:" + strconv.Itoa(tipoActa) + ",Activo:True&limit=-1"
 		logs.Debug(urlcrud)
-		if response, err := request.GetJsonTest(urlcrud, &historicoActa); err == nil { // (2) error servicio caido
+		if response, err := request.GetJsonTest(urlcrud, &historicoActa); err == nil && response.StatusCode == 200 { // (2) error servicio caido
 			logs.Debug(historicoActa[0].EstadoActaId)
+			fmt.Println(historicoActa[0].Id)
+			fmt.Printf("[%T] %+v\n", historicoActa, historicoActa)
+
+			fmt.Println("ddee")
+			if len(historicoActa) == 0 || historicoActa[0].Id == 0 {
+				fmt.Println("dd")
+				err := errors.New("There's currently no act records")
+				logs.Warn(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetActasRecibidoTipo",
+					"err":     err,
+					"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+				}
+				return nil, outputError
+			}
+
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				for _, acta := range historicoActa {
 					// UBICACION
