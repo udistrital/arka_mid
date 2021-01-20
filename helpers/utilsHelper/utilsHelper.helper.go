@@ -13,7 +13,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/ConvertirInterfaceMap",
+				"funcion": "/ConvertirInterfaceMap - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -25,7 +25,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 		if err2 := json.Unmarshal(jsonString, &Salida); err2 != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/ConvertirInterfaceMap",
+				"funcion": "/ConvertirInterfaceMap - json.Unmarshal(jsonString, &Salida)",
 				"err":     err,
 				"status":  "500",
 			}
@@ -34,7 +34,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/ConvertirInterfaceMap",
+			"funcion": "/ConvertirInterfaceMap - json.Marshal(Objeto)",
 			"err":     err,
 			"status":  "500",
 		}
