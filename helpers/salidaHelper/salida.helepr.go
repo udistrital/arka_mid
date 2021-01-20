@@ -2,6 +2,7 @@ package salidaHelper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -222,7 +223,11 @@ func GetSalidas() (Salidas []map[string]interface{}, outputError map[string]inte
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetSalidas", "err": err, "status": "502"}
+			outputError = map[string]interface{}{
+				"funcion": "/GetSalidas - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
 			panic(outputError)
 		}
 	}()
@@ -230,8 +235,19 @@ func GetSalidas() (Salidas []map[string]interface{}, outputError map[string]inte
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,FormatoTipoMovimientoId.Descripcion__contains:guardar,Activo:true&limit=-1"
 
 	var salidas_ []map[string]interface{}
-	if _, err := request.GetJsonTest(urlcrud, &salidas_); err == nil {
-		logs.Info(fmt.Sprintf("#Salidas: %v", len(salidas_)))
+	if resp, err := request.GetJsonTest(urlcrud, &salidas_); err == nil && resp.StatusCode == 200 {
+		logs.Info(fmt.Sprintf("#Salidas %d:  %v", len(salidas_), salidas_))
+
+		if len(salidas_) == 0 || len(salidas_[0]) == 0 {
+			err := errors.New("There's currently no outs records")
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSalidas",
+				"err":     err,
+				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+			}
+			return nil, outputError
+		}
 
 		for _, salida := range salidas_ {
 			// fmt.Println("Salidas: ", salida)
@@ -246,17 +262,26 @@ func GetSalidas() (Salidas []map[string]interface{}, outputError map[string]inte
 					"err":     err,
 					"status":  "502",
 				}
-				return nil, outputError
+				return nil, err
 			}
 		}
 		return Salidas, nil
 
-	} else {
+	} else if err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetSalidas",
+			"funcion": "/GetSalidas -request.GetJsonTest(urlcrud, &salidas_)",
 			"err":     err,
 			"status":  "502",
+		}
+		return nil, outputError
+	} else {
+		err := fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSalidas - request.GetJsonTest(urlcrud, &salidas_)",
+			"err":     err,
+			"status":  "502", // (2) error servicio caido
 		}
 		return nil, outputError
 	}
