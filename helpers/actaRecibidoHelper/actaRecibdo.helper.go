@@ -1,7 +1,6 @@
 package actaRecibidoHelper
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -40,9 +39,9 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetActasRecibidoTipo - Unhandled Error!",
+				"funcion": "/GetActasRecibidoTipo",
 				"err":     err,
-				"status":  "500",
+				"status":  "502",
 			}
 			panic(outputError)
 		}
@@ -59,12 +58,11 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 			logs.Debug(historicoActa[0].EstadoActaId)
 
 			if len(historicoActa) == 0 || historicoActa[0].Id == 0 {
-				err := errors.New("There's currently no act records")
-				logs.Warn(err)
+				logs.Error(err)
 				outputError = map[string]interface{}{
 					"funcion": "/GetActasRecibidoTipo",
 					"err":     err,
-					"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+					"status":  "200",
 				}
 				return nil, outputError
 			}
