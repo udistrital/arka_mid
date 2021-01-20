@@ -429,11 +429,24 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 			if err := json.Unmarshal(jsonString, &data); err == nil {
 				for _, valores := range data {
 					Parametro = append(Parametro, valores["ParametroId"])
-					Valor = append(Valor, valores["Valor"])
+					v := []byte(fmt.Sprintf("%v", valores["Valor"]))
+					// logs.Debug(v)
+					var valorUnm interface{}
+					if err := json.Unmarshal(v, &valorUnm); err == nil {
+						Valor = append(Valor, valorUnm)
+						logs.Debug(fmt.Sprintf("FF: %v", valorUnm))
+
+					} else {
+						logs.Error("Fasha Marshal")
+					}
+
 					Id = append(Id, int(valores["Id"].(float64)))
 					Activo = append(Activo, bool(valores["Activo"].(bool)))
+					fmt.Printf("Tipo %T\n", valores["Valor"])
 				}
+
 			}
+
 		}
 		// fmt.Printf("%T\n", ss)
 		var data3 []map[string]interface{}
@@ -446,36 +459,22 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 			}
 		}
 
-		// var x interface{} = "abc"
-		str := fmt.Sprintf("%v", Valor)
-		fmt.Println(str)
-
-		new := make([]interface{}, len(str))
-		for i, v := range str {
-			new[i] = v
-		}
-		fmt.Printf("%T\n", new)
-
-		// if err := json.Unmarshal(str, &data); err == nil {
-		// 	for _, valores := range data {
-		// 		Tarifa = append(Tarifa, valores["TarifaId"])
-		// 	}
-		// }
 		var data2 []interface{}
 		if jsonString2, err := json.Marshal(Valor); err == nil {
-			var ii = 0
-			for i, v := range jsonString2 {
+			// var ii = 0
+			// for i, v := range jsonString2 {
 
-				if i == 0 {
-					jsonString2 = RemoveIndex(jsonString2, i)
-				}
-				if v == 92 {
-					ii++
-					jsonString2 = RemoveIndex(jsonString2, i)
-					fmt.Println(string(v))
-				}
+			// 	if i == 0 {
+			// 		jsonString2 = RemoveIndex(jsonString2, i)
+			// 	}
+			// 	if v == 92 {
+			// 		ii++
+			// 		jsonString2 = RemoveIndex(jsonString2, i)
+			// 		fmt.Println(string(v))
+			// 	}
 
-			}
+			// }
+
 			// for i, v := range jsonString2 {
 
 			// 	if i == len(jsonString2) {
@@ -489,7 +488,7 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 			// 	fmt.Println(len(jsonString2))
 
 			// }
-			fmt.Println(ii)
+			// fmt.Println(ii)
 			fmt.Println(jsonString2)
 
 			if err := json.Unmarshal(jsonString2, &data2); err == nil {
