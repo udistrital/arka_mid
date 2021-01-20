@@ -128,34 +128,33 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, outputError
 			}
 
-			if Terceros == nil {
+			// findAndAddTercero trae la información de un tercero y la agrega
+			// al buffer de terceros
+			findAndAddTercero := func() map[string]interface{} {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
+					return nil
 				} else {
 					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas",
+					return map[string]interface{}{
+						"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
 						"err":     err,
 						"status":  "502",
 					}
-					return nil, outputError
+				}
+			}
+
+			if Terceros == nil {
+				if err := findAndAddTercero(); err != nil {
+					return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
 					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-								Tercero_ = Tercero
-								Terceros = append(Terceros, Tercero)
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllActasRecibidoActivas",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+							if err := findAndAddTercero(); err != nil {
+								return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
@@ -170,17 +169,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 						return nil, outputError
 					}
 				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-						Tercero_ = Tercero
-						Terceros = append(Terceros, Tercero)
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+					if err := findAndAddTercero(); err != nil {
+						return nil, err
 					}
 				}
 			}
