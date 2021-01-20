@@ -13,7 +13,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
-
 	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
@@ -38,6 +37,20 @@ type VigenciaImpuesto struct {
 	Tarifa               int64
 	PorcentajeAplicacion int
 	ImpuestoId           Impuesto
+}
+
+type Imp struct {
+	Activo            bool
+	FechaCreacion     time.Time
+	FechaModificacion time.Time
+	Id                int
+	ParametroId       map[string]interface{}
+	PeriodoId         map[string]interface{}
+	Valor             interface{}
+}
+
+type Impu struct {
+	Iva []Imp
 }
 
 type Unidad struct {
@@ -82,6 +95,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// fmt.Println(states)
 
 	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&query=Activo:true"
+	fmt.Println(url)
 	// url += ",EstadoActaId__Id:3"
 	// TODO: Por rendimiento, TODO lo relacionado a ...
 	// - buscar el historico_acta mas reciente
@@ -304,19 +318,20 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		// TODO: Quitar los parámetros de ID de Proveedor y Contratista
 		// de la siguiente función, una vez sea uniforme el espacio de
 		// usuarios
-		if usrWSO2 != "" {
-			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
-				historicoActa = actas
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
-			}
-		}
+		// fmt.Println(usrWSO2)
+		// if usrWSO2 != "" {
+		// 	if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
+		// 		historicoActa = actas
+		// 	} else {
+		// 		logs.Error(err)
+		// 		outputError = map[string]interface{}{
+		// 			"funcion": "/GetAllActasRecibidoActivas",
+		// 			"err":     err,
+		// 			"status":  "502",
+		// 		}
+		// 		return nil, outputError
+		// 	}
+		// }
 
 		return historicoActa, nil
 
@@ -331,14 +346,42 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	}
 }
 
+func RemoveIndex(s []byte, index int) []byte {
+	return append(s[:index], s[index+1:]...)
+}
+
 // GetAllParametrosActa ...
 func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
-	var Unidades interface{}
-	var IVA interface{}
-	var TipoBien interface{}
-	var EstadoActa interface{}
-	var EstadoElemento interface{}
+	var (
+		Unidades       interface{}
+		IVA            interface{}
+		TipoBien       interface{}
+		EstadoActa     interface{}
+		EstadoElemento interface{}
+		ss             map[string]interface{}
+		// IVAA           interface{}
+		Id     []int
+		Id2    []int
+		Activo []bool
+		// IVVAA          []interface{}
+		Parametro []interface{}
+		Valor     []interface{}
+		Tarifa2   []interface{}
+	)
+
+	// var Unidades interface{}
+	// var IVA interface{}
+	// var TipoBien interface{}
+	// var EstadoActa interface{}
+	// var EstadoElemento interface{}
+	// var ss map[string]interface{}
+	// var IVAA interface{}
+	// // var Data []map[string]interface{}
+	// // var sfga Imp
+	// // var inttt int}
+	// var IVVAA []interface{}
+
 	parametros := make([]map[string]interface{}, 0)
 
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"tipo_bien?limit=-1", &TipoBien); err == nil { // (2) error servicio caido
@@ -370,6 +413,106 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		return nil, outputError
 	}
 
+	// if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12?limit=-1", &IVAA); err == nil { // (2) error servicio caido
+	// if _, err := request.GetJsonTest("http://pruebasapi.intranetoas.udistrital.edu.co:8510/v1/parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
+	// 	IVAA = ss["Data"]
+
+	// } else {
+	// 	logs.Info("Error IVA servicio caido")
+	// 	outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	// 	return nil, outputError
+	// }
+
+	if err := request.GetJson("http://pruebasapi.intranetoas.udistrital.edu.co:8510/v1/parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
+		var data []map[string]interface{}
+		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
+			if err := json.Unmarshal(jsonString, &data); err == nil {
+				for _, valores := range data {
+					Parametro = append(Parametro, valores["ParametroId"])
+					Valor = append(Valor, valores["Valor"])
+					Id = append(Id, int(valores["Id"].(float64)))
+					Activo = append(Activo, bool(valores["Activo"].(bool)))
+				}
+			}
+		}
+		// fmt.Printf("%T\n", ss)
+		var data3 []map[string]interface{}
+
+		if jsonString, err := json.Marshal(Parametro); err == nil {
+			if err := json.Unmarshal(jsonString, &data3); err == nil {
+				for _, valores := range data3 {
+					Id2 = append(Id2, int(valores["Id"].(float64)))
+				}
+			}
+		}
+
+		// var x interface{} = "abc"
+		str := fmt.Sprintf("%v", Valor)
+		fmt.Println(str)
+
+		new := make([]interface{}, len(str))
+		for i, v := range str {
+			new[i] = v
+		}
+		fmt.Printf("%T\n", new)
+
+		// if err := json.Unmarshal(str, &data); err == nil {
+		// 	for _, valores := range data {
+		// 		Tarifa = append(Tarifa, valores["TarifaId"])
+		// 	}
+		// }
+		var data2 []interface{}
+		if jsonString2, err := json.Marshal(Valor); err == nil {
+			var ii = 0
+			for i, v := range jsonString2 {
+
+				if i == 0 {
+					jsonString2 = RemoveIndex(jsonString2, i)
+				}
+				if v == 92 {
+					ii++
+					jsonString2 = RemoveIndex(jsonString2, i)
+					fmt.Println(string(v))
+				}
+
+			}
+			// for i, v := range jsonString2 {
+
+			// 	if i == len(jsonString2) {
+			// 		jsonString2 = RemoveIndex(jsonString2, i)
+			// 		fmt.Println("ff")
+			// 	}
+			// 	if i == len(jsonString2) {
+			// 		jsonString2 = RemoveIndex(jsonString2, i)
+			// 		fmt.Println("ff")
+			// 	}
+			// 	fmt.Println(len(jsonString2))
+
+			// }
+			fmt.Println(ii)
+			fmt.Println(jsonString2)
+
+			if err := json.Unmarshal(jsonString2, &data2); err == nil {
+				for _, valores := range data2 {
+					Tarifa2 = append(Tarifa2, valores)
+				}
+			}
+			Tarifa2 = data2
+			fmt.Println(data2)
+		}
+
+		// fmt.Println(data2)
+		// fmt.Println(Tarifa)
+		// fmt.Println(data2)
+		// fmt.Printf("%T\n", Tarifa)
+		// fmt.Println(Tarifa)
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
 
 	} else {
@@ -379,11 +522,15 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 	}
 
 	parametros = append(parametros, map[string]interface{}{
+		"data":           ss["Data"],
 		"Unidades":       Unidades,
 		"IVA":            IVA,
 		"TipoBien":       TipoBien,
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
+		"IVAA":           Valor,
+		"Id2":            Id2,
+		"Tar":            Tarifa2,
 	})
 
 	return parametros, nil
