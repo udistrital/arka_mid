@@ -40,13 +40,10 @@ type VigenciaImpuesto struct {
 }
 
 type Imp struct {
-	Activo            bool
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
-	Id                int
-	ParametroId       map[string]interface{}
-	PeriodoId         map[string]interface{}
-	Valor             interface{}
+	PorcentajeAplicacion int
+	Tarifa               int
+	BasePesos            int
+	BaseUvt              int
 }
 
 type Impu struct {
@@ -354,33 +351,21 @@ func RemoveIndex(s []byte, index int) []byte {
 func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
 	var (
-		Unidades       interface{}
-		IVA            interface{}
-		TipoBien       interface{}
-		EstadoActa     interface{}
-		EstadoElemento interface{}
-		ss             map[string]interface{}
-		// IVAA           interface{}
-		Id     []int
-		Id2    []int
-		Activo []bool
-		// IVVAA          []interface{}
-		Parametro []interface{}
-		Valor     []interface{}
-		Tarifa2   []interface{}
+		Unidades          interface{}
+		IVA               interface{}
+		TipoBien          interface{}
+		EstadoActa        interface{}
+		EstadoElemento    interface{}
+		ss                map[string]interface{}
+		Id                []int
+		CodigoAbreviacion []string
+		Id2               []int
+		Activo            []bool
+		Parametro         []interface{}
+		Valor             []interface{}
+		Tarifa2           []interface{}
+		IvaTest           []Imp
 	)
-
-	// var Unidades interface{}
-	// var IVA interface{}
-	// var TipoBien interface{}
-	// var EstadoActa interface{}
-	// var EstadoElemento interface{}
-	// var ss map[string]interface{}
-	// var IVAA interface{}
-	// // var Data []map[string]interface{}
-	// // var sfga Imp
-	// // var inttt int}
-	// var IVVAA []interface{}
 
 	parametros := make([]map[string]interface{}, 0)
 
@@ -430,16 +415,11 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 				for _, valores := range data {
 					Parametro = append(Parametro, valores["ParametroId"])
 					v := []byte(fmt.Sprintf("%v", valores["Valor"]))
-					// logs.Debug(v)
 					var valorUnm interface{}
 					if err := json.Unmarshal(v, &valorUnm); err == nil {
 						Valor = append(Valor, valorUnm)
 						logs.Debug(fmt.Sprintf("FF: %v", valorUnm))
-
-					} else {
-						logs.Error("Fasha Marshal")
 					}
-
 					Id = append(Id, int(valores["Id"].(float64)))
 					Activo = append(Activo, bool(valores["Activo"].(bool)))
 					fmt.Printf("Tipo %T\n", valores["Valor"])
@@ -455,56 +435,45 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 			if err := json.Unmarshal(jsonString, &data3); err == nil {
 				for _, valores := range data3 {
 					Id2 = append(Id2, int(valores["Id"].(float64)))
+					CodigoAbreviacion = append(CodigoAbreviacion, string(valores["CodigoAbreviacion"].(string)))
 				}
 			}
 		}
 
-		var data2 []interface{}
+		var data2 []map[string]interface{}
 		if jsonString2, err := json.Marshal(Valor); err == nil {
-			// var ii = 0
-			// for i, v := range jsonString2 {
-
-			// 	if i == 0 {
-			// 		jsonString2 = RemoveIndex(jsonString2, i)
-			// 	}
-			// 	if v == 92 {
-			// 		ii++
-			// 		jsonString2 = RemoveIndex(jsonString2, i)
-			// 		fmt.Println(string(v))
-			// 	}
-
-			// }
-
-			// for i, v := range jsonString2 {
-
-			// 	if i == len(jsonString2) {
-			// 		jsonString2 = RemoveIndex(jsonString2, i)
-			// 		fmt.Println("ff")
-			// 	}
-			// 	if i == len(jsonString2) {
-			// 		jsonString2 = RemoveIndex(jsonString2, i)
-			// 		fmt.Println("ff")
-			// 	}
-			// 	fmt.Println(len(jsonString2))
-
-			// }
-			// fmt.Println(ii)
-			fmt.Println(jsonString2)
-
 			if err := json.Unmarshal(jsonString2, &data2); err == nil {
 				for _, valores := range data2 {
-					Tarifa2 = append(Tarifa2, valores)
+					Tarifa2 = append(Tarifa2, valores["Tarifa"])
+					Tarifa2 = append(Tarifa2, valores["BasePesos"])
+					Tarifa2 = append(Tarifa2, valores["BaseUvt"])
+					Tarifa2 = append(Tarifa2, valores["PorcentajeAplicacion"])
 				}
 			}
-			Tarifa2 = data2
-			fmt.Println(data2)
 		}
 
-		// fmt.Println(data2)
-		// fmt.Println(Tarifa)
-		// fmt.Println(data2)
-		// fmt.Printf("%T\n", Tarifa)
-		// fmt.Println(Tarifa)
+		// if jsonbody, err := json.Marshal(Valor); err == nil {
+		// 	var student []Imp
+		// 	if err := json.Unmarshal(jsonbody, &student); err == nil {
+		// 		fmt.Println(err)
+		// 		return
+		// 	}
+		// }
+
+		jsonbody, err := json.Marshal(Valor)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		var ivatest []Imp
+		if err := json.Unmarshal(jsonbody, &ivatest); err != nil {
+			fmt.Println(err)
+			return
+		}
+		IvaTest = ivatest
+		fmt.Println(ivatest)
+		fmt.Println(IvaTest)
 
 	} else {
 		logs.Info("Error IVA servicio caido")
@@ -530,6 +499,8 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		"IVAA":           Valor,
 		"Id2":            Id2,
 		"Tar":            Tarifa2,
+		"IvaTest":        IvaTest,
+		"Codi":           CodigoAbreviacion,
 	})
 
 	return parametros, nil
