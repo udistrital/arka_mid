@@ -88,10 +88,21 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 
-	if _, err := request.GetJsonTest(url, &Historico); err == nil { // (2) error servicio caido
+	if resp, err := request.GetJsonTest(url, &Historico); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
 
 		// fmt.Print("historicos:")
 		// fmt.Println(len(Historico))
+
+		if len(Historico) == 0 || len(Historico[0]) == 0 {
+			err := errors.New("There's currently no act records")
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas",
+				"err":     err,
+				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+			}
+			return nil, outputError
+		}
 
 		for _, historicos := range Historico {
 
@@ -289,7 +300,16 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		return historicoActa, nil
 
+	} else if err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
+			"err":     err,
+			"status":  "502", // (2) error servicio caido
+		}
+		return nil, outputError
 	} else {
+		err := fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
