@@ -213,50 +213,50 @@ func (c *ActaRecibidoController) GetAllActas() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("400")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
 
 	var reqStates []string
 	var WSO2user string
-	var idProveedor int
-	var idContratista int
 
 	if v := c.GetString("states"); v != "" {
-		reqStates = strings.Split(v, ",")
+		valido := false
+		states := strings.Split(v, ",")
+		for _, state := range states {
+			state = strings.TrimSpace(state)
+			if state != "" {
+				reqStates = append(reqStates, state)
+				valido = true
+			}
+		}
+
+		if !valido {
+			panic(map[string]interface{}{
+				"funcion": "GetAllActas",
+				"err":     "Bad syntax. Acts MUST be comma separated",
+				"status":  "400",
+			})
+		}
 	}
 	// fmt.Print("ESTADOS SOLICITADOS: ")
 	// fmt.Println(reqStates)
 
 	if v := c.GetString("u"); v != "" {
-		WSO2user = v
-	}
-
-	if v, err := c.GetInt("provId", 0); err == nil {
-		// fmt.Printf("ProveedorID: %d\n", v)
-		idProveedor = v
-	} else {
-		// fmt.Print("Error proveedor: ")
-		// fmt.Println(err)
-		panic(err)
-	}
-
-	if v, err := c.GetInt("contrId", 0); err == nil {
-		// fmt.Printf("ContratistaID: %d\n", v)
-		idContratista = v
-	} else {
-		// fmt.Print("Error contratista: ")
-		// fmt.Println(err)
-		panic(err)
-	}
-
-	if idProveedor < 0 || idContratista < 0 {
-		panic(map[string]interface{}{
-			"funcion": "GetAllActas",
-			"err":     "IDs MUST be positive (or 0 for no filter)",
-			"status":  "400",
-		})
+		valido := false
+		user := strings.TrimSpace(v)
+		if user != "" {
+			WSO2user = v
+			valido = true
+		}
+		if !valido {
+			panic(map[string]interface{}{
+				"funcion": "GetAllActas",
+				"err":     "Bad syntax",
+				"status":  "400",
+			})
+		}
 	}
 
 	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {

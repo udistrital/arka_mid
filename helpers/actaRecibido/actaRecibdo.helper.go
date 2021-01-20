@@ -65,7 +65,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas",
+				"funcion": "/GetAllActasRecibidoActivas - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -88,10 +88,21 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 
-	if _, err := request.GetJsonTest(url, &Historico); err == nil { // (2) error servicio caido
+	if resp, err := request.GetJsonTest(url, &Historico); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
 
 		// fmt.Print("historicos:")
 		// fmt.Println(len(Historico))
+
+		if len(Historico) == 0 || len(Historico[0]) == 0 {
+			err := errors.New("There's currently no act records")
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas",
+				"err":     err,
+				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+			}
+			return nil, outputError
+		}
 
 		for _, historicos := range Historico {
 
@@ -107,55 +118,42 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
 				data_ = data
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
+				return nil, err
 			}
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
+				return nil, err
 			}
 
-			if Terceros == nil {
+			// findAndAddTercero trae la información de un tercero y la agrega
+			// al buffer de terceros
+			findAndAddTercero := func() map[string]interface{} {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
+					return nil
 				} else {
 					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas",
+					return map[string]interface{}{
+						"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
 						"err":     err,
 						"status":  "502",
 					}
-					return nil, outputError
+				}
+			}
+
+			if Terceros == nil {
+				if err := findAndAddTercero(); err != nil {
+					return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
 					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-								Tercero_ = Tercero
-								Terceros = append(Terceros, Tercero)
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllActasRecibidoActivas",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+							if err := findAndAddTercero(); err != nil {
+								return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
@@ -170,17 +168,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 						return nil, outputError
 					}
 				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-						Tercero_ = Tercero
-						Terceros = append(Terceros, Tercero)
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+					if err := findAndAddTercero(); err != nil {
+						return nil, err
 					}
 				}
 			}
@@ -301,31 +290,31 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		// TODO: Manejar concurrencia en las peticiones a otras APIS
 		// Referencia: https://www.golang-book.com/books/intro/10
-		// TODO: Quitar los parámetros de ID de Proveedor y Contratista
-		// de la siguiente función, una vez sea uniforme el espacio de
-		// usuarios
 		if usrWSO2 != "" {
 			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
 				historicoActa = actas
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
+				return nil, err
 			}
 		}
 
 		return historicoActa, nil
 
-	} else {
+	} else if err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetAllActasRecibidoActivas",
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
 			"err":     err,
-			"status":  "502",
+			"status":  "502", // (2) error servicio caido
+		}
+		return nil, outputError
+	} else {
+		err := fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
+			"err":     err,
+			"status":  "502", // (2) error servicio caido
 		}
 		return nil, outputError
 	}
