@@ -98,8 +98,12 @@ func (c *ActaRecibidoController) GetActasByTipo() {
 // @Title Get Elementos
 // @Description get Elementos by id
 // @Param	id		path 	int	true		"id del acta"
-// @Success 200 {object} models.Elemento
+// @Success 200 {object} []models.Elemento
+// @Success 204 Empty response (Due to Act not found or without elements)
+// @Failure 400 Wrong ID (MUST be greater than 0)
 // @Failure 404 not found resource
+// @Failure 500 Internal Error
+// @Failure 502 Error with external API
 // @router /get_elementos_acta/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 
@@ -107,22 +111,32 @@ func (c *ActaRecibidoController) GetElementosActa() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
 
 	idStr := c.Ctx.Input.Param(":id")
 	var id int
-	if idTest, err := strconv.Atoi(idStr); err == nil {
+	if idTest, err := strconv.Atoi(idStr); err == nil && idTest > 0 {
 		id = idTest
+	} else if err != nil {
+		panic(map[string]interface{}{
+			"funcion": "GetElementosActa",
+			"err":     err,
+			"status":  "400",
+		})
 	} else {
-		panic(err)
+		panic(map[string]interface{}{
+			"funcion": "GetElementosActa",
+			"err":     "The Id MUST be greater than 0",
+			"status":  "400",
+		})
 	}
 	// fmt.Printf("id: %v\n", id)
 

@@ -720,9 +720,9 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetElementos",
+				"funcion": "/GetElementos - Unhandled Error!",
 				"err":     err,
-				"status":  "502",
+				"status":  "500",
 			}
 			panic(outputError)
 		}
@@ -734,7 +734,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		auxE      models.ElementosActa
 		soporte   *models.SoporteActaProveedor
 	)
-	if actaId != 0 { // (1) error parametro
+	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=SoporteActaId.ActaRecibidoId.Id:" + strconv.Itoa(actaId) +
 			",Activo:True&limit=-1"
@@ -742,6 +742,18 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			// Solicita información unidad elemento
 			// urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
 			// fmt.Printf("#Elementos: %v\n", len(elementos))
+
+			if len(elementos) == 0 || elementos[0].Id == 0 {
+				err := fmt.Errorf("No elements for Act #%d (or Act not found)", actaId)
+				logs.Warn(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
+					"err":     err,
+					"status":  "204",
+				}
+				return nil, outputError
+			}
+
 			for k, elemento := range elementos {
 				fmt.Printf("#Elemento: %v\n", k)
 
@@ -750,38 +762,58 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				auxE.Cantidad = elemento.Cantidad
 				auxE.Marca = elemento.Marca
 				auxE.Serie = elemento.Serie
-				// UNIDAD DEMEDIDA
-				if unidad, err2 := unidadHelper.GetUnidad(elemento.UnidadMedida); err2 == nil && len(unidad) > 0 {
-					auxE.UnidadMedida = unidad[0]
-				} else if err2 != nil {
-					return nil, err2
-				} else {
-					outputError = map[string]interface{}{
-						"funcion": "/GetElementos",
-						"err":     err2,
-						"status":  "502",
+
+				// UNIDAD DE MEDIDA
+				if elemento.UnidadMedida > 0 {
+					if unidad, err := unidadHelper.GetUnidad(elemento.UnidadMedida); err == nil && len(unidad) > 0 {
+						auxE.UnidadMedida = unidad[0]
+					} else if err != nil {
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
+					} else {
+						err := fmt.Errorf("UnidadMedida '%d' Not Found", elemento.UnidadMedida)
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida) / len(unidad) > 0",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
-					logs.Error(outputError)
-					return nil, outputError
 				}
 
 				auxE.ValorUnitario = elemento.ValorUnitario
 				auxE.Subtotal = elemento.Subtotal
 				auxE.Descuento = elemento.Descuento
 				auxE.ValorTotal = elemento.ValorTotal
+
 				// PORCENTAJE IVA
-				if iva, err2 := parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId); err2 == nil && len(iva) > 0 {
-					auxE.PorcentajeIvaId = iva[0]
-				} else if err2 != nil {
-					return nil, err2
-				} else {
-					outputError = map[string]interface{}{
-						"funcion": "/GetElementos",
-						"err":     err2,
-						"status":  "502",
+				if elemento.PorcentajeIvaId > 0 {
+					if iva, err := parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId); err == nil && len(iva) > 0 {
+						auxE.PorcentajeIvaId = iva[0]
+					} else if err != nil {
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
+					} else {
+						err := fmt.Errorf("PorcentajeIvaId '%d' Not Found", elemento.PorcentajeIvaId)
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId)",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
-					logs.Error(outputError)
-					return nil, outputError
 				}
 
 				auxE.ValorIva = elemento.ValorIva
@@ -792,22 +824,31 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				auxE.EstadoElementoId = elemento.EstadoElementoId
 				// SOPORTE
 				soporte = new(models.SoporteActaProveedor)
+
 				if elemento.SoporteActaId.ProveedorId > 0 {
-					if proveedor, err2 := proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId); err2 == nil && len(proveedor) > 0 {
+					if proveedor, err := proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId); err == nil && len(proveedor) > 0 {
 						fmt.Printf("proveedor: %#v\n", proveedor[0])
 						soporte.ProveedorId = proveedor[0]
-					} else if err2 != nil {
-						return nil, err2
-					} else {
+					} else if err != nil {
+						logs.Error(err)
 						outputError = map[string]interface{}{
-							"funcion": "/GetElementos",
-							"err":     err2,
+							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
+							"err":     err,
 							"status":  "502",
 						}
-						logs.Error(outputError)
+						return nil, outputError
+					} else {
+						err := fmt.Errorf("ProveedorId '%d' Not Found", elemento.SoporteActaId.ProveedorId)
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
+							"err":     err,
+							"status":  "500",
+						}
 						return nil, outputError
 					}
 				}
+
 				soporte.Id = elemento.SoporteActaId.Id
 				soporte.ActaRecibidoId = elemento.SoporteActaId.ActaRecibidoId
 				soporte.Consecutivo = elemento.SoporteActaId.Consecutivo
@@ -827,18 +868,31 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			}
 
 			return elementosActa, nil
-		} else {
-			// logs.Info("Error (2) servicio caido")
+		} else if err != nil {
 			logs.Error(err)
-			outputError = map[string]interface{}{"funcion": "/GetElementos", "err": err, "status": "502"}
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
+				"err":     err,
+				"status":  "502", // Error (2) servicio caido
+			}
+			return nil, outputError
+		} else {
+			err := fmt.Errorf("Undesired State: %d", response.StatusCode)
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
+				"err":     err,
+				"status":  "500",
+			}
 			return nil, outputError
 		}
 	} else {
-		// logs.Info("Error (1) Parametro")
+		err := errors.New("ID must be greater than 0")
+		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetElementos",
-			"err":     "Error (1) Parametro",
-			"status":  "502",
+			"funcion": "/GetElementos - actaId > 0",
+			"err":     err,
+			"status":  "400",
 		}
 		return nil, outputError
 	}

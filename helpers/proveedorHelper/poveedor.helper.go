@@ -1,6 +1,7 @@
 package proveedorHelper
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -14,30 +15,48 @@ func GetProveedorById(proveedorId int) (proveedor []*models.Proveedor, outputErr
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetProveedorById", "err": err, "status": "502"}
+			outputError = map[string]interface{}{
+				"funcion": "/GetProveedorById - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
 			panic(outputError)
 		}
 	}()
 
-	if proveedorId != 0 { // (1) error parametro
+	if proveedorId > 0 { // (1) error parametro
 
-		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("administrativaService")+"informacion_proveedor?query=Id:"+strconv.Itoa(proveedorId), &proveedor); err == nil { // (2) error servicio caido
+		urlProveedor := "http://" + beego.AppConfig.String("administrativaService") + "informacion_proveedor?query=Id:" + strconv.Itoa(proveedorId)
+		if response, err := request.GetJsonTest(urlProveedor, &proveedor); err == nil { // (2) error servicio caido
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				return proveedor, nil
 			} else {
-				logs.Info("Error (3) estado de la solicitud")
-				outputError = map[string]interface{}{"funcion": "GetProveedorById", "err": response.Status, "status": response.Status}
+				err := fmt.Errorf("Undesired Status: %s", response.Status)
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetProveedorById - request.GetJsonTest(urlProveedor, &proveedor)",
+					"err":     err,
+					"status":  "500", // Error (3) estado de la solicitud
+				}
 				return nil, outputError
 			}
 		} else {
-			logs.Debug(err)
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"funcion": "GetProveedorById", "err": err, "status": "502"}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetProveedorById - request.GetJsonTest(urlProveedor, &proveedor)",
+				"err":     err,
+				"status":  "502", // Error (2) servicio caido
+			}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"funcion": "GetProveedorById", "err": "null parameter", "status": "400"}
+		err := fmt.Errorf("proveedorId MUST be greater than 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetProveedorById - proveedorId > 0",
+			"err":     err,
+			"status":  "400", // (1) error parametro
+		}
 		return nil, outputError
 	}
 }

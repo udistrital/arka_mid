@@ -1,6 +1,7 @@
 package unidadHelper
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -12,26 +13,53 @@ import (
 
 // GetUnidad ...
 func GetUnidad(unidadId int) (unidad []*models.Unidad, outputError map[string]interface{}) {
-	if unidadId != 0 { // (1) error parametro
+	if unidadId > 0 { // (1) error parametro
+
+		defer func() {
+			if err := recover(); err != nil {
+				outputError = map[string]interface{}{
+					"funcion": "/GetUnidad - Unhandled Error!",
+					"err":     err,
+					"status":  "500",
+				}
+				panic(outputError)
+			}
+		}()
+
 		var unidadAux *models.Unidad
 
-		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("administrativaService")+"unidad/"+strconv.Itoa(unidadId), &unidadAux); err == nil { // (2) error servicio caido
+		urlUnidad := "http://" + beego.AppConfig.String("administrativaService") + "unidad/" + strconv.Itoa(unidadId)
+		if response, err := request.GetJsonTest(urlUnidad, &unidadAux); err == nil { // (2) error servicio caido
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				unidad = append(unidad, unidadAux)
 				return unidad, nil
 			} else {
-				logs.Info("Error (3) estado de la solicitud")
-				outputError = map[string]interface{}{"Function": "GetUnidad:GetUnidad", "Error": response.Status}
+				err := fmt.Errorf("Undesired Status: %s", response.Status)
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetUnidad - request.GetJsonTest(urlUnidad, &unidadAux) / response.StatusCode == 200",
+					"err":     err,
+					"status":  "500", // Error (3) estado de la solicitud
+				}
 				return nil, outputError
 			}
 		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetUnidad", "Error": err}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetUnidad - request.GetJsonTest(urlUnidad, &unidadAux)",
+				"err":     err,
+				"status":  "502", // Error (2) servicio caido
+			}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetUnidad", "Error": "null parameter"}
+		err := fmt.Errorf("unidadId MUST be greater than 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetUnidad",
+			"err":     err,
+			"status":  "400", // null parameter
+		}
 		return nil, outputError
 	}
 }
