@@ -81,15 +81,29 @@ func (c *ActaRecibidoController) GetAll() {
 // @Failure 403
 // @router /get_actas_recibido_tipo/:tipo [get]
 func (c *ActaRecibidoController) GetActasByTipo() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "GetActasByTipo" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	tipoStr := c.Ctx.Input.Param(":tipo")
 	tipo, _ := strconv.Atoi(tipoStr)
-	v, err := actaRecibidoHelper.GetActasRecibidoTipo(tipo)
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
-	} else {
+
+	if v, err := actaRecibidoHelper.GetActasRecibidoTipo(tipo); err == nil {
 		c.Data["json"] = v
+		c.Ctx.Output.SetStatus(200)
+	} else {
+		panic(err)
 	}
 	c.ServeJSON()
 }
