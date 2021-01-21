@@ -175,11 +175,26 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Elemento"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Elemento"
+                            }
                         }
+                    },
+                    "204": {
+                        "description": "Empty response (Due to Act not found or without elements)"
+                    },
+                    "400": {
+                        "description": "Wrong ID (MUST be greater than 0)"
                     },
                     "404": {
                         "description": "not found resource"
+                    },
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "502": {
+                        "description": "Error with external API"
                     }
                 }
             }

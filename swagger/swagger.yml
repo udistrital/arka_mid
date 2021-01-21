@@ -81,13 +81,11 @@ paths:
       parameters:
       - in: query
         name: states
-        description: If specified, returns only acts with the specified state(s) from
-          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        description: If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
         type: string
       - in: query
         name: u
-        description: WSO2 User. When specified, acts will be filtered upon the available
-          roles for the specified user
+        description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
         type: string
       responses:
         "200":
@@ -121,9 +119,19 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Elemento'
+            type: array
+            items:
+              $ref: '#/definitions/models.Elemento'
+        "204":
+          description: Empty response (Due to Act not found or without elements)
+        "400":
+          description: Wrong ID (MUST be greater than 0)
         "404":
           description: not found resource
+        "500":
+          description: Internal Error
+        "502":
+          description: Error with external API
   /acta_recibido/get_soportes_acta/{id}:
     get:
       tags:
@@ -310,14 +318,12 @@ paths:
     post:
       tags:
       - catalogo_elementos
-      description: Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas
-        asociadas a subgrupos
+      description: Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas asociadas a subgrupos
       operationId: CatalogoElementosController.Create
       parameters:
       - in: body
         name: body
-        description: body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos,
-          cada subgrupo debe llevar un Id definido)
+        description: body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos, cada subgrupo debe llevar un Id definido)
         required: true
         schema:
           $ref: '#/definitions/models.Tr_cuentas_subgrupo'
@@ -547,8 +553,7 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit

@@ -71,7 +71,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas",
+				"funcion": "/GetAllActasRecibidoActivas - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -95,10 +95,21 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 
-	if _, err := request.GetJsonTest(url, &Historico); err == nil { // (2) error servicio caido
+	if resp, err := request.GetJsonTest(url, &Historico); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
 
 		// fmt.Print("historicos:")
 		// fmt.Println(len(Historico))
+
+		if len(Historico) == 0 || len(Historico[0]) == 0 {
+			err := errors.New("There's currently no act records")
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas",
+				"err":     err,
+				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+			}
+			return nil, outputError
+		}
 
 		for _, historicos := range Historico {
 
@@ -114,55 +125,42 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
 				data_ = data
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
+				return nil, err
 			}
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetAllActasRecibidoActivas",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
+				return nil, err
 			}
 
-			if Terceros == nil {
+			// findAndAddTercero trae la información de un tercero y la agrega
+			// al buffer de terceros
+			findAndAddTercero := func() map[string]interface{} {
 				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
+					return nil
 				} else {
 					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas",
+					return map[string]interface{}{
+						"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
 						"err":     err,
 						"status":  "502",
 					}
-					return nil, outputError
+				}
+			}
+
+			if Terceros == nil {
+				if err := findAndAddTercero(); err != nil {
+					return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
 					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-								Tercero_ = Tercero
-								Terceros = append(Terceros, Tercero)
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllActasRecibidoActivas",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+							if err := findAndAddTercero(); err != nil {
+								return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
@@ -177,17 +175,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 						return nil, outputError
 					}
 				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-						Tercero_ = Tercero
-						Terceros = append(Terceros, Tercero)
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+					if err := findAndAddTercero(); err != nil {
+						return nil, err
 					}
 				}
 			}
@@ -308,32 +297,31 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		// TODO: Manejar concurrencia en las peticiones a otras APIS
 		// Referencia: https://www.golang-book.com/books/intro/10
-		// TODO: Quitar los parámetros de ID de Proveedor y Contratista
-		// de la siguiente función, una vez sea uniforme el espacio de
-		// usuarios
-		// fmt.Println(usrWSO2)
-		// if usrWSO2 != "" {
-		// 	if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
-		// 		historicoActa = actas
-		// 	} else {
-		// 		logs.Error(err)
-		// 		outputError = map[string]interface{}{
-		// 			"funcion": "/GetAllActasRecibidoActivas",
-		// 			"err":     err,
-		// 			"status":  "502",
-		// 		}
-		// 		return nil, outputError
-		// 	}
-		// }
-
+		if usrWSO2 != "" {
+			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
+				historicoActa = actas
+			} else {
+				return nil, err
+			}
+		}
+    
 		return historicoActa, nil
 
-	} else {
+	} else if err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetAllActasRecibidoActivas",
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
 			"err":     err,
-			"status":  "502",
+			"status":  "502", // (2) error servicio caido
+		}
+		return nil, outputError
+	} else {
+		err := fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
+			"err":     err,
+			"status":  "502", // (2) error servicio caido
 		}
 		return nil, outputError
 	}
@@ -841,9 +829,9 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetElementos",
+				"funcion": "/GetElementos - Unhandled Error!",
 				"err":     err,
-				"status":  "502",
+				"status":  "500",
 			}
 			panic(outputError)
 		}
@@ -855,7 +843,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		auxE      models.ElementosActa
 		soporte   *models.SoporteActaProveedor
 	)
-	if actaId != 0 { // (1) error parametro
+	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=SoporteActaId.ActaRecibidoId.Id:" + strconv.Itoa(actaId) +
 			",Activo:True&limit=-1"
@@ -863,6 +851,18 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			// Solicita información unidad elemento
 			// urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
 			// fmt.Printf("#Elementos: %v\n", len(elementos))
+
+			if len(elementos) == 0 || elementos[0].Id == 0 {
+				err := fmt.Errorf("No elements for Act #%d (or Act not found)", actaId)
+				logs.Warn(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
+					"err":     err,
+					"status":  "204",
+				}
+				return nil, outputError
+			}
+
 			for k, elemento := range elementos {
 				fmt.Printf("#Elemento: %v\n", k)
 
@@ -871,19 +871,29 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				auxE.Cantidad = elemento.Cantidad
 				auxE.Marca = elemento.Marca
 				auxE.Serie = elemento.Serie
-				// UNIDAD DEMEDIDA
-				if unidad, err2 := unidadHelper.GetUnidad(elemento.UnidadMedida); err2 == nil && len(unidad) > 0 {
-					auxE.UnidadMedida = unidad[0]
-				} else if err2 != nil {
-					return nil, err2
-				} else {
-					outputError = map[string]interface{}{
-						"funcion": "/GetElementos",
-						"err":     err2,
-						"status":  "502",
+
+				// UNIDAD DE MEDIDA
+				if elemento.UnidadMedida > 0 {
+					if unidad, err := unidadHelper.GetUnidad(elemento.UnidadMedida); err == nil && len(unidad) > 0 {
+						auxE.UnidadMedida = unidad[0]
+					} else if err != nil {
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
+					} else {
+						err := fmt.Errorf("UnidadMedida '%d' Not Found", elemento.UnidadMedida)
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida) / len(unidad) > 0",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
-					logs.Error(outputError)
-					return nil, outputError
 				}
 
 				auxE.ValorUnitario = elemento.ValorUnitario
@@ -899,22 +909,31 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				auxE.EstadoElementoId = elemento.EstadoElementoId
 				// SOPORTE
 				soporte = new(models.SoporteActaProveedor)
+
 				if elemento.SoporteActaId.ProveedorId > 0 {
-					if proveedor, err2 := proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId); err2 == nil && len(proveedor) > 0 {
+					if proveedor, err := proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId); err == nil && len(proveedor) > 0 {
 						fmt.Printf("proveedor: %#v\n", proveedor[0])
 						soporte.ProveedorId = proveedor[0]
-					} else if err2 != nil {
-						return nil, err2
-					} else {
+					} else if err != nil {
+						logs.Error(err)
 						outputError = map[string]interface{}{
-							"funcion": "/GetElementos",
-							"err":     err2,
+							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
+							"err":     err,
 							"status":  "502",
 						}
-						logs.Error(outputError)
+						return nil, outputError
+					} else {
+						err := fmt.Errorf("ProveedorId '%d' Not Found", elemento.SoporteActaId.ProveedorId)
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
+							"err":     err,
+							"status":  "500",
+						}
 						return nil, outputError
 					}
 				}
+
 				soporte.Id = elemento.SoporteActaId.Id
 				soporte.ActaRecibidoId = elemento.SoporteActaId.ActaRecibidoId
 				soporte.Consecutivo = elemento.SoporteActaId.Consecutivo
@@ -934,18 +953,31 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			}
 
 			return elementosActa, nil
-		} else {
-			// logs.Info("Error (2) servicio caido")
+		} else if err != nil {
 			logs.Error(err)
-			outputError = map[string]interface{}{"funcion": "/GetElementos", "err": err, "status": "502"}
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
+				"err":     err,
+				"status":  "502", // Error (2) servicio caido
+			}
+			return nil, outputError
+		} else {
+			err := fmt.Errorf("Undesired State: %d", response.StatusCode)
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
+				"err":     err,
+				"status":  "500",
+			}
 			return nil, outputError
 		}
 	} else {
-		// logs.Info("Error (1) Parametro")
+		err := errors.New("ID must be greater than 0")
+		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetElementos",
-			"err":     "Error (1) Parametro",
-			"status":  "502",
+			"funcion": "/GetElementos - actaId > 0",
+			"err":     err,
+			"status":  "400",
 		}
 		return nil, outputError
 	}

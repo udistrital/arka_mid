@@ -81,33 +81,12 @@ func (c *ActaRecibidoController) GetAll() {
 // @Failure 403
 // @router /get_actas_recibido_tipo/:tipo [get]
 func (c *ActaRecibidoController) GetActasByTipo() {
-	tipoStr := c.Ctx.Input.Param(":tipo")
-	tipo, _ := strconv.Atoi(tipoStr)
-	v, err := actaRecibidoHelper.GetActasRecibidoTipo(tipo)
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
-	} else {
-		c.Data["json"] = v
-	}
-	c.ServeJSON()
-}
-
-// GetElementosActa ...
-// @Title Get Elementos
-// @Description get Elementos by id
-// @Param	id		path 	int	true		"id del acta"
-// @Success 200 {object} models.Elemento
-// @Failure 404 not found resource
-// @router /get_elementos_acta/:id [get]
-func (c *ActaRecibidoController) GetElementosActa() {
 
 	defer func() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "GetActasByTipo" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -117,12 +96,61 @@ func (c *ActaRecibidoController) GetElementosActa() {
 		}
 	}()
 
-	idStr := c.Ctx.Input.Param(":id")
-	var id int
-	if idTest, err := strconv.Atoi(idStr); err == nil {
-		id = idTest
+	tipoStr := c.Ctx.Input.Param(":tipo")
+	tipo, _ := strconv.Atoi(tipoStr)
+
+	if v, err := actaRecibidoHelper.GetActasRecibidoTipo(tipo); err == nil {
+		c.Data["json"] = v
+		c.Ctx.Output.SetStatus(200)
 	} else {
 		panic(err)
+	}
+	c.ServeJSON()
+}
+
+// GetElementosActa ...
+// @Title Get Elementos
+// @Description get Elementos by id
+// @Param	id		path 	int	true		"id del acta"
+// @Success 200 {object} []models.Elemento
+// @Success 204 Empty response (Due to Act not found or without elements)
+// @Failure 400 Wrong ID (MUST be greater than 0)
+// @Failure 404 not found resource
+// @Failure 500 Internal Error
+// @Failure 502 Error with external API
+// @router /get_elementos_acta/:id [get]
+func (c *ActaRecibidoController) GetElementosActa() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
+	idStr := c.Ctx.Input.Param(":id")
+	var id int
+	if idTest, err := strconv.Atoi(idStr); err == nil && idTest > 0 {
+		id = idTest
+	} else if err != nil {
+		panic(map[string]interface{}{
+			"funcion": "GetElementosActa",
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		panic(map[string]interface{}{
+			"funcion": "GetElementosActa",
+			"err":     "The Id MUST be greater than 0",
+			"status":  "400",
+		})
 	}
 	// fmt.Printf("id: %v\n", id)
 
@@ -199,50 +227,50 @@ func (c *ActaRecibidoController) GetAllActas() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("400")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
 
 	var reqStates []string
 	var WSO2user string
-	var idProveedor int
-	var idContratista int
 
 	if v := c.GetString("states"); v != "" {
-		reqStates = strings.Split(v, ",")
+		valido := false
+		states := strings.Split(v, ",")
+		for _, state := range states {
+			state = strings.TrimSpace(state)
+			if state != "" {
+				reqStates = append(reqStates, state)
+				valido = true
+			}
+		}
+
+		if !valido {
+			panic(map[string]interface{}{
+				"funcion": "GetAllActas",
+				"err":     "Bad syntax. Acts MUST be comma separated",
+				"status":  "400",
+			})
+		}
 	}
 	// fmt.Print("ESTADOS SOLICITADOS: ")
 	// fmt.Println(reqStates)
 
 	if v := c.GetString("u"); v != "" {
-		WSO2user = v
-	}
-
-	if v, err := c.GetInt("provId", 0); err == nil {
-		// fmt.Printf("ProveedorID: %d\n", v)
-		idProveedor = v
-	} else {
-		// fmt.Print("Error proveedor: ")
-		// fmt.Println(err)
-		panic(err)
-	}
-
-	if v, err := c.GetInt("contrId", 0); err == nil {
-		// fmt.Printf("ContratistaID: %d\n", v)
-		idContratista = v
-	} else {
-		// fmt.Print("Error contratista: ")
-		// fmt.Println(err)
-		panic(err)
-	}
-
-	if idProveedor < 0 || idContratista < 0 {
-		panic(map[string]interface{}{
-			"funcion": "GetAllActas",
-			"err":     "IDs MUST be positive (or 0 for no filter)",
-			"status":  "400",
-		})
+		valido := false
+		user := strings.TrimSpace(v)
+		if user != "" {
+			WSO2user = v
+			valido = true
+		}
+		if !valido {
+			panic(map[string]interface{}{
+				"funcion": "GetAllActas",
+				"err":     "Bad syntax",
+				"status":  "400",
+			})
+		}
 	}
 
 	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
