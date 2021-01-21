@@ -44,6 +44,7 @@ type Imp struct {
 	Tarifa               int
 	BasePesos            int
 	BaseUvt              int
+	CodigoAbreviacion    string
 }
 
 type Impu struct {
@@ -351,20 +352,16 @@ func RemoveIndex(s []byte, index int) []byte {
 func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
 	var (
-		Unidades          interface{}
-		IVA               interface{}
-		TipoBien          interface{}
-		EstadoActa        interface{}
-		EstadoElemento    interface{}
-		ss                map[string]interface{}
-		Id                []int
-		CodigoAbreviacion []string
-		Id2               []int
-		Activo            []bool
-		Parametro         []interface{}
-		Valor             []interface{}
-		Tarifa2           []interface{}
-		IvaTest           []Imp
+		Unidades       interface{}
+		IVA            interface{}
+		TipoBien       interface{}
+		EstadoActa     interface{}
+		EstadoElemento interface{}
+		ss             map[string]interface{}
+		Parametro      []interface{}
+		Valor          []interface{}
+		IvaTest        []Imp
+		Ivas           []Imp
 	)
 
 	parametros := make([]map[string]interface{}, 0)
@@ -398,17 +395,8 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		return nil, outputError
 	}
 
-	// if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12?limit=-1", &IVAA); err == nil { // (2) error servicio caido
-	// if _, err := request.GetJsonTest("http://pruebasapi.intranetoas.udistrital.edu.co:8510/v1/parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
-	// 	IVAA = ss["Data"]
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
 
-	// } else {
-	// 	logs.Info("Error IVA servicio caido")
-	// 	outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-	// 	return nil, outputError
-	// }
-
-	if err := request.GetJson("http://pruebasapi.intranetoas.udistrital.edu.co:8510/v1/parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
 		var data []map[string]interface{}
 		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
 			if err := json.Unmarshal(jsonString, &data); err == nil {
@@ -418,62 +406,34 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 					var valorUnm interface{}
 					if err := json.Unmarshal(v, &valorUnm); err == nil {
 						Valor = append(Valor, valorUnm)
-						logs.Debug(fmt.Sprintf("FF: %v", valorUnm))
 					}
-					Id = append(Id, int(valores["Id"].(float64)))
-					Activo = append(Activo, bool(valores["Activo"].(bool)))
-					fmt.Printf("Tipo %T\n", valores["Valor"])
-				}
-
-			}
-
-		}
-		// fmt.Printf("%T\n", ss)
-		var data3 []map[string]interface{}
-
-		if jsonString, err := json.Marshal(Parametro); err == nil {
-			if err := json.Unmarshal(jsonString, &data3); err == nil {
-				for _, valores := range data3 {
-					Id2 = append(Id2, int(valores["Id"].(float64)))
-					CodigoAbreviacion = append(CodigoAbreviacion, string(valores["CodigoAbreviacion"].(string)))
 				}
 			}
 		}
 
-		var data2 []map[string]interface{}
-		if jsonString2, err := json.Marshal(Valor); err == nil {
-			if err := json.Unmarshal(jsonString2, &data2); err == nil {
-				for _, valores := range data2 {
-					Tarifa2 = append(Tarifa2, valores["Tarifa"])
-					Tarifa2 = append(Tarifa2, valores["BasePesos"])
-					Tarifa2 = append(Tarifa2, valores["BaseUvt"])
-					Tarifa2 = append(Tarifa2, valores["PorcentajeAplicacion"])
-				}
+		if jsonbody1, err := json.Marshal(Parametro); err == nil {
+			if err := json.Unmarshal(jsonbody1, &Ivas); err != nil {
+				fmt.Println(err)
+				return
 			}
 		}
 
-		// if jsonbody, err := json.Marshal(Valor); err == nil {
-		// 	var student []Imp
-		// 	if err := json.Unmarshal(jsonbody, &student); err == nil {
-		// 		fmt.Println(err)
-		// 		return
-		// 	}
-		// }
-
-		jsonbody, err := json.Marshal(Valor)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if jsonbody1, err := json.Marshal(Valor); err == nil {
+			if err := json.Unmarshal(jsonbody1, &IvaTest); err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
 
-		var ivatest []Imp
-		if err := json.Unmarshal(jsonbody, &ivatest); err != nil {
-			fmt.Println(err)
-			return
+		for i, valores := range IvaTest {
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
 		}
-		IvaTest = ivatest
-		fmt.Println(ivatest)
-		fmt.Println(IvaTest)
+		for i, valores := range Ivas {
+			IvaTest[i].BasePesos = valores.BasePesos
+			IvaTest[i].BaseUvt = valores.BaseUvt
+			IvaTest[i].PorcentajeAplicacion = valores.PorcentajeAplicacion
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
+		}
 
 	} else {
 		logs.Info("Error IVA servicio caido")
@@ -497,10 +457,7 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
 		"IVAA":           Valor,
-		"Id2":            Id2,
-		"Tar":            Tarifa2,
 		"IvaTest":        IvaTest,
-		"Codi":           CodigoAbreviacion,
 	})
 
 	return parametros, nil
