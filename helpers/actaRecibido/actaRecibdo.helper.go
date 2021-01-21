@@ -336,7 +336,6 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 
 	var (
 		Unidades       interface{}
-		IVA            interface{}
 		TipoBien       interface{}
 		EstadoActa     interface{}
 		EstadoElemento interface{}
@@ -367,13 +366,6 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 
 	} else {
 		logs.Info("Error EstadoElemento servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-		return nil, outputError
-	}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error IVA servicio caido")
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return nil, outputError
 	}
@@ -434,7 +426,6 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 
 	parametros = append(parametros, map[string]interface{}{
 		"Unidades":       Unidades,
-		"IaaaVAssss":     IVA,
 		"TipoBien":       TipoBien,
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
@@ -447,7 +438,6 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 // "DecodeXlsx2Json ..."
 func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, outputError map[string]interface{}) {
 
-	var IVA []VigenciaImpuesto
 	var Unidades []Unidad
 	var SubgruposConsumo []map[string]interface{}
 	var SubgruposConsumoControlado []map[string]interface{}
@@ -459,14 +449,6 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		IvaTest   []Imp
 		Ivas      []Imp
 	)
-
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error IVA servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-		return nil, outputError
-	}
 
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
 
