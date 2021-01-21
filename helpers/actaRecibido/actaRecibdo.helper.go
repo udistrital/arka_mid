@@ -13,7 +13,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
-	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
@@ -45,10 +44,6 @@ type Imp struct {
 	BasePesos            int
 	BaseUvt              int
 	CodigoAbreviacion    string
-}
-
-type Impu struct {
-	Iva []Imp
 }
 
 type Unidad struct {
@@ -450,14 +445,12 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 	}
 
 	parametros = append(parametros, map[string]interface{}{
-		"data":           ss["Data"],
 		"Unidades":       Unidades,
-		"IVA":            IVA,
+		"IaaaVAssss":     IVA,
 		"TipoBien":       TipoBien,
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
-		"IVAA":           Valor,
-		"IvaTest":        IvaTest,
+		"IVA":            IvaTest,
 	})
 
 	return parametros, nil
@@ -471,6 +464,13 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 	var SubgruposConsumo []map[string]interface{}
 	var SubgruposConsumoControlado []map[string]interface{}
 	var SubgruposDevolutivo []map[string]interface{}
+	var (
+		ss        map[string]interface{}
+		Parametro []interface{}
+		Valor     []interface{}
+		IvaTest   []Imp
+		Ivas      []Imp
+	)
 
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
 
@@ -479,6 +479,53 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return nil, outputError
 	}
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
+
+		var data []map[string]interface{}
+		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
+			if err := json.Unmarshal(jsonString, &data); err == nil {
+				for _, valores := range data {
+					Parametro = append(Parametro, valores["ParametroId"])
+					v := []byte(fmt.Sprintf("%v", valores["Valor"]))
+					var valorUnm interface{}
+					if err := json.Unmarshal(v, &valorUnm); err == nil {
+						Valor = append(Valor, valorUnm)
+					}
+				}
+			}
+		}
+
+		if jsonbody1, err := json.Marshal(Parametro); err == nil {
+			if err := json.Unmarshal(jsonbody1, &Ivas); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
+		if jsonbody1, err := json.Marshal(Valor); err == nil {
+			if err := json.Unmarshal(jsonbody1, &IvaTest); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
+		for i, valores := range IvaTest {
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
+		}
+		for i, valores := range Ivas {
+			IvaTest[i].BasePesos = valores.BasePesos
+			IvaTest[i].BaseUvt = valores.BaseUvt
+			IvaTest[i].PorcentajeAplicacion = valores.PorcentajeAplicacion
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
+		}
+
+	} else {
+		logs.Info("Error IVA servicio caido")
+		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		return nil, outputError
+	}
+
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/1", &SubgruposConsumo); err == nil { // (2) error servicio caido
 
 	} else {
@@ -562,9 +609,9 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							logs.Info(convertir)
 							valor, err := strconv.ParseInt(convertir[0], 10, 64)
 							if err == nil {
-								for _, valor_iva := range IVA {
-									if valor == valor_iva.Tarifa {
-										elementos[11] = strconv.Itoa(valor_iva.Id)
+								for _, valor_iva := range IvaTest {
+									if valor == int64(valor_iva.Tarifa) {
+										elementos[11] = strconv.Itoa(valor_iva.Tarifa)
 									}
 								}
 							} else {
@@ -843,21 +890,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				auxE.Subtotal = elemento.Subtotal
 				auxE.Descuento = elemento.Descuento
 				auxE.ValorTotal = elemento.ValorTotal
-				// PORCENTAJE IVA
-				if iva, err2 := parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId); err2 == nil && len(iva) > 0 {
-					auxE.PorcentajeIvaId = iva[0]
-				} else if err2 != nil {
-					return nil, err2
-				} else {
-					outputError = map[string]interface{}{
-						"funcion": "/GetElementos",
-						"err":     err2,
-						"status":  "502",
-					}
-					logs.Error(outputError)
-					return nil, outputError
-				}
-
+				auxE.PorcentajeIvaId = elemento.PorcentajeIvaId
 				auxE.ValorIva = elemento.ValorIva
 				auxE.ValorFinal = elemento.ValorFinal
 				auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
