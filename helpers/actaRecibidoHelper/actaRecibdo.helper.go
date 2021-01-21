@@ -7,7 +7,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 
-	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
 	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 
 	"github.com/astaxie/beego"
@@ -117,7 +116,6 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		urlcrud   string
 		elementos []models.Elemento
 		unidad    []*models.Unidad
-		iva       []*models.ParametrosGobierno
 		proveedor []*models.Proveedor
 		auxE      models.ElementosActa
 		soporte   *models.SoporteActaProveedor
@@ -146,8 +144,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 					auxE.Descuento = elemento.Descuento
 					auxE.ValorTotal = elemento.ValorTotal
 					// PORCENTAJE IVA
-					iva, outputError = parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId)
-					auxE.PorcentajeIvaId = iva[0]
+					auxE.PorcentajeIvaId = elemento.PorcentajeIvaId
 					auxE.ValorIva = elemento.ValorIva
 					auxE.ValorFinal = elemento.ValorFinal
 					auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
