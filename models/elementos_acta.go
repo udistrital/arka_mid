@@ -13,7 +13,7 @@ type ElementosActa struct {
 	Subtotal           float64               `orm:"column(subtotal);null"`
 	Descuento          float64               `orm:"column(descuento);null"`
 	ValorTotal         float64               `orm:"column(valor_total);null"`
-	PorcentajeIvaId    *ParametrosGobierno   `orm:"column(porcentaje_iva_id)"`
+	PorcentajeIvaId    int                   `orm:"column(porcentaje_iva_id)"`
 	ValorIva           float64               `orm:"column(valor_iva);null"`
 	ValorFinal         float64               `orm:"column(valor_final);null"`
 	SubgrupoCatalogoId int                   `orm:"column(subgrupo_catalogo_id)"`
