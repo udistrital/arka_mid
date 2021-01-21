@@ -430,7 +430,6 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
 		"IVA":            IvaTest,
-		"IVVAA":          ss,
 	})
 
 	return parametros, nil
