@@ -869,49 +869,68 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 
 // GetSoportes ...
 func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetSoportes - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud   string
 		soportes  []models.SoporteActa
 		proveedor []*models.Proveedor
 		auxS      models.SoporteActaProveedor
 	)
-	if actaId != 0 { // (1) error parametro
+	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta?query=ActaRecibidoId:" + strconv.Itoa(actaId) + ",ActaRecibidoId.Activo:True&limit=-1"
-		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil {
+		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil && response.StatusCode == 200 {
 			// Solicita información unidad elemento
-			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
 			for _, soporte := range soportes {
-				if response.StatusCode == 200 { // (3) error estado de la solicitud
-					auxS.Id = soporte.Id
-					auxS.Consecutivo = soporte.Consecutivo
-					auxS.ActaRecibidoId = soporte.ActaRecibidoId
-					auxS.FechaSoporte = soporte.FechaSoporte
-					auxS.Activo = soporte.Activo
-					// SOPORTE
+				auxS.Id = soporte.Id
+				auxS.Consecutivo = soporte.Consecutivo
+				auxS.ActaRecibidoId = soporte.ActaRecibidoId
+				auxS.FechaSoporte = soporte.FechaSoporte
+				auxS.Activo = soporte.Activo
+				// SOPORTE
+				if soporte.ProveedorId > 0 {
 					proveedor, outputError = proveedorHelper.GetProveedorById(soporte.ProveedorId)
 					//soporteAux = new(models.SoporteActaProveedor)
 					auxS.ProveedorId = proveedor[0]
-
-					auxS.FechaCreacion = soporte.FechaCreacion
-					auxS.FechaModificacion = soporte.FechaModificacion
-
-					soportesActa = append(soportesActa, auxS)
-				} else {
-					logs.Info("Error (3) estado de la solicitud")
-					outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
-					return nil, outputError
 				}
+
+				auxS.FechaCreacion = soporte.FechaCreacion
+				auxS.FechaModificacion = soporte.FechaModificacion
+
+				soportesActa = append(soportesActa, auxS)
 			}
 			return soportesActa, nil
 		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetIva", "Error": err}
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSoportes - request.GetJsonTest(urlcrud, &soportes)",
+				"err":     err,
+				"status":  "502",
+			}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetIva", "Error": "null parameter"}
+		err := fmt.Errorf("Wrong ActaID. Must be greater than 0 - Got: %d", actaId)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSoportes - actaId > 0",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 }

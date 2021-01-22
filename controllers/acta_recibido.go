@@ -169,16 +169,41 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // @Failure 404 not found resource
 // @router /get_soportes_acta/:id [get]
 func (c *ActaRecibidoController) GetSoportesActa() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500")
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := actaRecibido.GetSoportes(id)
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+	var id int
+
+	if idTest, err := strconv.Atoi(idStr); err == nil && idTest > 0 {
+		id = idTest
 	} else {
+		if err == nil {
+			err = fmt.Errorf("The Id MUST be greater than 0 - Got: %s", idStr)
+		}
+		panic(map[string]interface{}{
+			"funcion": "GetSoportesActa",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	if v, err := actaRecibido.GetSoportes(id); err == nil {
 		c.Data["json"] = v
+	} else {
+		panic(err)
 	}
 	c.ServeJSON()
 }
