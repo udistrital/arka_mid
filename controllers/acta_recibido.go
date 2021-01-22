@@ -164,9 +164,12 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // GetSoportesActa ...
 // @Title Get Soportes
 // @Description get Soportes by id
-// @Param	body	body 	models.Entrada	true
-// @Success 200 {object} []models.AsignacionEspacioFisicoDependencia
+// @Param	id	path 	int	true "Acta Id"
+// @Success 200 {object} []models.SoporteActaProveedor
+// @Failure 400 ID MUST be greater than 0
 // @Failure 404 not found resource
+// @Failure 500 Internal Error
+// @Failure 502 External API Error
 // @router /get_soportes_acta/:id [get]
 func (c *ActaRecibidoController) GetSoportesActa() {
 
