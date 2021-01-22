@@ -707,63 +707,6 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 
 }
 
-/*
-// GetActasRecibidoTipo ...
-func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbicacion, outputError map[string]interface{}) {
-	var (
-		urlcrud       string
-		historicoActa []*models.HistoricoActa
-	)
-	if tipoActa != 0 { // (1) error parametro
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=EstadoActaId.Id:" + strconv.Itoa(tipoActa) + ",Activo:True&limit=-1"
-		logs.Debug(urlcrud)
-		if response, err := request.GetJsonTest(urlcrud, &historicoActa); err == nil { // (2) error servicio caido
-			logs.Debug(historicoActa[0].EstadoActaId)
-			if response.StatusCode == 200 { // (3) error estado de la solicitud
-				for _, acta := range historicoActa {
-					// UBICACION
-					ubicacion, err := ubicacionHelper.GetUbicacion(acta.ActaRecibidoId.UbicacionId)
-
-					if err != nil {
-						panic(err)
-					}
-
-					logs.Debug(ubicacion)
-
-					actaRecibidoAux := models.ActaRecibidoUbicacion{
-						Id:                acta.ActaRecibidoId.Id,
-						RevisorId:         acta.ActaRecibidoId.RevisorId,
-						FechaCreacion:     acta.ActaRecibidoId.FechaCreacion,
-						FechaModificacion: acta.ActaRecibidoId.FechaModificacion,
-						FechaVistoBueno:   acta.ActaRecibidoId.FechaVistoBueno,
-						Observaciones:     acta.ActaRecibidoId.Observaciones,
-						Activo:            acta.ActaRecibidoId.Activo,
-						EstadoActaId:      acta.EstadoActaId,
-						UbicacionId:       ubicacion[0],
-					}
-
-					actasRecibido = append(actasRecibido, actaRecibidoAux)
-				}
-				return actasRecibido, nil
-			} else {
-				logs.Info("Error (3) estado de la solicitud")
-				outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo:GetActasRecibidoTipo", "Error": response.Status}
-				return nil, outputError
-			}
-		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo", "Error": err}
-			return nil, outputError
-		}
-	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:getUserAgora", "Error": "null parameter"}
-		return nil, outputError
-	}
-
-}
-// */
-
 // GetElementos ...
 func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError map[string]interface{}) {
 
