@@ -891,6 +891,17 @@ func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, output
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta?query=ActaRecibidoId:" + strconv.Itoa(actaId) + ",ActaRecibidoId.Activo:True&limit=-1"
 		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil && response.StatusCode == 200 {
+
+			if len(soportes) == 0 || soportes[0].Id == 0 {
+				err = fmt.Errorf("El Acta #%d no existe o no tiene soportes", actaId)
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSoportes - len(soportes) == 0 || soportes[0].Id == 0",
+					"err":     err,
+					"status":  "200",
+				}
+				return nil, outputError
+			}
 			// Solicita información unidad elemento
 			for _, soporte := range soportes {
 				auxS.Id = soporte.Id
