@@ -8,11 +8,11 @@ import (
 	"mime/multipart"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
+
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
@@ -21,49 +21,6 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
-
-type Impuesto struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	CodigoAbreviacion string
-	Activo            bool
-}
-
-type VigenciaImpuesto struct {
-	Id                   int
-	Activo               bool
-	Tarifa               int64
-	PorcentajeAplicacion int
-	ImpuestoId           Impuesto
-}
-
-type Imp struct {
-	PorcentajeAplicacion int
-	Tarifa               int
-	BasePesos            int
-	BaseUvt              int
-	CodigoAbreviacion    string
-}
-
-type Unidad struct {
-	Id          int
-	Unidad      string
-	Tipo        string
-	Descripcion string
-	Estado      bool
-}
-
-type Subgrupo struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	Activo            bool
-	Codigo            string
-	Estado            bool
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
-}
 
 // GetAllActasRecibido ...
 func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
@@ -304,7 +261,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 		}
-    
+
 		return historicoActa, nil
 
 	} else if err != nil {
@@ -750,6 +707,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 
 }
 
+/*
 // GetActasRecibidoTipo ...
 func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbicacion, outputError map[string]interface{}) {
 	var (
@@ -804,6 +762,7 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 	}
 
 }
+// */
 
 // GetElementos ...
 func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError map[string]interface{}) {

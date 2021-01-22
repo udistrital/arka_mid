@@ -1,20 +1,19 @@
-package actaRecibidoHelper
+package actaRecibido
 
 import (
-	"fmt"
 	"strconv"
-
-	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
-
-	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
+	// "github.com/udistrital/arka_mid/helpers/proveedorHelper"
+	// "github.com/udistrital/arka_mid/helpers/unidadHelper"
+	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
+/*
 // GetAllActasRecibido ...
 func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]interface{}) {
 	if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=ActaRecibidoId.Activo:True", &historicoActa); err == nil { // (2) error servicio caido
@@ -31,6 +30,7 @@ func GetAllActasRecibido() (historicoActa interface{}, outputError map[string]in
 		return outputError, nil
 	}
 }
+// */
 
 // GetActasRecibidoTipo ...
 func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbicacion, outputError map[string]interface{}) {
@@ -110,6 +110,7 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 
 }
 
+/*
 // GetElementos ...
 func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError map[string]interface{}) {
 	var (
@@ -188,7 +189,9 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		return nil, outputError
 	}
 }
+// */
 
+/*
 // GetSoportes ...
 func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, outputError map[string]interface{}) {
 	var (
@@ -237,7 +240,9 @@ func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, output
 		return nil, outputError
 	}
 }
+// */
 
+/*
 // GetIdElementoPlaca Busca el id de un elemento a partir de su placa
 func GetIdElementoPlaca(placa string) (idElemento string, err error) {
 	var urlelemento string
@@ -260,6 +265,7 @@ func GetIdElementoPlaca(placa string) (idElemento string, err error) {
 	}
 	return
 }
+// */
 
 func GetElementoById(Id string) (Elemento map[string]interface{}, outputError map[string]interface{}) {
 	var urlelemento string

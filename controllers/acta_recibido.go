@@ -10,7 +10,6 @@ import (
 
 	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -99,7 +98,7 @@ func (c *ActaRecibidoController) GetActasByTipo() {
 	tipoStr := c.Ctx.Input.Param(":tipo")
 	tipo, _ := strconv.Atoi(tipoStr)
 
-	if v, err := actaRecibidoHelper.GetActasRecibidoTipo(tipo); err == nil {
+	if v, err := actaRecibido.GetActasRecibidoTipo(tipo); err == nil {
 		c.Data["json"] = v
 		c.Ctx.Output.SetStatus(200)
 	} else {
@@ -172,7 +171,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 func (c *ActaRecibidoController) GetSoportesActa() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	v, err := actaRecibidoHelper.GetSoportes(id)
+	v, err := actaRecibido.GetSoportes(id)
 	if err != nil {
 		logs.Error(err)
 		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
