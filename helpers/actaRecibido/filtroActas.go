@@ -136,10 +136,12 @@ func filtrarActasSegunRoles(actas []map[string]interface{}, usuarioWSO2 string,
 
 			dejar := false
 			if soloAsignadas {
-				if contratista > 0 && actaAsig == contratista {
+				if contratista > 0 && actaAsig == contratista &&
+					(estado == "En Elaboracion" || estado == "En Modificacion") {
 					// fmt.Printf("Acta %d - contratista %d\n", actaID, contratista)
 					dejar = true
-				} else if proveedor > 0 {
+				} else if proveedor > 0 &&
+					(estado == "En Elaboracion") {
 					// fmt.Printf("%#T\n", actaID)
 					if idF, ok := actaID.(float64); ok {
 						id := int(idF)
