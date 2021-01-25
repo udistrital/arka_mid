@@ -208,12 +208,12 @@
                 "operationId": "ActaRecibidoController.Get Soportes",
                 "parameters": [
                     {
-                        "in": "body",
-                        "name": "body",
-                        "description": "true",
-                        "schema": {
-                            "$ref": "#/definitions/models.Entrada"
-                        }
+                        "in": "path",
+                        "name": "id",
+                        "description": "Acta Id",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
@@ -222,12 +222,21 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                                "$ref": "#/definitions/models.SoporteActaProveedor"
                             }
                         }
                     },
+                    "400": {
+                        "description": "ID MUST be greater than 0"
+                    },
                     "404": {
                         "description": "not found resource"
+                    },
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "502": {
+                        "description": "External API Error"
                     }
                 }
             }
@@ -1414,6 +1423,28 @@
                 }
             }
         },
+        "models.Estado": {
+            "title": "Estado",
+            "type": "object",
+            "properties": {
+                "Abreviatura": {
+                    "type": "string"
+                },
+                "ClaseParametro": {
+                    "type": "string"
+                },
+                "DescripcionParametro": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorParametro": {
+                    "type": "string"
+                }
+            }
+        },
         "models.EstadoElemento": {
             "title": "EstadoElemento",
             "type": "object",
@@ -1607,6 +1638,82 @@
                 }
             }
         },
+        "models.Proveedor": {
+            "title": "Proveedor",
+            "type": "object",
+            "properties": {
+                "Anexorup": {
+                    "type": "string"
+                },
+                "Anexorut": {
+                    "type": "string"
+                },
+                "ClasificacionEvaluacion": {
+                    "type": "string"
+                },
+                "Correo": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Direccion": {
+                    "type": "string"
+                },
+                "Estado": {
+                    "$ref": "#/definitions/models.Estado"
+                },
+                "FechaRegistro": {
+                    "type": "string"
+                },
+                "FechaUltimaModificacion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdCiudadContacto": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdEntidadBancaria": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NomAsesor": {
+                    "type": "string"
+                },
+                "NomProveedor": {
+                    "type": "string"
+                },
+                "NumCuentaBancaria": {
+                    "type": "string"
+                },
+                "NumDocumento": {
+                    "type": "string"
+                },
+                "PuntajeEvaluacion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "RegimenContributivo": {
+                    "type": "string"
+                },
+                "TelAsesor": {
+                    "type": "string"
+                },
+                "TipoCuentaBancaria": {
+                    "type": "string"
+                },
+                "Tipopersona": {
+                    "type": "string"
+                },
+                "Web": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Salida": {
             "title": "Salida",
             "type": "object"
@@ -1655,6 +1762,40 @@
                 "ProveedorId": {
                     "type": "integer",
                     "format": "int64"
+                }
+            }
+        },
+        "models.SoporteActaProveedor": {
+            "title": "SoporteActaProveedor",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "$ref": "#/definitions/models.ActaRecibido"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaSoporte": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProveedorId": {
+                    "$ref": "#/definitions/models.Proveedor"
                 }
             }
         },

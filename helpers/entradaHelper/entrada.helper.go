@@ -7,7 +7,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 
 	"github.com/udistrital/arka_mid/models"
@@ -230,7 +230,7 @@ func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[s
 func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outputError map[string]interface{}) {
 	var urlelemento string
 	var elemento map[string]interface{}
-	if id, err := actaRecibidoHelper.GetIdElementoPlaca(placa); err == nil {
+	if id, err := actaRecibido.GetIdElementoPlaca(placa); err == nil {
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_encargado_elemento/" + id
 		if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
 			fmt.Println("status: ", elemento)

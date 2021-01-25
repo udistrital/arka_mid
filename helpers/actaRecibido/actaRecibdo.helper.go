@@ -8,11 +8,11 @@ import (
 	"mime/multipart"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
+
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
@@ -21,49 +21,6 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
-
-type Impuesto struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	CodigoAbreviacion string
-	Activo            bool
-}
-
-type VigenciaImpuesto struct {
-	Id                   int
-	Activo               bool
-	Tarifa               int64
-	PorcentajeAplicacion int
-	ImpuestoId           Impuesto
-}
-
-type Imp struct {
-	PorcentajeAplicacion int
-	Tarifa               int
-	BasePesos            int
-	BaseUvt              int
-	CodigoAbreviacion    string
-}
-
-type Unidad struct {
-	Id          int
-	Unidad      string
-	Tipo        string
-	Descripcion string
-	Estado      bool
-}
-
-type Subgrupo struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	Activo            bool
-	Codigo            string
-	Estado            bool
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
-}
 
 // GetAllActasRecibido ...
 func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
@@ -304,7 +261,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 		}
-    
+
 		return historicoActa, nil
 
 	} else if err != nil {
@@ -750,61 +707,6 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 
 }
 
-// GetActasRecibidoTipo ...
-func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbicacion, outputError map[string]interface{}) {
-	var (
-		urlcrud       string
-		historicoActa []*models.HistoricoActa
-	)
-	if tipoActa != 0 { // (1) error parametro
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=EstadoActaId.Id:" + strconv.Itoa(tipoActa) + ",Activo:True&limit=-1"
-		logs.Debug(urlcrud)
-		if response, err := request.GetJsonTest(urlcrud, &historicoActa); err == nil { // (2) error servicio caido
-			logs.Debug(historicoActa[0].EstadoActaId)
-			if response.StatusCode == 200 { // (3) error estado de la solicitud
-				for _, acta := range historicoActa {
-					// UBICACION
-					ubicacion, err := ubicacionHelper.GetUbicacion(acta.ActaRecibidoId.UbicacionId)
-
-					if err != nil {
-						panic(err)
-					}
-
-					logs.Debug(ubicacion)
-
-					actaRecibidoAux := models.ActaRecibidoUbicacion{
-						Id:                acta.ActaRecibidoId.Id,
-						RevisorId:         acta.ActaRecibidoId.RevisorId,
-						FechaCreacion:     acta.ActaRecibidoId.FechaCreacion,
-						FechaModificacion: acta.ActaRecibidoId.FechaModificacion,
-						FechaVistoBueno:   acta.ActaRecibidoId.FechaVistoBueno,
-						Observaciones:     acta.ActaRecibidoId.Observaciones,
-						Activo:            acta.ActaRecibidoId.Activo,
-						EstadoActaId:      acta.EstadoActaId,
-						UbicacionId:       ubicacion[0],
-					}
-
-					actasRecibido = append(actasRecibido, actaRecibidoAux)
-				}
-				return actasRecibido, nil
-			} else {
-				logs.Info("Error (3) estado de la solicitud")
-				outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo:GetActasRecibidoTipo", "Error": response.Status}
-				return nil, outputError
-			}
-		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo", "Error": err}
-			return nil, outputError
-		}
-	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:getUserAgora", "Error": "null parameter"}
-		return nil, outputError
-	}
-
-}
-
 // GetElementos ...
 func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError map[string]interface{}) {
 
@@ -967,49 +869,79 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 
 // GetSoportes ...
 func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetSoportes - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud   string
 		soportes  []models.SoporteActa
 		proveedor []*models.Proveedor
 		auxS      models.SoporteActaProveedor
 	)
-	if actaId != 0 { // (1) error parametro
+	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta?query=ActaRecibidoId:" + strconv.Itoa(actaId) + ",ActaRecibidoId.Activo:True&limit=-1"
-		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil {
+		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil && response.StatusCode == 200 {
+
+			if len(soportes) == 0 || soportes[0].Id == 0 {
+				err = fmt.Errorf("El Acta #%d no existe o no tiene soportes", actaId)
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSoportes - len(soportes) == 0 || soportes[0].Id == 0",
+					"err":     err,
+					"status":  "200",
+				}
+				return nil, outputError
+			}
 			// Solicita información unidad elemento
-			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
 			for _, soporte := range soportes {
-				if response.StatusCode == 200 { // (3) error estado de la solicitud
-					auxS.Id = soporte.Id
-					auxS.Consecutivo = soporte.Consecutivo
-					auxS.ActaRecibidoId = soporte.ActaRecibidoId
-					auxS.FechaSoporte = soporte.FechaSoporte
-					auxS.Activo = soporte.Activo
-					// SOPORTE
+				auxS.Id = soporte.Id
+				auxS.Consecutivo = soporte.Consecutivo
+				auxS.ActaRecibidoId = soporte.ActaRecibidoId
+				auxS.FechaSoporte = soporte.FechaSoporte
+				auxS.Activo = soporte.Activo
+				// SOPORTE
+				if soporte.ProveedorId > 0 {
 					proveedor, outputError = proveedorHelper.GetProveedorById(soporte.ProveedorId)
 					//soporteAux = new(models.SoporteActaProveedor)
 					auxS.ProveedorId = proveedor[0]
-
-					auxS.FechaCreacion = soporte.FechaCreacion
-					auxS.FechaModificacion = soporte.FechaModificacion
-
-					soportesActa = append(soportesActa, auxS)
-				} else {
-					logs.Info("Error (3) estado de la solicitud")
-					outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
-					return nil, outputError
 				}
+
+				auxS.FechaCreacion = soporte.FechaCreacion
+				auxS.FechaModificacion = soporte.FechaModificacion
+
+				soportesActa = append(soportesActa, auxS)
 			}
 			return soportesActa, nil
 		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetIva", "Error": err}
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSoportes - request.GetJsonTest(urlcrud, &soportes)",
+				"err":     err,
+				"status":  "502",
+			}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetIva", "Error": "null parameter"}
+		err := fmt.Errorf("Wrong ActaID. Must be greater than 0 - Got: %d", actaId)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSoportes - actaId > 0",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 }
