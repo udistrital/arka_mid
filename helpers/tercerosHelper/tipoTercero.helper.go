@@ -4,6 +4,7 @@ var diccionarioTipoHelper = map[string](func() ([]map[string]interface{}, map[st
 	"funcionarioPlanta": GetFuncionariosPlanta,
 }
 
+// GetTipos retorna la lista de tipos que pueden ser usados con GetHelperTipo
 func GetTipos() (tercero []string) {
 	for k := range diccionarioTipoHelper {
 		tercero = append(tercero, k)
@@ -11,6 +12,8 @@ func GetTipos() (tercero []string) {
 	return tercero
 }
 
+// GetHelperTipo trae los terceros con el criterio especificado.
+// El criterio debe ser alguno de los valores retornados por GetTipos
 func GetHelperTipo(tipo string) (helper func() ([]map[string]interface{}, map[string]interface{}), outputError map[string]interface{}) {
 
 	defer func() {
