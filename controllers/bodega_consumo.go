@@ -137,9 +137,11 @@ func (c *BodegaConsumoController) GetAllExistencias() {
 // @Success 200 {object} models.Bodega-Consumo
 // @Failure 403 :id is not int
 // @router /:id [put]
+/*
 func (c *BodegaConsumoController) Put() {
 
 }
+*/
 
 // Delete ...
 // @Title Delete
@@ -148,6 +150,8 @@ func (c *BodegaConsumoController) Put() {
 // @Success 200 {string} delete success!
 // @Failure 403 id is empty
 // @router /:id [delete]
+/*
 func (c *BodegaConsumoController) Delete() {
 
 }
+*/

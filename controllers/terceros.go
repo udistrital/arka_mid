@@ -51,9 +51,11 @@ func (c *TercerosController) GetOne() {
 // @Success 200 {object} models.Terceros
 // @Failure 403
 // @router / [get]
+/*
 func (c *TercerosController) GetAll() {
 
 }
+*/
 
 // Put ...
 // @Title Put
@@ -63,9 +65,11 @@ func (c *TercerosController) GetAll() {
 // @Success 200 {object} models.Terceros
 // @Failure 403 :id is not int
 // @router /:id [put]
+/*
 func (c *TercerosController) Put() {
 
 }
+*/
 
 // Delete ...
 // @Title Delete
@@ -74,6 +78,8 @@ func (c *TercerosController) Put() {
 // @Success 200 {string} delete success!
 // @Failure 403 id is empty
 // @router /:id [delete]
+/*
 func (c *TercerosController) Delete() {
 
 }
+*/
