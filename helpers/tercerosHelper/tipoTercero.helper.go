@@ -2,6 +2,7 @@ package tercerosHelper
 
 var diccionarioTipoHelper = map[string](func() ([]map[string]interface{}, map[string]interface{})){
 	"funcionarioPlanta": GetFuncionariosPlanta,
+	"jefes":             GetJefes,
 }
 
 // GetTipos retorna la lista de tipos que pueden ser usados con GetHelperTipo
@@ -19,7 +20,7 @@ func GetHelperTipo(tipo string) (helper func() ([]map[string]interface{}, map[st
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/CertificacionDocumentosAprobados",
+				"funcion": "/GetHelperTipo",
 				"err":     err,
 				"status":  "400",
 			}
