@@ -521,6 +521,42 @@ paths:
             $ref: '#/definitions/models.Terceros'
         "403":
           description: :id is empty
+  /terceros/tipo/:
+    get:
+      tags:
+      - terceros
+      description: List the Tercero types that can be used to gather Terceros by {tipo}
+      operationId: TercerosController.GetAll
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              type: string
+        "403":
+          description: ""
+  /terceros/tipo/{tipo}:
+    get:
+      tags:
+      - terceros
+      description: get Terceros with the specified {tipo}
+      operationId: TercerosController.GetAll
+      parameters:
+      - in: path
+        name: tipo
+        description: Tercero type available from /tipo/
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.Terceros'
+        "403":
+          description: ""
 definitions:
   '{}':
     title: '{}'

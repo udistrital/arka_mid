@@ -14,7 +14,8 @@ type TercerosController struct {
 // URLMapping ...
 func (c *TercerosController) URLMapping() {
 	c.Mapping("GetOne", c.GetOne)
-
+	c.Mapping("GetVinculacion", c.GetByTipo)
+	c.Mapping("GetTipos", c.GetTipos)
 }
 
 // GetOne ...
@@ -56,6 +57,39 @@ func (c *TercerosController) GetAll() {
 
 }
 */
+
+// GetTipos ...
+// @Title GetAll
+// @Description List the Tercero types that can be used to gather Terceros by {tipo}
+// @Success 200 {object} []string
+// @Failure 403
+// @router /tipo/ [get]
+func (c *TercerosController) GetTipos() {
+	c.Data["json"] = tercerosHelper.GetTipos()
+	c.ServeJSON()
+}
+
+// GetByTipo ...
+// @Title GetAll
+// @Description get Terceros with the specified {tipo}
+// @Param	tipo	path 	string	true		"Tercero type available from /tipo/"
+// @Success 200 {object} []models.Terceros
+// @Failure 403
+// @router /tipo/:tipo [get]
+func (c *TercerosController) GetByTipo() {
+	tipo := c.Ctx.Input.Param(":tipo")
+
+	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
+		if v, err := helper(); err == nil {
+			c.Data["json"] = v
+		} else {
+			panic(err)
+		}
+	} else {
+		panic(err)
+	}
+	c.ServeJSON()
+}
 
 // Put ...
 // @Title Put
