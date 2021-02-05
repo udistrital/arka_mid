@@ -63,6 +63,9 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 		urlTerceros := "http://" + beego.AppConfig.String("tercerosService") + "vinculacion?limit=-1"
 		urlTerceros += "&fields=Id,TerceroPrincipalId,TipoVinculacionId,DependenciaId"
 		urlTerceros += "&query=Activo:true,TipoVinculacionId:" + fmt.Sprint(paramID)
+		if idTercero > 0 {
+			urlTerceros += ",TerceroPrincipalId__Id:" + fmt.Sprint(idTercero)
+		}
 		// fmt.Println(urlTerceros)
 		if resp, err := request.GetJsonTest(urlTerceros, &vinculaciones); err == nil && resp.StatusCode == 200 {
 
