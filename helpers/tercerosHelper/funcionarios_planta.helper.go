@@ -118,24 +118,23 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 			return nil, outputError
 		}
 	}
-	fmt.Println("#terceros:", len(terceros))
+	// fmt.Println("#terceros:", len(terceros))
 
 	// PARTE 3 - Agregar Información complementaria de Sede y Dependencia (si la hay)
 
 	var sedesDependencias []models.AsignacionEspacioFisicoDependencia
-	for k1, tercero := range terceros {
-		fmt.Println("k1:", k1, "tercero:", tercero)
+	for _, tercero := range terceros {
+		// fmt.Println("k:", k, "tercero:", tercero)
 
 		// 3.1 traer los registros necesarios/disponibles
 		consultar := true
 		for _, seDependencia := range sedesDependencias {
 			if seDependencia.DependenciaId.Id == tercero["Dependencia"] {
-				fmt.Println("seDepend:", seDependencia.Id)
+				// fmt.Println("seDepend:", seDependencia.Id)
 				consultar = false
 			}
 		}
 		if consultar {
-			fmt.Println("consultar")
 
 			var resBody []models.AsignacionEspacioFisicoDependencia
 			urlOikos := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?limit=-1"
@@ -143,7 +142,7 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 			// urlOikos += ",EspacioFisicoId__TipoEspacioFisicoId__Nombre:SEDE"
 			urlOikos += ",EspacioFisicoId__TipoEspacioFisicoId__CodigoAbreviacion:Tipo_1"
 			urlOikos += ",DependenciaId__Id:" + fmt.Sprint(tercero["DependenciaId"])
-			fmt.Println(urlOikos)
+			// fmt.Println(urlOikos)
 			if resp, err := request.GetJsonTest(urlOikos, &resBody); err == nil && resp.StatusCode == 200 {
 
 				if len(resBody) == 0 || resBody[0].Id == 0 {
@@ -178,7 +177,7 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 			}
 		}
 	}
-	fmt.Printf("%v\n", sedesDependencias)
+	// fmt.Printf("%v\n", sedesDependencias)
 
 	return terceros, nil
 }
