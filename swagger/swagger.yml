@@ -534,8 +534,6 @@ paths:
             type: array
             items:
               type: string
-        "403":
-          description: ""
   /terceros/tipo/{tipo}:
     get:
       tags:
@@ -554,9 +552,13 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Terceros'
-        "403":
-          description: ""
+              $ref: '#/definitions/map[string]interface{}'
+        "500":
+          description: Internal Error
+        "501":
+          description: '{tipo} Not Implemented'
+        "502":
+          description: Error with external API
   /terceros/tipo/{tipo}/{id}:
     get:
       tags:
@@ -582,12 +584,23 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Terceros'
-        "403":
-          description: ""
+              $ref: '#/definitions/map[string]interface{}'
+        "400":
+          description: Wrong ID
+        "404":
+          description: ID with {tipo} Not Found
+        "500":
+          description: Internal Error
+        "501":
+          description: '{tipo} Not Implemented'
+        "502":
+          description: Error with external API
 definitions:
   '{}':
     title: '{}'
+    type: object
+  map[string]interface{}:
+    title: map[string]interface{}
     type: object
   models.Acta_recibido:
     title: Acta_recibido

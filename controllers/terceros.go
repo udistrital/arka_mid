@@ -66,7 +66,6 @@ func (c *TercerosController) GetAll() {
 // @Title GetAll
 // @Description List the Tercero types that can be used to gather Terceros by {tipo}
 // @Success 200 {object} []string
-// @Failure 403
 // @router /tipo/ [get]
 func (c *TercerosController) GetTipos() {
 	c.Data["json"] = tercerosHelper.GetTipos()
@@ -77,8 +76,10 @@ func (c *TercerosController) GetTipos() {
 // @Title GetAll
 // @Description get Terceros with the specified {tipo}
 // @Param	tipo	path 	string	true		"Tercero type available from /tipo/"
-// @Success 200 {object} []models.Terceros
-// @Failure 403
+// @Success 200 {object} []map[string]interface{}
+// @Failure 500 Internal Error
+// @Failure 501 {tipo} Not Implemented
+// @Failure 502 Error with external API
 // @router /tipo/:tipo [get]
 func (c *TercerosController) GetByTipo() {
 
@@ -115,8 +116,12 @@ func (c *TercerosController) GetByTipo() {
 // @Description get Terceros with the specified {tipo} and {id} of a record in terceros table from Terceros CRUD API
 // @Param	tipo	path 	string	true		"Tercero type available from /tipo/"
 // @Param	id		path 	uint	true		"ID. MUST be greater than 0"
-// @Success 200 {object} []models.Terceros
-// @Failure 403
+// @Success 200 {object} []map[string]interface{}
+// @Failure 400 Wrong ID
+// @Failure 404 ID with {tipo} Not Found
+// @Failure 500 Internal Error
+// @Failure 501 {tipo} Not Implemented
+// @Failure 502 Error with external API
 // @router /tipo/:tipo/:id [get]
 func (c *TercerosController) GetByTipoAndID() {
 

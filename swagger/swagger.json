@@ -774,9 +774,6 @@
                                 "type": "string"
                             }
                         }
-                    },
-                    "403": {
-                        "description": ""
                     }
                 }
             }
@@ -803,12 +800,18 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Terceros"
+                                "$ref": "#/definitions/map[string]interface{}"
                             }
                         }
                     },
-                    "403": {
-                        "description": ""
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "501": {
+                        "description": "{tipo} Not Implemented"
+                    },
+                    "502": {
+                        "description": "Error with external API"
                     }
                 }
             }
@@ -843,12 +846,24 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Terceros"
+                                "$ref": "#/definitions/map[string]interface{}"
                             }
                         }
                     },
-                    "403": {
-                        "description": ""
+                    "400": {
+                        "description": "Wrong ID"
+                    },
+                    "404": {
+                        "description": "ID with {tipo} Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "501": {
+                        "description": "{tipo} Not Implemented"
+                    },
+                    "502": {
+                        "description": "Error with external API"
                     }
                 }
             }
@@ -884,6 +899,10 @@
         }
     },
     "definitions": {
+        "map[string]interface{}": {
+            "title": "map[string]interface{}",
+            "type": "object"
+        },
         "models.ActaRecibido": {
             "title": "ActaRecibido",
             "type": "object",
