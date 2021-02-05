@@ -1,5 +1,5 @@
 package tercerosHelper
 
-func GetJefes() (terceros []map[string]interface{}, outputError map[string]interface{}) {
+func GetJefes(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
 	return nil, nil
 }

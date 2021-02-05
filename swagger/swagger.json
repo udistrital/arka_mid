@@ -813,6 +813,46 @@
                 }
             }
         },
+        "/terceros/tipo/{tipo}/{id}": {
+            "get": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "get Terceros with the specified {tipo} and {id} of a record in terceros table from Terceros CRUD API",
+                "operationId": "TercerosController.GetAll",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "tipo",
+                        "description": "Tercero type available from /tipo/",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID. MUST be greater than 0",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Terceros"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/terceros/{id}": {
             "get": {
                 "tags": [

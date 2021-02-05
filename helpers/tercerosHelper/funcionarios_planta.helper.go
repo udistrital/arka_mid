@@ -11,7 +11,7 @@ import (
 )
 
 // GetFuncionariosPlanta trae los funcionarios de planta
-func GetFuncionariosPlanta() (terceros []map[string]interface{}, outputError map[string]interface{}) {
+func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
 
 	// PARTE 1. Traer los ID de los parámetros asociados a funcionarios de planta
 

@@ -1,6 +1,6 @@
 package tercerosHelper
 
-var diccionarioTipoHelper = map[string](func() ([]map[string]interface{}, map[string]interface{})){
+var diccionarioTipoHelper = map[string](func(int) ([]map[string]interface{}, map[string]interface{})){
 	"funcionarioPlanta": GetFuncionariosPlanta,
 	"jefes":             GetJefes,
 }
@@ -15,7 +15,7 @@ func GetTipos() (tercero []string) {
 
 // GetHelperTipo trae los terceros con el criterio especificado.
 // El criterio debe ser alguno de los valores retornados por GetTipos
-func GetHelperTipo(tipo string) (helper func() ([]map[string]interface{}, map[string]interface{}), outputError map[string]interface{}) {
+func GetHelperTipo(tipo string) (helper func(int) ([]map[string]interface{}, map[string]interface{}), outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {

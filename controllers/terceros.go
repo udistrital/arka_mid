@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
@@ -14,8 +17,9 @@ type TercerosController struct {
 // URLMapping ...
 func (c *TercerosController) URLMapping() {
 	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetVinculacion", c.GetByTipo)
+	c.Mapping("GetByTipo", c.GetByTipo)
 	c.Mapping("GetTipos", c.GetTipos)
+	c.Mapping("GetByTipoAndId", c.GetByTipoAndID)
 }
 
 // GetOne ...
@@ -80,7 +84,41 @@ func (c *TercerosController) GetByTipo() {
 	tipo := c.Ctx.Input.Param(":tipo")
 
 	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
-		if v, err := helper(); err == nil {
+		if v, err := helper(0); err == nil {
+			c.Data["json"] = v
+		} else {
+			panic(err)
+		}
+	} else {
+		panic(err)
+	}
+	c.ServeJSON()
+}
+
+// GetByTipoAndId ...
+// @Title GetAll
+// @Description get Terceros with the specified {tipo} and {id} of a record in terceros table from Terceros CRUD API
+// @Param	tipo	path 	string	true		"Tercero type available from /tipo/"
+// @Param	id		path 	uint	true		"ID. MUST be greater than 0"
+// @Success 200 {object} []models.Terceros
+// @Failure 403
+// @router /tipo/:tipo/:id [get]
+func (c *TercerosController) GetByTipoAndID() {
+
+	tipo := c.Ctx.Input.Param(":tipo")
+	idQuery := c.Ctx.Input.Param(":id")
+	var id int
+	if i, err := strconv.Atoi(idQuery); err == nil && i > 0 {
+		id = i
+	} else if err != nil {
+		panic(err)
+	} else {
+		err := fmt.Errorf("Wrong ID")
+		panic(err)
+	}
+
+	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
+		if v, err := helper(id); err == nil {
 			c.Data["json"] = v
 		} else {
 			panic(err)
