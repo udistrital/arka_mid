@@ -41,7 +41,7 @@ func GetFuncionariosPlanta() (terceros []map[string]interface{}, outputError map
 				}
 			}
 		}
-		// fmt.Printf("ids: %#v", parametroPlantaID)
+		// fmt.Printf("ids: %#v\n", parametroPlantaID)
 	} else if err != nil {
 		logs.Error("carajo1")
 		logs.Error(err)
@@ -52,5 +52,50 @@ func GetFuncionariosPlanta() (terceros []map[string]interface{}, outputError map
 	}
 
 	// PARTE 2. Traer los terceros que tengan estos IDs en la tabla vinculacion
+
+	// NOTA: Esta parte se podría mejorar aplicando concurrencia. Vease:
+	// https://gobyexample.com/goroutines
+	// https://gobyexample.com/waitgroups
+	// https://mayurwadekar2.medium.com/concurrency-and-parallelism-in-golang-c8327701fd94
+	for _, paramId := range parametroPlantaID {
+
+		var vinculaciones []models.Vinculacion
+		urlTerceros := "http://" + beego.AppConfig.String("tercerosService") + "vinculacion?limit=-1"
+		urlTerceros += "&fields=Id,TerceroPrincipalId,TipoVinculacionId,DependenciaId"
+		urlTerceros += "&query=Activo:true,TipoVinculacionId:" + fmt.Sprint(paramId)
+		// fmt.Println(urlTerceros)
+		if resp, err := request.GetJsonTest(urlTerceros, &vinculaciones); err == nil && resp.StatusCode == 200 {
+
+			if len(vinculaciones) == 0 || vinculaciones[0].Id < 0 {
+				continue
+			}
+			// fmt.Println("paramId:", paramId, "#vinculaciones: ", len(vinculaciones))
+
+			for _, vincul := range vinculaciones {
+				add := true
+				for _, tercero := range terceros {
+					if vincul.Id == tercero["Id"] {
+						add = false
+						break
+					}
+				}
+				if add {
+					terceros = append(terceros, map[string]interface{}{
+						"TerceroPrincipal": vincul.TerceroPrincipalId,
+						"TipoVinculacion":  vincul.TipoVinculacionId,
+						"Dependencia":      vincul.DependenciaId,
+					})
+				}
+			}
+		} else if err != nil {
+			logs.Error("carajo3")
+			logs.Error(err)
+		} else {
+			logs.Error("carajo4")
+			err := fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+			logs.Error(err)
+		}
+
+	}
 	return terceros, nil
 }
