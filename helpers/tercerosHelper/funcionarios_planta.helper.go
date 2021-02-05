@@ -172,6 +172,7 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 		// 3.2 asignar la información disponible
 		for _, seDep := range sedesDependencias {
 			if tercero["DependenciaId"] == seDep.DependenciaId.Id {
+				tercero["Sede"] = seDep.EspacioFisicoId
 				tercero["Dependencia"] = seDep.DependenciaId
 				break
 			}
