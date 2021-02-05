@@ -1,5 +1,11 @@
 package tercerosHelper
 
+import (
+	"fmt"
+
+	"github.com/astaxie/beego/logs"
+)
+
 var diccionarioTipoHelper = map[string](func(int) ([]map[string]interface{}, map[string]interface{})){
 	"funcionarioPlanta": GetFuncionariosPlanta,
 	"jefes":             GetJefes,
@@ -22,11 +28,22 @@ func GetHelperTipo(tipo string) (helper func(int) ([]map[string]interface{}, map
 			outputError = map[string]interface{}{
 				"funcion": "/GetHelperTipo",
 				"err":     err,
-				"status":  "400",
+				"status":  "500", // Error no manejado!
 			}
 			panic(outputError)
 		}
 	}()
 
-	return diccionarioTipoHelper[tipo], nil
+	if helper, found := diccionarioTipoHelper[tipo]; found {
+		return helper, nil
+	}
+
+	err := fmt.Errorf("\"%s\" not implemented", tipo)
+	logs.Error(err)
+
+	return nil, map[string]interface{}{
+		"funcion": "/GetHelperTipo",
+		"err":     err,
+		"status":  "501",
+	}
 }

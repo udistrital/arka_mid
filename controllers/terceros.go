@@ -81,6 +81,21 @@ func (c *TercerosController) GetTipos() {
 // @Failure 403
 // @router /tipo/:tipo [get]
 func (c *TercerosController) GetByTipo() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	tipo := c.Ctx.Input.Param(":tipo")
 
 	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
@@ -105,20 +120,47 @@ func (c *TercerosController) GetByTipo() {
 // @router /tipo/:tipo/:id [get]
 func (c *TercerosController) GetByTipoAndID() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	tipo := c.Ctx.Input.Param(":tipo")
 	idQuery := c.Ctx.Input.Param(":id")
 	var id int
 	if i, err := strconv.Atoi(idQuery); err == nil && i > 0 {
 		id = i
-	} else if err != nil {
-		panic(err)
 	} else {
-		err := fmt.Errorf("Wrong ID")
-		panic(err)
+		if err == nil {
+			err = fmt.Errorf("ID MUST be greater than 0 - Got: %d", i)
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "/GetByTipoAndID - strconv.Atoi(idQuery)",
+			"err":     err,
+			"status":  "400",
+		})
 	}
 
 	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
 		if v, err := helper(id); err == nil {
+			if len(v) == 0 {
+				err := fmt.Errorf("len(v) == 0")
+				panic(map[string]interface{}{
+					"funcion": "/GetByTipoAndID",
+					"err":     err,
+					"status":  "404",
+				})
+			}
 			c.Data["json"] = v
 		} else {
 			panic(err)

@@ -13,6 +13,17 @@ import (
 // GetFuncionariosPlanta trae los funcionarios de planta
 func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
 
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetFuncionariosPlanta",
+				"err":     err,
+				"status":  "500", // Error no manejado!
+			}
+			panic(outputError)
+		}
+	}()
+
 	// PARTE 1. Traer los ID de los parámetros asociados a funcionarios de planta
 
 	// Los siguientes son los códigos de los registros de la tabla "parametro" de la API
@@ -42,13 +53,17 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 			}
 		}
 		// fmt.Printf("ids: %#v\n", parametroPlantaID)
-	} else if err != nil {
-		logs.Error("carajo1")
-		logs.Error(err)
 	} else {
-		logs.Error("carajo2")
-		err := fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+		if err == nil {
+			err = fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+		}
 		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetFuncionariosPlanta - request.GetJsonTest(urlParametros, &respBody)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 
 	// PARTE 2. Traer los terceros que tengan estos IDs en la tabla vinculacion
@@ -90,13 +105,17 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 					})
 				}
 			}
-		} else if err != nil {
-			logs.Error("carajo3")
-			logs.Error(err)
 		} else {
-			logs.Error("carajo4")
-			err := fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+			if err == nil {
+				err = fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+			}
 			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetFuncionariosPlanta - request.GetJsonTest(urlTerceros, &vinculaciones)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 	}
 	fmt.Println("#terceros:", len(terceros))
@@ -136,13 +155,17 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 					sedesDependencias = append(sedesDependencias, v)
 				}
 
-			} else if err != nil {
-				logs.Error("carajo5")
-				logs.Error(err)
 			} else {
-				logs.Error("carajo6")
-				err := fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+				if err == nil {
+					err = fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+				}
 				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetFuncionariosPlanta - request.GetJsonTest(urlOikos, &resBody)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 		}
 
