@@ -57,16 +57,16 @@ func GetFuncionariosPlanta() (terceros []map[string]interface{}, outputError map
 	// https://gobyexample.com/goroutines
 	// https://gobyexample.com/waitgroups
 	// https://mayurwadekar2.medium.com/concurrency-and-parallelism-in-golang-c8327701fd94
-	for _, paramId := range parametroPlantaID {
+	for _, paramID := range parametroPlantaID {
 
 		var vinculaciones []models.Vinculacion
 		urlTerceros := "http://" + beego.AppConfig.String("tercerosService") + "vinculacion?limit=-1"
 		urlTerceros += "&fields=Id,TerceroPrincipalId,TipoVinculacionId,DependenciaId"
-		urlTerceros += "&query=Activo:true,TipoVinculacionId:" + fmt.Sprint(paramId)
+		urlTerceros += "&query=Activo:true,TipoVinculacionId:" + fmt.Sprint(paramID)
 		// fmt.Println(urlTerceros)
 		if resp, err := request.GetJsonTest(urlTerceros, &vinculaciones); err == nil && resp.StatusCode == 200 {
 
-			if len(vinculaciones) == 0 || vinculaciones[0].Id < 0 {
+			if len(vinculaciones) == 0 || vinculaciones[0].Id == 0 {
 				continue
 			}
 			// fmt.Println("paramId:", paramId, "#vinculaciones: ", len(vinculaciones))
@@ -83,7 +83,7 @@ func GetFuncionariosPlanta() (terceros []map[string]interface{}, outputError map
 					terceros = append(terceros, map[string]interface{}{
 						"TerceroPrincipal": vincul.TerceroPrincipalId,
 						"TipoVinculacion":  vincul.TipoVinculacionId,
-						"Dependencia":      vincul.DependenciaId,
+						"DependenciaId":    vincul.DependenciaId,
 					})
 				}
 			}
@@ -95,7 +95,63 @@ func GetFuncionariosPlanta() (terceros []map[string]interface{}, outputError map
 			err := fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
 			logs.Error(err)
 		}
-
 	}
+	fmt.Println("#terceros:", len(terceros))
+
+	// PARTE 3 - Agregar Información complementaria de Sede y Dependencia (si la hay)
+
+	var sedesDependencias []models.AsignacionEspacioFisicoDependencia
+	for k1, tercero := range terceros {
+		fmt.Println("k1:", k1, "tercero:", tercero)
+
+		// 3.1 traer los registros necesarios/disponibles
+		consultar := true
+		for _, seDependencia := range sedesDependencias {
+			if seDependencia.DependenciaId.Id == tercero["Dependencia"] {
+				fmt.Println("seDepend:", seDependencia.Id)
+				consultar = false
+			}
+		}
+		if consultar {
+			fmt.Println("consultar")
+
+			var resBody []models.AsignacionEspacioFisicoDependencia
+			urlOikos := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?limit=-1"
+			urlOikos += "&fields=Id,EspacioFisicoId,DependenciaId&query=Activo:true"
+			// urlOikos += ",EspacioFisicoId__TipoEspacioFisicoId__Nombre:SEDE"
+			urlOikos += ",EspacioFisicoId__TipoEspacioFisicoId__CodigoAbreviacion:Tipo_1"
+			urlOikos += ",DependenciaId__Id:" + fmt.Sprint(tercero["DependenciaId"])
+			fmt.Println(urlOikos)
+			if resp, err := request.GetJsonTest(urlOikos, &resBody); err == nil && resp.StatusCode == 200 {
+
+				if len(resBody) == 0 || resBody[0].Id == 0 {
+					// No se encontró relación sede-dependencia para el tercero actual
+					continue
+				}
+
+				for _, v := range resBody {
+					sedesDependencias = append(sedesDependencias, v)
+				}
+
+			} else if err != nil {
+				logs.Error("carajo5")
+				logs.Error(err)
+			} else {
+				logs.Error("carajo6")
+				err := fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+				logs.Error(err)
+			}
+		}
+
+		// 3.2 asignar la información disponible
+		for _, seDep := range sedesDependencias {
+			if tercero["DependenciaId"] == seDep.DependenciaId.Id {
+				tercero["Dependencia"] = seDep.DependenciaId
+				break
+			}
+		}
+	}
+	fmt.Printf("%v\n", sedesDependencias)
+
 	return terceros, nil
 }
