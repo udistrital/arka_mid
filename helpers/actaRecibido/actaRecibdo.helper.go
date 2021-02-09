@@ -94,7 +94,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			// findAndAddTercero trae la información de un tercero y la agrega
 			// al buffer de terceros
 			findAndAddTercero := func() map[string]interface{} {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
+				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
 					return nil
