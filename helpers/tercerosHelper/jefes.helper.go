@@ -117,7 +117,7 @@ func GetJefes(idTercero int) (terceros []map[string]interface{}, outputError map
 			}
 			return nil, outputError
 		}
-		fmt.Printf("ids: %#v\n", terceros)
+		// fmt.Printf("ids: %#v\n", terceros)
 	}
 
 	return terceros, nil
