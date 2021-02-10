@@ -81,13 +81,11 @@ paths:
       parameters:
       - in: query
         name: states
-        description: If specified, returns only acts with the specified state(s) from
-          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        description: If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
         type: string
       - in: query
         name: u
-        description: WSO2 User. When specified, acts will be filtered upon the available
-          roles for the specified user
+        description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
         type: string
       responses:
         "200":
@@ -286,14 +284,12 @@ paths:
     post:
       tags:
       - catalogo_elementos
-      description: Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas
-        asociadas a subgrupos
+      description: Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas asociadas a subgrupos
       operationId: CatalogoElementosController.Create
       parameters:
       - in: body
         name: body
-        description: body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos,
-          cada subgrupo debe llevar un Id definido)
+        description: body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos, cada subgrupo debe llevar un Id definido)
         required: true
         schema:
           $ref: '#/definitions/models.Tr_cuentas_subgrupo'
@@ -563,8 +559,7 @@ paths:
     get:
       tags:
       - terceros
-      description: get Terceros with the specified {tipo} and {id} of a record in
-        terceros table from Terceros CRUD API
+      description: get Terceros with the specified {tipo} and {id} of a record in terceros table from Terceros CRUD API
       operationId: TercerosController.GetAll
       parameters:
       - in: path
