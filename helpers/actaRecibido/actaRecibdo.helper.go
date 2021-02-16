@@ -8,68 +8,65 @@ import (
 	"mime/multipart"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/tealeg/xlsx"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/tealeg/xlsx"
 
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosGobiernoHelper"
-	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
-type Impuesto struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	CodigoAbreviacion string
-	Activo            bool
-}
-
-type VigenciaImpuesto struct {
-	Id                   int
-	Activo               bool
-	Tarifa               int64
-	PorcentajeAplicacion int
-	ImpuestoId           Impuesto
-}
-
-type Unidad struct {
-	Id          int
-	Unidad      string
-	Tipo        string
-	Descripcion string
-	Estado      bool
-}
-
-type Subgrupo struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	Activo            bool
-	Codigo            string
-	Estado            bool
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
-}
-
-
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err error) {
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	var Historico []map[string]interface{}
 	var Terceros []map[string]interface{}
 	var Ubicaciones []map[string]interface{}
+	var asignado []*models.Proveedor
 
-	url := "http://"+beego.AppConfig.String("actaRecibidoService")+"historico_acta?query=Activo:true&limit=-1"
+	// fmt.Print("Estados Solicitados: ")
+	// fmt.Println(states)
 
-	if _, err := request.GetJsonTest(url, &Historico); err == nil { // (2) error servicio caido
+	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&query=Activo:true"
+	fmt.Println(url)
+	// url += ",EstadoActaId__Id:3"
+	// TODO: Por rendimiento, TODO lo relacionado a ...
+	// - buscar el historico_acta mas reciente
+	// - Filtrar por estados
+	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
+
+	if resp, err := request.GetJsonTest(url, &Historico); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
+
+		// fmt.Print("historicos:")
+		// fmt.Println(len(Historico))
+
+		if len(Historico) == 0 || len(Historico[0]) == 0 {
+			err := errors.New("There's currently no act records")
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas",
+				"err":     err,
+				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+			}
+			return nil, outputError
+		}
 
 		for _, historicos := range Historico {
 
@@ -78,112 +75,153 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 			var data3_ map[string]interface{}
 			var Tercero_ map[string]interface{}
 			var Ubicacion_ map[string]interface{}
+			var nombreAsignado string
 
 			Ubicacion_ = nil
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
 				data_ = data
 			} else {
-				panic(err.Error())
 				return nil, err
 			}
+
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
 				data2_ = data
 			} else {
-				panic(err.Error())
 				return nil, err
 			}
-			if Terceros == nil {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
+
+			// findAndAddTercero trae la información de un tercero y la agrega
+			// al buffer de terceros
+			findAndAddTercero := func() map[string]interface{} {
+				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
+					return nil
 				} else {
-					panic(err.Error())
+					logs.Error(err)
+					return map[string]interface{}{
+						"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
+						"err":     err,
+						"status":  "502",
+					}
+				}
+			}
+
+			if Terceros == nil {
+				if err := findAndAddTercero(); err != nil {
 					return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
 					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
 						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-								Tercero_ = Tercero
-								Terceros = append(Terceros, Tercero)
-							} else {
-								panic(err.Error())
+							if err := findAndAddTercero(); err != nil {
 								return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-						Tercero_ = Tercero
-						Terceros = append(Terceros, Tercero)
-					} else {
-						panic(err.Error())
+					if err := findAndAddTercero(); err != nil {
 						return nil, err
-					} 
+					}
 				}
 			}
-			
 
 			if Ubicaciones == nil {
 				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-					fmt.Println(ubicacion)
+					// fmt.Println(ubicacion)
 					if keys := len(ubicacion); keys != 0 {
 						Ubicacion_ = ubicacion
 						Ubicaciones = append(Ubicaciones, ubicacion)
 					}
-					
+
 				} else {
-					panic(err.Error())
-					return nil, err
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetAllActasRecibidoActivas",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			} else {
 				if keys := len(Ubicaciones[0]); keys != 0 {
 					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
 						if keys := len(ubicacion); keys == 0 {
 							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-								fmt.Println(ubicacion)
+								// fmt.Println(ubicacion)
 								if keys := len(ubicacion); keys != 0 {
 									Ubicacion_ = ubicacion
 									Ubicaciones = append(Ubicaciones, ubicacion)
 								}
 							} else {
-								panic(err.Error())
-								return nil, err
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "/GetAllActasRecibidoActivas",
+									"err":     err,
+									"status":  "502",
+								}
+								return nil, outputError
 							}
 						} else {
 							Ubicacion_ = ubicacion
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
 					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-						fmt.Println(ubicacion)
+						// fmt.Println(ubicacion)
 						if keys := len(ubicacion); keys != 0 {
 							Ubicacion_ = ubicacion
 							Ubicaciones = append(Ubicaciones, ubicacion)
 						}
 					} else {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				}
 			}
-			
-			
+
+			var tmpAsignadoId = int(data_["PersonaAsignada"].(float64))
+			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
+			if outputError == nil {
+				nombreAsignado = asignado[0].NomProveedor
+				// fmt.Println(outputError)
+			}
+
 			if Ubicacion_ != nil {
 				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
 					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
-						panic(err.Error())
-						return nil, err
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetAllActasRecibidoActivas",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				}
 			} else {
@@ -191,36 +229,80 @@ func GetAllActasRecibidoActivas() (historicoActa []map[string]interface{}, err e
 					"Nombre": "Ubicacion No Especificada",
 				}
 			}
-			fmt.Println(data3_)
+			// fmt.Println(data3_)
 			Acta := map[string]interface{}{
-				"UbicacionId":			data3_["Nombre"],
-				"Activo":				data_["Activo"],
-				"FechaCreacion":		data_["FechaCreacion"],
-				"FechaVistoBueno":		data_["FechaVistoBueno"],
-				"FechaModificacion":	data_["FechaModificacion"],
-				"Id":					data_["Id"],
-				"Observaciones":		data_["Observaciones"],
-				"RevisorId":			Tercero_["NombreCompleto"],
-				"Estado":				data2_["Nombre"],
+				"UbicacionId":       data3_["Nombre"],
+				"Activo":            data_["Activo"],
+				"FechaCreacion":     data_["FechaCreacion"],
+				"FechaVistoBueno":   data_["FechaVistoBueno"],
+				"FechaModificacion": data_["FechaModificacion"],
+				"Id":                data_["Id"],
+				"Observaciones":     data_["Observaciones"],
+				"RevisorId":         Tercero_["NombreCompleto"],
+				"PersonaAsignada":   nombreAsignado,
+				"PersonaAsignadaId": int(data_["PersonaAsignada"].(float64)),
+				"Estado":            data2_["Nombre"],
 			}
+			// fmt.Println("Es esto")
+			// fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
 		}
+
+		if len(states) > 0 {
+			historicoActa = filtrarActasPorEstados(historicoActa, states)
+		}
+
+		// TODO: Manejar concurrencia en las peticiones a otras APIS
+		// Referencia: https://www.golang-book.com/books/intro/10
+		if usrWSO2 != "" {
+			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
+				historicoActa = actas
+			} else {
+				return nil, err
+			}
+		}
+
 		return historicoActa, nil
-			
+
+	} else if err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
+			"err":     err,
+			"status":  "502", // (2) error servicio caido
+		}
+		return nil, outputError
 	} else {
-		panic(err.Error())
-		return nil, err
+		err := fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
+			"err":     err,
+			"status":  "502", // (2) error servicio caido
+		}
+		return nil, outputError
 	}
+}
+
+func RemoveIndex(s []byte, index int) []byte {
+	return append(s[:index], s[index+1:]...)
 }
 
 // GetAllParametrosActa ...
 func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
-	var Unidades interface{}
-	var IVA interface{}
-	var TipoBien interface{}
-	var EstadoActa interface{}
-	var EstadoElemento interface{}
+	var (
+		Unidades       interface{}
+		TipoBien       interface{}
+		EstadoActa     interface{}
+		EstadoElemento interface{}
+		ss             map[string]interface{}
+		Parametro      []interface{}
+		Valor          []interface{}
+		IvaTest        []Imp
+		Ivas           []Imp
+	)
+
 	parametros := make([]map[string]interface{}, 0)
 
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"tipo_bien?limit=-1", &TipoBien); err == nil { // (2) error servicio caido
@@ -244,7 +326,46 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return nil, outputError
 	}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
+
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
+
+		var data []map[string]interface{}
+		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
+			if err := json.Unmarshal(jsonString, &data); err == nil {
+				for _, valores := range data {
+					Parametro = append(Parametro, valores["ParametroId"])
+					v := []byte(fmt.Sprintf("%v", valores["Valor"]))
+					var valorUnm interface{}
+					if err := json.Unmarshal(v, &valorUnm); err == nil {
+						Valor = append(Valor, valorUnm)
+					}
+				}
+			}
+		}
+
+		if jsonbody1, err := json.Marshal(Parametro); err == nil {
+			if err := json.Unmarshal(jsonbody1, &Ivas); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
+		if jsonbody1, err := json.Marshal(Valor); err == nil {
+			if err := json.Unmarshal(jsonbody1, &IvaTest); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
+		for i, valores := range IvaTest {
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
+		}
+		for i, valores := range Ivas {
+			IvaTest[i].BasePesos = valores.BasePesos
+			IvaTest[i].BaseUvt = valores.BaseUvt
+			IvaTest[i].PorcentajeAplicacion = valores.PorcentajeAplicacion
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
+		}
 
 	} else {
 		logs.Info("Error IVA servicio caido")
@@ -262,10 +383,10 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 
 	parametros = append(parametros, map[string]interface{}{
 		"Unidades":       Unidades,
-		"IVA":            IVA,
 		"TipoBien":       TipoBien,
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
+		"IVA":            IvaTest,
 	})
 
 	return parametros, nil
@@ -274,19 +395,64 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 // "DecodeXlsx2Json ..."
 func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, outputError map[string]interface{}) {
 
-	var IVA []VigenciaImpuesto
 	var Unidades []Unidad
 	var SubgruposConsumo []map[string]interface{}
 	var SubgruposConsumoControlado []map[string]interface{}
 	var SubgruposDevolutivo []map[string]interface{}
+	var (
+		ss        map[string]interface{}
+		Parametro []interface{}
+		Valor     []interface{}
+		IvaTest   []Imp
+		Ivas      []Imp
+	)
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosGobiernoService")+"vigencia_impuesto?limit=-1", &IVA); err == nil { // (2) error servicio caido
+	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
+
+		var data []map[string]interface{}
+		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
+			if err := json.Unmarshal(jsonString, &data); err == nil {
+				for _, valores := range data {
+					Parametro = append(Parametro, valores["ParametroId"])
+					v := []byte(fmt.Sprintf("%v", valores["Valor"]))
+					var valorUnm interface{}
+					if err := json.Unmarshal(v, &valorUnm); err == nil {
+						Valor = append(Valor, valorUnm)
+					}
+				}
+			}
+		}
+
+		if jsonbody1, err := json.Marshal(Parametro); err == nil {
+			if err := json.Unmarshal(jsonbody1, &Ivas); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
+		if jsonbody1, err := json.Marshal(Valor); err == nil {
+			if err := json.Unmarshal(jsonbody1, &IvaTest); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
+		for i, valores := range IvaTest {
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
+		}
+		for i, valores := range Ivas {
+			IvaTest[i].BasePesos = valores.BasePesos
+			IvaTest[i].BaseUvt = valores.BaseUvt
+			IvaTest[i].PorcentajeAplicacion = valores.PorcentajeAplicacion
+			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
+		}
 
 	} else {
 		logs.Info("Error IVA servicio caido")
 		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
 		return nil, outputError
 	}
+
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/1", &SubgruposConsumo); err == nil { // (2) error servicio caido
 
 	} else {
@@ -370,9 +536,9 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							logs.Info(convertir)
 							valor, err := strconv.ParseInt(convertir[0], 10, 64)
 							if err == nil {
-								for _, valor_iva := range IVA {
-									if valor == valor_iva.Tarifa {
-										elementos[11] = strconv.Itoa(valor_iva.Id)
+								for _, valor_iva := range IvaTest {
+									if valor == int64(valor_iva.Tarifa) {
+										elementos[11] = strconv.Itoa(valor_iva.Tarifa)
 									}
 								}
 							} else {
@@ -541,187 +707,241 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 
 }
 
-// GetActasRecibidoTipo ...
-func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbicacion, outputError map[string]interface{}) {
-	var (
-		urlcrud       string
-		historicoActa []*models.HistoricoActa
-	)
-	if tipoActa != 0 { // (1) error parametro
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=EstadoActaId.Id:" + strconv.Itoa(tipoActa) + ",Activo:True&limit=-1"
-		logs.Debug(urlcrud)
-		if response, err := request.GetJsonTest(urlcrud, &historicoActa); err == nil { // (2) error servicio caido
-			logs.Debug(historicoActa[0].EstadoActaId)
-			if response.StatusCode == 200 { // (3) error estado de la solicitud
-				for _, acta := range historicoActa {
-					// UBICACION
-					ubicacion, err := ubicacionHelper.GetUbicacion(acta.ActaRecibidoId.UbicacionId)
-
-					if err != nil {
-						panic(err)
-					}
-
-					logs.Debug(ubicacion)
-
-					actaRecibidoAux := models.ActaRecibidoUbicacion{
-						Id:                acta.ActaRecibidoId.Id,
-						RevisorId:         acta.ActaRecibidoId.RevisorId,
-						FechaCreacion:     acta.ActaRecibidoId.FechaCreacion,
-						FechaModificacion: acta.ActaRecibidoId.FechaModificacion,
-						FechaVistoBueno:   acta.ActaRecibidoId.FechaVistoBueno,
-						Observaciones:     acta.ActaRecibidoId.Observaciones,
-						Activo:            acta.ActaRecibidoId.Activo,
-						EstadoActaId:      acta.EstadoActaId,
-						UbicacionId:       ubicacion[0],
-					}
-
-					actasRecibido = append(actasRecibido, actaRecibidoAux)
-				}
-				return actasRecibido, nil
-			} else {
-				logs.Info("Error (3) estado de la solicitud")
-				outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo:GetActasRecibidoTipo", "Error": response.Status}
-				return nil, outputError
-			}
-		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo", "Error": err}
-			return nil, outputError
-		}
-	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:getUserAgora", "Error": "null parameter"}
-		return nil, outputError
-	}
-
-}
-
 // GetElementos ...
 func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud   string
 		elementos []models.Elemento
-		unidad    []*models.Unidad
-		iva       []*models.ParametrosGobierno
-		proveedor []*models.Proveedor
 		auxE      models.ElementosActa
 		soporte   *models.SoporteActaProveedor
 	)
-	if actaId != 0 { // (1) error parametro
+	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=SoporteActaId.ActaRecibidoId.Id:" + strconv.Itoa(actaId) +
 			",Activo:True&limit=-1"
-		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil {
+		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
 			// Solicita información unidad elemento
-			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
-			for _, elemento := range elementos {
-				if response.StatusCode == 200 { // (3) error estado de la solicitud
-					auxE.Id = elemento.Id
-					auxE.Nombre = elemento.Nombre
-					auxE.Cantidad = elemento.Cantidad
-					auxE.Marca = elemento.Marca
-					auxE.Serie = elemento.Serie
-					// UNIDAD DEMEDIDA
-					unidad, outputError = unidadHelper.GetUnidad(elemento.UnidadMedida)
-					auxE.UnidadMedida = unidad[0]
+			// urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
+			// fmt.Printf("#Elementos: %v\n", len(elementos))
 
-					auxE.ValorUnitario = elemento.ValorUnitario
-					auxE.Subtotal = elemento.Subtotal
-					auxE.Descuento = elemento.Descuento
-					auxE.ValorTotal = elemento.ValorTotal
-					// PORCENTAJE IVA
-					iva, outputError = parametrosGobiernoHelper.GetIva(elemento.PorcentajeIvaId)
-					auxE.PorcentajeIvaId = iva[0]
-
-					auxE.ValorIva = elemento.ValorIva
-					auxE.ValorFinal = elemento.ValorFinal
-					auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
-					auxE.Verificado = elemento.Verificado
-					auxE.TipoBienId = elemento.TipoBienId
-					auxE.EstadoElementoId = elemento.EstadoElementoId
-					// SOPORTE
-					proveedor, outputError = proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)
-					soporte = new(models.SoporteActaProveedor)
-					soporte.Id = elemento.SoporteActaId.Id
-					soporte.ActaRecibidoId = elemento.SoporteActaId.ActaRecibidoId
-					soporte.Consecutivo = elemento.SoporteActaId.Consecutivo
-					soporte.Activo = elemento.SoporteActaId.Activo
-					soporte.FechaCreacion = elemento.SoporteActaId.FechaCreacion
-					soporte.FechaModificacion = elemento.SoporteActaId.FechaModificacion
-					soporte.FechaSoporte = elemento.SoporteActaId.FechaSoporte
-					soporte.ProveedorId = proveedor[0]
-					auxE.SoporteActaId = soporte
-
-					auxE.Placa = elemento.Placa
-					auxE.Activo = elemento.Activo
-					auxE.FechaCreacion = elemento.FechaCreacion
-					auxE.FechaModificacion = elemento.FechaModificacion
-
-					elementosActa = append(elementosActa, auxE)
-				} else {
-					logs.Info("Error (3) estado de la solicitud")
-					outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
-					return nil, outputError
+			if len(elementos) == 0 || elementos[0].Id == 0 {
+				err := fmt.Errorf("No elements for Act #%d (or Act not found)", actaId)
+				logs.Warn(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
+					"err":     err,
+					"status":  "204",
 				}
+				return nil, outputError
 			}
+
+			for k, elemento := range elementos {
+				fmt.Printf("#Elemento: %v\n", k)
+
+				auxE.Id = elemento.Id
+				auxE.Nombre = elemento.Nombre
+				auxE.Cantidad = elemento.Cantidad
+				auxE.Marca = elemento.Marca
+				auxE.Serie = elemento.Serie
+
+				// UNIDAD DE MEDIDA
+				if elemento.UnidadMedida > 0 {
+					if unidad, err := unidadHelper.GetUnidad(elemento.UnidadMedida); err == nil && len(unidad) > 0 {
+						auxE.UnidadMedida = unidad[0]
+					} else if err != nil {
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
+					} else {
+						err := fmt.Errorf("UnidadMedida '%d' Not Found", elemento.UnidadMedida)
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida) / len(unidad) > 0",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
+					}
+				}
+
+				auxE.ValorUnitario = elemento.ValorUnitario
+				auxE.Subtotal = elemento.Subtotal
+				auxE.Descuento = elemento.Descuento
+				auxE.ValorTotal = elemento.ValorTotal
+				auxE.PorcentajeIvaId = elemento.PorcentajeIvaId
+				auxE.ValorIva = elemento.ValorIva
+				auxE.ValorFinal = elemento.ValorFinal
+				auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
+				auxE.Verificado = elemento.Verificado
+				auxE.TipoBienId = elemento.TipoBienId
+				auxE.EstadoElementoId = elemento.EstadoElementoId
+				// SOPORTE
+				soporte = new(models.SoporteActaProveedor)
+
+				if elemento.SoporteActaId.ProveedorId > 0 {
+					if proveedor, err := proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId); err == nil && len(proveedor) > 0 {
+						fmt.Printf("proveedor: %#v\n", proveedor[0])
+						soporte.ProveedorId = proveedor[0]
+					} else if err != nil {
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
+					} else {
+						err := fmt.Errorf("ProveedorId '%d' Not Found", elemento.SoporteActaId.ProveedorId)
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
+					}
+				}
+
+				soporte.Id = elemento.SoporteActaId.Id
+				soporte.ActaRecibidoId = elemento.SoporteActaId.ActaRecibidoId
+				soporte.Consecutivo = elemento.SoporteActaId.Consecutivo
+				soporte.Activo = elemento.SoporteActaId.Activo
+				soporte.FechaCreacion = elemento.SoporteActaId.FechaCreacion
+				soporte.FechaModificacion = elemento.SoporteActaId.FechaModificacion
+				soporte.FechaSoporte = elemento.SoporteActaId.FechaSoporte
+				auxE.SoporteActaId = soporte
+
+				auxE.Placa = elemento.Placa
+				auxE.Activo = elemento.Activo
+				auxE.FechaCreacion = elemento.FechaCreacion
+				auxE.FechaModificacion = elemento.FechaModificacion
+
+				elementosActa = append(elementosActa, auxE)
+
+			}
+
 			return elementosActa, nil
+		} else if err != nil {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
+				"err":     err,
+				"status":  "502", // Error (2) servicio caido
+			}
+			return nil, outputError
 		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetIva", "Error": err}
+			err := fmt.Errorf("Undesired State: %d", response.StatusCode)
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
+				"err":     err,
+				"status":  "500",
+			}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetIva", "Error": "null parameter"}
+		err := errors.New("ID must be greater than 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetElementos - actaId > 0",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 }
 
 // GetSoportes ...
 func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetSoportes - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud   string
 		soportes  []models.SoporteActa
 		proveedor []*models.Proveedor
 		auxS      models.SoporteActaProveedor
 	)
-	if actaId != 0 { // (1) error parametro
+	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta?query=ActaRecibidoId:" + strconv.Itoa(actaId) + ",ActaRecibidoId.Activo:True&limit=-1"
-		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil {
+		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil && response.StatusCode == 200 {
+
+			if len(soportes) == 0 || soportes[0].Id == 0 {
+				err = fmt.Errorf("El Acta #%d no existe o no tiene soportes", actaId)
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "/GetSoportes - len(soportes) == 0 || soportes[0].Id == 0",
+					"err":     err,
+					"status":  "200",
+				}
+				return nil, outputError
+			}
 			// Solicita información unidad elemento
-			urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
 			for _, soporte := range soportes {
-				if response.StatusCode == 200 { // (3) error estado de la solicitud
-					auxS.Id = soporte.Id
-					auxS.Consecutivo = soporte.Consecutivo
-					auxS.ActaRecibidoId = soporte.ActaRecibidoId
-					auxS.FechaSoporte = soporte.FechaSoporte
-					auxS.Activo = soporte.Activo
-					// SOPORTE
+				auxS.Id = soporte.Id
+				auxS.Consecutivo = soporte.Consecutivo
+				auxS.ActaRecibidoId = soporte.ActaRecibidoId
+				auxS.FechaSoporte = soporte.FechaSoporte
+				auxS.Activo = soporte.Activo
+				// SOPORTE
+				if soporte.ProveedorId > 0 {
 					proveedor, outputError = proveedorHelper.GetProveedorById(soporte.ProveedorId)
 					//soporteAux = new(models.SoporteActaProveedor)
 					auxS.ProveedorId = proveedor[0]
-
-					auxS.FechaCreacion = soporte.FechaCreacion
-					auxS.FechaModificacion = soporte.FechaModificacion
-
-					soportesActa = append(soportesActa, auxS)
-				} else {
-					logs.Info("Error (3) estado de la solicitud")
-					outputError = map[string]interface{}{"Function": "GetAllActasRecibido:GetAllActasRecibido", "Error": response.Status}
-					return nil, outputError
 				}
+
+				auxS.FechaCreacion = soporte.FechaCreacion
+				auxS.FechaModificacion = soporte.FechaModificacion
+
+				soportesActa = append(soportesActa, auxS)
 			}
 			return soportesActa, nil
 		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetIva", "Error": err}
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetSoportes - request.GetJsonTest(urlcrud, &soportes)",
+				"err":     err,
+				"status":  "502",
+			}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:GetIva", "Error": "null parameter"}
+		err := fmt.Errorf("Wrong ActaID. Must be greater than 0 - Got: %d", actaId)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetSoportes - actaId > 0",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 }

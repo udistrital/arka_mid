@@ -115,18 +115,41 @@
                 ],
                 "description": "get ActaRecibido",
                 "operationId": "ActaRecibidoController.Get All Actas",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "states",
+                        "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "u",
+                        "description": "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user",
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.HistoricoActa"
+                                "$ref": "#/definitions/models.ActaRecibido"
                             }
                         }
                     },
+                    "400": {
+                        "description": "\"Wrong IDs\""
+                    },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -144,18 +167,34 @@
                         "name": "id",
                         "description": "id del acta",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Elemento"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Elemento"
+                            }
                         }
+                    },
+                    "204": {
+                        "description": "Empty response (Due to Act not found or without elements)"
+                    },
+                    "400": {
+                        "description": "Wrong ID (MUST be greater than 0)"
                     },
                     "404": {
                         "description": "not found resource"
+                    },
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "502": {
+                        "description": "Error with external API"
                     }
                 }
             }
@@ -169,12 +208,12 @@
                 "operationId": "ActaRecibidoController.Get Soportes",
                 "parameters": [
                     {
-                        "in": "body",
-                        "name": "body",
-                        "description": "true",
-                        "schema": {
-                            "$ref": "#/definitions/models.Entrada"
-                        }
+                        "in": "path",
+                        "name": "id",
+                        "description": "Acta Id",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
@@ -183,12 +222,21 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                                "$ref": "#/definitions/models.SoporteActaProveedor"
                             }
                         }
                     },
+                    "400": {
+                        "description": "ID MUST be greater than 0"
+                    },
                     "404": {
                         "description": "not found resource"
+                    },
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "502": {
+                        "description": "External API Error"
                     }
                 }
             }
@@ -266,7 +314,13 @@
                         }
                     },
                     "404": {
-                        "description": "not found resource"
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -342,79 +396,30 @@
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "The key for staticblock",
+                        "description": "MovimientoId from Movimientos Arka CRUD",
                         "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{object}{\"Id\": int,\"FechaCreacion\": date,\"Observacion\": string,\"Elementos\": {\"Id\": int,\"Nombre\":string,\"Marca\": string,\"Serie\": string,\"CantidadDisponible\": int,\"CantidadSolicitada\": int,\t\"ValorUnitario\": float,} }"
-                    },
-                    "403": {
-                        "description": ":id is empty"
-                    }
-                }
-            }
-        },
-        "/bodega_consumo/{id}": {
-            "put": {
-                "tags": [
-                    "bodega_consumo"
-                ],
-                "description": "update the Bodega-Consumo",
-                "operationId": "BodegaConsumoController.Put",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The id you want to update",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for Bodega-Consumo content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Bodega-Consumo"
-                        }
+                        "type": "integer",
+                        "format": "int32"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Bodega-Consumo"
+                            "$ref": "#/definitions/models.BodegaConsumoSolicitud"
                         }
                     },
-                    "403": {
-                        "description": ":id is not int"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "bodega_consumo"
-                ],
-                "description": "delete the Bodega-Consumo",
-                "operationId": "BodegaConsumoController.Delete",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The id you want to delete",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} delete success!"
+                    "400": {
+                        "description": "\"Wrong parameter (ID MUST be \u003e 0)\""
                     },
-                    "403": {
-                        "description": "id is empty"
+                    "404": {
+                        "description": "\"Not found\""
+                    },
+                    "500": {
+                        "description": "\"Internal Error\""
+                    },
+                    "502": {
+                        "description": "\"Error with external API\""
                     }
                 }
             }
@@ -679,7 +684,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Movimiento"
+                            }
                         }
                     },
                     "404": {
@@ -700,15 +708,18 @@
                         "description": "body for Salida content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.SalidaGeneral"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TrSalida2"
+                            }
                         }
                     },
                     "403": {
@@ -730,14 +741,15 @@
                         "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.TrSalida"
                         }
                     },
                     "404": {
@@ -746,48 +758,39 @@
                 }
             }
         },
-        "/terceros/": {
+        "/terceros/tipo/": {
             "get": {
                 "tags": [
                     "terceros"
                 ],
-                "description": "get Terceros",
+                "description": "List the Tercero types that can be used to gather Terceros by {tipo}",
+                "operationId": "TercerosController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/terceros/tipo/{tipo}": {
+            "get": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "get Terceros with the specified {tipo}",
                 "operationId": "TercerosController.GetAll",
                 "parameters": [
                     {
-                        "in": "query",
-                        "name": "query",
-                        "description": "Filter. e.g. col1:v1,col2:v2 ...",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "fields",
-                        "description": "Fields returned. e.g. col1,col2 ...",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "sortby",
-                        "description": "Sorted-by fields. e.g. col1,col2 ...",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "order",
-                        "description": "Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "limit",
-                        "description": "Limit the size of result set. Must be an integer",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "offset",
-                        "description": "Start position of result set. Must be an integer",
+                        "in": "path",
+                        "name": "tipo",
+                        "description": "Tercero type available from /tipo/",
+                        "required": true,
                         "type": "string"
                     }
                 ],
@@ -795,11 +798,72 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Terceros"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/map[string]interface{}"
+                            }
                         }
                     },
-                    "403": {
-                        "description": ""
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "501": {
+                        "description": "{tipo} Not Implemented"
+                    },
+                    "502": {
+                        "description": "Error with external API"
+                    }
+                }
+            }
+        },
+        "/terceros/tipo/{tipo}/{id}": {
+            "get": {
+                "tags": [
+                    "terceros"
+                ],
+                "description": "get Terceros with the specified {tipo} and {id} of a record in terceros table from Terceros CRUD API",
+                "operationId": "TercerosController.GetAll",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "tipo",
+                        "description": "Tercero type available from /tipo/",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID. MUST be greater than 0",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/map[string]interface{}"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Wrong ID"
+                    },
+                    "404": {
+                        "description": "ID with {tipo} Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "501": {
+                        "description": "{tipo} Not Implemented"
+                    },
+                    "502": {
+                        "description": "Error with external API"
                     }
                 }
             }
@@ -831,70 +895,14 @@
                         "description": ":id is empty"
                     }
                 }
-            },
-            "put": {
-                "tags": [
-                    "terceros"
-                ],
-                "description": "update the Terceros",
-                "operationId": "TercerosController.Put",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The id you want to update",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for Terceros content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Terceros"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.Terceros"
-                        }
-                    },
-                    "403": {
-                        "description": ":id is not int"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "terceros"
-                ],
-                "description": "delete the Terceros",
-                "operationId": "TercerosController.Delete",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The id you want to delete",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} delete success!"
-                    },
-                    "403": {
-                        "description": "id is empty"
-                    }
-                }
             }
         }
     },
     "definitions": {
+        "map[string]interface{}": {
+            "title": "map[string]interface{}",
+            "type": "object"
+        },
         "models.ActaRecibido": {
             "title": "ActaRecibido",
             "type": "object",
@@ -969,6 +977,18 @@
         "models.Bodega-Consumo": {
             "title": "Bodega-Consumo",
             "type": "object"
+        },
+        "models.BodegaConsumoSolicitud": {
+            "title": "BodegaConsumoSolicitud",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "$ref": "#/definitions/models.ElementoSolicitud"
+                },
+                "Solicitud": {
+                    "$ref": "#/definitions/models.Movimiento"
+                }
+            }
         },
         "models.ConsultaEntrada": {
             "title": "ConsultaEntrada",
@@ -1203,6 +1223,114 @@
                 }
             }
         },
+        "models.ElementoCatalogo": {
+            "title": "ElementoCatalogo",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ElementoSolicitud": {
+            "title": "ElementoSolicitud",
+            "type": "object",
+            "properties": {
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "CantidadAprobada": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Dependencia": {
+                    "$ref": "#/definitions/models.Dependencia"
+                },
+                "ElementoCatalogoId": {
+                    "$ref": "#/definitions/models.ElementoCatalogo"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "SaldoCantidad": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "SaldoValor": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "Sede": {
+                    "$ref": "#/definitions/models.EspacioFisico"
+                },
+                "Ubicacion": {
+                    "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                }
+            }
+        },
+        "models.ElementosMovimiento": {
+            "title": "ElementosMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "ElementoActaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "SaldoCantidad": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "SaldoValor": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Unidad": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.Entrada": {
             "title": "Entrada",
             "type": "object"
@@ -1229,37 +1357,25 @@
                 }
             }
         },
-        "models.EstadoActa": {
-            "title": "EstadoActa",
+        "models.Estado": {
+            "title": "Estado",
             "type": "object",
             "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "CodigoAbreviacion": {
+                "Abreviatura": {
                     "type": "string"
                 },
-                "Descripcion": {
+                "ClaseParametro": {
                     "type": "string"
                 },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
+                "DescripcionParametro": {
+                    "type": "string"
                 },
                 "Id": {
                     "type": "integer",
                     "format": "int64"
                 },
-                "Nombre": {
+                "ValorParametro": {
                     "type": "string"
-                },
-                "NumeroOrden": {
-                    "type": "number",
-                    "format": "double"
                 }
             }
         },
@@ -1297,18 +1413,15 @@
                 }
             }
         },
-        "models.HistoricoActa": {
-            "title": "HistoricoActa",
+        "models.EstadoMovimiento": {
+            "title": "EstadoMovimiento",
             "type": "object",
             "properties": {
-                "ActaRecibidoId": {
-                    "$ref": "#/definitions/models.ActaRecibido"
-                },
                 "Activo": {
                     "type": "boolean"
                 },
-                "EstadoActaId": {
-                    "$ref": "#/definitions/models.EstadoActa"
+                "Descripcion": {
+                    "type": "string"
                 },
                 "FechaCreacion": {
                     "type": "string",
@@ -1321,6 +1434,122 @@
                 "Id": {
                     "type": "integer",
                     "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.FormatoTipoMovimiento": {
+            "title": "FormatoTipoMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Formato": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.Movimiento": {
+            "title": "Movimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Detalle": {
+                    "type": "string"
+                },
+                "EstadoMovimientoId": {
+                    "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FormatoTipoMovimientoId": {
+                    "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdTipoMovimiento": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoPadreId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.MovimientoProcesoExterno": {
+            "title": "MovimientoProcesoExterno",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProcesoExterno": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoMovimientoId": {
+                    "$ref": "#/definitions/models.TipoMovimiento"
                 }
             }
         },
@@ -1343,9 +1572,97 @@
                 }
             }
         },
+        "models.Proveedor": {
+            "title": "Proveedor",
+            "type": "object",
+            "properties": {
+                "Anexorup": {
+                    "type": "string"
+                },
+                "Anexorut": {
+                    "type": "string"
+                },
+                "ClasificacionEvaluacion": {
+                    "type": "string"
+                },
+                "Correo": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Direccion": {
+                    "type": "string"
+                },
+                "Estado": {
+                    "$ref": "#/definitions/models.Estado"
+                },
+                "FechaRegistro": {
+                    "type": "string"
+                },
+                "FechaUltimaModificacion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdCiudadContacto": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "IdEntidadBancaria": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NomAsesor": {
+                    "type": "string"
+                },
+                "NomProveedor": {
+                    "type": "string"
+                },
+                "NumCuentaBancaria": {
+                    "type": "string"
+                },
+                "NumDocumento": {
+                    "type": "string"
+                },
+                "PuntajeEvaluacion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "RegimenContributivo": {
+                    "type": "string"
+                },
+                "TelAsesor": {
+                    "type": "string"
+                },
+                "TipoCuentaBancaria": {
+                    "type": "string"
+                },
+                "Tipopersona": {
+                    "type": "string"
+                },
+                "Web": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Salida": {
             "title": "Salida",
             "type": "object"
+        },
+        "models.SalidaGeneral": {
+            "title": "SalidaGeneral",
+            "type": "object",
+            "properties": {
+                "Salidas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TrSalida"
+                    }
+                }
+            }
         },
         "models.SoporteActa": {
             "title": "SoporteActa",
@@ -1379,6 +1696,40 @@
                 "ProveedorId": {
                     "type": "integer",
                     "format": "int64"
+                }
+            }
+        },
+        "models.SoporteActaProveedor": {
+            "title": "SoporteActaProveedor",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "$ref": "#/definitions/models.ActaRecibido"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaSoporte": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ProveedorId": {
+                    "$ref": "#/definitions/models.Proveedor"
                 }
             }
         },
@@ -1493,6 +1844,72 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TipoMovimiento": {
+            "title": "TipoMovimiento",
+            "type": "object",
+            "properties": {
+                "Acronimo": {
+                    "type": "string"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Parametros": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TrSalida": {
+            "title": "TrSalida",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementosMovimiento"
+                    }
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
+                }
+            }
+        },
+        "models.TrSalida2": {
+            "title": "TrSalida2",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementosMovimiento"
+                    }
+                },
+                "MovimientosKronos": {
+                    "$ref": "#/definitions/models.MovimientoProcesoExterno"
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
                 }
             }
         },
