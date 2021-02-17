@@ -8,7 +8,7 @@ import (
 
 var diccionarioTipoHelper = map[string](func(int) ([]map[string]interface{}, map[string]interface{})){
 	"funcionarioPlanta": GetFuncionariosPlanta,
-	"jefes":             GetJefes,
+	"ordenadoresGasto":  GetOrdenadores,
 }
 
 // GetTipos retorna la lista de tipos que pueden ser usados con GetHelperTipo
