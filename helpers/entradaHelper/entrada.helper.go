@@ -32,7 +32,8 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 		panic(err.Error())
 	}
 	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
-
+	movimientoId := int(detalleJSON["movimiento_id"].(float64))
+	fmt.Println(movimientoId)
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(int(actaRecibidoId))
 
 	if _, err := request.GetJsonTest(urlcrud, &resH); err == nil { // (2) error servicio caido
@@ -47,6 +48,13 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 						var ent = data2["CodigoAbreviacion"]
 						if ent == "AsociadoEntrada" {
 							fmt.Println("Editar Entrada")
+							resultado = data2
+							urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
+							// if err := request.GetJson(urlcrud+strconv.Itoa(int(actaRecibidoId)), &actaRecibido); err == nil {
+							// } else {
+							// 	panic(err.Error())
+							// }
+
 						} else {
 							fmt.Println("Registrar entrada")
 							urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/"
