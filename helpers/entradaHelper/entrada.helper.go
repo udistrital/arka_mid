@@ -27,13 +27,17 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 		resultado    map[string]interface{}
 	)
 
+	// fmt.Println("Activo", data)
+	// fmt.Println("Detalle", data.Detalle)
+	// fmt.Println("estado", data.EstadoMovimientoId)
+	// fmt.Println("estado", data.EstadoMovimientoId)
+	// fmt.Println("estado", data.EstadoMovimientoId)
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
 		panic(err.Error())
 	}
 	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
-	movimientoId := int(detalleJSON["movimiento_id"].(float64))
-	fmt.Println(movimientoId)
+
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(int(actaRecibidoId))
 
 	if _, err := request.GetJsonTest(urlcrud, &resH); err == nil { // (2) error servicio caido
@@ -46,16 +50,103 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 				if jsonString1, err := json.Marshal(ss); err == nil {
 					if err := json.Unmarshal(jsonString1, &data2); err == nil {
 						var ent = data2["CodigoAbreviacion"]
-						if ent == "AsociadoEntrada" {
+						if data.Id > 0 {
 							fmt.Println("Editar Entrada")
 							resultado = data2
-							urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
-							// if err := request.GetJson(urlcrud+strconv.Itoa(int(actaRecibidoId)), &actaRecibido); err == nil {
-							// } else {
-							// 	panic(err.Error())
-							// }
 
-						} else {
+							urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(data.Id))
+
+							if err = request.SendJson(urlcrud, "PUT", &res, &data); err == nil {
+
+								urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(int(data.Id))
+
+								var sss map[string]interface{}
+								if _, err := request.GetJsonTest(urlcrud, &sss); err == nil {
+									var data3 map[string]interface{}
+									if jsonString2, err := json.Marshal(sss); err == nil {
+										if err := json.Unmarshal(jsonString2, &data3); err == nil {
+											var sssd = data3["Body"]
+											fmt.Println("sssd:", sssd)
+											var data4 []map[string]interface{}
+											if jsonString3, err := json.Marshal(sssd); err == nil {
+												if err := json.Unmarshal(jsonString3, &data4); err == nil {
+
+													urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(int(data.Id))
+
+													procesoExterno := data.Id
+													var formatoArka map[string]interface{}
+													var idMovArka int
+
+													if jsonString, err := json.Marshal(res["FormatoTipoMovimientoId"]); err == nil {
+														if err := json.Unmarshal(jsonString, &formatoArka); err != nil {
+															panic(err.Error())
+														}
+														idMovArka = int(formatoArka["Id"].(float64))
+													} else {
+														panic(err.Error())
+													}
+
+													tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
+													movimientosKronos := models.MovimientoProcesoExterno{
+														Id:                       int(data4[0]["Id"].(float64)),
+														TipoMovimientoId:         &tipo,
+														ProcesoExterno:           int64(procesoExterno),
+														Activo:                   true,
+														MovimientoProcesoExterno: idMovArka,
+													}
+													if err = request.SendJson(urlcrud, "PUT", &resM, &movimientosKronos); err == nil {
+
+													} else {
+														fmt.Println("failed")
+													}
+												} else {
+													fmt.Println(err)
+												}
+											}
+										}
+									}
+
+									fmt.Println("hier")
+								} else {
+									fmt.Println(err)
+								}
+
+								// urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
+
+								// 	procesoExterno := int64(res["Id"].(float64))
+
+								// 	var formato_arka map[string]interface{}
+								// 	var id_mov_arka int
+
+								// 	if jsonString, err := json.Marshal(res["FormatoTipoMovimientoId"]); err == nil {
+								// 		if err := json.Unmarshal(jsonString, &formato_arka); err != nil {
+								// 			panic(err.Error())
+								// 		}
+								// 		id_mov_arka = int(formato_arka["Id"].(float64))
+								// 	} else {
+								// 		panic(err.Error())
+								// 	}
+
+								// 	tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
+								// 	movimientosKronos := models.MovimientoProcesoExterno{
+								// 		TipoMovimientoId:         &tipo,
+								// 		ProcesoExterno:           procesoExterno,
+								// 		Activo:                   true,
+								// 		MovimientoProcesoExterno: id_mov_arka,
+								// 	}
+
+								// 	if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
+								// 		resultado = res
+								// 	} else {
+								// 		panic(err.Error())
+								// 	}
+
+							} else {
+								fmt.Println("hiersss")
+								panic(err.Error())
+							}
+
+						} else if ent == "AsociadoEntrad" {
 							fmt.Println("Registrar entrada")
 							urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/"
 
@@ -134,6 +225,8 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 							} else {
 								panic(err.Error())
 							}
+						} else {
+							fmt.Println(res)
 						}
 					}
 				}
