@@ -13,6 +13,7 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+// GetContratista trae la lista de contratistas registrados en Terceros, con opción de filtrar por ID
 func GetContratista(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
@@ -64,7 +65,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		}
 		return nil, outputError
 	}
-	logs.Debug("parametroContratistaID:", parametroContratistaID)
+	// logs.Debug("parametroContratistaID:", parametroContratistaID)
 
 	// PARTE 2. Traer los terceros que tengan los ID anteriores en la tabla vinculacion
 	for _, paramID := range parametroContratistaID {
@@ -110,13 +111,14 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 			return nil, outputError
 		}
 	}
-	logs.Debug("terceros:", terceros)
+	// logs.Debug("terceros:", terceros)
 
 	// PARTE 3 Traer identificación disponible...
 	for _, tercero := range terceros {
 
 		var terceroModelo models.Tercero
 		if err := mapstructure.Decode(tercero["Tercero"], &terceroModelo); err != nil {
+			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "/GetContratista - mapstructure.Decode(tercero[\"Tercero\"], &terceroModelo)",
 				"err":     err,
@@ -124,14 +126,14 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 			}
 			return nil, outputError
 		}
-		logs.Debug("terceroModelo:", terceroModelo)
+		// logs.Debug("terceroModelo:", terceroModelo)
 
 		// 3.1 ... de terceros?
 		var dataTerceros []map[string]interface{} // models.DatosIdentificacion
 		urlDocTercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
 		urlDocTercero += "?fields=TipoDocumentoId,Numero"
 		urlDocTercero += "&query=Activo:true,TerceroId__Id:" + fmt.Sprint(terceroModelo.Id)
-		logs.Debug("urlDocTercero: ", urlDocTercero)
+		// logs.Debug("urlDocTercero: ", urlDocTercero)
 		if resp, err := request.GetJsonTest(urlDocTercero, &dataTerceros); err == nil && resp.StatusCode == 200 {
 			tercero["DataTercerosDocumento"] = dataTerceros[0]
 		} else {
@@ -150,7 +152,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		// 3.2 ... de Autenticacion MID?
 		if data, err := autenticacion.DataUsuario(terceroModelo.UsuarioWSO2); err == nil {
 			tercero["DataAutenticacion"] = data
-			logs.Debug("dataAutenticacion:", data)
+			// logs.Debug("dataAutenticacion:", data)
 		} else {
 			return nil, err
 		}
