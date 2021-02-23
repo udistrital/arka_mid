@@ -83,10 +83,12 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 			}
 			// fmt.Println("paramId:", paramId, "#vinculaciones: ", len(vinculaciones))
 
+			// Lo siguiente es para que no se vuelva a agregar un tercero
+			// cuando el tercero tenga más de una vinculación
 			for _, vincul := range vinculaciones {
 				add := true
 				for _, tercero := range terceros {
-					if vincul.Id == tercero["Id"] {
+					if mTercero := tercero["TerceroPrincipal"].(models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
 						add = false
 						break
 					}
@@ -94,6 +96,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 				if add {
 					terceros = append(terceros, map[string]interface{}{
 						"Tercero": vincul.TerceroPrincipalId,
+						// "TipoVinculacion":  vincul.TipoVinculacionId,
 					})
 				}
 			}
