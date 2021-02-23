@@ -5,10 +5,11 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/mitchellh/mapstructure"
 
-	"github.com/udistrital/arka_mid/models"
-	// "github.com/udistrital/arka_mid/helpers/autenticacion"
 	// "github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/helpers/autenticacion"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -77,6 +78,38 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		}
 	}
 	logs.Debug("terceros:", terceros)
+
+	// PARTE 3 Traer identificación disponible...
+	for _, tercero := range terceros {
+
+		var terceroModelo models.Tercero
+		if err := mapstructure.Decode(tercero["Tercero"], &terceroModelo); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetContratista - mapstructure.Decode(tercero[\"Tercero\"], &terceroModelo)",
+				"err":     err,
+				"status":  "500",
+			}
+			return nil, outputError
+		}
+		logs.Debug("terceroModelo:", terceroModelo)
+
+		// 3.1 ... de terceros?
+		var dataTerceros []map[string]interface{} // models.DatosIdentificacion
+		urlDocTercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
+		urlDocTercero += "?fields=TipoDocumentoId,Numero"
+		urlDocTercero += "&query=Activo:true,TerceroId__Id:" + fmt.Sprint(terceroModelo.Id)
+		logs.Debug("urlDocTercero: ", urlDocTercero)
+		if resp, err := request.GetJsonTest(urlDocTercero, &dataTerceros); err == nil && resp.StatusCode == 200 {
+			tercero["DataTercerosDocumento"] = dataTerceros[0]
+		}
+
+		// 3.2 ... de Autenticacion MID?
+		if data, err := autenticacion.DataUsuario(terceroModelo.UsuarioWSO2); err == nil {
+			tercero["DataAutenticacion"] = data
+			logs.Debug("dataAutenticacion:", data)
+		}
+
+	}
 
 	return terceros, nil
 }
