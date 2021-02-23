@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -13,6 +14,15 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
+
+type Consecutivo struct {
+	Id          int
+	ContextoId  int
+	Year        int
+	Consecutivo int
+	Descripcion string
+	Activo      bool
+}
 
 // AddEntrada Transacción para registrar la información de una entrada
 func AddEntrada(data models.Movimiento) map[string]interface{} {
@@ -30,6 +40,30 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
 		panic(err.Error())
 	}
+
+
+	year, _, _ := time.Now().Date()
+	consec := Consecutivo{0, 1, year, 0, "Entradas", true}
+	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
+	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
+		resultado, _ := res["Data"].(map[string]interface{})
+		numeroentrada := "-" + fmt.Sprintf("%05.0f", resultado["Consecutivo"]) + "-" + strconv.Itoa(year)
+		vconsecutivo := detalleJSON["consecutivo"].(string) + "-" + numeroentrada
+		detalleJSON["consecutivo"] = vconsecutivo
+	} else {
+		logs.Error(err)
+		panic(err.Error())
+	}
+	var jsonData []byte
+	jsonData, err1 := json.Marshal(detalleJSON)
+	if err1 != nil {
+		logs.Error(err1)
+		panic(err1.Error())
+	}
+	data.Detalle = string(jsonData[:])
+
+	// Solicita información acta
+
 	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
 
 	if data.Id > 0 { // Si desde el cliente se envía el id del movimiento, se hace el put
@@ -301,6 +335,7 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 	var urlelemento string
 	var elemento map[string]interface{}
 	if id, err := actaRecibido.GetIdElementoPlaca(placa); err == nil {
+		fmt.Println("id: ", id)
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_encargado_elemento/" + id
 		if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
 			fmt.Println("status: ", elemento)
