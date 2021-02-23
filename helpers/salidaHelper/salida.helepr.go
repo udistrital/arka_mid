@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	// "reflect"
 	"strings"
@@ -16,6 +17,72 @@ import (
 	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
+
+type Consecutivo struct {
+	Id          int
+	ContextoId  int
+	Year        int
+	Consecutivo int
+	Descripcion string
+	Activo      bool
+}
+
+// AsignarPlaca Transacción para asignar las placas
+func AsignarPlaca(m *models.Elemento) (resultado map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/ModificarPlaca", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
+
+	fmt.Printf("entro a asignar")
+	fmt.Printf("%+v\n", m)
+	year, month, day := time.Now().Date()
+	//	fecstring := fmt.Sprintf("%4d", year) + fmt.Sprintf("%02d", int(month)) + fmt.Sprintf("%02d", day)
+
+	consec := Consecutivo{0, 0, year, 0, "Placas", true}
+	var (
+		res       map[string]interface{} // models.SalidaGeneral
+		fecstring string
+	)
+
+	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
+	putElemento := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/" + fmt.Sprintf("%d", m.Id)
+
+	// Inserta salida en Movimientos ARKA
+	// AsignarPlaca Transacción para asignar las placas
+	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
+		resultado, _ := res["Data"].(map[string]interface{})
+		fmt.Printf("%+v\n", &resultado)
+		fmt.Printf("%05.0f\n", resultado["Consecutivo"])
+		fecstring := fmt.Sprintf("%4d", year) + fmt.Sprintf("%02d", int(month)) + fmt.Sprintf("%02d", day) + fmt.Sprintf("%05.0f", resultado["Consecutivo"])
+		fmt.Printf(fecstring)
+		m.Placa = fecstring
+		if err := request.SendJson(putElemento, "PUT", &resultado, &m); err == nil {
+			return resultado, nil
+		} else {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/AsignarPlaca",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
+		}
+	} else {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/AsignarPlaca",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	fmt.Println("day: ", fecstring)
+	return nil, outputError
+}
 
 // AddEntrada Transacción para registrar la información de una salida
 func AddSalida(m *models.SalidaGeneral) (resultado []map[string]interface{}, outputError map[string]interface{}) {
