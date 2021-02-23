@@ -15,6 +15,17 @@ import (
 
 func GetContratista(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
 
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "/GetContratista - Uncaught Error!",
+				"err":     err,
+				"status":  "500", // Uncaught error!
+			}
+			panic(outputError)
+		}
+	}()
+
 	// PARTE 1. Traer los ID de los parámetros asociados a contratistas
 
 	// Los siguientes son los códigos de los registros de la tabla "parametro" de la API
@@ -41,6 +52,17 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 				}
 			}
 		}
+	} else {
+		if err == nil {
+			err = fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetContratista - request.GetJsonTest(urlParametros, &respBody)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 	logs.Debug("parametroContratistaID:", parametroContratistaID)
 
@@ -75,6 +97,17 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 				}
 			}
 
+		} else {
+			if err == nil {
+				err = fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetContratista - request.GetJsonTest(urlTerceros, &vinculaciones)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 	}
 	logs.Debug("terceros:", terceros)
@@ -101,12 +134,25 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		logs.Debug("urlDocTercero: ", urlDocTercero)
 		if resp, err := request.GetJsonTest(urlDocTercero, &dataTerceros); err == nil && resp.StatusCode == 200 {
 			tercero["DataTercerosDocumento"] = dataTerceros[0]
+		} else {
+			if err == nil {
+				err = fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetContratista - request.GetJsonTest(urlDocTercero, &dataTerceros)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 
 		// 3.2 ... de Autenticacion MID?
 		if data, err := autenticacion.DataUsuario(terceroModelo.UsuarioWSO2); err == nil {
 			tercero["DataAutenticacion"] = data
 			logs.Debug("dataAutenticacion:", data)
+		} else {
+			return nil, err
 		}
 
 	}
