@@ -6,7 +6,7 @@ type TipoContribuyente struct {
 	Id                int
 	Nombre            string
 	Descripcion       string
-	CodigoAbreviaion  string
+	CodigoAbreviacion string
 	Activo            bool
 	FechaCreacion     string
 	FechaModificacion string
@@ -25,6 +25,7 @@ type Tercero struct {
 	TipoContribuyenteId *TipoContribuyente
 	FechaCreacion       string
 	FechaModificacion   string
+	UsuarioWSO2         string
 }
 
 type Vinculacion struct {
