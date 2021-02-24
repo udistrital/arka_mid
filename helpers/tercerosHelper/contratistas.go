@@ -8,7 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	// "github.com/udistrital/arka_mid/helpers/utilsHelper"
-	"github.com/udistrital/arka_mid/helpers/autenticacion"
+	// "github.com/udistrital/arka_mid/helpers/autenticacion"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -97,7 +97,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 					terceroRecortado := map[string]interface{}{
 						"Id":             vincul.TerceroPrincipalId.Id,
 						"NombreCompleto": vincul.TerceroPrincipalId.NombreCompleto,
-						"UsuarioWSO2":    vincul.TerceroPrincipalId.UsuarioWSO2,
+						// "UsuarioWSO2":    vincul.TerceroPrincipalId.UsuarioWSO2,
 					}
 					terceros = append(terceros, map[string]interface{}{
 						// "Tercero": vincul.TerceroPrincipalId,
@@ -164,7 +164,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 					},
 					"Numero": dataModel.Numero,
 				}
-				tercero["DataTercerosDocumento"] = dataRecortada
+				tercero["Identificacion"] = dataRecortada
 			} else {
 				err := fmt.Errorf("Hay +/- un documento registrado como Activo para el Tercero con ID: %d", terceroModelo.Id)
 				logs.Warn(err)
@@ -183,12 +183,14 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		}
 
 		// 3.2 ... de Autenticacion MID?
-		if data, err := autenticacion.DataUsuario(terceroModelo.UsuarioWSO2); err == nil {
-			tercero["DataAutenticacion"] = data
-			// logs.Debug("dataAutenticacion:", data)
-		} else {
-			return nil, err
-		}
+		/*
+			if data, err := autenticacion.DataUsuario(terceroModelo.UsuarioWSO2); err == nil {
+				tercero["DataAutenticacion"] = data
+				// logs.Debug("dataAutenticacion:", data)
+			} else {
+				return nil, err
+			}
+		*/
 
 	}
 
