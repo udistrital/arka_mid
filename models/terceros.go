@@ -54,11 +54,25 @@ type TerceroTipoTercero struct {
 }
 
 type TipoDocumento struct {
-	TipoContribuyente
-	NumeroOrden int
+	Id                int
+	Nombre            string
+	Descripcion       string
+	CodigoAbreviacion string
+	Activo            bool
+	FechaCreacion     string
+	FechaModificacion string
+	NumeroOrden       int
 }
 
-type TipoTercero TipoContribuyente
+type TipoTercero struct {
+	Id                int
+	Nombre            string
+	Descripcion       string
+	CodigoAbreviacion string
+	Activo            bool
+	FechaCreacion     string
+	FechaModificacion string
+}
 
 type Vinculacion struct {
 	Id                     int

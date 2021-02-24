@@ -88,14 +88,20 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 			for _, vincul := range vinculaciones {
 				add := true
 				for _, tercero := range terceros {
-					if mTercero := tercero["TerceroPrincipal"].(*models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
+					if mTercero := tercero["Tercero"].(*models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
 						add = false
 						break
 					}
 				}
 				if add {
+					terceroRecortado := map[string]interface{}{
+						"Id":             vincul.TerceroPrincipalId.Id,
+						"NombreCompleto": vincul.TerceroPrincipalId.NombreCompleto,
+						"UsuarioWSO2":    vincul.TerceroPrincipalId.UsuarioWSO2,
+					}
 					terceros = append(terceros, map[string]interface{}{
-						"TerceroPrincipal": vincul.TerceroPrincipalId,
+						// "Tercero": vincul.TerceroPrincipalId,
+						"Tercero": terceroRecortado,
 						// "TipoVinculacion":  vincul.TipoVinculacionId,
 					})
 				}
@@ -138,7 +144,31 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		urlDocTercero += "&query=Activo:true,TerceroId__Id:" + fmt.Sprint(terceroModelo.Id)
 		// logs.Debug("urlDocTercero: ", urlDocTercero)
 		if resp, err := request.GetJsonTest(urlDocTercero, &dataTerceros); err == nil && resp.StatusCode == 200 {
-			tercero["DataTercerosDocumento"] = dataTerceros[0]
+			// tercero["DataTercerosDocumento"] = dataTerceros[0]
+			if len(dataTerceros) == 1 && dataTerceros[0]["Id"] != 0 {
+				var dataModel models.DatosIdentificacion
+				if err := mapstructure.Decode(dataTerceros[0], &dataModel); err != nil {
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetContratista - mapstructure.Decode(dataTerceros[0], &dataModel)",
+						"err":     err,
+						"status":  "500",
+					}
+					return nil, outputError
+				}
+				dataRecortada := map[string]interface{}{
+					// "TipoDocumentoId": dataModel.TipoDocumentoId,
+					"TipoDocumentoId": map[string]interface{}{
+						"Id":     dataModel.TipoDocumentoId.Id,
+						"Nombre": dataModel.TipoDocumentoId.Nombre,
+					},
+					"Numero": dataModel.Numero,
+				}
+				tercero["DataTercerosDocumento"] = dataRecortada
+			} else {
+				err := fmt.Errorf("Hay +/- un documento registrado como Activo para el Tercero con ID: %d", terceroModelo.Id)
+				logs.Warn(err)
+			}
 		} else {
 			if err == nil {
 				err = fmt.Errorf("Undesired status code - Got:%d", resp.StatusCode)
