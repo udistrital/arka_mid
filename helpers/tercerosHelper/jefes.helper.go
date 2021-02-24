@@ -87,14 +87,14 @@ func GetOrdenadores(idTercero int) (terceros []map[string]interface{}, outputErr
 			if len(vinculaciones) == 0 || vinculaciones[0].Id == 0 {
 				continue
 			}
-			// fmt.Println("paramId:", paramId, "#vinculaciones: ", len(vinculaciones))
+			// fmt.Println("paramId:", paramID, "#vinculaciones: ", len(vinculaciones))
 
 			// Lo siguiente es para que no se vuelva a agregar un tercero
 			// cuando el tercero tenga más de una vinculación
 			for _, vincul := range vinculaciones {
 				add := true
 				for _, tercero := range terceros {
-					if mTercero := tercero["TerceroPrincipal"].(models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
+					if mTercero := tercero["TerceroPrincipal"].(*models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
 						add = false
 						break
 					}

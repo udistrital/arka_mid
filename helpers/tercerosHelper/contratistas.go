@@ -88,14 +88,14 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 			for _, vincul := range vinculaciones {
 				add := true
 				for _, tercero := range terceros {
-					if mTercero := tercero["TerceroPrincipal"].(models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
+					if mTercero := tercero["TerceroPrincipal"].(*models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
 						add = false
 						break
 					}
 				}
 				if add {
 					terceros = append(terceros, map[string]interface{}{
-						"Tercero": vincul.TerceroPrincipalId,
+						"TerceroPrincipal": vincul.TerceroPrincipalId,
 						// "TipoVinculacion":  vincul.TipoVinculacionId,
 					})
 				}
