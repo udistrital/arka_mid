@@ -70,23 +70,23 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		for _, historicos := range Historico {
 
-			var data_ map[string]interface{}
-			var data2_ map[string]interface{}
-			var data3_ map[string]interface{}
-			var Tercero_ map[string]interface{}
-			var Ubicacion_ map[string]interface{}
+			var acta map[string]interface{}
+			var estado map[string]interface{}
+			var ubicacionData map[string]interface{}
+			var editor map[string]interface{}
+			var preUbicacion map[string]interface{}
 			var nombreAsignado string
 
-			Ubicacion_ = nil
+			preUbicacion = nil
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
-				data_ = data
+				acta = data
 			} else {
 				return nil, err
 			}
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
-				data2_ = data
+				estado = data
 			} else {
 				return nil, err
 			}
@@ -94,8 +94,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			// findAndAddTercero trae la información de un tercero y la agrega
 			// al buffer de terceros
 			findAndAddTercero := func() map[string]interface{} {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-					Tercero_ = Tercero
+				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", acta["RevisorId"])); err == nil {
+					editor = Tercero
 					Terceros = append(Terceros, Tercero)
 					return nil
 				} else {
@@ -114,13 +114,13 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
-					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
+					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", acta["RevisorId"])); err == nil {
 						if keys := len(Tercero); keys == 0 {
 							if err := findAndAddTercero(); err != nil {
 								return nil, err
 							}
 						} else {
-							Tercero_ = Tercero
+							editor = Tercero
 						}
 					} else {
 						logs.Error(err)
@@ -139,10 +139,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 
 			if Ubicaciones == nil {
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
 					// fmt.Println(ubicacion)
 					if keys := len(ubicacion); keys != 0 {
-						Ubicacion_ = ubicacion
+						preUbicacion = ubicacion
 						Ubicaciones = append(Ubicaciones, ubicacion)
 					}
 
@@ -157,12 +157,12 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			} else {
 				if keys := len(Ubicaciones[0]); keys != 0 {
-					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
 						if keys := len(ubicacion); keys == 0 {
-							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
 								// fmt.Println(ubicacion)
 								if keys := len(ubicacion); keys != 0 {
-									Ubicacion_ = ubicacion
+									preUbicacion = ubicacion
 									Ubicaciones = append(Ubicaciones, ubicacion)
 								}
 							} else {
@@ -175,7 +175,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 								return nil, outputError
 							}
 						} else {
-							Ubicacion_ = ubicacion
+							preUbicacion = ubicacion
 						}
 					} else {
 						logs.Error(err)
@@ -187,10 +187,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 						return nil, outputError
 					}
 				} else {
-					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
+					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
 						// fmt.Println(ubicacion)
 						if keys := len(ubicacion); keys != 0 {
-							Ubicacion_ = ubicacion
+							preUbicacion = ubicacion
 							Ubicaciones = append(Ubicaciones, ubicacion)
 						}
 					} else {
@@ -205,16 +205,16 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			var tmpAsignadoId = int(data_["PersonaAsignada"].(float64))
+			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
 			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
 			if outputError == nil {
 				nombreAsignado = asignado[0].NomProveedor
 				// fmt.Println(outputError)
 			}
 
-			if Ubicacion_ != nil {
-				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
-					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
+			if preUbicacion != nil {
+				if jsonString2, err := json.Marshal(preUbicacion["EspacioFisicoId"]); err == nil {
+					if err2 := json.Unmarshal(jsonString2, &ubicacionData); err2 != nil {
 						logs.Error(err)
 						outputError = map[string]interface{}{
 							"funcion": "/GetAllActasRecibidoActivas",
@@ -225,23 +225,23 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					}
 				}
 			} else {
-				data3_ = map[string]interface{}{
+				ubicacionData = map[string]interface{}{
 					"Nombre": "Ubicacion No Especificada",
 				}
 			}
-			// fmt.Println(data3_)
+			// fmt.Println(ubicacionData)
 			Acta := map[string]interface{}{
-				"UbicacionId":       data3_["Nombre"],
-				"Activo":            data_["Activo"],
-				"FechaCreacion":     data_["FechaCreacion"],
-				"FechaVistoBueno":   data_["FechaVistoBueno"],
-				"FechaModificacion": data_["FechaModificacion"],
-				"Id":                data_["Id"],
-				"Observaciones":     data_["Observaciones"],
-				"RevisorId":         Tercero_["NombreCompleto"],
+				"UbicacionId":       ubicacionData["Nombre"],
+				"Activo":            acta["Activo"],
+				"FechaCreacion":     acta["FechaCreacion"],
+				"FechaVistoBueno":   acta["FechaVistoBueno"],
+				"FechaModificacion": acta["FechaModificacion"],
+				"Id":                acta["Id"],
+				"Observaciones":     acta["Observaciones"],
+				"RevisorId":         editor["NombreCompleto"],
 				"PersonaAsignada":   nombreAsignado,
-				"PersonaAsignadaId": int(data_["PersonaAsignada"].(float64)),
-				"Estado":            data2_["Nombre"],
+				"PersonaAsignadaId": int(acta["PersonaAsignada"].(float64)),
+				"Estado":            estado["Nombre"],
 			}
 			// fmt.Println("Es esto")
 			// fmt.Println(Acta)
