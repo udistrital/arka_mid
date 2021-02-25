@@ -138,41 +138,38 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			if Ubicaciones == nil {
+			// findAndAddUbicacion trae la información de una ubicación y la agrega
+			// al buffer de ubicaciones
+			findAndAddUbicacion := func() map[string]interface{} {
 				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
 					// fmt.Println(ubicacion)
 					if keys := len(ubicacion); keys != 0 {
 						preUbicacion = ubicacion
 						Ubicaciones = append(Ubicaciones, ubicacion)
 					}
+					return nil
 
 				} else {
 					logs.Error(err)
 					outputError = map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas",
+						"funcion": "/GetAllActasRecibidoActivas/findAndAddUbicacion",
 						"err":     err,
 						"status":  "502",
 					}
-					return nil, outputError
+					return outputError
+				}
+			}
+
+			if Ubicaciones == nil {
+				if err := findAndAddUbicacion(); err != nil {
+					return nil, err
 				}
 			} else {
 				if keys := len(Ubicaciones[0]); keys != 0 {
 					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
 						if keys := len(ubicacion); keys == 0 {
-							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
-								// fmt.Println(ubicacion)
-								if keys := len(ubicacion); keys != 0 {
-									preUbicacion = ubicacion
-									Ubicaciones = append(Ubicaciones, ubicacion)
-								}
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllActasRecibidoActivas",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+							if err := findAndAddUbicacion(); err != nil {
+								return nil, err
 							}
 						} else {
 							preUbicacion = ubicacion
@@ -187,20 +184,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 						return nil, outputError
 					}
 				} else {
-					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
-						// fmt.Println(ubicacion)
-						if keys := len(ubicacion); keys != 0 {
-							preUbicacion = ubicacion
-							Ubicaciones = append(Ubicaciones, ubicacion)
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+					if err := findAndAddUbicacion(); err != nil {
+						return nil, err
 					}
 				}
 			}
