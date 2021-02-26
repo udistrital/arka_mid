@@ -19,6 +19,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+
+	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -39,12 +41,14 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	var Historico []map[string]interface{}
 	Terceros := make(map[int](map[string]interface{}))
 	Ubicaciones := make(map[int](map[string]interface{}))
-	var asignado []*models.Proveedor
+	Proveedores := make(map[int](*models.Proveedor))
 
 	consultasTerceros := 0
 	consultasUbicaciones := 0
+	consultasProveedores := 0
 	evTerceros := 0
 	evUbicaciones := 0
+	evProveedores := 0
 
 	// fmt.Print("Estados Solicitados: ")
 	// fmt.Println(states)
@@ -80,7 +84,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var ubicacionData map[string]interface{}
 			var editor map[string]interface{}
 			var preUbicacion map[string]interface{}
-			var nombreAsignado string
+			// var nombreAsignado string
+			var asignado *models.Proveedor
 
 			preUbicacion = nil
 
@@ -164,11 +169,44 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 
+			// findAndAddUbicacion trae la información de un proveedor y la agrega
+			// al buffer de proveedores
+			// (Nota: Evitar usar, se va a usar terceros en vez de Agora)
+			findAndAddProveedor := func(ProveedorId int) (*models.Proveedor, map[string]interface{}) {
+
+				var vacio models.Proveedor
+				if ProveedorId == 0 {
+					return &vacio, nil
+				}
+
+				if proveedor, ok := Proveedores[ProveedorId]; ok {
+					evProveedores++
+					return proveedor, nil
+				}
+
+				// if ProveedorId > 0 {
+				consultasProveedores++
+				if provs, err := proveedorHelper.GetProveedorById(ProveedorId); err == nil {
+					if len(provs) == 1 && provs[0].Id > 0 {
+						proveedor := provs[0]
+						Proveedores[ProveedorId] = proveedor
+						return proveedor, nil
+					}
+					if len(provs) > 1 {
+						logs.Warn("Proveedor", ProveedorId, "tiene más de un resultado")
+					}
+				} else {
+					return nil, err
+				}
+
+				// }
+
+				return &vacio, nil
+			}
+
 			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
-			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
-			if outputError == nil {
-				nombreAsignado = asignado[0].NomProveedor
-				// fmt.Println(outputError)
+			if v, err := findAndAddProveedor(tmpAsignadoId); err == nil {
+				asignado = v
 			}
 
 			if preUbicacion != nil {
@@ -198,8 +236,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				"Id":                acta["Id"],
 				"Observaciones":     acta["Observaciones"],
 				"RevisorId":         editor["NombreCompleto"],
-				"PersonaAsignada":   nombreAsignado,
-				"PersonaAsignadaId": int(acta["PersonaAsignada"].(float64)),
+				"PersonaAsignada":   asignado.NomProveedor,
+				"PersonaAsignadaId": tmpAsignadoId,
 				"Estado":            estado["Nombre"],
 			}
 			// fmt.Println("Es esto")
@@ -223,6 +261,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)
 		logs.Info("consultasUbicaciones:", consultasUbicaciones, " - Evitadas: ", evUbicaciones)
+		logs.Info("consultasProveedores:", consultasProveedores, " - Evitadas: ", evProveedores)
+		// formatdata.JsonPrint(Proveedores)
 		logs.Info(len(historicoActa), "actas")
 		return historicoActa, nil
 
