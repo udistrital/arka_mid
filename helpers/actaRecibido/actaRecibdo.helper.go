@@ -37,9 +37,14 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	}()
 
 	var Historico []map[string]interface{}
-	var Terceros []map[string]interface{}
-	var Ubicaciones []map[string]interface{}
+	Terceros := make(map[int](map[string]interface{}))
+	Ubicaciones := make(map[int](map[string]interface{}))
 	var asignado []*models.Proveedor
+
+	consultasTerceros := 0
+	consultasUbicaciones := 0
+	evTerceros := 0
+	evUbicaciones := 0
 
 	// fmt.Print("Estados Solicitados: ")
 	// fmt.Println(states)
@@ -93,14 +98,24 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			// findAndAddTercero trae la información de un tercero y la agrega
 			// al buffer de terceros
-			findAndAddTercero := func() map[string]interface{} {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", acta["RevisorId"])); err == nil {
-					editor = Tercero
-					Terceros = append(Terceros, Tercero)
-					return nil
+			findAndAddTercero := func(TerceroId int) (map[string]interface{}, map[string]interface{}) {
+				idStr := fmt.Sprint(TerceroId)
+
+				if Tercero, ok := Terceros[TerceroId]; ok {
+					evTerceros++
+					return Tercero, nil
+				}
+
+				consultasTerceros++
+				if Tercero, err := tercerosHelper.GetNombreTerceroById(idStr); err == nil {
+					if keys := len(Tercero); keys != 0 {
+						Terceros[TerceroId] = Tercero
+						logs.Debug("len(Terceros)", len(Terceros))
+					}
+					return Tercero, nil
 				} else {
 					logs.Error(err)
-					return map[string]interface{}{
+					return nil, map[string]interface{}{
 						"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
 						"err":     err,
 						"status":  "502",
@@ -108,47 +123,29 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			if Terceros == nil {
-				if err := findAndAddTercero(); err != nil {
-					return nil, err
-				}
+			idRev := int(acta["RevisorId"].(float64))
+			if v, err := findAndAddTercero(idRev); err == nil {
+				editor = v
 			} else {
-				if keys := len(Terceros[0]); keys != 0 {
-					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", acta["RevisorId"])); err == nil {
-						if keys := len(Tercero); keys == 0 {
-							if err := findAndAddTercero(); err != nil {
-								return nil, err
-							}
-						} else {
-							editor = Tercero
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				} else {
-					if err := findAndAddTercero(); err != nil {
-						return nil, err
-					}
-				}
+				return nil, err
 			}
 
 			// findAndAddUbicacion trae la información de una ubicación y la agrega
 			// al buffer de ubicaciones
-			findAndAddUbicacion := func() map[string]interface{} {
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
-					// fmt.Println(ubicacion)
-					if keys := len(ubicacion); keys != 0 {
-						preUbicacion = ubicacion
-						Ubicaciones = append(Ubicaciones, ubicacion)
-					}
-					return nil
+			findAndAddUbicacion := func(UbicacionId int) (map[string]interface{}, map[string]interface{}) {
+				idStr := fmt.Sprint(UbicacionId)
 
+				if ubicacion, ok := Ubicaciones[UbicacionId]; ok {
+					evUbicaciones++
+					return ubicacion, nil
+				}
+
+				consultasUbicaciones++
+				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idStr); err == nil {
+					if keys := len(ubicacion); keys != 0 {
+						Ubicaciones[UbicacionId] = ubicacion
+					}
+					return ubicacion, nil
 				} else {
 					logs.Error(err)
 					outputError = map[string]interface{}{
@@ -156,38 +153,15 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 						"err":     err,
 						"status":  "502",
 					}
-					return outputError
+					return nil, outputError
 				}
 			}
 
-			if Ubicaciones == nil {
-				if err := findAndAddUbicacion(); err != nil {
-					return nil, err
-				}
+			idUb := int(acta["UbicacionId"].(float64))
+			if v, err := findAndAddUbicacion(idUb); err == nil {
+				preUbicacion = v
 			} else {
-				if keys := len(Ubicaciones[0]); keys != 0 {
-					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", acta["UbicacionId"])); err == nil {
-						if keys := len(ubicacion); keys == 0 {
-							if err := findAndAddUbicacion(); err != nil {
-								return nil, err
-							}
-						} else {
-							preUbicacion = ubicacion
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				} else {
-					if err := findAndAddUbicacion(); err != nil {
-						return nil, err
-					}
-				}
+				return nil, err
 			}
 
 			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
@@ -247,6 +221,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 		}
 
+		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)
+		logs.Info("consultasUbicaciones:", consultasUbicaciones, " - Evitadas: ", evUbicaciones)
+		logs.Info(len(historicoActa), "actas")
 		return historicoActa, nil
 
 	} else if err != nil {
