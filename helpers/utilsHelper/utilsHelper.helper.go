@@ -70,6 +70,10 @@ func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, er
 // ArrayFind
 func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) (Busqueda map[string]interface{}, err error) {
 
+	if len(Objeto__) == 0 {
+		return nil, nil
+	}
+
 	Busqueda_ := make(map[string]interface{}, 0)
 	if keys := len(Objeto__[0]); keys != 0 {
 
