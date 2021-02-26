@@ -50,6 +50,104 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	evUbicaciones := 0
 	evProveedores := 0
 
+	// findAndAddTercero trae la información de un tercero y la agrega
+	// al buffer de terceros
+	findAndAddTercero := func(TerceroId int) (map[string]interface{}, map[string]interface{}) {
+
+		if TerceroId == 0 {
+			return nil, nil
+		}
+
+		idStr := fmt.Sprint(TerceroId)
+
+		if Tercero, ok := Terceros[TerceroId]; ok {
+			evTerceros++
+			return Tercero, nil
+		}
+
+		consultasTerceros++
+		if Tercero, err := tercerosHelper.GetNombreTerceroById(idStr); err == nil {
+			if keys := len(Tercero); keys != 0 {
+				Terceros[TerceroId] = Tercero
+			}
+			return Tercero, nil
+		} else {
+			logs.Error(err)
+			return nil, map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
+				"err":     err,
+				"status":  "502",
+			}
+		}
+	}
+
+	// findAndAddUbicacion trae la información de una ubicación y la agrega
+	// al buffer de ubicaciones
+	findAndAddUbicacion := func(UbicacionId int) (map[string]interface{}, map[string]interface{}) {
+
+		if UbicacionId == 0 {
+			return nil, nil
+		}
+
+		idStr := fmt.Sprint(UbicacionId)
+
+		if ubicacion, ok := Ubicaciones[UbicacionId]; ok {
+			evUbicaciones++
+			return ubicacion, nil
+		}
+
+		consultasUbicaciones++
+		if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idStr); err == nil {
+			if keys := len(ubicacion); keys != 0 {
+				Ubicaciones[UbicacionId] = ubicacion
+			}
+			return ubicacion, nil
+		} else {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas/findAndAddUbicacion",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
+		}
+	}
+
+	// findAndAddUbicacion trae la información de un proveedor y la agrega
+	// al buffer de proveedores
+	// (Nota: Evitar usar, se va a usar terceros en vez de Agora)
+	findAndAddProveedor := func(ProveedorId int) (*models.Proveedor, map[string]interface{}) {
+
+		var vacio models.Proveedor
+		if ProveedorId == 0 {
+			return &vacio, nil
+		}
+
+		if proveedor, ok := Proveedores[ProveedorId]; ok {
+			evProveedores++
+			return proveedor, nil
+		}
+
+		// if ProveedorId > 0 {
+		consultasProveedores++
+		if provs, err := proveedorHelper.GetProveedorById(ProveedorId); err == nil {
+			if len(provs) == 1 && provs[0].Id > 0 {
+				proveedor := provs[0]
+				Proveedores[ProveedorId] = proveedor
+				return proveedor, nil
+			}
+			if len(provs) > 1 {
+				logs.Warn("Proveedor", ProveedorId, "tiene más de un resultado")
+			}
+		} else {
+			return nil, err
+		}
+
+		// }
+
+		return &vacio, nil
+	}
+
 	// fmt.Print("Estados Solicitados: ")
 	// fmt.Println(states)
 
@@ -102,37 +200,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 
-			// findAndAddTercero trae la información de un tercero y la agrega
-			// al buffer de terceros
-			findAndAddTercero := func(TerceroId int) (map[string]interface{}, map[string]interface{}) {
-
-				if TerceroId == 0 {
-					return nil, nil
-				}
-
-				idStr := fmt.Sprint(TerceroId)
-
-				if Tercero, ok := Terceros[TerceroId]; ok {
-					evTerceros++
-					return Tercero, nil
-				}
-
-				consultasTerceros++
-				if Tercero, err := tercerosHelper.GetNombreTerceroById(idStr); err == nil {
-					if keys := len(Tercero); keys != 0 {
-						Terceros[TerceroId] = Tercero
-					}
-					return Tercero, nil
-				} else {
-					logs.Error(err)
-					return nil, map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
-						"err":     err,
-						"status":  "502",
-					}
-				}
-			}
-
 			idRev := int(acta["RevisorId"].(float64))
 			if v, err := findAndAddTercero(idRev); err == nil {
 				editor = v
@@ -140,78 +207,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 
-			// findAndAddUbicacion trae la información de una ubicación y la agrega
-			// al buffer de ubicaciones
-			findAndAddUbicacion := func(UbicacionId int) (map[string]interface{}, map[string]interface{}) {
-
-				if UbicacionId == 0 {
-					return nil, nil
-				}
-
-				idStr := fmt.Sprint(UbicacionId)
-
-				if ubicacion, ok := Ubicaciones[UbicacionId]; ok {
-					evUbicaciones++
-					return ubicacion, nil
-				}
-
-				consultasUbicaciones++
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idStr); err == nil {
-					if keys := len(ubicacion); keys != 0 {
-						Ubicaciones[UbicacionId] = ubicacion
-					}
-					return ubicacion, nil
-				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas/findAndAddUbicacion",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
-				}
-			}
-
 			idUb := int(acta["UbicacionId"].(float64))
 			if v, err := findAndAddUbicacion(idUb); err == nil {
 				preUbicacion = v
 			} else {
 				return nil, err
-			}
-
-			// findAndAddUbicacion trae la información de un proveedor y la agrega
-			// al buffer de proveedores
-			// (Nota: Evitar usar, se va a usar terceros en vez de Agora)
-			findAndAddProveedor := func(ProveedorId int) (*models.Proveedor, map[string]interface{}) {
-
-				var vacio models.Proveedor
-				if ProveedorId == 0 {
-					return &vacio, nil
-				}
-
-				if proveedor, ok := Proveedores[ProveedorId]; ok {
-					evProveedores++
-					return proveedor, nil
-				}
-
-				// if ProveedorId > 0 {
-				consultasProveedores++
-				if provs, err := proveedorHelper.GetProveedorById(ProveedorId); err == nil {
-					if len(provs) == 1 && provs[0].Id > 0 {
-						proveedor := provs[0]
-						Proveedores[ProveedorId] = proveedor
-						return proveedor, nil
-					}
-					if len(provs) > 1 {
-						logs.Warn("Proveedor", ProveedorId, "tiene más de un resultado")
-					}
-				} else {
-					return nil, err
-				}
-
-				// }
-
-				return &vacio, nil
 			}
 
 			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
