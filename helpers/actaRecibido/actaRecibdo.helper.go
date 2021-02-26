@@ -104,6 +104,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			// findAndAddTercero trae la información de un tercero y la agrega
 			// al buffer de terceros
 			findAndAddTercero := func(TerceroId int) (map[string]interface{}, map[string]interface{}) {
+
+				if TerceroId == 0 {
+					return nil, nil
+				}
+
 				idStr := fmt.Sprint(TerceroId)
 
 				if Tercero, ok := Terceros[TerceroId]; ok {
@@ -138,6 +143,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			// findAndAddUbicacion trae la información de una ubicación y la agrega
 			// al buffer de ubicaciones
 			findAndAddUbicacion := func(UbicacionId int) (map[string]interface{}, map[string]interface{}) {
+
+				if UbicacionId == 0 {
+					return nil, nil
+				}
+
 				idStr := fmt.Sprint(UbicacionId)
 
 				if ubicacion, ok := Ubicaciones[UbicacionId]; ok {
