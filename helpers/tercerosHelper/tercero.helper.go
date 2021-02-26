@@ -21,7 +21,7 @@ func GetNombreTerceroById(idTercero string) (tercero map[string]interface{}, err
 				if len(element) == 0 {
 					return nil, errors.New("No se encontro registro")
 				} else {
-					fmt.Println("encargado: ", element)
+					// fmt.Println("encargado: ", element)
 					return map[string]interface{}{
 						"Id":             element["TerceroId"].(map[string]interface{})["Id"],
 						"Numero":         element["Numero"],
