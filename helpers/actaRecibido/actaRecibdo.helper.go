@@ -54,7 +54,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// fmt.Println(states)
 
 	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&query=Activo:true"
-	fmt.Println(url)
+	// fmt.Println(url)
 	// url += ",EstadoActaId__Id:3"
 	// TODO: Por rendimiento, TODO lo relacionado a ...
 	// - buscar el historico_acta mas reciente
@@ -120,7 +120,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				if Tercero, err := tercerosHelper.GetNombreTerceroById(idStr); err == nil {
 					if keys := len(Tercero); keys != 0 {
 						Terceros[TerceroId] = Tercero
-						logs.Debug("len(Terceros)", len(Terceros))
 					}
 					return Tercero, nil
 				} else {
