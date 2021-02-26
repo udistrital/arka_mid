@@ -85,7 +85,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var editor map[string]interface{}
 			var preUbicacion map[string]interface{}
 			// var nombreAsignado string
-			var asignado *models.Proveedor
+			var oldAsignado *models.Proveedor
+			var asignado map[string]interface{}
 
 			preUbicacion = nil
 
@@ -215,6 +216,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
 			if v, err := findAndAddProveedor(tmpAsignadoId); err == nil {
+				oldAsignado = v
+			}
+			if v, err := findAndAddTercero(tmpAsignadoId); err == nil {
 				asignado = v
 			}
 
@@ -245,7 +249,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				"Id":                acta["Id"],
 				"Observaciones":     acta["Observaciones"],
 				"RevisorId":         editor["NombreCompleto"],
-				"PersonaAsignada":   asignado.NomProveedor,
+				"oldAsignada":       oldAsignado.NomProveedor,
+				"PersonaAsignada":   asignado["NombreCompleto"],
 				"PersonaAsignadaId": tmpAsignadoId,
 				"Estado":            estado["Nombre"],
 			}
