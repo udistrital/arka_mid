@@ -13,6 +13,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 
+	"github.com/udistrital/arka_mid/helpers/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
@@ -38,6 +39,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		}
 	}()
 
+	// PARTE "0": Buffers, para evitar repetir consultas...
 	var Historico []map[string]interface{}
 	Terceros := make(map[int](map[string]interface{}))
 	Ubicaciones := make(map[int](map[string]interface{}))
@@ -148,8 +150,122 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		return &vacio, nil
 	}
 
+	// PARTE 1 - Identificar los tipos de actas que hay que traer
+	// (y así definir la estrategia para traer las actas)
+	verTodasLasActas := false
+	algunosEstados := []string{}
+	proveedor := false
+	contratista := false
+	idTercero := 0
+	// De especificarse un usuario, hay que definir las actas que puede ver
+	if usrWSO2 != "" {
+
+		// Traer la información de Autenticación MID para obtener los roles
+		var usr models.UsuarioAutenticacion
+		if data, err := autenticacion.DataUsuario(usrWSO2); err == nil && data.Role != nil {
+			// logs.Debug(data)
+			usr = data
+		} else if err == nil { // data.Role == nil
+			err := fmt.Errorf("El usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetAllActasRecibidoActivas - autenticacion.DataUsuario(usrWSO2)",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
+		} else {
+			return nil, err
+		}
+
+		// Averiguar si el usuario puede ver todas las actas en todos los estados
+		for _, rol := range usr.Role {
+			if verTodasLasActas {
+				break
+			}
+			for _, rolSuficiente := range verCualquierEstado {
+				if rol == rolSuficiente {
+					verTodasLasActas = true
+					break
+				}
+			}
+		}
+
+		// Si no puede ver actas en cualquier estado, averiguar en qué estados puede ver
+		if !verTodasLasActas {
+			for estado, roles := range reglasVerTodas {
+				verEstado := false
+				for _, rolSuficiente := range roles {
+					if verEstado {
+						break
+					}
+					for _, rol := range usr.Role {
+						if rol == rolSuficiente {
+							verEstado = true
+							break
+						}
+					}
+				}
+				if verEstado {
+					algunosEstados = append(algunosEstados, estado)
+				}
+			}
+		}
+
+		// Si no puede ver todas las actas de al menos un estado, únicamente se
+		// traerán las asignadas como contratista o proveedor
+		if len(algunosEstados) == 0 {
+			for _, rol := range usr.Role {
+				if proveedor && contratista {
+					break
+				}
+				if rol == models.RolesArka["Proveedor"] {
+					proveedor = true
+				} else if rol == models.RolesArka["Contratista"] {
+					contratista = true
+				}
+			}
+			if proveedor || contratista {
+				if data, err := tercerosHelper.GetTerceroByUsuarioWSO2(usrWSO2); err == nil {
+					if v, ok := data["Id"].(int); ok {
+						idTercero = v
+						// Terceros[v] = data // Se podría agregar de una vez, pero no incluye el documento
+					}
+				} else {
+					return nil, err
+				}
+			}
+		}
+	}
+	logs.Info("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
+
 	// fmt.Print("Estados Solicitados: ")
 	// fmt.Println(states)
+
+	// Si se pasaron estados
+	if len(states) > 0 {
+		if usrWSO2 == "" || verTodasLasActas {
+			algunosEstados = states
+			verTodasLasActas = false
+		} else if idTercero == 0 { // len(algunosEstados) > 0
+			estFinales := []string{}
+			for _, estUsuario := range algunosEstados {
+				for _, est := range states {
+					if est == estUsuario {
+						estFinales = append(estFinales, estUsuario)
+						break
+					}
+				}
+			}
+			algunosEstados = estFinales
+		}
+		logs.Info("t:", verTodasLasActas, "- e:", algunosEstados)
+	}
+
+	return nil, nil
+
+	// PARTE 2: Traer los tipos de actas identificados
+	// (con base a la estrategia definida anteriormente)
 
 	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&query=Activo:true"
 	// fmt.Println(url)
@@ -257,20 +373,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			// fmt.Println("Es esto")
 			// fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
-		}
-
-		if len(states) > 0 {
-			historicoActa = filtrarActasPorEstados(historicoActa, states)
-		}
-
-		// TODO: Manejar concurrencia en las peticiones a otras APIS
-		// Referencia: https://www.golang-book.com/books/intro/10
-		if usrWSO2 != "" {
-			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
-				historicoActa = actas
-			} else {
-				return nil, err
-			}
 		}
 
 		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)

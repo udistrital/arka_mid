@@ -16,13 +16,19 @@ import (
 // Llaves: estados válidos de Actas
 // Valores: mapeables desde models.RolesArka
 var reglasVerTodas = map[string][]string{
-	"Registrada":         []string{models.RolesArka["Admin"], models.RolesArka["Revisor"], models.RolesArka["Secretaria"]},
-	"En Elaboracion":     []string{models.RolesArka["Admin"], models.RolesArka["Revisor"]},
-	"En Modificacion":    []string{models.RolesArka["Admin"], models.RolesArka["Revisor"]},
-	"En verificacion":    []string{models.RolesArka["Admin"], models.RolesArka["Revisor"]},
-	"Aceptada":           []string{models.RolesArka["Admin"], models.RolesArka["Revisor"]},
-	"Asociada a Entrada": []string{models.RolesArka["Admin"], models.RolesArka["Revisor"]},
-	"Anulada":            []string{models.RolesArka["Admin"], models.RolesArka["Revisor"]},
+	"Registrada":         {models.RolesArka["Secretaria"]},
+	"En Elaboracion":     {},
+	"En Modificacion":    {},
+	"En verificacion":    {},
+	"Aceptada":           {},
+	"Asociada a Entrada": {},
+	"Anulada":            {},
+}
+
+// Arreglo de roles que pueden ver actas en cualquier estado
+var verCualquierEstado = []string{
+	models.RolesArka["Admin"],
+	models.RolesArka["Revisor"],
 }
 
 func filtrarActasSegunRoles(actas []map[string]interface{}, usuarioWSO2 string,
