@@ -68,11 +68,11 @@ func filtrarActasSegunRoles(actas []map[string]interface{}, usuarioWSO2 string,
 		contratista := 0
 
 		if soloAsignadas {
-			if proveedores, err2 := proveedorHelper.GetProveedorByDoc(data.Documento); err2 == nil && len(proveedores) > 0 {
+			if prov, err := proveedorHelper.GetProveedorByDoc(data.Documento); err == nil {
 				// for k, prov := range proveedores {
 				// 	fmt.Printf("Prov: %v - Data: %#v\n", k, prov)
 				// }
-				idProveedor := proveedores[0].Id
+				idProveedor := prov.Id
 				for _, role := range data.Role {
 					if role == models.RolesArka["Proveedor"] {
 						proveedor = idProveedor
@@ -85,22 +85,8 @@ func filtrarActasSegunRoles(actas []map[string]interface{}, usuarioWSO2 string,
 						break
 					}
 				}
-			} else if err2 != nil {
-				logs.Error(err2)
-				outputError = map[string]interface{}{
-					"funcion": "/filtrarActasSegunRoles",
-					"err":     err2,
-					"status":  "502",
-				}
-				return nil, outputError
 			} else {
-				outputError = map[string]interface{}{
-					"funcion": "/filtrarActasSegunRoles",
-					"err":     "No se encuentra un proveedor con el documento especificado",
-					"status":  "404",
-				}
-				logs.Error(outputError)
-				return nil, outputError
+				return nil, err
 			}
 		}
 		// fmt.Printf("Solo Actas Asignadas: %t\n", soloAsignadas)
