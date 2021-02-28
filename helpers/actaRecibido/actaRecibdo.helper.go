@@ -130,7 +130,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			return proveedor, nil
 		}
 
-		// if ProveedorId > 0 {
 		consultasProveedores++
 		if provs, err := proveedorHelper.GetProveedorById(ProveedorId); err == nil {
 			if len(provs) == 1 && provs[0].Id > 0 {
@@ -144,8 +143,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		} else {
 			return nil, err
 		}
-
-		// }
 
 		return &vacio, nil
 	}
@@ -281,9 +278,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// PARTE 2: Traer los tipos de actas identificados
 	// (con base a la estrategia definida anteriormente)
 
-	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&query=Activo:true"
-	// fmt.Println(url)
-	// url += ",EstadoActaId__Id:3"
 	// TODO: Por rendimiento, TODO lo relacionado a ...
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
@@ -383,23 +377,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 	}
 
-	return Historico, nil
-
-	if resp, err := request.GetJsonTest(url, &Historico); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
-
-		// fmt.Print("historicos:")
-		// fmt.Println(len(Historico))
-
-		if len(Historico) == 0 || len(Historico[0]) == 0 {
-			err := errors.New("There's currently no act records")
-			logs.Warn(err)
-			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas",
-				"err":     err,
-				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
-			}
-			return nil, outputError
-		}
+	// PARTE 3: Completar data faltante
+	if len(Historico) > 0 {
 
 		for _, historicos := range Historico {
 
@@ -408,8 +387,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var ubicacionData map[string]interface{}
 			var editor map[string]interface{}
 			var preUbicacion map[string]interface{}
-			// var nombreAsignado string
-			var oldAsignado *models.Proveedor
+			var oldAsignado *models.Proveedor // "old": de proveedores, se va a eliminar
 			var asignado map[string]interface{}
 
 			preUbicacion = nil
@@ -492,23 +470,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		logs.Info(len(historicoActa), "actas")
 		return historicoActa, nil
 
-	} else if err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
-			"err":     err,
-			"status":  "502", // (2) error servicio caido
-		}
-		return nil, outputError
 	} else {
-		err := fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
-			"err":     err,
-			"status":  "502", // (2) error servicio caido
-		}
-		return nil, outputError
+		return nil, nil
 	}
 }
 
