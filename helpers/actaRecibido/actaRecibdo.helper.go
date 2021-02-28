@@ -278,8 +278,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		logs.Info("t:", verTodasLasActas, "- e:", algunosEstados)
 	}
 
-	return nil, nil
-
 	// PARTE 2: Traer los tipos de actas identificados
 	// (con base a la estrategia definida anteriormente)
 
@@ -290,6 +288,102 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
+	if verTodasLasActas {
+		var hists []map[string]interface{}
+		urlTodas := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
+		urlTodas += "&fields=ActaRecibidoId,EstadoActaId"
+		urlTodas += "&query=Activo:true"
+		if resp, err := request.GetJsonTest(urlTodas, &hists); err == nil && resp.StatusCode == 200 {
+			if len(hists) == 0 || len(hists[0]) == 0 {
+				return nil, nil
+			}
+			Historico = append(Historico, hists...)
+		}
+
+	} else if len(algunosEstados) > 0 {
+		for _, estado := range algunosEstados {
+			var hists []map[string]interface{}
+			urlEstado := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
+			urlEstado += "&fields=ActaRecibidoId,EstadoActaId"
+			urlEstado += "&query=Activo:true,EstadoActaId__Nombre:" + estado
+			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
+				if len(hists) == 0 || len(hists[0]) == 0 {
+					continue
+				}
+				Historico = append(Historico, hists...)
+			}
+		}
+
+	} else if contratista || proveedor {
+
+		histMap := make(map[int](map[string]interface{})) // mapeo "idActa --> historico_acta activo"
+
+		var estados []string
+		if contratista {
+			estados = append(estados, "En Elaboracion", "En Modificacion")
+		} else if proveedor {
+			estados = append(estados, "En Elaboracion")
+		}
+
+		urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
+		urlEstados += "&fields=ActaRecibidoId,EstadoActaId"
+		for _, estado := range estados {
+			var hists []map[string]interface{}
+			urlEstado := urlEstados + "&query=Activo:true,EstadoActaId__Nombre:" + estado
+			if !proveedor {
+				// Si no es proveedor, agregar de una vez el filtro del contratista
+				// pues sería la única razón para que se ejecute este "for"
+				urlEstado += ",ActaRecibidoId__PersonaAsignada:" + fmt.Sprint(idTercero)
+			}
+			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
+				if len(hists) == 0 || len(hists[0]) == 0 {
+					continue
+				}
+				for _, hist := range hists {
+					idActa := int(hist["ActaRecibidoId"].(map[string]interface{})["Id"].(float64))
+					histMap[idActa] = hist
+				}
+				// Historicos = append(Historicos, hists...)
+			}
+		}
+
+		for idActa, hist := range histMap {
+			agregar := false
+			if proveedor {
+				var soportes []map[string]interface{}
+				urlSoporteActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta"
+				urlSoporteActa += "&fields=Id" // Realmente no importan los campos, lo que importa es la asociacion con el proveedor y el acta
+				urlSoporteActa += "&query=Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(idActa)
+				urlSoporteActa += ",ProveedorId:" + fmt.Sprint(idProveedor) // TODO: Cambiar por idTercero cuando sea el momento
+				if resp, err := request.GetJsonTest(urlSoporteActa, &soportes); err == nil && resp.StatusCode == 200 {
+					if len(soportes) >= 1 {
+						for _, soporte := range soportes {
+							if len(soporte) > 0 {
+								agregar = true
+								break
+							}
+						}
+					}
+				}
+			}
+			if !agregar && contratista {
+				if proveedor {
+					if idTercero == int(hist["ActaRecibidoId"].(map[string]interface{})["PersonaAsignada"].(float64)) {
+						agregar = true
+					}
+				} else {
+					// Las actas (historicos activos) ya se trajeron filtradas por contratista
+					agregar = true
+				}
+			}
+			if agregar {
+				Historico = append(Historico, hist)
+			}
+		}
+
+	}
+
+	return Historico, nil
 
 	if resp, err := request.GetJsonTest(url, &Historico); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
 
