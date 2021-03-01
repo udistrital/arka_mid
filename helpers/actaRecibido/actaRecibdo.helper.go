@@ -31,7 +31,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas - Unhandled Error!",
+				"funcion": "GetAllActasRecibidoActivas - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -76,7 +76,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		} else {
 			logs.Error(err)
 			return nil, map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
+				"funcion": "GetAllActasRecibidoActivas/findAndAddTercero",
 				"err":     err,
 				"status":  "502",
 			}
@@ -282,29 +282,48 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
+	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
+	urlEstados += "&fields=ActaRecibidoId,EstadoActaId&query=Activo:true"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
-		urlTodas := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
-		urlTodas += "&fields=ActaRecibidoId,EstadoActaId"
-		urlTodas += "&query=Activo:true"
-		if resp, err := request.GetJsonTest(urlTodas, &hists); err == nil && resp.StatusCode == 200 {
+		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
 			if len(hists) == 0 || len(hists[0]) == 0 {
 				return nil, nil
 			}
 			Historico = append(Historico, hists...)
+		} else {
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlTodas, &hists)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 
 	} else if len(algunosEstados) > 0 {
 		for _, estado := range algunosEstados {
 			var hists []map[string]interface{}
-			urlEstado := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
-			urlEstado += "&fields=ActaRecibidoId,EstadoActaId"
-			urlEstado += "&query=Activo:true,EstadoActaId__Nombre:" + estado
+			urlEstado := urlEstados + ",EstadoActaId__Nombre:" + estado
 			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
 				if len(hists) == 0 || len(hists[0]) == 0 {
 					continue
 				}
 				Historico = append(Historico, hists...)
+			} else {
+				if err == nil {
+					err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+				}
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlEstado, &hists)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 		}
 
@@ -319,16 +338,15 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			estados = append(estados, "En Elaboracion")
 		}
 
-		urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
-		urlEstados += "&fields=ActaRecibidoId,EstadoActaId"
 		for _, estado := range estados {
 			var hists []map[string]interface{}
-			urlEstado := urlEstados + "&query=Activo:true,EstadoActaId__Nombre:" + estado
+			urlEstado := urlEstados + ",EstadoActaId__Nombre:" + estado
 			if !proveedor {
 				// Si no es proveedor, agregar de una vez el filtro del contratista
 				// pues sería la única razón para que se ejecute este "for"
 				urlEstado += ",ActaRecibidoId__PersonaAsignada:" + fmt.Sprint(idTercero)
 			}
+			// logs.Debug("url-contr/prov:", urlEstado)
 			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
 				if len(hists) == 0 || len(hists[0]) == 0 {
 					continue
@@ -337,7 +355,17 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					idActa := int(hist["ActaRecibidoId"].(map[string]interface{})["Id"].(float64))
 					histMap[idActa] = hist
 				}
-				// Historicos = append(Historicos, hists...)
+			} else {
+				if err == nil {
+					err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+				}
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetAllActasRecibidoActivas - (contratista || proveedor) request.GetJsonTest(urlEstado, &hists)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 		}
 
@@ -358,6 +386,17 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 							}
 						}
 					}
+				} else {
+					if err == nil {
+						err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+					}
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlSoporteActa, &soportes)",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			}
 			if !agregar && contratista {
