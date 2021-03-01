@@ -310,6 +310,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		for _, estado := range algunosEstados {
 			var hists []map[string]interface{}
 			urlEstado := urlEstados + ",EstadoActaId__Nombre:" + estado
+			urlEstado = strings.ReplaceAll(urlEstado, " ", "%20")
 			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
 				if len(hists) == 0 || len(hists[0]) == 0 {
 					continue
@@ -342,14 +343,15 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		for _, estado := range estados {
 			var hists []map[string]interface{}
-			urlEstado := urlEstados + ",EstadoActaId__Nombre:" + estado
+			urlContProv := urlEstados + ",EstadoActaId__Nombre:" + estado
 			if !proveedor {
 				// Si no es proveedor, agregar de una vez el filtro del contratista
 				// pues sería la única razón para que se ejecute este "for"
-				urlEstado += ",ActaRecibidoId__PersonaAsignada:" + fmt.Sprint(idTercero)
+				urlContProv += ",ActaRecibidoId__PersonaAsignada:" + fmt.Sprint(idTercero)
 			}
-			// logs.Debug("url-contr/prov:", urlEstado)
-			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
+			urlContProv = strings.ReplaceAll(urlContProv, " ", "%20")
+			// logs.Debug("urlContProv:", urlContProv, "- estado:", estado)
+			if resp, err := request.GetJsonTest(urlContProv, &hists); err == nil && resp.StatusCode == 200 {
 				if len(hists) == 0 || len(hists[0]) == 0 {
 					continue
 				}
@@ -363,7 +365,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 				logs.Error(err)
 				outputError = map[string]interface{}{
-					"funcion": "GetAllActasRecibidoActivas - (contratista || proveedor) request.GetJsonTest(urlEstado, &hists)",
+					"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlContProv, &hists)",
 					"err":     err,
 					"status":  "502",
 				}
@@ -376,9 +378,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			if proveedor {
 				var soportes []map[string]interface{}
 				urlSoporteActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta"
-				urlSoporteActa += "&fields=Id" // Realmente no importan los campos, lo que importa es la asociacion con el proveedor y el acta
+				urlSoporteActa += "?fields=Id" // Realmente no importan los campos, lo que importa es la asociacion con el proveedor y el acta
 				urlSoporteActa += "&query=Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(idActa)
 				urlSoporteActa += ",ProveedorId:" + fmt.Sprint(idProveedor) // TODO: Cambiar por idTercero cuando sea el momento
+				// logs.Debug("urlSoporteActa:", urlSoporteActa)
 				if resp, err := request.GetJsonTest(urlSoporteActa, &soportes); err == nil && resp.StatusCode == 200 {
 					if len(soportes) >= 1 {
 						for _, soporte := range soportes {
