@@ -90,3 +90,23 @@ func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) (B
 
 	return Busqueda_, nil
 }
+
+// KeysValuesMap descompone un mapeo en dos arreglos con sus claves y valores
+func KeysValuesMap(m map[interface{}]interface{}) (keys []interface{}, vals []interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			panic(map[string]interface{}{
+				"funcion": "KeysValuesMap - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			})
+		}
+	}()
+
+	for k, v := range m {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	return
+}

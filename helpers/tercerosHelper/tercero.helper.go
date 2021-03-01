@@ -109,3 +109,16 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 
 	return tercero, nil
 }
+
+func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputError map[string]interface{}) {
+	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=Activo:true"
+	urltercero += "Numero:" + doc
+	var terceros []*models.DatosIdentificacion
+
+	if resp, err := request.GetJsonTest(urltercero, &terceros); err == nil && resp.StatusCode == 200 {
+		return terceros[0], nil
+	}
+
+	var vacio models.DatosIdentificacion
+	return &vacio, nil
+}
