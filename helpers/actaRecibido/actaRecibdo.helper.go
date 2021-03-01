@@ -118,6 +118,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// findAndAddUbicacion trae la información de un proveedor y la agrega
 	// al buffer de proveedores
 	// (Nota: Evitar usar, se va a usar terceros en vez de Agora)
+
 	findAndAddProveedor := func(ProveedorId int) (*models.Proveedor, map[string]interface{}) {
 
 		var vacio models.Proveedor
@@ -146,6 +147,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		return &vacio, nil
 	}
+	findAndAddProveedor(0)
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
 	// (y así definir la estrategia para traer las actas)
@@ -426,7 +428,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var ubicacionData map[string]interface{}
 			var editor map[string]interface{}
 			var preUbicacion map[string]interface{}
-			var oldAsignado *models.Proveedor // "old": de proveedores, se va a eliminar
+			// var oldAsignado *models.Proveedor // "old": de proveedores, se va a eliminar
 			var asignado map[string]interface{}
 
 			preUbicacion = nil
@@ -458,9 +460,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 
 			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
-			if v, err := findAndAddProveedor(tmpAsignadoId); err == nil {
-				oldAsignado = v
-			}
+			// if v, err := findAndAddProveedor(tmpAsignadoId); err == nil {
+			// 	oldAsignado = v
+			// }
 			if v, err := findAndAddTercero(tmpAsignadoId); err == nil {
 				asignado = v
 			}
@@ -492,10 +494,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				"Id":                acta["Id"],
 				"Observaciones":     acta["Observaciones"],
 				"RevisorId":         editor["NombreCompleto"],
-				"oldAsignada":       oldAsignado.NomProveedor,
-				"PersonaAsignada":   asignado["NombreCompleto"],
-				"PersonaAsignadaId": tmpAsignadoId,
-				"Estado":            estado["Nombre"],
+				// "oldAsignada":       oldAsignado.NomProveedor,
+				"PersonaAsignada": asignado["NombreCompleto"],
+				// "PersonaAsignadaId": tmpAsignadoId,
+				"Estado": estado["Nombre"],
 			}
 			// fmt.Println("Es esto")
 			// fmt.Println(Acta)
