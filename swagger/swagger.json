@@ -89,8 +89,8 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
-                        "description": "id del acta",
+                        "name": "tipo",
+                        "description": "Estado del acta",
                         "required": true,
                         "type": "string"
                     }

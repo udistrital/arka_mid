@@ -13,12 +13,15 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 
+	"github.com/udistrital/arka_mid/helpers/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+
+	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -28,7 +31,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas - Unhandled Error!",
+				"funcion": "GetAllActasRecibidoActivas - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -36,185 +39,440 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		}
 	}()
 
+	// PARTE "0": Buffers, para evitar repetir consultas...
 	var Historico []map[string]interface{}
-	var Terceros []map[string]interface{}
-	var Ubicaciones []map[string]interface{}
-	var asignado []*models.Proveedor
+	Terceros := make(map[int](map[string]interface{}))
+	Ubicaciones := make(map[int](map[string]interface{}))
+	Proveedores := make(map[int](*models.Proveedor))
+
+	consultasTerceros := 0
+	consultasUbicaciones := 0
+	consultasProveedores := 0
+	evTerceros := 0
+	evUbicaciones := 0
+	evProveedores := 0
+
+	// findAndAddTercero trae la información de un tercero y la agrega
+	// al buffer de terceros
+	findAndAddTercero := func(TerceroId int) (map[string]interface{}, map[string]interface{}) {
+
+		if TerceroId == 0 {
+			return nil, nil
+		}
+
+		idStr := fmt.Sprint(TerceroId)
+
+		if Tercero, ok := Terceros[TerceroId]; ok {
+			evTerceros++
+			return Tercero, nil
+		}
+
+		consultasTerceros++
+		if Tercero, err := tercerosHelper.GetNombreTerceroById(idStr); err == nil {
+			if keys := len(Tercero); keys != 0 {
+				Terceros[TerceroId] = Tercero
+			}
+			return Tercero, nil
+		} else {
+			logs.Error(err)
+			return nil, map[string]interface{}{
+				"funcion": "GetAllActasRecibidoActivas/findAndAddTercero",
+				"err":     err,
+				"status":  "502",
+			}
+		}
+	}
+
+	// findAndAddUbicacion trae la información de una ubicación y la agrega
+	// al buffer de ubicaciones
+	findAndAddUbicacion := func(UbicacionId int) (map[string]interface{}, map[string]interface{}) {
+
+		if UbicacionId == 0 {
+			return nil, nil
+		}
+
+		idStr := fmt.Sprint(UbicacionId)
+
+		if ubicacion, ok := Ubicaciones[UbicacionId]; ok {
+			evUbicaciones++
+			return ubicacion, nil
+		}
+
+		consultasUbicaciones++
+		if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idStr); err == nil {
+			if keys := len(ubicacion); keys != 0 {
+				Ubicaciones[UbicacionId] = ubicacion
+			}
+			return ubicacion, nil
+		} else {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetAllActasRecibidoActivas/findAndAddUbicacion",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
+		}
+	}
+
+	// findAndAddUbicacion trae la información de un proveedor y la agrega
+	// al buffer de proveedores
+	// (Nota: Evitar usar, se va a usar terceros en vez de Agora)
+
+	findAndAddProveedor := func(ProveedorId int) (*models.Proveedor, map[string]interface{}) {
+
+		var vacio models.Proveedor
+		if ProveedorId == 0 {
+			return &vacio, nil
+		}
+
+		if proveedor, ok := Proveedores[ProveedorId]; ok {
+			evProveedores++
+			return proveedor, nil
+		}
+
+		consultasProveedores++
+		if provs, err := proveedorHelper.GetProveedorById(ProveedorId); err == nil {
+			if len(provs) == 1 && provs[0].Id > 0 {
+				proveedor := provs[0]
+				Proveedores[ProveedorId] = proveedor
+				return proveedor, nil
+			}
+			if len(provs) > 1 {
+				logs.Warn("Proveedor", ProveedorId, "tiene más de un resultado")
+			}
+		} else {
+			return nil, err
+		}
+
+		return &vacio, nil
+	}
+	findAndAddProveedor(0)
+
+	// PARTE 1 - Identificar los tipos de actas que hay que traer
+	// (y así definir la estrategia para traer las actas)
+	verTodasLasActas := false
+	algunosEstados := []string{}
+	proveedor := false
+	contratista := false
+	idTercero := 0
+	idProveedor := 0 // TODO: Eliminar esta variable cuando se pasen los proveedores a Terceros, usar solo idTercero
+	// De especificarse un usuario, hay que definir las actas que puede ver
+	if usrWSO2 != "" {
+
+		// Traer la información de Autenticación MID para obtener los roles
+		var usr models.UsuarioAutenticacion
+		if data, err := autenticacion.DataUsuario(usrWSO2); err == nil && data.Role != nil {
+			// logs.Debug(data)
+			usr = data
+		} else if err == nil { // data.Role == nil
+			err := fmt.Errorf("El usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetAllActasRecibidoActivas - autenticacion.DataUsuario(usrWSO2)",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
+		} else {
+			return nil, err
+		}
+
+		// Averiguar si el usuario puede ver todas las actas en todos los estados
+		for _, rol := range usr.Role {
+			if verTodasLasActas {
+				break
+			}
+			for _, rolSuficiente := range verCualquierEstado {
+				if rol == rolSuficiente {
+					verTodasLasActas = true
+					break
+				}
+			}
+		}
+
+		// Si no puede ver actas en cualquier estado, averiguar en qué estados puede ver
+		if !verTodasLasActas {
+			for estado, roles := range reglasVerTodas {
+				verEstado := false
+				for _, rolSuficiente := range roles {
+					if verEstado {
+						break
+					}
+					for _, rol := range usr.Role {
+						if rol == rolSuficiente {
+							verEstado = true
+							break
+						}
+					}
+				}
+				if verEstado {
+					algunosEstados = append(algunosEstados, estado)
+				}
+			}
+		}
+
+		// Si no puede ver todas las actas de al menos un estado, únicamente se
+		// traerán las asignadas como contratista o proveedor
+		if len(algunosEstados) == 0 {
+			for _, rol := range usr.Role {
+				if proveedor && contratista {
+					break
+				}
+				if rol == models.RolesArka["Proveedor"] {
+					proveedor = true
+				} else if rol == models.RolesArka["Contratista"] {
+					contratista = true
+				}
+			}
+			// TODO: Debería ser suficiente cambiar la condicion por 'proveedor || contratista'
+			// una vez se decida cargar los proveedores también de terceros
+			if contratista && idTercero == 0 {
+				if data, err := tercerosHelper.GetTerceroByUsuarioWSO2(usrWSO2); err == nil {
+					if v, ok := data["Id"].(int); ok {
+						idTercero = v
+						// Terceros[v] = data // Se podría agregar de una vez, pero no incluye el documento
+					}
+				} else {
+					return nil, err
+				}
+			}
+			// TODO: Eliminar el siguiente bloque cuando se pasen los proveedores a Terceros
+			// (Debería ser suficiente con el bloque anterior, idTercero)
+			if proveedor && idProveedor == 0 {
+				// 1. A partir del documento obtenido de WSO2, buscar el proveedor
+				consultasProveedores++
+				if data, err := proveedorHelper.GetProveedorByDoc(usr.Documento); err == nil {
+					idProveedor = data.Id
+					Proveedores[idProveedor] = data
+				} else {
+					return nil, err
+				}
+			}
+		}
+	}
+	logs.Info("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
+	logs.Info("iP:", idProveedor)
 
 	// fmt.Print("Estados Solicitados: ")
 	// fmt.Println(states)
 
-	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&query=Activo:true"
-	fmt.Println(url)
-	// url += ",EstadoActaId__Id:3"
+	// Si se pasaron estados
+	if len(states) > 0 {
+		if usrWSO2 == "" || verTodasLasActas {
+			algunosEstados = states
+			verTodasLasActas = false
+		} else if idTercero == 0 { // len(algunosEstados) > 0
+			estFinales := []string{}
+			for _, estUsuario := range algunosEstados {
+				for _, est := range states {
+					if est == estUsuario {
+						estFinales = append(estFinales, estUsuario)
+						break
+					}
+				}
+			}
+			algunosEstados = estFinales
+		}
+		logs.Info("t:", verTodasLasActas, "- e:", algunosEstados)
+	}
+
+	// PARTE 2: Traer los tipos de actas identificados
+	// (con base a la estrategia definida anteriormente)
+
 	// TODO: Por rendimiento, TODO lo relacionado a ...
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
-
-	if resp, err := request.GetJsonTest(url, &Historico); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
-
-		// fmt.Print("historicos:")
-		// fmt.Println(len(Historico))
-
-		if len(Historico) == 0 || len(Historico[0]) == 0 {
-			err := errors.New("There's currently no act records")
-			logs.Warn(err)
+	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
+	urlEstados += "&fields=ActaRecibidoId,EstadoActaId&query=Activo:true"
+	if verTodasLasActas {
+		var hists []map[string]interface{}
+		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
+			if len(hists) == 0 || len(hists[0]) == 0 {
+				return nil, nil
+			}
+			Historico = append(Historico, hists...)
+		} else {
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			}
+			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllActasRecibidoActivas",
+				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlTodas, &hists)",
 				"err":     err,
-				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+				"status":  "502",
 			}
 			return nil, outputError
 		}
 
-		for _, historicos := range Historico {
-
-			var data_ map[string]interface{}
-			var data2_ map[string]interface{}
-			var data3_ map[string]interface{}
-			var Tercero_ map[string]interface{}
-			var Ubicacion_ map[string]interface{}
-			var nombreAsignado string
-
-			Ubicacion_ = nil
-
-			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
-				data_ = data
-			} else {
-				return nil, err
-			}
-
-			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
-				data2_ = data
-			} else {
-				return nil, err
-			}
-
-			// findAndAddTercero trae la información de un tercero y la agrega
-			// al buffer de terceros
-			findAndAddTercero := func() map[string]interface{} {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-					Tercero_ = Tercero
-					Terceros = append(Terceros, Tercero)
-					return nil
-				} else {
-					logs.Error(err)
-					return map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas/findAndAddTercero",
-						"err":     err,
-						"status":  "502",
-					}
+	} else if len(algunosEstados) > 0 {
+		for _, estado := range algunosEstados {
+			var hists []map[string]interface{}
+			urlEstado := urlEstados + ",EstadoActaId__Nombre:" + estado
+			urlEstado = strings.ReplaceAll(urlEstado, " ", "%20")
+			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
+				if len(hists) == 0 || len(hists[0]) == 0 {
+					continue
 				}
+				Historico = append(Historico, hists...)
+			} else {
+				if err == nil {
+					err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+				}
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlEstado, &hists)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
+		}
 
-			if Terceros == nil {
-				if err := findAndAddTercero(); err != nil {
-					return nil, err
+	} else if contratista || proveedor {
+
+		histMap := make(map[int](map[string]interface{})) // mapeo "idActa --> historico_acta activo"
+
+		var estados []string
+		if contratista {
+			estados = append(estados, "En Elaboracion", "En Modificacion")
+		} else if proveedor {
+			estados = append(estados, "En Elaboracion")
+		}
+
+		for _, estado := range estados {
+			var hists []map[string]interface{}
+			urlContProv := urlEstados + ",EstadoActaId__Nombre:" + estado
+			if !proveedor {
+				// Si no es proveedor, agregar de una vez el filtro del contratista
+				// pues sería la única razón para que se ejecute este "for"
+				urlContProv += ",ActaRecibidoId__PersonaAsignada:" + fmt.Sprint(idTercero)
+			}
+			urlContProv = strings.ReplaceAll(urlContProv, " ", "%20")
+			// logs.Debug("urlContProv:", urlContProv, "- estado:", estado)
+			if resp, err := request.GetJsonTest(urlContProv, &hists); err == nil && resp.StatusCode == 200 {
+				if len(hists) == 0 || len(hists[0]) == 0 {
+					continue
+				}
+				for _, hist := range hists {
+					idActa := int(hist["ActaRecibidoId"].(map[string]interface{})["Id"].(float64))
+					histMap[idActa] = hist
 				}
 			} else {
-				if keys := len(Terceros[0]); keys != 0 {
-					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["RevisorId"])); err == nil {
-						if keys := len(Tercero); keys == 0 {
-							if err := findAndAddTercero(); err != nil {
-								return nil, err
+				if err == nil {
+					err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+				}
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlContProv, &hists)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
+			}
+		}
+
+		for idActa, hist := range histMap {
+			agregar := false
+			if proveedor {
+				var soportes []map[string]interface{}
+				urlSoporteActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta"
+				urlSoporteActa += "?fields=Id" // Realmente no importan los campos, lo que importa es la asociacion con el proveedor y el acta
+				urlSoporteActa += "&query=Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(idActa)
+				urlSoporteActa += ",ProveedorId:" + fmt.Sprint(idProveedor) // TODO: Cambiar por idTercero cuando sea el momento
+				// logs.Debug("urlSoporteActa:", urlSoporteActa)
+				if resp, err := request.GetJsonTest(urlSoporteActa, &soportes); err == nil && resp.StatusCode == 200 {
+					if len(soportes) >= 1 {
+						for _, soporte := range soportes {
+							if len(soporte) > 0 {
+								agregar = true
+								break
 							}
-						} else {
-							Tercero_ = Tercero
 						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
 					}
 				} else {
-					if err := findAndAddTercero(); err != nil {
-						return nil, err
+					if err == nil {
+						err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
 					}
-				}
-			}
-
-			if Ubicaciones == nil {
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-					// fmt.Println(ubicacion)
-					if keys := len(ubicacion); keys != 0 {
-						Ubicacion_ = ubicacion
-						Ubicaciones = append(Ubicaciones, ubicacion)
-					}
-
-				} else {
 					logs.Error(err)
 					outputError = map[string]interface{}{
-						"funcion": "/GetAllActasRecibidoActivas",
+						"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlSoporteActa, &soportes)",
 						"err":     err,
 						"status":  "502",
 					}
 					return nil, outputError
 				}
-			} else {
-				if keys := len(Ubicaciones[0]); keys != 0 {
-					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-						if keys := len(ubicacion); keys == 0 {
-							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-								// fmt.Println(ubicacion)
-								if keys := len(ubicacion); keys != 0 {
-									Ubicacion_ = ubicacion
-									Ubicaciones = append(Ubicaciones, ubicacion)
-								}
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllActasRecibidoActivas",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
-							}
-						} else {
-							Ubicacion_ = ubicacion
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
+			}
+			if !agregar && contratista {
+				if proveedor {
+					if idTercero == int(hist["ActaRecibidoId"].(map[string]interface{})["PersonaAsignada"].(float64)) {
+						agregar = true
 					}
 				} else {
-					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["UbicacionId"])); err == nil {
-						// fmt.Println(ubicacion)
-						if keys := len(ubicacion); keys != 0 {
-							Ubicacion_ = ubicacion
-							Ubicaciones = append(Ubicaciones, ubicacion)
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
+					// Las actas (historicos activos) ya se trajeron filtradas por contratista
+					agregar = true
 				}
 			}
+			if agregar {
+				Historico = append(Historico, hist)
+			}
+		}
 
-			var tmpAsignadoId = int(data_["PersonaAsignada"].(float64))
-			asignado, outputError = proveedorHelper.GetProveedorById(tmpAsignadoId)
-			if outputError == nil {
-				nombreAsignado = asignado[0].NomProveedor
-				// fmt.Println(outputError)
+	}
+
+	// PARTE 3: Completar data faltante
+	if len(Historico) > 0 {
+
+		for _, historicos := range Historico {
+
+			var acta map[string]interface{}
+			var estado map[string]interface{}
+			var ubicacionData map[string]interface{}
+			var editor map[string]interface{}
+			var preUbicacion map[string]interface{}
+			// var oldAsignado *models.Proveedor // "old": de proveedores, se va a eliminar
+			var asignado map[string]interface{}
+
+			preUbicacion = nil
+
+			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
+				acta = data
+			} else {
+				return nil, err
 			}
 
-			if Ubicacion_ != nil {
-				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
-					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
+			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
+				estado = data
+			} else {
+				return nil, err
+			}
+
+			idRev := int(acta["RevisorId"].(float64))
+			if v, err := findAndAddTercero(idRev); err == nil {
+				editor = v
+			} else {
+				return nil, err
+			}
+
+			idUb := int(acta["UbicacionId"].(float64))
+			if v, err := findAndAddUbicacion(idUb); err == nil {
+				preUbicacion = v
+			} else {
+				return nil, err
+			}
+
+			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
+			// if v, err := findAndAddProveedor(tmpAsignadoId); err == nil {
+			// 	oldAsignado = v
+			// }
+			if v, err := findAndAddTercero(tmpAsignadoId); err == nil {
+				asignado = v
+			}
+
+			if preUbicacion != nil {
+				if jsonString2, err := json.Marshal(preUbicacion["EspacioFisicoId"]); err == nil {
+					if err2 := json.Unmarshal(jsonString2, &ubicacionData); err2 != nil {
 						logs.Error(err)
 						outputError = map[string]interface{}{
 							"funcion": "/GetAllActasRecibidoActivas",
@@ -225,62 +483,39 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					}
 				}
 			} else {
-				data3_ = map[string]interface{}{
+				ubicacionData = map[string]interface{}{
 					"Nombre": "Ubicacion No Especificada",
 				}
 			}
-			// fmt.Println(data3_)
+			// fmt.Println(ubicacionData)
 			Acta := map[string]interface{}{
-				"UbicacionId":       data3_["Nombre"],
-				"Activo":            data_["Activo"],
-				"FechaCreacion":     data_["FechaCreacion"],
-				"FechaVistoBueno":   data_["FechaVistoBueno"],
-				"FechaModificacion": data_["FechaModificacion"],
-				"Id":                data_["Id"],
-				"Observaciones":     data_["Observaciones"],
-				"RevisorId":         Tercero_["NombreCompleto"],
-				"PersonaAsignada":   nombreAsignado,
-				"PersonaAsignadaId": int(data_["PersonaAsignada"].(float64)),
-				"Estado":            data2_["Nombre"],
+				"UbicacionId":       ubicacionData["Nombre"],
+				"Activo":            acta["Activo"],
+				"FechaCreacion":     acta["FechaCreacion"],
+				"FechaVistoBueno":   acta["FechaVistoBueno"],
+				"FechaModificacion": acta["FechaModificacion"],
+				"Id":                acta["Id"],
+				"Observaciones":     acta["Observaciones"],
+				"RevisorId":         editor["NombreCompleto"],
+				// "oldAsignada":       oldAsignado.NomProveedor,
+				"PersonaAsignada": asignado["NombreCompleto"],
+				// "PersonaAsignadaId": tmpAsignadoId,
+				"Estado": estado["Nombre"],
 			}
 			// fmt.Println("Es esto")
 			// fmt.Println(Acta)
 			historicoActa = append(historicoActa, Acta)
 		}
 
-		if len(states) > 0 {
-			historicoActa = filtrarActasPorEstados(historicoActa, states)
-		}
-
-		// TODO: Manejar concurrencia en las peticiones a otras APIS
-		// Referencia: https://www.golang-book.com/books/intro/10
-		if usrWSO2 != "" {
-			if actas, err := filtrarActasSegunRoles(historicoActa, usrWSO2); err == nil {
-				historicoActa = actas
-			} else {
-				return nil, err
-			}
-		}
-
+		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)
+		logs.Info("consultasUbicaciones:", consultasUbicaciones, " - Evitadas: ", evUbicaciones)
+		logs.Info("consultasProveedores:", consultasProveedores, " - Evitadas: ", evProveedores)
+		// formatdata.JsonPrint(Proveedores)
+		logs.Info(len(historicoActa), "actas")
 		return historicoActa, nil
 
-	} else if err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
-			"err":     err,
-			"status":  "502", // (2) error servicio caido
-		}
-		return nil, outputError
 	} else {
-		err := fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "/GetAllActasRecibidoActivas - request.GetJsonTest(url, &Historico)",
-			"err":     err,
-			"status":  "502", // (2) error servicio caido
-		}
-		return nil, outputError
+		return nil, nil
 	}
 }
 
