@@ -1,12 +1,12 @@
 package main
 
 import (
-	_ "github.com/udistrital/arka_mid/routers"
-	apistatus "github.com/udistrital/utils_oas/apiStatusLib"
-	"github.com/udistrital/utils_oas/customerror"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/plugins/cors"
+	_ "github.com/udistrital/arka_mid/routers"
+	"github.com/udistrital/auditoria"
+	apistatus "github.com/udistrital/utils_oas/apiStatusLib"
+	"github.com/udistrital/utils_oas/customerror"
 	// "github.com/udistrital/utils_oas/responseformat"
 )
 
@@ -30,5 +30,6 @@ func main() {
 	}))
 	beego.ErrorController(&customerror.CustomErrorController{})
 	apistatus.Init()
+	auditoria.InitMiddleware()
 	beego.Run()
 }
