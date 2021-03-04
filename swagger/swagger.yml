@@ -339,6 +339,28 @@ paths:
           description: '{}'
         "404":
           description: not found resource
+  /elemento/:
+    post:
+      tags:
+      - elemento
+      description: create Salida
+      operationId: ElementoController.Create
+      parameters:
+      - in: body
+        name: body
+        description: body for Salida content
+        required: true
+        schema:
+          $ref: '#/definitions/models.SalidaGeneral'
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.TrSalida2'
+        "403":
+          description: body is empty
   /entrada/:
     get:
       tags:
@@ -1323,6 +1345,9 @@ tags:
 - name: entrada
   description: |
     EntradaController operations for Entrada
+- name: elemento
+  description: |
+    SalidaController operations for Salida
 - name: parametros_soporte
   description: |
     ParametrosController operations for Parametros

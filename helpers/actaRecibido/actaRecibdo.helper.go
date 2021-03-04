@@ -766,13 +766,39 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						elementos[i] = cell.String()
 					}
 					if elementos[0] != "Totales" {
+						vlrcantidad, err := strconv.ParseInt(elementos[6], 10, 64)
+						if err == nil {
+						} else {
+							vlrcantidad = 0
+							logs.Info(err)
+						}
+
+						vlrunitario, err := strconv.ParseFloat(elementos[8], 64)
+						if err == nil {
+						} else {
+							vlrunitario = float64(0)
+							logs.Info(err)
+						}
+
+						vlrsubtotal := float64(0)
+						vlrsubtotal = float64(vlrunitario) * float64(vlrcantidad)
+						elementos[9] = strconv.FormatFloat(vlrsubtotal, 'f', 2, 64)
+
+						vlrdcto, err := strconv.ParseFloat(elementos[10], 64)
+						if err == nil {
+							vlrdcto = vlrsubtotal - vlrdcto
+						} else {
+							vlrdcto = float64(0)
+							logs.Info(err)
+						}
+
 						convertir := strings.Split(elementos[11], ".")
 						if err == nil {
-							logs.Info(convertir)
 							valor, err := strconv.ParseInt(convertir[0], 10, 64)
 							if err == nil {
 								for _, valor_iva := range IvaTest {
 									if valor == int64(valor_iva.Tarifa) {
+										elementos[12] = strconv.FormatFloat(vlrdcto*float64(valor)/100, 'f', 2, 64)
 										elementos[11] = strconv.Itoa(valor_iva.Tarifa)
 									}
 								}
@@ -783,9 +809,17 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							logs.Info(err)
 						}
 
+						vlrtotal, err := strconv.ParseFloat(elementos[12], 64)
+						if err == nil {
+							vlrtotal = vlrdcto + vlrtotal
+							elementos[13] = strconv.FormatFloat(vlrtotal, 'f', 2, 64)
+						} else {
+							vlrtotal = float64(0)
+							logs.Info(err)
+						}
+
 						convertir2 := strings.ToUpper(elementos[7])
 						if err == nil {
-							logs.Info(convertir2)
 							for _, unidad := range Unidades {
 								if convertir2 == unidad.Unidad {
 									elementos[7] = strconv.Itoa(unidad.Id)
@@ -794,6 +828,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						} else {
 							logs.Info(err)
 						}
+
 						convertir3 := elementos[2]
 						if err == nil {
 							logs.Info(convertir3)
