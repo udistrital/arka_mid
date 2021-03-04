@@ -768,44 +768,37 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 					if elementos[0] != "Totales" {
 						vlrcantidad, err := strconv.ParseInt(elementos[6], 10, 64)
 						if err == nil {
-							if err == nil {
-								fmt.Printf("El seis %d", vlrcantidad)
-							}
 						} else {
+							vlrcantidad = 0
 							logs.Info(err)
 						}
 
 						vlrunitario, err := strconv.ParseFloat(elementos[8], 64)
 						if err == nil {
 						} else {
+							vlrunitario = float64(0)
 							logs.Info(err)
 						}
 
 						vlrsubtotal := float64(0)
-						if err == nil {
-							vlrsubtotal = float64(vlrunitario * float64(vlrcantidad))
-							elementos[9] = strconv.FormatFloat(vlrsubtotal, 'f', 2, 64)
-							fmt.Printf("El total %s", elementos[9])
-						} else {
-							logs.Info(err)
-						}
+						vlrsubtotal = float64(vlrunitario) * float64(vlrcantidad)
+						elementos[9] = strconv.FormatFloat(vlrsubtotal, 'f', 2, 64)
 
 						vlrdcto, err := strconv.ParseFloat(elementos[10], 64)
 						if err == nil {
 							vlrdcto = vlrsubtotal - vlrdcto
 						} else {
+							vlrdcto = float64(0)
 							logs.Info(err)
-
 						}
 
 						convertir := strings.Split(elementos[11], ".")
 						if err == nil {
 							valor, err := strconv.ParseInt(convertir[0], 10, 64)
 							if err == nil {
-								valori := valor
 								for _, valor_iva := range IvaTest {
 									if valor == int64(valor_iva.Tarifa) {
-										elementos[12] = strconv.FormatFloat(vlrdcto*float64(valori)/100, 'f', 2, 64)
+										elementos[12] = strconv.FormatFloat(vlrdcto*float64(valor)/100, 'f', 2, 64)
 										elementos[11] = strconv.Itoa(valor_iva.Tarifa)
 									}
 								}
@@ -821,13 +814,12 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							vlrtotal = vlrdcto + vlrtotal
 							elementos[13] = strconv.FormatFloat(vlrtotal, 'f', 2, 64)
 						} else {
+							vlrtotal = float64(0)
 							logs.Info(err)
-
 						}
 
 						convertir2 := strings.ToUpper(elementos[7])
 						if err == nil {
-							logs.Info(convertir2)
 							for _, unidad := range Unidades {
 								if convertir2 == unidad.Unidad {
 									elementos[7] = strconv.Itoa(unidad.Id)
@@ -836,6 +828,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						} else {
 							logs.Info(err)
 						}
+
 						convertir3 := elementos[2]
 						if err == nil {
 							logs.Info(convertir3)
