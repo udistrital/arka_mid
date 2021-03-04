@@ -766,13 +766,46 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						elementos[i] = cell.String()
 					}
 					if elementos[0] != "Totales" {
+						vlrcantidad, err := strconv.ParseInt(elementos[6], 10, 64)
+						if err == nil {
+							if err == nil {
+								fmt.Printf("El seis %d", vlrcantidad)
+							}
+						} else {
+							logs.Info(err)
+						}
+
+						vlrunitario, err := strconv.ParseFloat(elementos[8], 64)
+						if err == nil {
+						} else {
+							logs.Info(err)
+						}
+
+						vlrsubtotal := float64(0)
+						if err == nil {
+							vlrsubtotal = float64(vlrunitario * float64(vlrcantidad))
+							elementos[9] = strconv.FormatFloat(vlrsubtotal, 'f', 2, 64)
+							fmt.Printf("El total %s", elementos[9])
+						} else {
+							logs.Info(err)
+						}
+
+						vlrdcto, err := strconv.ParseFloat(elementos[10], 64)
+						if err == nil {
+							vlrdcto = vlrsubtotal - vlrdcto
+						} else {
+							logs.Info(err)
+
+						}
+
 						convertir := strings.Split(elementos[11], ".")
 						if err == nil {
-							logs.Info(convertir)
 							valor, err := strconv.ParseInt(convertir[0], 10, 64)
 							if err == nil {
+								valori := valor
 								for _, valor_iva := range IvaTest {
 									if valor == int64(valor_iva.Tarifa) {
+										elementos[12] = strconv.FormatFloat(vlrdcto*float64(valori)/100, 'f', 2, 64)
 										elementos[11] = strconv.Itoa(valor_iva.Tarifa)
 									}
 								}
@@ -781,6 +814,15 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							}
 						} else {
 							logs.Info(err)
+						}
+
+						vlrtotal, err := strconv.ParseFloat(elementos[12], 64)
+						if err == nil {
+							vlrtotal = vlrdcto + vlrtotal
+							elementos[13] = strconv.FormatFloat(vlrtotal, 'f', 2, 64)
+						} else {
+							logs.Info(err)
+
 						}
 
 						convertir2 := strings.ToUpper(elementos[7])

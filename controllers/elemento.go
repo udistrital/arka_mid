@@ -48,31 +48,28 @@ func (c *ElementoController) Put() {
 
 	// fmt.Printf("body: %v\n", c.Ctx.Input.RequestBody)
 	var v models.Elemento
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		fmt.Printf("valores")
-		// formatdata.JsonPrint(v)
-		if respuesta, err := salidaHelper.AsignarPlaca(&v); err == nil && respuesta != nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = respuesta
-		} else if err != nil {
-			panic(map[string]interface{}{
-				"funcion": "Post",
-				"err":     err,
-				"status":  "502",
-			})
-		} else {
-			panic(map[string]interface{}{
-				"funcion": "Post",
-				"err":     "No hubo respuesta",
-				"status":  "404",
-			})
-		}
-	} else {
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(map[string]interface{}{
 			"funcion": "Post",
 			"err":     "JSON mal estructurado",
 			"status":  "400",
 		})
 	}
+
+	fmt.Printf("valores")
+	// formatdata.JsonPrint(v)
+	if respuesta, err := salidaHelper.AsignarPlaca(&v); err == nil && respuesta != nil {
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = respuesta
+	} else if err != nil {
+		panic(err)
+	} else {
+		panic(map[string]interface{}{
+			"funcion": "Post",
+			"err":     "No hubo respuesta",
+			"status":  "404",
+		})
+	}
+
 	c.ServeJSON()
 }
