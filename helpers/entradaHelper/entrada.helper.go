@@ -41,13 +41,12 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 		panic(err.Error())
 	}
 
-
 	year, _, _ := time.Now().Date()
 	consec := Consecutivo{0, 1, year, 0, "Entradas", true}
 	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
 	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
 		resultado, _ := res["Data"].(map[string]interface{})
-		numeroentrada := "-" + fmt.Sprintf("%05.0f", resultado["Consecutivo"]) + "-" + strconv.Itoa(year)
+		numeroentrada := fmt.Sprintf("%05.0f", resultado["Consecutivo"]) + "-" + strconv.Itoa(year)
 		vconsecutivo := detalleJSON["consecutivo"].(string) + "-" + numeroentrada
 		detalleJSON["consecutivo"] = vconsecutivo
 	} else {
