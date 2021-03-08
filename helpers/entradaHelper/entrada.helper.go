@@ -10,6 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -280,7 +281,6 @@ func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[s
 
 	// Solicita información Movimientos KRONOS
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=TipoMovimientoId.Acronimo:e_arka,Activo:true&limit=-1"
-
 	if err := request.GetJson(urlcrud, &tipoMovimiento); err == nil {
 		// Solicita información movimientos ARKA de acuedo a la información consultada por movimientos kronos
 		var data []map[string]interface{}
@@ -329,36 +329,35 @@ func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[s
 	}
 }
 
-// GetEncargado busca al encargado de un elemento
+//GetEncargadoElemento busca al encargado de un elemento
 func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outputError map[string]interface{}) {
 	var urlelemento string
-	var elemento map[string]interface{}
+	var detalle []map[string]interface{}
 	if id, err := actaRecibido.GetIdElementoPlaca(placa); err == nil {
-		fmt.Println("id: ", id)
-		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_encargado_elemento/" + id
-		if response, err := request.GetJsonTest(urlelemento, &elemento); err == nil {
-			fmt.Println("status: ", elemento)
-			if response.StatusCode == 200 {
-				if response, err := tercerosHelper.GetNombreTerceroById("elemento"); err == nil {
-					elemento["funcionario"] = response["NombreCompleto"].(string)
-					idElemento = elemento
-					return
+		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:" + id
+		if response, err := request.GetJsonTest(urlelemento, &detalle); err == nil {
+			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
+			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
+				idtercero := fmt.Sprintf("%v", resultado["funcionario"])
+				fmt.Println("id tercero ", idtercero)
+				if response, err := tercerosHelper.GetNombreTerceroById(idtercero); err == nil {
+					var nombrecompleto = response["NombreCompleto"].(string)
+					var aux = make(map[string]interface{})
+					aux = map[string]interface{}{"Id": idtercero, "NombreCompleto": nombrecompleto}
+					return aux, nil
 				} else {
-					outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "Error": err}
-					return
+					outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": "404", "err": err}
+					return nil, outputError
 				}
-
-			} else {
-				outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "status": int(response.StatusCode), "Error": response.Status}
-				return
 			}
 		} else {
 			logs.Error(err)
-			outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "status": int(response.StatusCode), "Error": err}
+			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": int(response.StatusCode), "err": err}
 			return nil, outputError
 		}
 	} else {
-		outputError = map[string]interface{}{"Function": "GetEncargadoElemento", "status": "404", "Error": err}
+		logs.Error(err)
+		outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": "404", "err": err}
 		return nil, outputError
 	}
 	return
