@@ -147,7 +147,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		return &vacio, nil
 	}
-	findAndAddProveedor(0)
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
 	// (y así definir la estrategia para traer las actas)
