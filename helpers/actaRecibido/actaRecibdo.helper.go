@@ -930,17 +930,14 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 
 	var Ubicaciones []map[string]interface{}
 	var Parametros2 []map[string]interface{}
-	fmt.Println(Datos.Sede)
-	fmt.Println(Datos.Dependencia)
 	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+
 		"asignacion_espacio_fisico_dependencia?query=DependenciaId.Id:"+strconv.Itoa(Datos.Dependencia.Id)+
 		"&limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
-		fmt.Println(Ubicaciones)
 		for _, relacion := range Ubicaciones {
 			var data map[string]interface{}
 			if jsonString, err := json.Marshal(relacion["EspacioFisicoId"]); err == nil {
 				if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
-					if number := strings.Index(fmt.Sprintf("%v", data["Codigo"]), Datos.Sede.Codigo); number != -1 {
+					if number := strings.Index(fmt.Sprintf("%v", data["CodigoAbreviacion"]), Datos.Sede.CodigoAbreviacion); number != -1 {
 						Parametros2 = append(Parametros2, map[string]interface{}{
 							"Id":              relacion["Id"],
 							"DependenciaId":   relacion["DependenciaId"],
