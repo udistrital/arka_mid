@@ -1,6 +1,7 @@
 package actaRecibido
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -43,15 +44,24 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 			// logs.Debug(historicoActa, "- len:", len(historicoActa))
 
 			for _, acta := range historicoActa {
-				logs.Debug("holiActa", acta)
-				// UBICACION
-				var ubicacion *models.EspacioFisico
-
+				var ubicacion *models.AsignacionEspacioFisicoDependencia
 				if id := acta.ActaRecibidoId.UbicacionId; id > 0 {
-					if ubicaciones, err := ubicacionHelper.GetUbicacion(id); err == nil {
-						ubicacion = ubicaciones[0]
+					if ubicaciones, err := ubicacionHelper.GetAsignacionSedeDependencia(strconv.Itoa(id)); err == nil {
+						if jsonString, err := json.Marshal(ubicaciones); err == nil {
+							if err := json.Unmarshal(jsonString, &ubicacion); err == nil {
+							} else {
+								logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+								outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo", "Error": err}
+								return nil, outputError
+							}
+						} else {
+							logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+							outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo", "Error": err}
+							return nil, outputError
+						}
+
 					} else {
-						return nil, err
+						return nil, nil
 					}
 				}
 
