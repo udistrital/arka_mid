@@ -80,7 +80,7 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 		urlTerceros += "&query=Activo:true,TipoTerceroId__Id:" + fmt.Sprint(id)
 		if idProveedor > 0 {
 			// logs.Debug("idProveedor:", idProveedor)
-			urlTerceros += ",TerceroPrincipalId__Id:" + fmt.Sprint(idProveedor)
+			urlTerceros += ",TerceroId__Id:" + fmt.Sprint(idProveedor)
 		}
 		// logs.Debug("urlTerceros:", urlTerceros)
 		// fmt.Println(urlTerceros)
