@@ -114,7 +114,50 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 			}
 		}
 	}
-	formatdata.JsonPrint(tercerosMap)
+	// formatdata.JsonPrint(tercerosMap)
+
+	// PARTE 3: Traer información de identificación, de estar disponible
+	for idTercero, dataTercero := range tercerosMap {
+
+		dataFinal := map[string]interface{}{
+			"Tercero": dataTercero,
+		}
+
+		var dataTerceros []map[string]interface{} // models.DatosIdentificacion
+		urlDocTercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
+		urlDocTercero += "?fields=TipoDocumentoId,Numero"
+		urlDocTercero += "&query=Activo:true,TerceroId__Id:" + fmt.Sprint(idTercero)
+		// logs.Debug("urlDocTercero: ", urlDocTercero)
+		if resp, err := request.GetJsonTest(urlDocTercero, &dataTerceros); err == nil && resp.StatusCode == 200 {
+			if len(dataTerceros) == 1 && len(dataTerceros[0]) > 0 {
+				var dataTercero models.DatosIdentificacion
+				if err := mapstructure.Decode(dataTerceros[0], &dataTercero); err != nil {
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "/GetContratista - mapstructure.Decode(dataTerceros[0], &dataTercero)",
+						"err":     err,
+						"status":  "500",
+					}
+					return nil, outputError
+				}
+				dataRecortada := map[string]interface{}{
+					// "TipoDocumentoId": dataModel.TipoDocumentoId,
+					"TipoDocumentoId": map[string]interface{}{
+						"Id":     dataTercero.TipoDocumentoId.Id,
+						"Nombre": dataTercero.TipoDocumentoId.Nombre,
+					},
+					"Numero": dataTercero.Numero,
+				}
+				dataFinal["Identificacion"] = dataRecortada
+			} else {
+				err := fmt.Errorf("No hay UN (único) documento registrado como Activo para el Tercero con ID: %d", idTercero)
+				logs.Warn(err)
+			}
+		}
+
+		terceros = append(terceros, dataFinal)
+	}
+	formatdata.JsonPrint(terceros)
 
 	return
 }
