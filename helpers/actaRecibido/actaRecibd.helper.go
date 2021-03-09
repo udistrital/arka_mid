@@ -48,8 +48,7 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 				if id := acta.ActaRecibidoId.UbicacionId; id > 0 {
 					if ubicaciones, err := ubicacionHelper.GetAsignacionSedeDependencia(strconv.Itoa(id)); err == nil {
 						if jsonString, err := json.Marshal(ubicaciones); err == nil {
-							if err := json.Unmarshal(jsonString, &ubicacion); err == nil {
-							} else {
+							if err := json.Unmarshal(jsonString, &ubicacion); err != nil {
 								logs.Error(err)
 								return nil, map[string]interface{}{
 									"funcion": "GetActasRecibidoTipo",
@@ -75,8 +74,6 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 						}
 					}
 				}
-
-				// logs.Debug(ubicacion)
 
 				actaRecibidoAux := models.ActaRecibidoUbicacion{
 					Id:                acta.ActaRecibidoId.Id,
