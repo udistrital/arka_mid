@@ -10,7 +10,7 @@ import (
 	// "github.com/udistrital/arka_mid/helpers/utilsHelper"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/formatdata"
+	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -20,7 +20,7 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetProveedor - Uncaught Error!",
+				"funcion": "GetProveedor - Uncaught Error!",
 				"err":     err,
 				"status":  "500", // Uncaught error!
 			}
@@ -42,7 +42,7 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 			err := fmt.Errorf("No hay tipo_tercero registrados")
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/GetProveedor - request.GetJsonTest(urlTipos, &data)",
+				"funcion": "GetProveedor - request.GetJsonTest(urlTipos, &data)",
 				"err":     err,
 				"status":  "502",
 			}
@@ -62,7 +62,7 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetProveedor - request.GetJsonTest(urlTipos, &data)",
+			"funcion": "GetProveedor - request.GetJsonTest(urlTipos, &data)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -86,7 +86,7 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 		// fmt.Println(urlTerceros)
 		if resp, err := request.GetJsonTest(urlTerceros, &data); err == nil && resp.StatusCode == 200 {
 			if len(data) == 0 || len(data[0]) == 0 {
-				logs.Debug("No se encontraron terceros. Saltando al siguiente parametro")
+				// logs.Debug("No se encontraron terceros. Saltando al siguiente parametro")
 				continue
 			}
 
@@ -97,7 +97,7 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 				if err := mapstructure.Decode(terceroTipo["TerceroId"], &terData); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
-						"funcion": "/GetProveedor - mapstructure.Decode(terceroTipo[\"TerceroId\"], &terData)",
+						"funcion": "GetProveedor - mapstructure.Decode(terceroTipo[\"TerceroId\"], &terData)",
 						"err":     err,
 						"status":  "500",
 					}
@@ -112,11 +112,22 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 				tercerosMap[terData.Id] = terceroClean
 				// logs.Debug("terceroClean:", terceroClean)
 			}
+		} else {
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetProveedor - request.GetJsonTest(urlTerceros, &data)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 	}
 	// formatdata.JsonPrint(tercerosMap)
 
-	// PARTE 3: Traer información de identificación, de estar disponible
+	// PARTE 3: Completar información de identificación, de estar disponible
 	for idTercero, dataTercero := range tercerosMap {
 
 		dataFinal := map[string]interface{}{
@@ -134,7 +145,7 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 				if err := mapstructure.Decode(dataTerceros[0], &dataTercero); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
-						"funcion": "/GetContratista - mapstructure.Decode(dataTerceros[0], &dataTercero)",
+						"funcion": "GetProveedor - mapstructure.Decode(dataTerceros[0], &dataTercero)",
 						"err":     err,
 						"status":  "500",
 					}
@@ -153,11 +164,22 @@ func GetProveedor(idProveedor int) (terceros []map[string]interface{}, outputErr
 				err := fmt.Errorf("No hay UN (único) documento registrado como Activo para el Tercero con ID: %d", idTercero)
 				logs.Warn(err)
 			}
+		} else {
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetProveedor - request.GetJsonTest(urlDocTercero, &dataTerceros)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 
 		terceros = append(terceros, dataFinal)
 	}
-	formatdata.JsonPrint(terceros)
+	// formatdata.JsonPrint(terceros)
 
 	return
 }
