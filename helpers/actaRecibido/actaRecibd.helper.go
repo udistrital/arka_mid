@@ -61,7 +61,9 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 						}
 
 					} else {
-						return nil, nil
+						logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
+						outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo", "Error": err}
+						return nil, outputError
 					}
 				}
 
