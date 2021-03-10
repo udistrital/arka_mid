@@ -19,7 +19,7 @@ type ActaRecibido struct {
 
 type ActaRecibidoUbicacion struct {
 	Id                int
-	UbicacionId       *EspacioFisico
+	UbicacionId       *AsignacionEspacioFisicoDependencia
 	FechaVistoBueno   time.Time
 	RevisorId         int
 	Observaciones     string
