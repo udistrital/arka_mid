@@ -331,34 +331,74 @@ func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[s
 
 //GetEncargadoElemento busca al encargado de un elemento
 func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetEncargadoElemento - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var urlelemento string
 	var detalle []map[string]interface{}
+
+	if placa == "" {
+		err := fmt.Errorf("La placa no puede estar en blanco")
+		logs.Error(err)
+		outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - placa == ''", "status": "400", "err": err}
+		return nil, outputError
+	}
+
 	if id, err := actaRecibido.GetIdElementoPlaca(placa); err == nil {
+		if id == "" {
+			err = fmt.Errorf("La placa '%s' no ha sido asignada a una salida", placa)
+			logs.Error(err)
+			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - id == ''", "status": "404", "err": err}
+			return nil, outputError
+		}
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:" + id
-		if response, err := request.GetJsonTest(urlelemento, &detalle); err == nil {
+		fmt.Println(urlelemento)
+		if resp, err := request.GetJsonTest(urlelemento, &detalle); err == nil && resp.StatusCode == 200 {
+			logs.Info(detalle)
 			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
 			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
 				idtercero := fmt.Sprintf("%v", resultado["funcionario"])
-				fmt.Println("id tercero ", idtercero)
 				if response, err := tercerosHelper.GetNombreTerceroById(idtercero); err == nil {
+					if len(response) == 0 { // posible validación adicional:  || response["Id"].(string) == "0"
+						err := fmt.Errorf("Respuesta inesperada en la respuesta de la función GetNombreTerceroById")
+						logs.Error(err)
+						outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - tercerosHelper.GetNombreTerceroById(idtercero)", "status": "404", "err": err}
+						return nil, outputError
+					}
 					var nombrecompleto = response["NombreCompleto"].(string)
 					var aux = make(map[string]interface{})
 					aux = map[string]interface{}{"Id": idtercero, "NombreCompleto": nombrecompleto}
 					return aux, nil
 				} else {
-					outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": "404", "err": err}
+					logs.Error(err)
+					outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - tercerosHelper.GetNombreTerceroById(idtercero)", "status": "502", "err": err}
 					return nil, outputError
 				}
+			} else {
+				logs.Error(err)
+				outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - actaRecibido.GetIdElementoPlaca(placa);", "status": "500", "err": err}
+				return nil, outputError
 			}
 		} else {
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			}
 			logs.Error(err)
-			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": int(response.StatusCode), "err": err}
+			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - request.GetJsonTest(urlelemento, &detalle) ", "status": "500", "err": err}
 			return nil, outputError
 		}
 	} else {
 		logs.Error(err)
-		outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": "404", "err": err}
+		outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": "502", "err": err}
 		return nil, outputError
 	}
-	return
 }
