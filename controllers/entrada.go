@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -97,18 +98,37 @@ func (c *EntradaController) GetEntradas() {
 // @Failure 404 not found resource
 // @router /encargado/:placa [get]
 func (c *EntradaController) GetEncargadoElemento() {
-	placa := c.Ctx.Input.Param(":placa")
-	if funcionario, err := entradaHelper.GetEncargadoElemento(placa); err == nil {
-		if funcionario == nil {
-			c.Data["json"] = map[string]interface{}{}
 
-		} else {
-			c.Data["json"] = funcionario
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
 		}
+	}()
 
+	placa := c.Ctx.Input.Param(":placa")
+	if placa == "" {
+		err := fmt.Errorf("{placa} no debe ser vacia")
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "GetEncargadoElemento",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	if funcionario, err := entradaHelper.GetEncargadoElemento(placa); err == nil {
+		c.Data["json"] = funcionario
+		c.Ctx.Output.SetStatus(200)
 	} else {
-		c.Data["json"] = err
-		c.Abort("404")
+		panic(err)
 	}
 	c.ServeJSON()
 }

@@ -17,29 +17,26 @@ func GetNombreTerceroById(idTercero string) (tercero map[string]interface{}, err
 	var personas []map[string]interface{}
 
 	urltercero = "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=TerceroId__Id:" + idTercero + ",Activo:true"
-	if response, err := request.GetJsonTest(urltercero, &personas); err == nil {
-		if response.StatusCode == 200 {
-			for _, element := range personas {
-				if len(element) == 0 {
-					return nil, errors.New("No se encontro registro")
-				} else {
-					// fmt.Println("encargado: ", element)
-					return map[string]interface{}{
-						"Id":             element["TerceroId"].(map[string]interface{})["Id"],
-						"Numero":         element["Numero"],
-						"NombreCompleto": element["TerceroId"].(map[string]interface{})["NombreCompleto"],
-					}, nil
-				}
-
+	if resp, err := request.GetJsonTest(urltercero, &personas); err == nil && resp.StatusCode == 200 {
+		for _, element := range personas {
+			if len(element) == 0 {
+				return nil, errors.New("No se encontro registro")
+			} else {
+				// fmt.Println("encargado: ", element)
+				return map[string]interface{}{
+					"Id":             element["TerceroId"].(map[string]interface{})["Id"],
+					"Numero":         element["Numero"],
+					"NombreCompleto": element["TerceroId"].(map[string]interface{})["NombreCompleto"],
+				}, nil
 			}
-		} else if response.StatusCode == 400 {
-			return nil, err
 		}
 	} else {
-		fmt.Println("error: ", err)
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		}
+		logs.Error(err)
 		return nil, err
 	}
-
 	return
 
 }
