@@ -76,47 +76,62 @@ steps:
   # - go test -v ./... | go-junit-report > test.xml
   when:
     branch:
-    # - develop
-    # - release/*
-    - master
+    - develop
+    - feature/*
+    - release/*
     event:
     - push
 
 - name: run_sonar_scanner
-  image: openjdk:8-alpine
-  commands:
-  - export RELEASE=4.2.0.1873
-  - apk add --no-cache  curl grep sed unzip nodejs npm
-  - curl --insecure -o ./sonarscanner.zip -L https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$RELEASE-linux.zip
-  - unzip sonarscanner.zip && rm sonarscanner.zip
-  - rm -rf sonar-scanner-$RELEASE-linux/jre
-  - sed -i 's/use_embedded_jre=true/use_embedded_jre=false/g' ./sonar-scanner-$RELEASE-linux/bin/sonar-scanner
-  - export PATH=$PATH:/go/src/github.com/udistrital/${DRONE_REPO##udistrital/}/sonar-scanner-$RELEASE-linux/bin
-  - cp sonar-project.properties ./sonar-scanner-$RELEASE-linux/conf/sonar-scanner.properties
-  - sonar-scanner
+  image: aosapps/drone-sonar-plugin
+  settings:
+    sonar_host:
+      from_secret: SONAR_HOST
+    sonar_token:
+      from_secret: SONAR_TOKEN
   when:
     branch:
-    # - develop
-    # - release/*
-    - master
+    - develop
+    - feature/*
+    - release/*
+
+- name: publish_to_ecr_release
+  image: plugins/ecr
+  settings:
+    access_key:
+      from_secret: AWS_ACCESS_KEY_ID
+    secret_key:
+      from_secret: AWS_SECRET_ACCESS_KEY
+    region:
+      from_secret: AWS_REGION
+    repo: ${DRONE_REPO##udistrital/}
+    tags:
+      - ${DRONE_COMMIT:0:7}
+      - release
+  when:
+    branch:
+    - release/*
     event:
     - push
 
-- name: publish_dockerhub
-  image: plugins/docker
+- name: publish_to_ecr_master
+  image: plugins/ecr
   settings:
-    username:
-      from_secret: DOCKER_USERNAME
-    password:
-      from_secret: DOCKER_PASSWORD
-    repo: oas0/${DRONE_REPO##udistrital/}
+    access_key:
+      from_secret: AWS_ACCESS_KEY_ID
+    secret_key:
+      from_secret: AWS_SECRET_ACCESS_KEY
+    region:
+      from_secret: AWS_REGION
+    repo: ${DRONE_REPO##udistrital/}
     tags:
       - ${DRONE_COMMIT:0:7}
       - latest
   when:
     branch:
-    - release/*
     - master
+    event:
+    - push
 
 - name: update_aws_ecs
   image: golang:1.9
@@ -125,27 +140,30 @@ steps:
       from_secret: AWS_ACCESS_KEY_ID
     AWS_SECRET_ACCESS_KEY:
       from_secret: AWS_SECRET_ACCESS_KEY
+    AWS_CONTAINER:
+      from_secret: AWS_CONTAINER
   commands:
   - case ${DRONE_BRANCH} in
        release/*)
          AMBIENTE=test
          CLUSTER=test
+         MYCONTAINER=$${AWS_CONTAINER}/${DRONE_REPO##udistrital/}:release
          ;;
        master)
          AMBIENTE=prod
          CLUSTER=oas
+         MYCONTAINER=$${AWS_CONTAINER}/${DRONE_REPO##udistrital/}:latest
          ;;
     esac
   - AWS_REGION=us-east-1
   - SERVICE=${DRONE_REPO##udistrital/}_$AMBIENTE
-  - MYCONTAINER=oas0/${DRONE_REPO##udistrital/}:${DRONE_COMMIT:0:7}
   - container_name=${DRONE_REPO##udistrital/}
   - apt-get update
   - apt-get install unzip
   - wget https://github.com/Autodesk/go-awsecs/releases/download/v1.1/update-aws-ecs-service-linux-amd64.zip
   - unzip update-aws-ecs-service-linux-amd64.zip -d /go/bin
   - AWS_ACCESS_KEY_ID=$${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=$${AWS_SECRET_ACCESS_KEY} AWS_REGION=$AWS_REGION
-    $GOPATH/bin/update-aws-ecs-service -cluster $CLUSTER -service $SERVICE -container-image $container_name=$MYCONTAINER
+    $GOPATH/bin/update-aws-ecs-service -cluster $CLUSTER -service $SERVICE -container-image $MYCONTAINER
   when:
     branch:
     - release/*
