@@ -42,7 +42,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	var Historico []map[string]interface{}
 	Terceros := make(map[int](map[string]interface{}))
 	Ubicaciones := make(map[int](map[string]interface{}))
-	Proveedores := make(map[int](*models.Proveedor))
 
 	consultasTerceros := 0
 	consultasUbicaciones := 0
@@ -58,7 +57,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	proveedor := false
 	contratista := false
 	idTercero := 0
-	idProveedor := 0 // TODO: Eliminar esta variable cuando se pasen los proveedores a Terceros, usar solo idTercero
+
 	// De especificarse un usuario, hay que definir las actas que puede ver
 	if usrWSO2 != "" {
 
@@ -127,9 +126,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					contratista = true
 				}
 			}
-			// TODO: Debería ser suficiente cambiar la condicion por 'proveedor || contratista'
-			// una vez se decida cargar los proveedores también de terceros
-			if contratista && idTercero == 0 {
+			if proveedor || contratista {
 				if data, err := tercerosHelper.GetTerceroByUsuarioWSO2(usrWSO2); err == nil {
 					if v, ok := data["Id"].(int); ok {
 						idTercero = v
@@ -139,22 +136,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					return nil, err
 				}
 			}
-			// TODO: Eliminar el siguiente bloque cuando se pasen los proveedores a Terceros
-			// (Debería ser suficiente con el bloque anterior, idTercero)
-			if proveedor && idProveedor == 0 {
-				// 1. A partir del documento obtenido de WSO2, buscar el proveedor
-				consultasProveedores++
-				if data, err := proveedorHelper.GetProveedorByDoc(usr.Documento); err == nil {
-					idProveedor = data.Id
-					Proveedores[idProveedor] = data
-				} else {
-					return nil, err
-				}
-			}
 		}
 	}
 	logs.Info("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
-	logs.Info("iP:", idProveedor)
 
 	// fmt.Print("Estados Solicitados: ")
 	// fmt.Println(states)
@@ -282,7 +266,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				urlSoporteActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta"
 				urlSoporteActa += "?fields=Id" // Realmente no importan los campos, lo que importa es la asociacion con el proveedor y el acta
 				urlSoporteActa += "&query=Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(idActa)
-				urlSoporteActa += ",ProveedorId:" + fmt.Sprint(idProveedor) // TODO: Cambiar por idTercero cuando sea el momento
+				urlSoporteActa += ",ProveedorId:" + fmt.Sprint(idTercero)
 				// logs.Debug("urlSoporteActa:", urlSoporteActa)
 				if resp, err := request.GetJsonTest(urlSoporteActa, &soportes); err == nil && resp.StatusCode == 200 {
 					if len(soportes) >= 1 {
