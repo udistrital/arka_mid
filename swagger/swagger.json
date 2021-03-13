@@ -981,14 +981,18 @@
             "title": "AsignacionEspacioFisicoDependencia",
             "type": "object",
             "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
                 "DependenciaId": {
                     "$ref": "#/definitions/models.Dependencia"
                 },
+                "DocumentoSoporte": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "EspacioFisicoId": {
                     "$ref": "#/definitions/models.EspacioFisico"
-                },
-                "Estado": {
-                    "type": "string"
                 },
                 "FechaFin": {
                     "type": "string",
@@ -1373,11 +1377,19 @@
             "title": "EspacioFisico",
             "type": "object",
             "properties": {
-                "Codigo": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
                     "type": "string"
                 },
-                "Estado": {
-                    "type": "string"
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
                 },
                 "Id": {
                     "type": "integer",
@@ -1872,6 +1884,20 @@
             "title": "TipoEspacio",
             "type": "object",
             "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
                 "Id": {
                     "type": "integer",
                     "format": "int64"
