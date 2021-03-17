@@ -12,7 +12,11 @@ func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, o
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/DataUsuario", "err": err, "status": "502"}
+			outputError = map[string]interface{}{
+				"funcion": "DataUsuario - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
 			panic(outputError)
 		}
 	}()
@@ -24,13 +28,14 @@ func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, o
 	if err := request.SendJson(url, "POST", &dataUsuario, &req); err == nil {
 		return dataUsuario, nil
 	} else {
+		var empty models.UsuarioAutenticacion
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/DataUsuario",
+			"funcion": "DataUsuario - request.SendJson(url, \"POST\", &dataUsuario, &req)",
 			"err":     err,
 			"status":  "502",
 		}
-		return dataUsuario, outputError
+		return empty, outputError
 	}
 
 }

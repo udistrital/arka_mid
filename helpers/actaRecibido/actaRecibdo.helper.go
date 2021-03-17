@@ -63,10 +63,13 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		// Traer la información de Autenticación MID para obtener los roles
 		var usr models.UsuarioAutenticacion
-		if data, err := autenticacion.DataUsuario(usrWSO2); err == nil && data.Role != nil {
+		if data, err := autenticacion.DataUsuario(usrWSO2); err == nil && data.Role != nil && len(data.Role) > 0 {
 			// logs.Debug(data)
 			usr = data
-		} else if err == nil { // data.Role == nil
+		} else if err != nil {
+			// formatdata.JsonPrint(data)
+			return nil, err
+		} else { // data.Role == nil || len(data.Role) == 0
 			err := fmt.Errorf("El usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
 			logs.Warn(err)
 			outputError = map[string]interface{}{
@@ -75,8 +78,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				"status":  "404",
 			}
 			return nil, outputError
-		} else {
-			return nil, err
 		}
 
 		// Averiguar si el usuario puede ver todas las actas en todos los estados
