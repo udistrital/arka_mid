@@ -657,12 +657,15 @@ definitions:
     title: AsignacionEspacioFisicoDependencia
     type: object
     properties:
+      Activo:
+        type: boolean
       DependenciaId:
         $ref: '#/definitions/models.Dependencia'
+      DocumentoSoporte:
+        type: integer
+        format: int64
       EspacioFisicoId:
         $ref: '#/definitions/models.EspacioFisico'
-      Estado:
-        type: string
       FechaFin:
         type: string
         format: datetime
@@ -803,6 +806,9 @@ definitions:
       Descuento:
         type: number
         format: double
+      EspacioFisicoId:
+        type: integer
+        format: int64
       EstadoElementoId:
         $ref: '#/definitions/models.EstadoElemento'
       FechaCreacion:
@@ -936,17 +942,29 @@ definitions:
     title: EspacioFisico
     type: object
     properties:
-      Codigo:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
         type: string
-      Estado:
+      FechaCreacion:
         type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64
       Nombre:
         type: string
+      TipoEdificacionId:
+        type: integer
+        format: int64
       TipoEspacio:
         $ref: '#/definitions/models.TipoEspacio'
+      TipoTerrenoId:
+        type: integer
+        format: int64
   models.Estado:
     title: Estado
     type: object
@@ -1285,6 +1303,16 @@ definitions:
     title: TipoEspacio
     type: object
     properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64
