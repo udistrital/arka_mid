@@ -957,6 +957,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				auxE.Verificado = elemento.Verificado
 				auxE.TipoBienId = elemento.TipoBienId
 				auxE.EstadoElementoId = elemento.EstadoElementoId
+				auxE.EspacioFisicoId = elemento.EspacioFisicoId
 				// SOPORTE
 				soporte = new(models.SoporteActaProveedor)
 
