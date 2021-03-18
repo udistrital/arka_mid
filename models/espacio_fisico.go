@@ -7,6 +7,8 @@ type EspacioFisico struct {
 	Nombre            string
 	CodigoAbreviacion string
 	Activo            bool
+	TipoTerrenoId     int
+	TipoEdificacionId int
 	TipoEspacio       *TipoEspacio
 	FechaCreacion     time.Time
 	FechaModificacion time.Time

@@ -20,6 +20,7 @@ type ElementosActa struct {
 	Verificado         bool                  `orm:"column(verificado)"`
 	TipoBienId         *TipoBien             `orm:"column(tipo_bien_id);rel(fk)"`
 	EstadoElementoId   *EstadoElemento       `orm:"column(estado_elemento_id);rel(fk)"`
+	EspacioFisicoId    int                   `orm:"column(espacio_fisico_id)"`
 	SoporteActaId      *SoporteActaProveedor `orm:"column(soporte_acta_id);rel(fk)"`
 	Placa              string                `orm:"column(placa);null"`
 	Activo             bool                  `orm:"column(activo)"`
