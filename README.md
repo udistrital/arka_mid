@@ -36,8 +36,7 @@ ARKA_MID_PORT=8080 ARKA_MID_PGURLS=127.0.0.1:27017 ARKA_MID_SOME_VARIABLE=some_v
 
 ### Ejecución Dockerfile
 ```shell
-# docker build --tag=arka_mid . --no-cache
-# docker run -p 80:80 arka_mid
+# Implementado para despliegue del Sistema de integración continua CI.
 ```
 
 ### Ejecución docker-compose
