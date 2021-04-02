@@ -414,6 +414,25 @@ paths:
             $ref: '#/definitions/models.ConsultaEntrada'
         "404":
           description: not found resource
+  /entrada/anular/{id}:
+    get:
+      tags:
+      - entrada
+      description: anular Entrada by id
+      operationId: EntradaController.Get User
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.ConsultaEntrada'
+        "404":
+          description: not found resource
   /entrada/encargado/{placa}:
     get:
       tags:
