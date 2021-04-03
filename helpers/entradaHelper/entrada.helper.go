@@ -405,6 +405,18 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 
 // AnularEntrada Anula una entrada y los movimientos posteriores a esta, el acta asociada queda en estado aceptada
 func AnularEntrada(movimientoId int) (response map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetEncargadoElemento - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud        string
 		res            map[string]interface{}
@@ -419,28 +431,28 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 	res = make(map[string]interface{})
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(movimientoId))
 	if _, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil { // Get movimiento de api movimientos_arka_crud
-		movimientoArka.EstadoMovimientoId.Id = 1
-		if err := request.SendJson(urlcrud, "PUT", &resArka, &movimientoArka); err == nil { // Put en el api movimientos_arka_crud
+		fmt.Println(movimientoArka.Id)
+		if movimientoArka.Id > 0 {
 
-			urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(int(movimientoId))
-			var data0 map[string]interface{}
-			if _, err := request.GetJsonTest(urlcrud, &data0); err == nil { // Get movimiento de api movimientos_crud
-				var data1 []models.MovimientoProcesoExterno
-				if jsonString1, err := json.Marshal(data0["Body"]); err == nil {
-					if err := json.Unmarshal(jsonString1, &data1); err == nil {
-						res["Movimiento"] = data0["Body"]
+			movimientoArka.EstadoMovimientoId.Id = 1
+			if err := request.SendJson(urlcrud, "PUT", &resArka, &movimientoArka); err == nil { // Put en el api movimientos_arka_crud
+				res["Movimiento"] = resArka
 
-						urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(int(data1[0].Id))
-						tipo := models.TipoMovimiento{Id: 34}
-						movimientosKronos := models.MovimientoProcesoExterno{
-							Id:                       data1[0].Id,
-							TipoMovimientoId:         &tipo,
-							ProcesoExterno:           data1[0].ProcesoExterno,
-							Activo:                   true,
-							MovimientoProcesoExterno: data1[0].MovimientoProcesoExterno,
-						}
-						if err = request.SendJson(urlcrud, "PUT", &resM, &movimientosKronos); err == nil { // Put api movimientos_crud
+				var data0 map[string]interface{}
+				urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(int(movimientoId))
+				if _, err := request.GetJsonTest(urlcrud, &data0); err == nil { // Get movimiento de api movimientos_crud
+					var data1 []models.MovimientoProcesoExterno
+					if jsonString1, err := json.Marshal(data0["Body"]); err == nil {
+						if err := json.Unmarshal(jsonString1, &data1); err == nil {
 
+							tipo := models.TipoMovimiento{Id: 34}
+							movimientosKronos := models.MovimientoProcesoExterno{
+								Id:                       data1[0].Id,
+								TipoMovimientoId:         &tipo,
+								ProcesoExterno:           data1[0].ProcesoExterno,
+								Activo:                   true,
+								MovimientoProcesoExterno: data1[0].MovimientoProcesoExterno,
+							}
 							urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(int(data1[0].Id))
 							if err = request.SendJson(urlcrud, "PUT", &resM, &movimientosKronos); err == nil { // Put api movimientos_crud
 								var detalleMovimiento map[string]interface{}
@@ -460,58 +472,58 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 													res["Salidas"] = resP
 												}
 											} else {
-												logs.Debug(err)
-												outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+												logs.Error(err)
+												outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 												return nil, outputError
 											}
 										} else {
-											logs.Debug(err)
-											outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+											logs.Error(err)
+											outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
 											return nil, outputError
 										}
 									} else {
-										logs.Debug(err)
-										outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+										logs.Error(err)
+										outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
 										return nil, outputError
 									}
 								} else {
-									logs.Debug(err)
-									outputError := map[string]interface{}{"Function": "AnularEntrada, Error interno", "Error": err}
+									logs.Error(err)
+									outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 									return nil, outputError
 								}
 							} else {
-								logs.Debug(err)
-								outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+								logs.Error(err)
+								outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
 								return nil, outputError
 							}
 						} else {
-							logs.Debug(err)
-							outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+							logs.Error(err)
+							outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 							return nil, outputError
 						}
 					} else {
-						logs.Debug(err)
-						outputError := map[string]interface{}{"Function": "AnularEntrada, Error interno", "Error": err}
+						logs.Error(err)
+						outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 						return nil, outputError
 					}
 				} else {
-					logs.Debug(err)
-					outputError := map[string]interface{}{"Function": "AnularEntrada, Error interno", "Error": err}
+					logs.Error(err)
+					outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
 					return nil, outputError
 				}
 			} else {
-				logs.Debug(err)
-				outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+				logs.Error(err)
+				outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.Movimiento(id);", "status": "502", "err": err}
 				return nil, outputError
 			}
 		} else {
-			logs.Debug(err)
-			outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+			logs.Error(err)
+			outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.Movimiento(id); El movimiento no existe", "status": "502", "err": err}
 			return nil, outputError
 		}
 	} else {
-		logs.Debug(err)
-		outputError := map[string]interface{}{"Function": "AnularEntrada", "Error": err}
+		logs.Error(err)
+		outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.Movimiento(id);", "status": "502", "err": err}
 		return nil, outputError
 	}
 	return res, nil

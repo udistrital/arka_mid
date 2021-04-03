@@ -141,15 +141,41 @@ func (c *EntradaController) GetEncargadoElemento() {
 // @Failure 404 not found resource
 // @router /anular/:id [get]
 func (c *EntradaController) AnularEntrada() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	v, err := entradaHelper.AnularEntrada(id)
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	if idStr != "" {
+		if v, err := entradaHelper.AnularEntrada(id); err == nil {
+			c.Data["json"] = v
+			c.Ctx.Output.SetStatus(200)
+		} else {
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "AnularEntrada",
+				"err":     err,
+				"status":  err["status"],
+			})
+		}
 	} else {
-		c.Data["json"] = v
+		panic(map[string]interface{}{
+			"funcion": "AnularEntrada",
+			"err":     "La entrada no puede ser nula",
+			"status":  "404",
+		})
 	}
 	c.ServeJSON()
 }
