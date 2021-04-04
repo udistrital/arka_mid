@@ -6,7 +6,7 @@ import (
 	_ "github.com/udistrital/arka_mid/routers"
 	"github.com/udistrital/auditoria"
 	apistatus "github.com/udistrital/utils_oas/apiStatusLib"
-	"github.com/udistrital/utils_oas/customerror"
+	"github.com/udistrital/utils_oas/customerrorv2"
 	// "github.com/udistrital/utils_oas/responseformat"
 )
 
@@ -28,7 +28,7 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
-	beego.ErrorController(&customerror.CustomErrorController{})
+	beego.ErrorController(&customerrorv2.CustomErrorController{})
 	apistatus.Init()
 	auditoria.InitMiddleware()
 	beego.Run()
