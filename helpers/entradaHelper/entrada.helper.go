@@ -418,82 +418,124 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 	}()
 
 	var (
-		urlcrud        string
-		res            map[string]interface{}
-		resArka        map[string]interface{}
-		resA           map[string]interface{}
-		resM           map[string]interface{}
-		movimientoArka models.Movimiento
-		resP           []models.Movimiento
-		actaRecibido   []models.TransaccionActaRecibido
+		urlcrud          string
+		res              map[string]interface{}
+		resArka          map[string]interface{}
+		resA             map[string]interface{}
+		resP             []models.Movimiento
+		resM             map[string]interface{}
+		movimientoArka   models.Movimiento
+		actaRecibido     []models.TransaccionActaRecibido
+		estadoMovimiento []models.EstadoMovimiento
+		tipoMovimiento   []models.TipoMovimiento
 	)
 
 	res = make(map[string]interface{})
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(movimientoId))
 	if _, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil { // Get movimiento de api movimientos_arka_crud
-		fmt.Println(movimientoArka.Id)
 		if movimientoArka.Id > 0 {
 
-			movimientoArka.EstadoMovimientoId.Id = 1
-			if err := request.SendJson(urlcrud, "PUT", &resArka, &movimientoArka); err == nil { // Put en el api movimientos_arka_crud
-				res["Movimiento"] = resArka
+			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Entrada%20Anulada"
+			if _, err := request.GetJsonTest(urlcrud, &estadoMovimiento); err == nil { // Get parametrización estado_movimiento de api movimientos_arka_crud
+				movimientoArka.EstadoMovimientoId.Id = estadoMovimiento[0].Id
 
-				var data0 map[string]interface{}
-				urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(int(movimientoId))
-				if _, err := request.GetJsonTest(urlcrud, &data0); err == nil { // Get movimiento de api movimientos_crud
-					var data1 []models.MovimientoProcesoExterno
-					if jsonString1, err := json.Marshal(data0["Body"]); err == nil {
-						if err := json.Unmarshal(jsonString1, &data1); err == nil {
+				urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(movimientoId))
+				if err := request.SendJson(urlcrud, "PUT", &resArka, &movimientoArka); err == nil { // Put en el api movimientos_arka_crud
+					res["Movimiento"] = resArka
+					var response map[string]interface{}
 
-							tipo := models.TipoMovimiento{Id: 34}
-							movimientosKronos := models.MovimientoProcesoExterno{
-								Id:                       data1[0].Id,
-								TipoMovimientoId:         &tipo,
-								ProcesoExterno:           data1[0].ProcesoExterno,
-								Activo:                   true,
-								MovimientoProcesoExterno: data1[0].MovimientoProcesoExterno,
-							}
-							urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(int(data1[0].Id))
-							if err = request.SendJson(urlcrud, "PUT", &resM, &movimientosKronos); err == nil { // Put api movimientos_crud
-								var detalleMovimiento map[string]interface{}
-								if err := json.Unmarshal([]byte(movimientoArka.Detalle), &detalleMovimiento); err == nil {
+					urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:Entrada%20Anulada"
+					if _, err := request.GetJsonTest(urlcrud, &response); err == nil { // Get parametrización tipo_movimiento de api movimientos_crud
+						if jsonString2, err := json.Marshal(response["Body"]); err == nil {
+							if err := json.Unmarshal(jsonString2, &tipoMovimiento); err == nil {
 
-									urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-									if err := request.GetJson(urlcrud, &actaRecibido); err == nil { // Get informacion acta de api acta_recibido_crud
-										actaRecibido[0].UltimoEstado.EstadoActaId.Id = 5
-										actaRecibido[0].UltimoEstado.Id = 0
-										if err = request.SendJson(urlcrud, "PUT", &resA, &actaRecibido[0]); err == nil { // Puesto que se anula la entrada, el acta debe quedar disponible para volver ser asociada a una entrada
-											res["Acta Recibido"] = resA
+								urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(int(movimientoId))
+								var data0 map[string]interface{}
+								if _, err := request.GetJsonTest(urlcrud, &data0); err == nil { // Get movimiento de api movimientos_crud
+									var data1 []models.MovimientoProcesoExterno
+									if jsonString1, err := json.Marshal(data0["Body"]); err == nil {
+										if err := json.Unmarshal(jsonString1, &data1); err == nil {
 
-											urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=EstadoMovimientoId__Id:3,MovimientoPadreId__Id:" + strconv.Itoa(int(movimientoId))
-											if _, err := request.GetJsonTest(urlcrud, &resP); err == nil { // Se determina si hay salidas que deban ser anuladas
-												if resP[0].Id > 0 {
-													// Cuando esté hecho el método para anular las salidas, agregarlo
-													res["Salidas"] = resP
+											tipo := models.TipoMovimiento{Id: tipoMovimiento[0].Id}
+											movimientosKronos := models.MovimientoProcesoExterno{
+												Id:                       data1[0].Id,
+												TipoMovimientoId:         &tipo,
+												ProcesoExterno:           data1[0].ProcesoExterno,
+												Activo:                   true,
+												MovimientoProcesoExterno: movimientoArka.FormatoTipoMovimientoId.Id,
+											}
+
+											urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(int(data1[0].Id))
+											if err = request.SendJson(urlcrud, "PUT", &resM, &movimientosKronos); err == nil { // Put api movimientos_crud
+												res["MovimientoKronos"] = movimientosKronos
+												var detalleMovimiento map[string]interface{}
+												if err := json.Unmarshal([]byte(movimientoArka.Detalle), &detalleMovimiento); err == nil {
+													var estadoActa []models.EstadoActa
+
+													urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_acta?query=Nombre:Aceptada"
+													if err := request.GetJson(urlcrud, &estadoActa); err == nil { // Get parametrización acta de api acta_recibido_crud
+
+														urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+														if err := request.GetJson(urlcrud, &actaRecibido); err == nil { // Get informacion acta de api acta_recibido_crud
+															actaRecibido[0].UltimoEstado.EstadoActaId.Id = estadoActa[0].Id
+															actaRecibido[0].UltimoEstado.Id = 0
+															if err = request.SendJson(urlcrud, "PUT", &resA, &actaRecibido[0]); err == nil { // Puesto que se anula la entrada, el acta debe quedar disponible para volver ser asociada a una entrada
+																res["Acta Recibido"] = resA
+
+																urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=EstadoMovimientoId__Id:3,MovimientoPadreId__Id:" + strconv.Itoa(int(movimientoId))
+																if _, err := request.GetJsonTest(urlcrud, &resP); err == nil { // Se determina si hay salidas que deban ser anuladas
+																	if resP[0].Id > 0 {
+																		// Cuando esté hecho el método para anular las salidas, agregarlo
+																		res["Salidas"] = resP
+																	}
+																} else {
+																	logs.Error(err)
+																	outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																	return nil, outputError
+																}
+															} else {
+																logs.Error(err)
+																outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
+																return nil, outputError
+															}
+														} else {
+															logs.Error(err)
+															outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
+															return nil, outputError
+														}
+													} else {
+														logs.Error(err)
+														outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.EstadoActa", "status": "502", "err": err}
+														return nil, outputError
+													}
+												} else {
+													logs.Error(err)
+													outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+													return nil, outputError
 												}
 											} else {
 												logs.Error(err)
-												outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+												outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
 												return nil, outputError
 											}
 										} else {
 											logs.Error(err)
-											outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
+											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 											return nil, outputError
 										}
 									} else {
 										logs.Error(err)
-										outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
+										outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 										return nil, outputError
 									}
 								} else {
 									logs.Error(err)
-									outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+									outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
 									return nil, outputError
 								}
 							} else {
 								logs.Error(err)
-								outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
+								outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 								return nil, outputError
 							}
 						} else {
@@ -503,17 +545,18 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 						}
 					} else {
 						logs.Error(err)
-						outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+						outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.TipoMovimiento", "status": "502", "err": err}
 						return nil, outputError
 					}
 				} else {
 					logs.Error(err)
-					outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
+					outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.Movimiento(id);", "status": "502", "err": err}
 					return nil, outputError
 				}
 			} else {
+				// fmt.Println("hier")
 				logs.Error(err)
-				outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.Movimiento(id);", "status": "502", "err": err}
+				outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.EstadoMovimiento", "status": "502", "err": err}
 				return nil, outputError
 			}
 		} else {
