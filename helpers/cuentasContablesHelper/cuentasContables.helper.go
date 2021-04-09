@@ -1,7 +1,6 @@
 package cuentasContablesHelper
 
 import (
-	"strconv"
 	"fmt"
 
 	"github.com/astaxie/beego"
@@ -12,12 +11,12 @@ import (
 )
 
 // GetCuentaContable ...
-func GetCuentaContable(cuentaContableId int) (cuentaContable map[string]interface{}, outputError map[string]interface{}) {
+func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]interface{}, outputError map[string]interface{}) {
 	var (
 		urlcrud string
 	)
 	fmt.Println(cuentaContableId)
-	urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + strconv.Itoa(cuentaContableId)
+	urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + cuentaContableId
 
 	if response, err := request.GetJsonTest(urlcrud, &cuentaContable); err == nil { // (2) error servicio caido
 		if response.StatusCode == 200 { // (3) error estado de la solicitud
