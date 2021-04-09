@@ -233,21 +233,39 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 }
 
-func GetElementosSinAsignar() (Elementos []map[string]interface{}, err error) {
+func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
 
-	fmt.Println("aaaaaaaaaaaaaaaaaaaaa")
-	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?query=MovimientoId.FormatoTipoMovimientoId.Id:9,Activo:true&limit=-1"
-	if _, err := request.GetJsonTest(url, &Elementos); err == nil {
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetElementosSinAsignar - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	// fmt.Println("aaaaaaaaaaaaaaaaaaaaa")
+	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?limit=-1"
+	url += "&query=Activo:true,MovimientoId.FormatoTipoMovimientoId.Id:9"
+	// logs.Debug("url:", url)
+	if res, err := request.GetJsonTest(url, &Elementos); err == nil && res.StatusCode == 200 {
 
 		if keys := len(Elementos[0]); keys != 0 {
 			for i, elemento := range Elementos {
 				var detalle []map[string]interface{}
-				url2 := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Id:" + fmt.Sprintf("%v", elemento["ElementoActaId"]) + "&fields=Id,Nombre,Marca,Serie,SubgrupoCatalogoId"
-				if _, err := request.GetJsonTest(url2, &detalle); err == nil {
+				url2 := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento"
+				url2 += "?query=Id:" + fmt.Sprintf("%v", elemento["ElementoActaId"])
+				url2 += "&fields=Id,Nombre,Marca,Serie,SubgrupoCatalogoId"
+				// logs.Debug("url2:", url2)
+				if res, err := request.GetJsonTest(url2, &detalle); err == nil && res.StatusCode == 200 {
 
 					var subgrupo []map[string]interface{}
-					url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo?query=Id:" + fmt.Sprintf("%v", detalle[0]["SubgrupoCatalogoId"])
-					if _, err := request.GetJsonTest(url3, &subgrupo); err == nil {
+					url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo"
+					url3 += "?query=Id:" + fmt.Sprintf("%v", detalle[0]["SubgrupoCatalogoId"])
+					// logs.Debug("url3:", url3)
+					if _, err := request.GetJsonTest(url3, &subgrupo); err == nil && res.StatusCode == 200 {
 
 						Elementos[i]["Nombre"] = detalle[0]["Nombre"]
 						Elementos[i]["Marca"] = detalle[0]["Marca"]
@@ -255,23 +273,45 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, err error) {
 						Elementos[i]["SubgrupoCatalogoId"] = subgrupo[0]
 
 					} else {
-						panic(err.Error())
-						return nil, err
+						if err == nil {
+							err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+						}
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "GetElementosSinAsignar - request.GetJsonTest(url3, &subgrupo)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				} else {
-					panic(err.Error())
-					return nil, err
+					if err == nil {
+						err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+					}
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "GetElementosSinAsignar - request.GetJsonTest(url2, &detalle)",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 			}
 
-			return Elementos, nil
-		} else {
-			return Elementos, nil
 		}
+		return Elementos, nil
 
 	} else {
-		panic(err.Error())
-		return nil, err
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetElementosSinAsignar - request.GetJsonTest(url, &Elementos)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 

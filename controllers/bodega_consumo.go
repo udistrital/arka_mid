@@ -80,11 +80,22 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 // @router /elementos_sin_asignar/ [get]
 func (c *BodegaConsumoController) GetElementos() {
 
-	v, err := bodegaConsumoHelper.GetElementosSinAsignar()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BodegaConsumoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
+	if v, err := bodegaConsumoHelper.GetElementosSinAsignar(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
