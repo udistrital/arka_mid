@@ -3,14 +3,13 @@ package bodegaConsumoHelper
 import (
 	"encoding/json"
 	"fmt"
-
-	// "strconv"
+	"strconv"
 	"strings"
-	// "reflect"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -20,7 +19,11 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetSolicitudById", "err": err, "status": "500"}
+			outputError = map[string]interface{}{
+				"funcion": "GetSolicitudById - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
 			panic(outputError)
 		}
 	}()
@@ -30,8 +33,12 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 
 	// url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + fmt.Sprintf("%v", id) + ""
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + fmt.Sprintf("%v", id) + ""
-	logs.Debug(url)
+	// logs.Debug(url)
 	if res, err := request.GetJsonTest(url, &solicitud_); err == nil && res.StatusCode == 200 {
+
+		// logs.Debug("solicitud_:")
+		// formatdata.JsonPrint(solicitud_)
+		// fmt.Println("")
 
 		// TO-DO: Arreglar el CRUD! No debería retornar un arreglo con un elemento vacío ([{}])
 		// Por máximo debería retornar el arreglo vacío! (sin el objeto vacío, [])
@@ -48,11 +55,11 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 		}
 
 		str := fmt.Sprintf("%v", solicitud_[0]["Detalle"])
-		logs.Debug(fmt.Sprintf("str: %s", str))
+		// logs.Debug(fmt.Sprintf("str: %s", str))
 		var data map[string]interface{}
 		if err := json.Unmarshal([]byte(str), &data); err == nil {
 
-			fmt.Println(data)
+			// logs.Debug("data:", data)
 			if tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data["Funcionario"])); err == nil {
 				solicitud_[0]["Funcionario"] = tercero
 			} else {
@@ -69,10 +76,11 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 				if err2 := json.Unmarshal(jsonString, &data_); err2 == nil {
 
 					for _, elementos := range data_ {
+						// logs.Debug("k:", k, "- elementos:", elementos)
 
 						if Elemento__, err := TraerElementoSolicitud(elementos); err == nil {
 							Elemento__["Cantidad"] = elementos["Cantidad"]
-							fmt.Println(elementos["CantidadAprobada"])
+							// fmt.Println(elementos["CantidadAprobada"])
 							if elementos["CantidadAprobada"] != nil {
 								Elemento__["CantidadAprobada"] = elementos["CantidadAprobada"]
 							} else {
@@ -80,14 +88,6 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 							}
 
 							elementos___ = append(elementos___, Elemento__)
-						} else {
-							logs.Error(err)
-							outputError = map[string]interface{}{
-								"funcion": "/GetSolicitudById - request.GetJsonTest(url, &solicitud_)",
-								"err":     err,
-								"status":  "502",
-							}
-							return nil, outputError
 						}
 					}
 					Solicitud = map[string]interface{}{
@@ -138,16 +138,41 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 	}
 }
 
-func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[string]interface{}, err error) {
+func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
 
-	urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + fmt.Sprintf("%v", Elemento["Ubicacion"])
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "TraerElementoSolicitud - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	var idStr int
+	if id, err := strconv.Atoi(fmt.Sprintf("%v", Elemento["Ubicacion"])); err == nil {
+		idStr = id
+	} else {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "TraerElementoSolicitud - strconv.Atoi(fmt.Sprintf(\"%v\", Elemento[\"Ubicacion\"]))",
+			"err":     err,
+			"status":  "400",
+		}
+		return nil, outputError
+	}
+
+	urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + strconv.Itoa(idStr)
+	// logs.Debug("urlcrud3:", urlcrud3)
 
 	var ubicacion []map[string]interface{}
 	var sede []map[string]interface{}
 
-	fmt.Println("elemento asdasdadasdfasd: ", Elemento)
+	// fmt.Println("elemento asdasdadasdfasd: ", Elemento)
 
-	if _, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil {
+	if res, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil && res.StatusCode == 200 {
 
 		ubicacion2 := ubicacion[0]["EspacioFisicoId"].(map[string]interface{})
 
@@ -155,14 +180,33 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 		urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
 
-		if _, err := request.GetJsonTest(urlcrud4, &sede); err == nil {
-			fmt.Println("Sede: ", sede)
-
-		} else {
-			panic(err.Error())
-			return nil, err
+		if res, err := request.GetJsonTest(urlcrud4, &sede); err != nil || res.StatusCode != 200 {
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "TraerElementoSolicitud - request.GetJsonTest(urlcrud4, &sede)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
-		if Elemento___, err := UltimoMovimientoKardex(fmt.Sprintf("%v", Elemento["ElementoActa"])); err == nil {
+
+		var idElemento int
+		if id, err := strconv.Atoi(fmt.Sprintf("%v", Elemento["ElementoActa"])); err == nil {
+			idElemento = id
+		} else {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "TraerElementoSolicitud - strconv.Atoi(fmt.Sprintf(\"%v\", Elemento[\"ElementoActa\"]))",
+				"err":     err,
+				"status":  "400",
+			}
+			return nil, outputError
+		}
+		// logs.Debug("elemActa:", elemActa)
+		if Elemento___, err := UltimoMovimientoKardex(idElemento); err == nil {
 
 			Elemento___["Sede"] = sede[0]
 			Elemento___["Dependencia"] = ubicacion[0]["DependenciaId"]
@@ -171,13 +215,20 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 			return Elemento___, nil
 
 		} else {
-			panic(err.Error())
 			return nil, err
 		}
 
 	} else {
-		panic(err.Error())
-		return nil, err
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "TraerElementoSolicitud - request.GetJsonTest(urlcrud3, &ubicacion)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 
 }
@@ -295,21 +346,39 @@ func GetAperturasKardex() (Elementos []map[string]interface{}, err error) {
 	}
 }
 
-func GetExistenciasKardex() (Elementos []map[string]interface{}, err error) {
+func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetExistenciasKardex - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	var Elementos___ []map[string]interface{}
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?query=MovimientoId.FormatoTipoMovimientoId.CodigoAbreviacion:AP_KDX,Activo:true&limit=-1&fields=ElementoCatalogoId"
-	if _, err := request.GetJsonTest(url, &Elementos___); err == nil {
-		fmt.Println("Elementos", Elementos___[0])
+	if res, err := request.GetJsonTest(url, &Elementos___); err == nil && res.StatusCode == 200 {
+		// fmt.Println("Elementos", Elementos___[0])
 
 		if keys := len(Elementos___[0]); keys != 0 {
 
 			for _, elemento := range Elementos___ {
 
-				if Elemento, err := UltimoMovimientoKardex(fmt.Sprintf("%v", elemento["ElementoCatalogoId"])); err == nil {
+				var idCatalogo int
+				if id, err := strconv.Atoi(fmt.Sprintf("%v", elemento["ElementoCatalogoId"])); err == nil {
+					idCatalogo = id
+				} else {
+					logs.Warn(err)
+					continue
+				}
+
+				if Elemento, err := UltimoMovimientoKardex(idCatalogo); err == nil {
 					Elementos = append(Elementos, Elemento)
 				} else {
-					panic(err.Error())
 					return nil, err
 				}
 			}
@@ -321,24 +390,58 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, err error) {
 		}
 
 	} else {
-		panic(err.Error())
-		return nil, err
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetExistenciasKardex - request.GetJsonTest(url, &Elementos___)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
 
-func UltimoMovimientoKardex(id_catalogo string) (Elemento_Movimiento map[string]interface{}, err error) {
+func UltimoMovimientoKardex(id_catalogo int) (Elemento_Movimiento map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "UltimoMovimientoKardex - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	if id_catalogo <= 0 {
+		err := fmt.Errorf("id MUST be > 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "UltimoMovimientoKardex - id_catalogo <= 0",
+			"err":     err,
+			"status":  "400",
+		}
+		return nil, outputError
+	}
+
+	idStr := strconv.Itoa(id_catalogo)
 
 	var elemento_catalogo []map[string]interface{}
 
-	fmt.Println("id asdasdadasdfasd: ", id_catalogo)
-	url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "elemento?query=Id:" + id_catalogo
-	if _, err := request.GetJsonTest(url3, &elemento_catalogo); err == nil {
+	// fmt.Println("id asdasdadasdfasd: ", id_catalogo)
+	url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "elemento?query=Id:" + idStr
+	// logs.Debug("url3:", url3)
+	if res, err := request.GetJsonTest(url3, &elemento_catalogo); err == nil && res.StatusCode == 200 {
 
-		fmt.Println(elemento_catalogo)
+		// fmt.Println(elemento_catalogo)
 		var ultimo_movimiento_kardex []map[string]interface{}
 		url4 := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?query=ElementoCatalogoId:" +
-			id_catalogo + ",Activo:true&limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor"
-		if _, err := request.GetJsonTest(url4, &ultimo_movimiento_kardex); err == nil {
+			idStr + ",Activo:true&limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor"
+		// logs.Debug("url4:", url4)
+		if res, err := request.GetJsonTest(url4, &ultimo_movimiento_kardex); err == nil && res.StatusCode == 200 {
 
 			Elemento := ultimo_movimiento_kardex[0]
 			Elemento["ElementoCatalogoId"] = elemento_catalogo[0]
@@ -347,12 +450,28 @@ func UltimoMovimientoKardex(id_catalogo string) (Elemento_Movimiento map[string]
 			return Elemento, nil
 
 		} else {
-			panic(err.Error())
-			return nil, err
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "UltimoMovimientoKardex - request.GetJsonTest(url4, &ultimo_movimiento_kardex)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 
 	} else {
-		panic(err.Error())
-		return nil, err
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "UltimoMovimientoKardex - request.GetJsonTest(url3, &elemento_catalogo)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 }
