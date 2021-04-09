@@ -258,6 +258,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 			subgruposCatalogoBuffer := make(map[int](map[string]interface{}))
 
 			for i, elemento := range Elementos {
+				void := true
 
 				var elementoActaId int
 				if v, err := strconv.Atoi(fmt.Sprintf("%v", elemento["ElementoActaId"])); err == nil && v > 0 {
@@ -286,6 +287,8 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 						Elementos[i]["Marca"] = detalle["Marca"]
 						Elementos[i]["Serie"] = detalle["Serie"]
 						Elementos[i]["SubgrupoCatalogoId"] = subgrupo
+
+						void = false
 					} else {
 						if err == nil {
 							logs.Warn(fmt.Errorf("no hay subgrupo_catalogo.Id=%d (CRUD catalogo) asociado al elemento.Id=%d (CRUD Actas)", subgrupoCatalogoId, elementoActaId))
@@ -302,7 +305,23 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 					}
 				}
 
+				if void {
+					Elementos[i] = nil
+				}
 			}
+
+			// Quitar elementos inconsistentes
+			fin := len(Elementos)
+			// logs.Debug("fin(antes):", fin)
+			for i := 0; i < fin; {
+				if Elementos[i] != nil {
+					i++
+				} else {
+					Elementos[i] = Elementos[fin-1]
+					fin--
+				}
+			}
+			// logs.Debug("fin(despues):", fin)
 
 		}
 		return Elementos, nil
