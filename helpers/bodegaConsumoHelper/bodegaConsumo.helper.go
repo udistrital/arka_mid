@@ -253,49 +253,55 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 	if res, err := request.GetJsonTest(url, &Elementos); err == nil && res.StatusCode == 200 {
 
 		if keys := len(Elementos[0]); keys != 0 {
+
+			elementosActaBuffer := make(map[int](map[string]interface{}))
+			subgruposCatalogoBuffer := make(map[int](map[string]interface{}))
+
 			for i, elemento := range Elementos {
-				var detalle []map[string]interface{}
-				url2 := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento"
-				url2 += "?query=Id:" + fmt.Sprintf("%v", elemento["ElementoActaId"])
-				url2 += "&fields=Id,Nombre,Marca,Serie,SubgrupoCatalogoId"
-				// logs.Debug("url2:", url2)
-				if res, err := request.GetJsonTest(url2, &detalle); err == nil && res.StatusCode == 200 {
 
-					var subgrupo []map[string]interface{}
-					url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo"
-					url3 += "?query=Id:" + fmt.Sprintf("%v", detalle[0]["SubgrupoCatalogoId"])
-					// logs.Debug("url3:", url3)
-					if _, err := request.GetJsonTest(url3, &subgrupo); err == nil && res.StatusCode == 200 {
+				var elementoActaId int
+				if v, err := strconv.Atoi(fmt.Sprintf("%v", elemento["ElementoActaId"])); err == nil && v > 0 {
+					elementoActaId = v
+				} else {
+					err = fmt.Errorf("ElementoActaId='%v', erroneo para 'elementos_movimiento.Id=%v'", elemento["ElementoActaId"], elemento["Id"])
+					logs.Warn(err)
+					// TODO: revisar si esto es suficiente
+					continue
+				}
 
-						Elementos[i]["Nombre"] = detalle[0]["Nombre"]
-						Elementos[i]["Marca"] = detalle[0]["Marca"]
-						Elementos[i]["Serie"] = detalle[0]["Serie"]
-						Elementos[i]["SubgrupoCatalogoId"] = subgrupo[0]
+				if detalle, err := bufferElementoActa(elementoActaId, elementosActaBuffer); err == nil && detalle != nil {
 
+					var subgrupoCatalogoId int
+					if v, err := strconv.Atoi(fmt.Sprintf("%v", detalle["SubgrupoCatalogoId"])); err == nil && v > 0 {
+						subgrupoCatalogoId = v
+					} else {
+						err = fmt.Errorf("SubgrupoCatalogoId='%v', erroneo para 'elemento(Acta).Id=%d'", detalle["SubgrupoCatalogoId"], elementoActaId)
+						logs.Warn(err)
+						// TODO: revisar si esto es suficiente
+						continue
+					}
+
+					if subgrupo, err := bufferSubgrupoCatalogo(subgrupoCatalogoId, subgruposCatalogoBuffer); err == nil && subgrupo != nil {
+						Elementos[i]["Nombre"] = detalle["Nombre"]
+						Elementos[i]["Marca"] = detalle["Marca"]
+						Elementos[i]["Serie"] = detalle["Serie"]
+						Elementos[i]["SubgrupoCatalogoId"] = subgrupo
 					} else {
 						if err == nil {
-							err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+							logs.Warn(fmt.Errorf("no hay subgrupo_catalogo.Id=%d (CRUD catalogo) asociado al elemento.Id=%d (CRUD Actas)", subgrupoCatalogoId, elementoActaId))
+						} else {
+							logs.Warn(err)
 						}
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "GetElementosSinAsignar - request.GetJsonTest(url3, &subgrupo)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
 					}
+
 				} else {
 					if err == nil {
-						err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+						logs.Warn(fmt.Errorf("no hay elemento.Id=%d (CRUD Actas) asociado al elemento.Id=%v (CRUD movimientos_arka)", elementoActaId, elemento["Id"]))
+					} else {
+						logs.Warn(err)
 					}
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "GetElementosSinAsignar - request.GetJsonTest(url2, &detalle)",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
 				}
+
 			}
 
 		}
