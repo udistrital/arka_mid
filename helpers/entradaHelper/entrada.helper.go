@@ -379,9 +379,7 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 					aux = map[string]interface{}{"Id": idtercero, "NombreCompleto": nombrecompleto}
 					return aux, nil
 				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - tercerosHelper.GetNombreTerceroById(idtercero)", "status": "502", "err": err}
-					return nil, outputError
+					return nil, err
 				}
 			} else {
 				logs.Error(err)

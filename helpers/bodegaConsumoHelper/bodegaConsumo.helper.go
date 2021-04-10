@@ -63,13 +63,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 			if tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data["Funcionario"])); err == nil {
 				solicitud_[0]["Funcionario"] = tercero
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetSolicitudById - tercerosHelper.GetNombreTerceroById(fmt.Sprintf(\"%v\", data[\"Funcionario\"]))",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
+				return nil, err
 			}
 			var data_ []map[string]interface{}
 			if jsonString, err := json.Marshal(data["Elementos"]); err == nil {
