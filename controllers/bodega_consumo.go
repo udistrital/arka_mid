@@ -110,11 +110,22 @@ func (c *BodegaConsumoController) GetElementos() {
 // @router /aperturas_kardex/ [get]
 func (c *BodegaConsumoController) GetAperturasKardex() {
 
-	v, err := bodegaConsumoHelper.GetAperturasKardex()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BodegaConsumoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
+	if v, err := bodegaConsumoHelper.GetAperturasKardex(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
