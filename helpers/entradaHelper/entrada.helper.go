@@ -411,7 +411,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "GetEncargadoElemento - Unhandled Error!",
+				"funcion": "Anular entrada - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
