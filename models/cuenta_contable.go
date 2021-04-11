@@ -11,3 +11,10 @@ type CuentaContable struct {
 	Codigo             string
 	NivelClasificacion *NivelClasificacion
 }
+
+type TipoComprobanteContable struct {
+	Id            int
+	Activo        bool
+	Codigo        string
+	TipoDocumento string
+}
