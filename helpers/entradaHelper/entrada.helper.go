@@ -528,7 +528,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																							}
 
 																							year, _, _ := time.Now().Date()
-																							postConsecutivo := Consecutivo{0, 2, year, 0, "Ajustes", true}
+																							postConsecutivo := Consecutivo{0, 199, year, 0, "Ajustes Arka", true}
 																							urlcrud = "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
 																							if err = request.SendJson(urlcrud, "POST", &resMap, &postConsecutivo); err == nil {
 																								if consecutivoId, err = strconv.Atoi(fmt.Sprint(resMap["Data"].(map[string]interface{})["Id"])); err == nil {
