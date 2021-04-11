@@ -637,12 +637,8 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																												if resMovmientoContable.(map[string]interface{})["Status"] == "201" {
 																													res["Respuesta movimientos contables Entradas"] = resMovmientoContable
 
-																													// urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=EstadoMovimientoId__Id:3,MovimientoPadreId__Id:" + strconv.Itoa(int(movimientoId))
-																													// if _, err := request.GetJsonTest(urlcrud, &resMap); err == nil { // Se determina si hay salidas que deban ser anuladas
-																													// 	// if resP[0].Id > 0 {
-																													// 	// 	// Cuando esté hecho el método para anular las salidas, agregarlo
-																													// 	// 	res["Salidas"] = resP
-																													// 	// } else {
+																													// Anulación de salidas asociadas
+																													// Si el estado de movimientoArka es Entrada Asociada a una salida, continuar con la anulación de las salidas
 
 																													consecutivoAjuste := "H20-" + fmt.Sprintf("%05d", consecutivo) + "-" + strconv.Itoa(year)
 																													detalleMovimiento["consecutivo_ajuste"] = consecutivoAjuste
@@ -681,12 +677,6 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																														outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 																														return nil, outputError
 																													}
-																													// }
-																													// } else {
-																													// 	logs.Error(err)
-																													// 	outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
-																													// 	return nil, outputError
-																													// }
 																												} else {
 																													res["Respuesta movimientos contables Entradas"] = resMovmientoContable.(map[string]interface{})["Data"]
 																													outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosContablesMid.postTransaccion;", "status": "502", "err": resMovmientoContable.(map[string]interface{})["Data"]}
@@ -703,6 +693,10 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 																											return nil, outputError
 																										}
+																									} else {
+																										logs.Error(err)
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																										return nil, outputError
 																									}
 																								} else {
 																									logs.Error(err)
