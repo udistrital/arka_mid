@@ -42,7 +42,7 @@ func GetCatalogoById(catalogoId int) (catalogo *[]map[string]interface{}, output
 func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []map[string]interface{}, outputError map[string]interface{}) {
 
 	var urlcrud string
-	var cuentasSubgrupo []*models.CuentasGrupo
+	var cuentasSubgrupo []*models.CuentaSubgrupo
 	var cuentaCredito map[string]interface{}
 	var cuentaDebito map[string]interface{}
 
@@ -55,7 +55,6 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []m
 				for _, cuenta := range cuentasSubgrupo {
 					cuentaCredito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
 					cuentaDebito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaDebitoId)
-					
 
 					cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{
 						"Id":                  cuenta.Id,
