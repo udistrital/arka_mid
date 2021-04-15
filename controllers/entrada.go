@@ -204,7 +204,6 @@ func (c *EntradaController) GetMovimientos() {
 
 	idStr := c.Ctx.Input.Param(":acta_recibido_id")
 	actaId, _ := strconv.Atoi(idStr)
-	fmt.Println(actaId > 0)
 	if actaId > 0 {
 		if v, err := entradaHelper.GetMovimientosByActa(actaId); err == nil {
 			c.Data["json"] = v
