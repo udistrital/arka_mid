@@ -812,11 +812,37 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 // GetAsignacionSedeDependencia ...
 func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetAsignacionSedeDependencia - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	if Datos.Sede == nil {
+		err := fmt.Errorf("Sede no especificada")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAsignacionSedeDependencia - Datos.Sede == nil",
+			"err":     err,
+			"status":  "400",
+		}
+		return nil, outputError
+	}
+
 	var Ubicaciones []map[string]interface{}
 	var Parametros2 []map[string]interface{}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+
-		"asignacion_espacio_fisico_dependencia?query=DependenciaId.Id:"+strconv.Itoa(Datos.Dependencia.Id)+
-		"&limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
+	// logs.Debug("Datos:")
+	// formatdata.JsonPrint(Datos)
+	// fmt.Println("")
+	oikosUrl := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?limit=-1"
+	oikosUrl += "&query=DependenciaId.Id:" + strconv.Itoa(Datos.Dependencia.Id)
+	// logs.Debug("oikosUrl:", oikosUrl)
+	if resp, err := request.GetJsonTest(oikosUrl, &Ubicaciones); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
 		for _, relacion := range Ubicaciones {
 			var data map[string]interface{}
 			if jsonString, err := json.Marshal(relacion["EspacioFisicoId"]); err == nil {
@@ -837,13 +863,21 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 					})
 
 				} else {
-					logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
-					outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err2}
+					logs.Error(err2)
+					outputError = map[string]interface{}{
+						"funcion": "GetAsignacionSedeDependencia - json.Unmarshal(jsonString, &data)",
+						"err":     err2,
+						"status":  "500",
+					}
 					return nil, outputError
 				}
 			} else {
-				logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
-				outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err}
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetAsignacionSedeDependencia - json.Marshal(relacion[\"EspacioFisicoId\"])",
+					"err":     err,
+					"status":  "500",
+				}
 				return nil, outputError
 			}
 		}
@@ -851,8 +885,15 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 		return Parametros, nil
 
 	} else {
-		logs.Info("Error asignacion_espacio_fisico_dependencia servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAsignacionSedeDependencia", "Error": err}
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAsignacionSedeDependencia - request.GetJsonTest(oikosUrl, &Ubicaciones)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
