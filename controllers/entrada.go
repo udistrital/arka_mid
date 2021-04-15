@@ -221,7 +221,7 @@ func (c *EntradaController) GetMovimientos() {
 		logs.Error(err)
 		panic(map[string]interface{}{
 			"funcion": "GetMovimientosByActa",
-			"err":     "El acta no es válida",
+			"err":     err,
 			"status":  "404",
 		})
 	}

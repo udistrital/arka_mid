@@ -867,9 +867,7 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 							if salidaCompleta, err := salidaHelper.TraerDetalle(salida); err == nil {
 								salidas[i] = salidaCompleta
 							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{"funcion": "TraerDetalle - movimientosArka.Movimiento(id);", "status": "502", "err": err}
-								return nil, outputError
+								return nil, err
 							}
 
 						}
