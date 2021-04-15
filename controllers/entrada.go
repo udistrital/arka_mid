@@ -31,20 +31,43 @@ func (c *EntradaController) URLMapping() {
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if respuesta := entradaHelper.AddEntrada(v); respuesta != nil {
+		if respuesta, err := entradaHelper.AddEntrada(v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {
-			c.Data["system"] = respuesta
-			c.Abort("400")
+			if err == nil {
+				panic(map[string]interface{}{
+					"funcion": "Post - entradaHelper.AddEntrada(v)",
+					"err":     err,
+					"status":  "400",
+				})
+			}
+			panic(err)
 		}
 	} else {
 		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("400")
+		panic(map[string]interface{}{
+			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
 	}
 	c.ServeJSON()
 }
@@ -78,12 +101,23 @@ func (c *EntradaController) GetEntrada() {
 // @Failure 404 not found resource
 // @router / [get]
 func (c *EntradaController) GetEntradas() {
-	v, err := entradaHelper.GetEntradas()
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	if v, err := entradaHelper.GetEntradas(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
