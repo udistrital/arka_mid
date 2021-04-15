@@ -1,8 +1,8 @@
 package tercerosHelper
 
 import (
-	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -12,33 +12,72 @@ import (
 )
 
 //GetNombreTerceroById trae el nombre de un encargado por su id
-func GetNombreTerceroById(idTercero string) (tercero map[string]interface{}, err error) {
-	var urltercero string
+func GetNombreTerceroById(idTercero string) (tercero map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetNombreTerceroById - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	if v, err := strconv.Atoi(idTercero); err != nil || v <= 0 {
+		err := fmt.Errorf("ID MUST be an integer > 0 - Got:%s", idTercero)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetNombreTerceroById - len(personas) != 1 || len(personas[0])",
+			"err":     err,
+			"status":  "400",
+		}
+		return nil, outputError
+	}
+
 	var personas []map[string]interface{}
 
-	urltercero = "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=TerceroId__Id:" + idTercero + ",Activo:true"
+	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
+	urltercero += "?query=Activo:true,TerceroId__Id:" + idTercero
+	// logs.Debug("urltercero:", urltercero)
 	if resp, err := request.GetJsonTest(urltercero, &personas); err == nil && resp.StatusCode == 200 {
-		for _, element := range personas {
-			if len(element) == 0 {
-				return nil, errors.New("No se encontro registro")
+
+		if len(personas) != 1 || len(personas[0]) == 0 {
+			var status string
+			if len(personas) > 1 {
+				err = fmt.Errorf("Hay más de un documento para Tercero.Id=%s", idTercero)
+				status = "409"
 			} else {
-				// fmt.Println("encargado: ", element)
-				return map[string]interface{}{
-					"Id":             element["TerceroId"].(map[string]interface{})["Id"],
-					"Numero":         element["Numero"],
-					"NombreCompleto": element["TerceroId"].(map[string]interface{})["NombreCompleto"],
-				}, nil
+				err = fmt.Errorf("No se encontró el Tercero.Id=%s y/o un documento asociado", idTercero)
+				status = "404"
 			}
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetNombreTerceroById - len(personas) != 1 || len(personas[0])",
+				"err":     err,
+				"status":  status,
+			}
+			return nil, outputError
 		}
+
+		return map[string]interface{}{
+			"Id":             personas[0]["TerceroId"].(map[string]interface{})["Id"],
+			"Numero":         personas[0]["Numero"],
+			"NombreCompleto": personas[0]["TerceroId"].(map[string]interface{})["NombreCompleto"],
+		}, nil
 	} else {
 		if err == nil {
 			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
 		}
 		logs.Error(err)
-		return nil, err
+		outputError = map[string]interface{}{
+			"funcion": "GetNombreTerceroById - request.GetJsonTest(urltercero, &personas)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
-	return
-
 }
 
 // GetTerceroByUsuarioWSO2 trae la información de un tercero a partir de su UsuarioWSO2
