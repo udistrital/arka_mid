@@ -184,13 +184,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
 				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllSolicitudes",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -200,13 +194,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 								Tercero_ = Tercero
 								Terceros = append(Terceros, Tercero)
 							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllSolicitudes",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+								return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
@@ -225,13 +213,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 						Tercero_ = Tercero
 						Terceros = append(Terceros, Tercero)
 					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						return nil, err
 					}
 				}
 			}
@@ -241,13 +223,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 					Revisor_ = Tercero
 					Terceros = append(Terceros, Tercero)
 				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllSolicitudes",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -257,13 +233,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 								Revisor_ = Tercero
 								Terceros = append(Terceros, Tercero)
 							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllSolicitudes",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+								return nil, err
 							}
 						} else {
 							Revisor_ = Tercero
@@ -282,13 +252,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 						Revisor_ = Tercero
 						Terceros = append(Terceros, Tercero)
 					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						return nil, err
 					}
 				}
 			}
@@ -471,22 +435,10 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 							return nil, outputError
 						}
 					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/TraerDetalle",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						return nil, err
 					}
 				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/TraerDetalle",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					return nil, err
 				}
 			} else {
 				logs.Error(err)

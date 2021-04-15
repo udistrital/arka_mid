@@ -31,20 +31,43 @@ func (c *EntradaController) URLMapping() {
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if respuesta := entradaHelper.AddEntrada(v); respuesta != nil {
+		if respuesta, err := entradaHelper.AddEntrada(v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {
-			c.Data["system"] = respuesta
-			c.Abort("400")
+			if err == nil {
+				panic(map[string]interface{}{
+					"funcion": "Post - entradaHelper.AddEntrada(v)",
+					"err":     err,
+					"status":  "400",
+				})
+			}
+			panic(err)
 		}
 	} else {
 		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("400")
+		panic(map[string]interface{}{
+			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
 	}
 	c.ServeJSON()
 }
@@ -78,12 +101,23 @@ func (c *EntradaController) GetEntrada() {
 // @Failure 404 not found resource
 // @router / [get]
 func (c *EntradaController) GetEntradas() {
-	v, err := entradaHelper.GetEntradas()
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	if v, err := entradaHelper.GetEntradas(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
@@ -129,6 +163,101 @@ func (c *EntradaController) GetEncargadoElemento() {
 		c.Ctx.Output.SetStatus(200)
 	} else {
 		panic(err)
+	}
+	c.ServeJSON()
+}
+
+// AnularEntrada ...
+// @Title Get User
+// @Description anular Entrada by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.ConsultaEntrada
+// @Failure 404 not found resource
+// @router /anular/:id [get]
+func (c *EntradaController) AnularEntrada() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	idStr := c.Ctx.Input.Param(":id")
+	id, _ := strconv.Atoi(idStr)
+	if idStr != "" {
+		if v, err := entradaHelper.AnularEntrada(id); err == nil {
+			c.Data["json"] = v
+			c.Ctx.Output.SetStatus(200)
+		} else {
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "AnularEntrada",
+				"err":     err,
+				"status":  err["status"],
+			})
+		}
+	} else {
+		panic(map[string]interface{}{
+			"funcion": "AnularEntrada",
+			"err":     "La entrada no puede ser nula",
+			"status":  "404",
+		})
+	}
+	c.ServeJSON()
+}
+
+// GetMovimientos ...
+// @Title Get User
+// @Description return movimientos asociados a un acta
+// @Param	acta_recibido_id		path 	string	true		"The key for staticblock"
+// @Success 200 {object]
+// @Failure 404 not found resource
+// @router /movimientos/:acta_recibido_id [get]
+func (c *EntradaController) GetMovimientos() {
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	idStr := c.Ctx.Input.Param(":acta_recibido_id")
+	actaId, _ := strconv.Atoi(idStr)
+	if actaId > 0 {
+		if v, err := entradaHelper.GetMovimientosByActa(actaId); err == nil {
+			c.Data["json"] = v
+			c.Ctx.Output.SetStatus(200)
+		} else {
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "GetMovimientosByActa",
+				"err":     err,
+				"status":  err["status"],
+			})
+		}
+	} else {
+		err := fmt.Errorf("{acta} no debe ser vacia")
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "GetMovimientosByActa",
+			"err":     err,
+			"status":  "404",
+		})
 	}
 	c.ServeJSON()
 }

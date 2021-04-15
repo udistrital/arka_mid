@@ -30,14 +30,25 @@ func (c *TercerosController) URLMapping() {
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *TercerosController) GetOne() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500")
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	//id, _ := strconv.Atoi(idStr)
-	v, err := tercerosHelper.GetNombreTerceroById(idStr)
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+
+	if v, err := tercerosHelper.GetNombreTerceroById(idStr); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}

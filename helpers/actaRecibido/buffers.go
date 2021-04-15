@@ -45,12 +45,7 @@ func findAndAddTercero(TerceroID int, Terceros map[int](map[string]interface{}),
 		}
 		return Tercero, nil
 	} else {
-		logs.Error(err)
-		return nil, map[string]interface{}{
-			"funcion": "findAndAddTercero",
-			"err":     err,
-			"status":  "502",
-		}
+		return nil, err
 	}
 }
 

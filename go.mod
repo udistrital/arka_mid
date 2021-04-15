@@ -12,6 +12,6 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/tealeg/xlsx v1.0.5
 	github.com/udistrital/auditoria v0.0.0-20200115201815-9680ae9c2515
-	github.com/udistrital/utils_oas v0.0.0-20191109214056-11e30cddc4f9
+	github.com/udistrital/utils_oas v0.0.0-20201230194626-bf49441f7130
 	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
 )
