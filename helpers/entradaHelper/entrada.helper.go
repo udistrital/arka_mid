@@ -28,7 +28,19 @@ type Consecutivo struct {
 }
 
 // AddEntrada Transacción para registrar la información de una entrada
-func AddEntrada(data models.Movimiento) map[string]interface{} {
+func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "AddEntrada - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud      string
 		res          map[string]interface{}
@@ -54,12 +66,22 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 		detalleJSON["consecutivo"] = vconsecutivo
 	} else {
 		logs.Error(err)
-		panic(err.Error())
+		outputError = map[string]interface{}{
+			"funcion": "AddEntrada - request.SendJson(apiCons, \"POST\", &res, &consec)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 	var jsonData []byte
 	jsonData, err1 := json.Marshal(detalleJSON)
 	if err1 != nil {
 		logs.Error(err1)
+		outputError = map[string]interface{}{
+			"funcion": "AddEntrada - json.Marshal(detalleJSON)",
+			"err":     err1,
+			"status":  "500",
+		}
 		panic(err1.Error())
 	}
 	data.Detalle = string(jsonData[:])
@@ -96,10 +118,22 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 									if err := json.Unmarshal(jsonString, &formatoArka); err == nil {
 										idMovArka = int(formatoArka["Id"].(float64))
 									} else {
-										panic(err.Error())
+										logs.Error(err)
+										outputError = map[string]interface{}{
+											"funcion": "AddEntrada - json.Unmarshal(jsonString, &formatoArka)",
+											"err":     err,
+											"status":  "500",
+										}
+										return nil, outputError
 									}
 								} else {
-									panic(err.Error())
+									logs.Error(err)
+									outputError = map[string]interface{}{
+										"funcion": "AddEntrada - json.Marshal(res[\"FormatoTipoMovimientoId\"])",
+										"err":     err,
+										"status":  "500",
+									}
+									return nil, outputError
 								}
 
 								tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
@@ -113,27 +147,69 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 								if err = request.SendJson(urlcrud, "PUT", &resM, &movimientosKronos); err == nil {
 									resultado = resM
 								} else {
-									panic(err.Error())
+									logs.Error(err)
+									outputError = map[string]interface{}{
+										"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &resM, &movimientosKronos)",
+										"err":     err,
+										"status":  "502",
+									}
+									return nil, outputError
 								}
 							} else {
-								panic(err.Error())
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "AddEntrada - json.Unmarshal(jsonString1, &data3)",
+									"err":     err,
+									"status":  "500",
+								}
+								return nil, outputError
 							}
 						} else {
-							panic(err.Error())
+							logs.Error(err)
+							outputError = map[string]interface{}{
+								"funcion": "AddEntrada - json.Marshal(data2)",
+								"err":     err,
+								"status":  "500",
+							}
+							return nil, outputError
 						}
 					} else {
-						panic(err.Error())
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "AddEntrada - json.Unmarshal(jsonString, &data1)",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 				} else {
-					panic(err.Error())
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "AddEntrada - json.Marshal(data0)",
+						"err":     err,
+						"status":  "500",
+					}
+					return nil, outputError
 				}
 			} else {
-				panic(err.Error())
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "AddEntrada - request.GetJsonTest(urlcrud, &data0)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 		} else {
-			panic(err.Error())
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &res, &data)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
-		return resultado
+		return resultado, nil
 
 	} else { // Si desde el cliente NO se envía el id del movimiento, se hace el POST
 		fmt.Println("Registrar entrada")
@@ -161,7 +237,13 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 					}
 
 					if err = request.SendJson(urlcrud, "POST", &resS, &soporteMovimiento); err != nil {
-						panic(err.Error())
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "AddEntrada - request.SendJson(urlcrud, \"POST\", &resS, &soporteMovimiento)",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				}
 
@@ -175,11 +257,23 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 
 				if jsonString, err := json.Marshal(res["FormatoTipoMovimientoId"]); err == nil {
 					if err := json.Unmarshal(jsonString, &formatoArka); err != nil {
-						panic(err.Error())
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "AddEntrada - json.Unmarshal(jsonString, &formatoArka)",
+							"err":     err,
+							"status":  "500",
+						}
+						return nil, outputError
 					}
 					idMovArka = int(formatoArka["Id"].(float64))
 				} else {
-					panic(err.Error())
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "AddEntrada - json.Marshal(res[\"FormatoTipoMovimientoId\"])",
+						"err":     err,
+						"status":  "500",
+					}
+					return nil, outputError
 				}
 
 				tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
@@ -201,22 +295,46 @@ func AddEntrada(data models.Movimiento) map[string]interface{} {
 						body["Acta"] = resA
 						resultado = body
 					} else {
-						panic(err.Error())
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &resA, &actaRecibido[0])",
+							"err":     err,
+							"status":  "502",
+						}
+						return nil, outputError
 					}
 				} else {
-					panic(err.Error())
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "AddEntrada - request.SendJson(urlcrud, \"POST\", &resM, &movimientosKronos)",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
 				}
 
 			} else {
-				panic(err.Error())
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "AddEntrada - request.SendJson(urlcrud, \"POST\", &res, &data)",
+					"err":     err,
+					"status":  "502",
+				}
+				return nil, outputError
 			}
 
 		} else {
-			panic(err.Error())
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AddEntrada - request.GetJson(urlcrud+strconv.Itoa(int(actaRecibidoId)), &actaRecibido)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
 	}
 
-	return resultado
+	return resultado, nil
 }
 
 // GetEntrada ...
@@ -274,6 +392,18 @@ func GetEntrada(entradaId int) (consultaEntrada map[string]interface{}, outputEr
 
 // GetEntradas
 func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetEntradas - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud                  string
 		tipoMovimiento           map[string]interface{}
@@ -305,21 +435,20 @@ func GetEntradas() (consultaEntradas []map[string]interface{}, outputError map[s
 			var movimientoArka map[string]interface{}
 			var aux map[string]interface{}
 
-			if response, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil { // (2) error servicio caido
+			if response, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil && response.StatusCode == 200 {
 
-				if response.StatusCode == 200 { // (3) error estado de la solicitud
-					aux = make(map[string]interface{})
-					aux = map[string]interface{}{"TipoMovimiento": tipoMovimientoEspecifico[contador], "Movimiento": movimientoArka}
-					consultaEntradas = append(consultaEntradas, aux)
-					//logs.Info(movimientoArka)
-				} else {
-					logs.Info("Error (3) estado de la solicitud")
-					outputError = map[string]interface{}{"Function": "GetEntrada:GetEntrada", "Error": response.Status}
-				}
+				aux = map[string]interface{}{"TipoMovimiento": tipoMovimientoEspecifico[contador], "Movimiento": movimientoArka}
+				consultaEntradas = append(consultaEntradas, aux)
 			} else {
-				logs.Info("Error (2) servicio caido")
-				logs.Debug(err)
-				outputError = map[string]interface{}{"Function": "GetEntrada", "Error": err}
+				if err == nil {
+					err = fmt.Errorf("Error (3) estado de la solicitud: %d", response.StatusCode)
+				}
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetEntrada",
+					"err":     err,
+					"status":  "502",
+				}
 			}
 			contador++
 		}
