@@ -68,6 +68,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 	// logs.Debug("parametroContratistaID:", parametroContratistaID)
 
 	// PARTE 2. Traer los terceros que tengan los ID anteriores en la tabla vinculacion
+	tercerosMap := make(map[int](map[string]interface{}))
 	for _, paramID := range parametroContratistaID {
 		var vinculaciones []models.Vinculacion
 		urlTerceros := "http://" + beego.AppConfig.String("tercerosService") + "vinculacion?limit=-1"
@@ -86,25 +87,18 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 			// Lo siguiente es para que no se vuelva a agregar un tercero
 			// cuando el tercero tenga más de una vinculación
 			for _, vincul := range vinculaciones {
-				add := true
-				for _, tercero := range terceros {
-					var test models.Tercero
-					if err := mapstructure.Decode(tercero["Tercero"], &test); err == nil && vincul.TerceroPrincipalId.Id == test.Id {
-						add = false
-						break
-					}
+				if _, found := tercerosMap[vincul.TerceroPrincipalId.Id]; found {
+					continue
 				}
-				if add {
-					terceroRecortado := map[string]interface{}{
-						"Id":             vincul.TerceroPrincipalId.Id,
-						"NombreCompleto": vincul.TerceroPrincipalId.NombreCompleto,
-						// "UsuarioWSO2":    vincul.TerceroPrincipalId.UsuarioWSO2,
-					}
-					terceros = append(terceros, map[string]interface{}{
-						// "Tercero": vincul.TerceroPrincipalId,
-						"Tercero": terceroRecortado,
-						// "TipoVinculacion":  vincul.TipoVinculacionId,
-					})
+				terceroRecortado := map[string]interface{}{
+					"Id":             vincul.TerceroPrincipalId.Id,
+					"NombreCompleto": vincul.TerceroPrincipalId.NombreCompleto,
+					// "UsuarioWSO2":    vincul.TerceroPrincipalId.UsuarioWSO2,
+				}
+				tercerosMap[vincul.TerceroPrincipalId.Id] = map[string]interface{}{
+					// "Tercero": vincul.TerceroPrincipalId,
+					"Tercero": terceroRecortado,
+					// "TipoVinculacion":  vincul.TipoVinculacionId,
 				}
 			}
 
@@ -119,6 +113,10 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 				"status":  "502",
 			}
 			return nil, outputError
+		}
+
+		for _, tercero := range tercerosMap {
+			terceros = append(terceros, tercero)
 		}
 	}
 	// logs.Debug("terceros:", terceros)
