@@ -88,7 +88,8 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 			for _, vincul := range vinculaciones {
 				add := true
 				for _, tercero := range terceros {
-					if mTercero, ok := tercero["Tercero"].(*models.Tercero); ok && vincul.TerceroPrincipalId.Id == mTercero.Id {
+					var test models.Tercero
+					if err := mapstructure.Decode(tercero["Tercero"], &test); err == nil && vincul.TerceroPrincipalId.Id == test.Id {
 						add = false
 						break
 					}
