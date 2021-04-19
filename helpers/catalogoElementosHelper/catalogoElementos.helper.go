@@ -63,19 +63,18 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []m
 	}
 
 	var cuentasSubgrupo []*models.CuentaSubgrupo
-	var cuentaCredito map[string]interface{}
-	var cuentaDebito map[string]interface{}
 
 	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?limit=-1"
 	urlcrud += "&query=Activo:True,SubgrupoId.Id:" + strconv.Itoa(int(subgrupoId))
-	logs.Debug("urlcrud:", urlcrud)
+	// logs.Debug("urlcrud:", urlcrud)
 
 	if response, err := request.GetJsonTest(urlcrud, &cuentasSubgrupo); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-		fmt.Println(cuentasSubgrupo[0])
+		// fmt.Println(cuentasSubgrupo[0])
 		if cuentasSubgrupo[0].Id != 0 {
 			for _, cuenta := range cuentasSubgrupo {
-				cuentaCredito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
-				cuentaDebito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaDebitoId)
+				// logs.Debug("CuentaCreditoId:", cuenta.CuentaCreditoId, " - CuentaDebitoId:", cuenta.CuentaDebitoId)
+				cuentaCredito, _ := cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
+				cuentaDebito, _ := cuentasContablesHelper.GetCuentaContable(cuenta.CuentaDebitoId)
 
 				cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{
 					"Id":                  cuenta.Id,

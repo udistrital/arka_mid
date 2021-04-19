@@ -6,6 +6,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -23,17 +24,19 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]inter
 		}
 	}()
 
-	var (
-		urlcrud string
-	)
-	urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + cuentaContableId
-	logs.Debug("urlcrud:", urlcrud)
+	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentaContableId
+	// logs.Debug("urlcrud:", urlcrud)
 
-	if response, err := request.GetJsonTest(urlcrud, &cuentaContable); err == nil && response.StatusCode == 200 {
-		return cuentaContable, nil
+	var data models.RespuestaAPI2obj
+	if resp, err := request.GetJsonTest(urlcrud, &data); err == nil && resp.StatusCode == 200 && data.Code == 200 {
+		return data.Body, nil
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+			if resp.StatusCode != 200 {
+				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			} else {
+				err = fmt.Errorf("Undesired Status Code: %d - in Body: %d", resp.StatusCode, data.Code)
+			}
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
