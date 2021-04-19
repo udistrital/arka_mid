@@ -41,47 +41,68 @@ func GetCatalogoById(catalogoId int) (catalogo *[]map[string]interface{}, output
 // GetCuentasContablesGrupo ...
 func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []map[string]interface{}, outputError map[string]interface{}) {
 
-	var urlcrud string
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetCuentasContablesSubgrupo - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	if subgrupoId <= 0 {
+		err := fmt.Errorf("subgrupoId MUST be > 0 - Got: %d", subgrupoId)
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetCuentasContablesSubgrupo - subgrupoId <= 0",
+			"err":     err,
+			"status":  "400",
+		}
+	}
+
 	var cuentasSubgrupo []*models.CuentaSubgrupo
 	var cuentaCredito map[string]interface{}
 	var cuentaDebito map[string]interface{}
 
-	urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?query=SubgrupoId.Id:" + strconv.Itoa(int(subgrupoId)) + ",Activo:True&limit=-1"
+	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?limit=-1"
+	urlcrud += "&query=Activo:True,SubgrupoId.Id:" + strconv.Itoa(int(subgrupoId))
+	logs.Debug("urlcrud:", urlcrud)
 
-	if response, err := request.GetJsonTest(urlcrud, &cuentasSubgrupo); err == nil { // (2) error servicio caido
-		if response.StatusCode == 200 { // (3) error estado de la solicitud
-			fmt.Println(cuentasSubgrupo[0])
-			if cuentasSubgrupo[0].Id != 0 {
-				for _, cuenta := range cuentasSubgrupo {
-					cuentaCredito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
-					cuentaDebito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaDebitoId)
+	if response, err := request.GetJsonTest(urlcrud, &cuentasSubgrupo); err == nil && response.StatusCode == 200 { // (2) error servicio caido
+		fmt.Println(cuentasSubgrupo[0])
+		if cuentasSubgrupo[0].Id != 0 {
+			for _, cuenta := range cuentasSubgrupo {
+				cuentaCredito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
+				cuentaDebito, outputError = cuentasContablesHelper.GetCuentaContable(cuenta.CuentaDebitoId)
 
-					cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{
-						"Id":                  cuenta.Id,
-						"CuentaCreditoId":     cuentaCredito,
-						"CuentaDebitoId":      cuentaDebito,
-						"SubtipoMovimientoId": cuenta.SubtipoMovimientoId,
-						"FechaCreacion":       cuenta.FechaCreacion,
-						"FechaModificacion":   cuenta.FechaModificacion,
-						"Activo":              cuenta.Activo,
-						"SubgrupoId":          cuenta.SubgrupoId,
-					})
-				}
-				return cuentasSubgrupoTransaccion, nil
-			} else {
-
-				cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{})
-				return cuentasSubgrupoTransaccion, nil
+				cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{
+					"Id":                  cuenta.Id,
+					"CuentaCreditoId":     cuentaCredito,
+					"CuentaDebitoId":      cuentaDebito,
+					"SubtipoMovimientoId": cuenta.SubtipoMovimientoId,
+					"FechaCreacion":       cuenta.FechaCreacion,
+					"FechaModificacion":   cuenta.FechaModificacion,
+					"Activo":              cuenta.Activo,
+					"SubgrupoId":          cuenta.SubgrupoId,
+				})
 			}
-
+			return cuentasSubgrupoTransaccion, nil
 		} else {
-			logs.Info("Error (3) estado de la solicitud")
-			outputError = map[string]interface{}{"Function": "GetCuentasContablesGrupo:GetCuentasContablesGrupo", "Error": response.Status}
-			return nil, outputError
+			cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{})
+			return cuentasSubgrupoTransaccion, nil
 		}
 	} else {
-		logs.Info("Error (2) servicio caido")
-		outputError = map[string]interface{}{"Function": "GetCuentasContablesGrupo", "Error": err}
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetCuentasContablesSubgrupo",
+			"err":     err,
+			"status:": "502",
+		}
 		return nil, outputError
 	}
 }

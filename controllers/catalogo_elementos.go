@@ -48,17 +48,44 @@ func (c *CatalogoElementosController) GetAll() {
 // GetOne ...
 // @Title GetCuentasSubgrupoById
 // @Description Devuelve las todas las actas de recibido
+// @Param	id		path 	int	true		"subgroup id"
 // @Success 200 {object} models.Acta_recibido
 // @Failure 403
 // @router /cuentas_contables/:id [get]
 func (c *CatalogoElementosController) GetOne() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id)
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	var id int
+	if v, err := strconv.Atoi(idStr); err == nil && v > 0 {
+		id = v
+	} else {
+		if err == nil {
+			err = fmt.Errorf("id MUST be > 0")
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "GetOne",
+				"err":     err,
+				"status":  "400",
+			})
+		}
+	}
+
+	if v, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
