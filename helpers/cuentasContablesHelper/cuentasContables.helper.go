@@ -1,9 +1,12 @@
 package cuentasContablesHelper
 
 import (
+	"fmt"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -13,7 +16,7 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]inter
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "GetCuentaContableByCodigo - Unhandled Error!",
+				"funcion": "GetCuentaContable - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -21,22 +24,26 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]inter
 		}
 	}()
 
-	var (
-		urlcrud string
-	)
-	urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + cuentaContableId
+	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentaContableId
+	// logs.Debug("urlcrud:", urlcrud)
 
-	if response, err := request.GetJsonTest(urlcrud, &cuentaContable); err == nil { // (2) error servicio caido
-		if response.StatusCode == 200 { // (3) error estado de la solicitud
-			return cuentaContable, nil
-		} else {
-			logs.Info("Error (3) estado de la solicitud")
-			outputError = map[string]interface{}{"Function": "GetCuentasContablesGrupo:GetCuentasContablesGrupo", "Error": response.Status}
-			return nil, outputError
-		}
+	var data models.RespuestaAPI2obj
+	if resp, err := request.GetJsonTest(urlcrud, &data); err == nil && resp.StatusCode == 200 && data.Code == 200 {
+		return data.Body, nil
 	} else {
-		logs.Info("Error (2) servicio caido")
-		outputError = map[string]interface{}{"Function": "GetCuentasContablesGrupo", "Error": err}
+		if err == nil {
+			if resp.StatusCode != 200 {
+				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			} else {
+				err = fmt.Errorf("Undesired Status Code: %d - in Body: %d", resp.StatusCode, data.Code)
+			}
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetCuentaContable - request.GetJsonTest(urlcrud, &cuentaContable)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 }
