@@ -23,3 +23,25 @@ type RespuestaAPI1Arr struct {
 	RespuestaAPI1
 	Data []map[string]interface{}
 }
+
+// RespuestaAPI2 es similar a RespuestaAPI1
+// Agrupa las estructuras comunes y por lo mismo
+// NO se debe usar directamente
+type RespuestaAPI2 struct {
+	Code    int
+	Message string
+}
+
+// RespuestaAPI2obj es un RespuestaAPI2 donde
+// el Body es un objeto
+type RespuestaAPI2obj struct {
+	RespuestaAPI2
+	Body map[string]interface{}
+}
+
+// RespuestaAPI2arr es un RespuestaAPI2 donde
+// el Body es un arreglo
+type RespuestaAPI2arr struct {
+	RespuestaAPI2
+	Body []map[string]interface{}
+}

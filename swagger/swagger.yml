@@ -321,6 +321,13 @@ paths:
       - catalogo_elementos
       description: Devuelve las todas las actas de recibido
       operationId: CatalogoElementosController.GetCuentasSubgrupoById
+      parameters:
+      - in: path
+        name: id
+        description: subgroup id
+        required: true
+        type: integer
+        format: int64
       responses:
         "200":
           description: ""
