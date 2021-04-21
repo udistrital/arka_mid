@@ -39,6 +39,8 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 	codigoTipoParamVinculacion := "TV"
 	parametroContratistaID := make(map[string]int)
 
+	panic(fmt.Errorf("paila"))
+
 	var respBody models.RespuestaAPI1Arr
 	urlParametros := "http://" + beego.AppConfig.String("parametrosService") + "parametro?limit=-1"
 	urlParametros += "&fields=Id,CodigoAbreviacion"
