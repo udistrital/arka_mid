@@ -27,3 +27,4 @@ main
 swagger/**
 !swagger/*.json
 !swagger/*.yml
+report.xml
