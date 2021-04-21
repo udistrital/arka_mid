@@ -58,7 +58,7 @@ func (c *CatalogoElementosController) GetOne() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -99,11 +99,22 @@ func (c *CatalogoElementosController) GetOne() {
 // @Failure 404 not found resource
 // @router /movimientos_kronos/
 func (c *CatalogoElementosController) GetAll2() {
-	v, err := catalogoElementosHelper.GetMovimientosKronos()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	if v, err := catalogoElementosHelper.GetMovimientosKronos(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}

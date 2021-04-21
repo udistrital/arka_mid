@@ -35,7 +35,7 @@ func (c *TercerosController) GetOne() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -98,7 +98,7 @@ func (c *TercerosController) GetByTipo() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -140,7 +140,7 @@ func (c *TercerosController) GetByTipoAndID() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
