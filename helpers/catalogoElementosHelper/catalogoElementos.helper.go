@@ -124,7 +124,7 @@ func GetMovimientosKronos() (Movimientos_Arka []map[string]interface{}, outputEr
 	var movimientos map[string]interface{}
 
 	urlcrud := "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Activo:true&limit=-1"
-	logs.Debug("urlcrud:", urlcrud)
+	// logs.Debug("urlcrud:", urlcrud)
 	if resp, err := request.GetJsonTest(urlcrud, &movimientos); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
 		step = "1"
 		var data []map[string]interface{}
@@ -146,6 +146,7 @@ func GetMovimientosKronos() (Movimientos_Arka []map[string]interface{}, outputEr
 						})
 					}
 				}
+				step = "4"
 				return Movimientos_Arka, nil
 			} else {
 				logs.Error(err2)

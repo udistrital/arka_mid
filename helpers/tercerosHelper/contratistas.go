@@ -87,7 +87,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		}
 		return nil, outputError
 	}
-	logs.Debug("parametroContratistaID:", parametroContratistaID)
+	// logs.Debug("parametroContratistaID:", parametroContratistaID)
 
 	// PARTE 2. Traer los terceros que tengan los ID anteriores en la tabla vinculacion
 	tercerosMap := make(map[int](map[string]interface{}))
@@ -100,7 +100,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		if idTercero > 0 {
 			urlTerceros += ",TerceroPrincipalId__Id:" + fmt.Sprint(idTercero)
 		}
-		logs.Debug("urlTerceros:", urlTerceros)
+		// logs.Debug("urlTerceros:", urlTerceros)
 		if resp, err := request.GetJsonTest(urlTerceros, &vinculaciones); err == nil && resp.StatusCode == 200 {
 			step = "2.2_" + k
 			if len(vinculaciones) == 0 || vinculaciones[0].TerceroPrincipalId == nil {
@@ -149,7 +149,7 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 		terceros = append(terceros, tercero)
 	}
 	step = "2.7"
-	logs.Debug("terceros:", terceros)
+	// logs.Debug("terceros:", terceros)
 
 	// PARTE 3 Traer identificación disponible...
 	for k, tercero := range terceros {
