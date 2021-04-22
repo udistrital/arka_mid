@@ -17,8 +17,6 @@ import (
 // GetContratista trae la lista de contratistas registrados en Terceros, con opción de filtrar por ID
 func GetContratista(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
 
-	logs.Warn("prueba GetContratista actualizado")
-
 	step := "0"
 
 	defer func() {
@@ -37,15 +35,9 @@ func GetContratista(idTercero int) (terceros []map[string]interface{}, outputErr
 	// Los siguientes son los códigos de los registros de la tabla "parametro" de la API
 	// de parámetros, cuyo tipo_parámetro_id sea el asociado a Cargos.
 	// Específicamente, los códigos de parámetros que se asignen a contratistas
-	logs.Warn("prueba GetContratista actualizado - AAA")
 	codigosParametroContratista := []string{"CPS"} // , "OPS", "PS"
 	codigoTipoParamVinculacion := "TV"
 	parametroContratistaID := make(map[string]int)
-	logs.Warn("prueba GetContratista actualizado - BBB")
-
-	panic(fmt.Errorf("paila"))
-
-	logs.Warn("prueba GetContratista actualizado - CCC")
 
 	var respBody models.RespuestaAPI1Arr
 	urlParametros := "http://" + beego.AppConfig.String("parametrosService") + "parametro?limit=-1"
