@@ -70,7 +70,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			// formatdata.JsonPrint(data)
 			return nil, err
 		} else { // data.Role == nil || len(data.Role) == 0
-			err := fmt.Errorf("El usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
+			err := fmt.Errorf("el usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
 			logs.Warn(err)
 			outputError = map[string]interface{}{
 				"funcion": "GetAllActasRecibidoActivas - autenticacion.DataUsuario(usrWSO2)",
@@ -182,7 +182,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			Historico = append(Historico, hists...)
 		} else {
 			if err == nil {
-				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
@@ -205,7 +205,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				Historico = append(Historico, hists...)
 			} else {
 				if err == nil {
-					err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+					err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 				}
 				logs.Error(err)
 				outputError = map[string]interface{}{
@@ -248,7 +248,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			} else {
 				if err == nil {
-					err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+					err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 				}
 				logs.Error(err)
 				outputError = map[string]interface{}{
@@ -280,7 +280,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					}
 				} else {
 					if err == nil {
-						err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+						err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 					}
 					logs.Error(err)
 					outputError = map[string]interface{}{
@@ -514,6 +514,17 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 // "DecodeXlsx2Json ..."
 func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, outputError map[string]interface{}) {
 
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "DecodeXlsx2Json - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var Unidades []Unidad
 	var SubgruposConsumo []map[string]interface{}
 	var SubgruposConsumoControlado []map[string]interface{}
@@ -526,7 +537,9 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		Ivas      []Imp
 	)
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
+	urlIva := "http://" + beego.AppConfig.String("parametrosService") + "parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12"
+	// logs.Debug("urlIva:", urlIva)
+	if resp, err := request.GetJsonTest(urlIva, &ss); err == nil && resp.StatusCode == 200 {
 
 		var data []map[string]interface{}
 		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
@@ -567,54 +580,81 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		}
 
 	} else {
-		logs.Info("Error IVA servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		if err == nil {
+			err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlIva, &ss)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/1", &SubgruposConsumo); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error IVA servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlCatT1 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/1"
+	if _, err := request.GetJsonTest(urlCatT1, &SubgruposConsumo); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT1, &SubgruposConsumo)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/2", &SubgruposConsumoControlado); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error IVA servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlCatT2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/2"
+	if _, err := request.GetJsonTest(urlCatT2, &SubgruposConsumoControlado); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT2, &SubgruposConsumoControlado)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("catalogoElementosService")+"tr_catalogo/tipo_de_bien/3", &SubgruposDevolutivo); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error IVA servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlCatT3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/3"
+	if _, err := request.GetJsonTest(urlCatT3, &SubgruposDevolutivo); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT3, &SubgruposDevolutivo)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
 
-	} else {
-		logs.Info("Error Unidades servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlAdmistrativa := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
+	if _, err := request.GetJsonTest(urlAdmistrativa, &Unidades); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlAdmistrativa, &Unidades)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
 	file, err := ioutil.ReadAll(c)
 	if err != nil {
-		fmt.Println("err reading file", err)
-		logs.Info("Error (1) error de recepcion")
-		outputError = map[string]interface{}{"Function": "PostDecodeXlsx2Json", "Error": 400}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "DecodeXlsx2Json - ioutil.ReadAll(c)",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
+
 	xlFile, err := xlsx.OpenBinary(file)
 	if err != nil {
-		fmt.Println("err reading file", err)
-		logs.Info("Error (1) error de recepcion")
-		outputError = map[string]interface{}{"Function": "PostDecodeXlsx2Json", "Error": 400}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "DecodeXlsx2Json - xlsx.OpenBinary(file)",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 
@@ -636,12 +676,14 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 					for i, cell := range row.Cells {
 						campos = append(campos, cell.String())
 						if campos[i] != validar_campos[i] {
-							logs.Info("Error Dependencia servicio caido")
-							outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": 403}
-							Respuesta2 := append(Respuesta, map[string]interface{}{
-								"Mensaje": "El formato no corresponde a las columnas necesarias",
-							})
-							return Respuesta2, outputError
+							err := fmt.Errorf("el formato no corresponde a las columnas necesarias")
+							logs.Error(err)
+							outputError = map[string]interface{}{
+								"funcion": "DecodeXlsx2Json - campos[i] != validar_campos[i]",
+								"err":     err,
+								"status":  "400",
+							}
+							return nil, outputError
 						}
 					}
 				} else {
@@ -654,14 +696,14 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						if err == nil {
 						} else {
 							vlrcantidad = 0
-							logs.Info(err)
+							logs.Warn(err)
 						}
 
 						vlrunitario, err := strconv.ParseFloat(elementos[8], 64)
 						if err == nil {
 						} else {
 							vlrunitario = float64(0)
-							logs.Info(err)
+							logs.Warn(err)
 						}
 
 						vlrsubtotal := float64(0)
@@ -673,7 +715,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							vlrdcto = vlrsubtotal - vlrdcto
 						} else {
 							vlrdcto = float64(0)
-							logs.Info(err)
+							logs.Warn(err)
 						}
 
 						convertir := strings.Split(elementos[11], ".")
@@ -687,10 +729,10 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 									}
 								}
 							} else {
-								logs.Info(err)
+								logs.Warn(err)
 							}
 						} else {
-							logs.Info(err)
+							logs.Warn(err)
 						}
 
 						vlrtotal, err := strconv.ParseFloat(elementos[12], 64)
@@ -699,7 +741,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							elementos[13] = strconv.FormatFloat(vlrtotal, 'f', 2, 64)
 						} else {
 							vlrtotal = float64(0)
-							logs.Info(err)
+							logs.Warn(err)
 						}
 
 						convertir2 := strings.ToUpper(elementos[7])
@@ -710,7 +752,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 								}
 							}
 						} else {
-							logs.Info(err)
+							logs.Warn(err)
 						}
 
 						convertir3 := elementos[2]
@@ -735,7 +777,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 								}
 							}
 						} else {
-							logs.Info(err)
+							logs.Warn(err)
 						}
 
 						Elemento = append(Elemento, map[string]interface{}{
@@ -772,31 +814,52 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 // GetAllParametrosSoporte ...
 func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetAllParametrosSoporte - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var Dependencias interface{}
 	var Sedes interface{}
 	var Ubicaciones interface{}
 	parametros := make([]map[string]interface{}, 0)
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+"dependencia?limit=-1", &Dependencias); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error Dependencia servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlOikosDependencia := "http://" + beego.AppConfig.String("oikos2Service") + "dependencia?limit=-1"
+	if _, err := request.GetJsonTest(urlOikosDependencia, &Dependencias); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosDependencia, &Dependencias)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+"asignacion_espacio_fisico_dependencia?limit=-1", &Ubicaciones); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error Ubicaciones servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlOikosAsignacion := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?limit=-1"
+	if _, err := request.GetJsonTest(urlOikosAsignacion, &Ubicaciones); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosAsignacion, &Ubicaciones)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("oikos2Service")+"espacio_fisico?query=TipoEspacioFisicoId.Id:1&limit=-1", &Sedes); err == nil { // (2) error servicio caido
 
-	} else {
-		logs.Info("Error Sedes servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlOikosEspFis := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=TipoEspacioFisicoId.Id:1&limit=-1"
+	if _, err := request.GetJsonTest(urlOikosEspFis, &Sedes); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosEspFis, &Sedes)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
@@ -824,7 +887,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 	}()
 
 	if Datos.Sede == nil {
-		err := fmt.Errorf("Sede no especificada")
+		err := fmt.Errorf("sede no especificada")
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "GetAsignacionSedeDependencia - Datos.Sede == nil",
@@ -886,7 +949,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -905,7 +968,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetElementos - Unhandled Error!",
+				"funcion": "GetElementos - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -929,10 +992,10 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			// fmt.Printf("#Elementos: %v\n", len(elementos))
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
-				err := fmt.Errorf("No elements for Act #%d (or Act not found)", actaId)
+				err := fmt.Errorf("no elements for Act #%d (or Act not found)", actaId)
 				logs.Warn(err)
 				outputError = map[string]interface{}{
-					"funcion": "/GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
+					"funcion": "GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
 					"err":     err,
 					"status":  "204",
 				}
@@ -953,20 +1016,14 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 					if unidad, err := unidadHelper.GetUnidad(elemento.UnidadMedida); err == nil && len(unidad) > 0 {
 						auxE.UnidadMedida = unidad[0]
 					} else if err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						return nil, err
 					} else {
 						err := fmt.Errorf("UnidadMedida '%d' Not Found", elemento.UnidadMedida)
 						logs.Error(err)
 						outputError = map[string]interface{}{
-							"funcion": "/GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida) / len(unidad) > 0",
+							"funcion": "GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
 							"err":     err,
-							"status":  "502",
+							"status":  "500",
 						}
 						return nil, outputError
 					}
@@ -991,18 +1048,12 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 						fmt.Printf("proveedor: %#v\n", proveedor[0])
 						soporte.ProveedorId = proveedor[0]
 					} else if err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						return nil, err
 					} else {
 						err := fmt.Errorf("ProveedorId '%d' Not Found", elemento.SoporteActaId.ProveedorId)
 						logs.Error(err)
 						outputError = map[string]interface{}{
-							"funcion": "/GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
+							"funcion": "GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
 							"err":     err,
 							"status":  "500",
 						}
@@ -1029,21 +1080,15 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 			}
 
 			return elementosActa, nil
-		} else if err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
-				"err":     err,
-				"status":  "502", // Error (2) servicio caido
-			}
-			return nil, outputError
 		} else {
-			err := fmt.Errorf("Undesired State: %d", response.StatusCode)
+			if err == nil {
+				err = fmt.Errorf("undesired State: %d", response.StatusCode)
+			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/GetElementos - request.GetJsonTest(urlcrud, &elementos)",
+				"funcion": "GetElementos - request.GetJsonTest(urlcrud, &elementos)",
 				"err":     err,
-				"status":  "500",
+				"status":  "502",
 			}
 			return nil, outputError
 		}
@@ -1051,7 +1096,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 		err := errors.New("ID must be greater than 0")
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetElementos - actaId > 0",
+			"funcion": "GetElementos - actaId > 0",
 			"err":     err,
 			"status":  "400",
 		}
@@ -1065,7 +1110,7 @@ func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, output
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetSoportes - Unhandled Error!",
+				"funcion": "GetSoportes - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -1085,10 +1130,10 @@ func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, output
 		if response, err := request.GetJsonTest(urlcrud, &soportes); err == nil && response.StatusCode == 200 {
 
 			if len(soportes) == 0 || soportes[0].Id == 0 {
-				err = fmt.Errorf("El Acta #%d no existe o no tiene soportes", actaId)
+				err = fmt.Errorf("el Acta #%d no existe o no tiene soportes", actaId)
 				logs.Error(err)
 				outputError = map[string]interface{}{
-					"funcion": "/GetSoportes - len(soportes) == 0 || soportes[0].Id == 0",
+					"funcion": "GetSoportes - len(soportes) == 0 || soportes[0].Id == 0",
 					"err":     err,
 					"status":  "200",
 				}
@@ -1116,21 +1161,21 @@ func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, output
 			return soportesActa, nil
 		} else {
 			if err == nil {
-				err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+				err = fmt.Errorf("undesired Status Code: %d", response.StatusCode)
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/GetSoportes - request.GetJsonTest(urlcrud, &soportes)",
+				"funcion": "GetSoportes - request.GetJsonTest(urlcrud, &soportes)",
 				"err":     err,
 				"status":  "502",
 			}
 			return nil, outputError
 		}
 	} else {
-		err := fmt.Errorf("Wrong ActaID. Must be greater than 0 - Got: %d", actaId)
+		err := fmt.Errorf("wrong ActaID. Must be greater than 0 - Got: %d", actaId)
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetSoportes - actaId > 0",
+			"funcion": "GetSoportes - actaId > 0",
 			"err":     err,
 			"status":  "400",
 		}
@@ -1163,23 +1208,44 @@ func GetIdElementoPlaca(placa string) (idElemento string, err error) {
 
 // GetAllElementosConsumo obtiene todos los elementos de consumo
 func GetAllElementosConsumo() (elementos []map[string]interface{}, outputError map[string]interface{}) {
-	var url string
-	url = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/?query=TipoBienId:1,Activo:true"
-	if response, err := request.GetJsonTest(url, &elementos); err == nil {
-		if response.StatusCode == 200 {
-			if len(elementos) == 0 {
-				return nil, map[string]interface{}{"Function": "GetAllElementosConsumo", "Error": errors.New("No se encontro registro")}
-			} else {
-				return elementos, nil
-			}
 
-		} else if response.StatusCode == 400 {
-			return nil, map[string]interface{}{"Function": "GetAllElementosConsumo", "Error": errors.New("No se encontro registro")}
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetAllElementosConsumo - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
 		}
+	}()
+
+	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=TipoBienId:1,Activo:true"
+	if response, err := request.GetJsonTest(url, &elementos); err == nil && response.StatusCode == 200 {
+		if len(elementos) == 0 {
+			err := errors.New("no hay elementos")
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetAllElementosConsumo - len(elementos) == 0",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
+		} else {
+			return elementos, nil
+		}
+
 	} else {
-		fmt.Println("error: ", err)
-		return nil, map[string]interface{}{"Function": "GetAllElementosConsumo", "Error": err}
+		if err == nil {
+			err = fmt.Errorf("undesired Status Code: %d", response.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllElementosConsumo - request.GetJsonTest(url, &elementos)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 
-	return
 }

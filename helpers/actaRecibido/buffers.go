@@ -85,14 +85,14 @@ func findAndAddUbicacion(UbicacionID int, Ubicaciones map[int](map[string]interf
 	} else {
 		logs.Error(err)
 		return nil, map[string]interface{}{
-			"funcion": "findAndAddUbicacion",
+			"funcion": "findAndAddUbicacion - ubicacionHelper.GetAsignacionSedeDependencia(idStr)",
 			"err":     err,
 			"status":  "502",
 		}
 	}
 }
 
-// findAndAddUbicacion trae la información de un proveedor y la agrega
+// findAndAddProveedor trae la información de un proveedor y la agrega
 // al buffer de proveedores
 // (Nota: Evitar usar, se va a usar terceros en vez de Agora)
 func findAndAddProveedor(ProveedorID int, Proveedores map[int](*models.Proveedor),
