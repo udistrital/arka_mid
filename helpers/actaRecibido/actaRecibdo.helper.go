@@ -410,6 +410,17 @@ func RemoveIndex(s []byte, index int) []byte {
 // GetAllParametrosActa ...
 func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
 
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetAllParametrosActa - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		Unidades       interface{}
 		TipoBien       interface{}
@@ -424,29 +435,41 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 
 	parametros := make([]map[string]interface{}, 0)
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"tipo_bien?limit=-1", &TipoBien); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error TipoBien servicio Acta caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-		return nil, outputError
-	}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"estado_acta?limit=-1", &EstadoActa); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error EstadoActa servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
-		return nil, outputError
-	}
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("actaRecibidoService")+"estado_elemento?limit=-1", &EstadoElemento); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error EstadoElemento servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlActasTipoBien := "http://" + beego.AppConfig.String("actaRecibidoService") + "tipo_bien?limit=-1"
+	if _, err := request.GetJsonTest(urlActasTipoBien, &TipoBien); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlActasTipoBien, &TipoBien)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("parametrosService")+"parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12", &ss); err == nil { // (2) error servicio caido
+	urlActasEstadoActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_acta?limit=-1"
+	if _, err := request.GetJsonTest(urlActasEstadoActa, &EstadoActa); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlActasEstadoActa, &EstadoActa)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	urlACtasEstadoElem := "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_elemento?limit=-1"
+	if _, err := request.GetJsonTest(urlACtasEstadoElem, &EstadoElemento); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlACtasEstadoElem, &EstadoElemento)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	urlParametros := "http://" + beego.AppConfig.String("parametrosService") + "parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12"
+	if _, err := request.GetJsonTest(urlParametros, &ss); err == nil {
 
 		var data []map[string]interface{}
 		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
@@ -487,16 +510,23 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		}
 
 	} else {
-		logs.Info("Error IVA servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlParametros, &ss)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
-	if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("AdministrativaService")+"unidad?limit=-1", &Unidades); err == nil { // (2) error servicio caido
-
-	} else {
-		logs.Info("Error Unidades servicio caido")
-		outputError = map[string]interface{}{"Function": "GetAllActasRecibido", "Error": err}
+	urlUnidad := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
+	if _, err := request.GetJsonTest(urlUnidad, &Unidades); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlUnidad, &Unidades)",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
 	}
 
@@ -1184,7 +1214,19 @@ func GetSoportes(actaId int) (soportesActa []models.SoporteActaProveedor, output
 }
 
 // GetIdElementoPlaca Busca el id de un elemento a partir de su placa
-func GetIdElementoPlaca(placa string) (idElemento string, err error) {
+func GetIdElementoPlaca(placa string) (idElemento string, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetIdElementoPlaca - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var urlelemento string
 	var elemento []map[string]interface{}
 	urlelemento = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/?query=Placa:" + placa + "&fields=Id&limit=1"
@@ -1201,7 +1243,13 @@ func GetIdElementoPlaca(placa string) (idElemento string, err error) {
 			}
 		}
 	} else {
-		return "", err
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetSoportes - request.GetJsonTest(urlelemento, &elemento)",
+			"err":     err,
+			"status":  "502",
+		}
+		return "", outputError
 	}
 	return
 }
