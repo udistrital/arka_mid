@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/actaRecibidoHelper"
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 )
 
 var parameters struct {
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 
 // GetAllActasRecibido ...
 func TestGetAllActasRecibido(t *testing.T) {
-	valor, err := actaRecibidoHelper.GetAllActasRecibido()
+	valor, err := actaRecibido.GetAllActasRecibidoActivas([]string{"Aceptada"}, "ADMIN_ARKA")
 	if err != nil {
 		t.Error("No se pudo consultar las actas de recibido", err)
 		t.Fail()
@@ -34,7 +34,7 @@ func TestGetAllActasRecibido(t *testing.T) {
 
 // GetActasRecibidoTipo ...
 func TestGetActasRecibidoTipo(t *testing.T) {
-	valor, err := actaRecibidoHelper.GetActasRecibidoTipo(5)
+	valor, err := actaRecibido.GetActasRecibidoTipo(5)
 	if err != nil {
 		t.Error("No se pudo consultar las actas de recibido por tipo", err)
 		t.Fail()
@@ -46,7 +46,7 @@ func TestGetActasRecibidoTipo(t *testing.T) {
 
 // GetElementos ...
 func TestGetElementos(t *testing.T) {
-	valor, err := actaRecibidoHelper.GetElementos(14)
+	valor, err := actaRecibido.GetElementos(14)
 	if err != nil {
 		t.Error("No se pudo consultar los elementos del acta de recibido", err)
 		t.Fail()

@@ -52,7 +52,9 @@ steps:
   image: golang:1.14
   commands:
   - go get -t
-  - GOOS=linux GOARCH=amd64 go build -o main
+  - GOOS=linux GOARCH=amd64 go build -v -o main
+  - sha256sum main # suma de verificacion
+  - ls -l main # peso en bytes y fecha de modificacion
   when:
     branch:
     - develop
