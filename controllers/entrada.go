@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -80,14 +81,37 @@ func (c *EntradaController) Post() {
 // @Failure 404 not found resource
 // @router /:id [get]
 func (c *EntradaController) GetEntrada() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := entradaHelper.GetEntrada(id)
-	if err != nil {
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		if err == nil {
+			err = errors.New("id MUST be > 0")
+		}
 		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+		panic(map[string]interface{}{
+			"funcion": "GetEntrada - err != nil || id <= 0",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	if v, err := entradaHelper.GetEntrada(id); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}

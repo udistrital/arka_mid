@@ -2,6 +2,7 @@ package entradaHelper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -340,16 +341,27 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 
 // GetEntrada ...
 func GetEntrada(entradaId int) (consultaEntrada map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetEntrada - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
 	var (
 		urlcrud        string
 		tipoMovimiento map[string]interface{}
 		movimientoArka map[string]interface{}
 	)
 
-	if entradaId != 0 { // (1) error parametro
+	if entradaId > 0 { // (1) error parametro
 		// Solicita información Movimientos KRONOS
 		urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(entradaId) + ",TipoMovimientoId.Acronimo:e_arka,Activo:true"
-
 		if err := request.GetJson(urlcrud, &tipoMovimiento); err == nil {
 			// Solicita información movimientos ARKA de acuedo a la información consultada por movimientos kronos
 			var data []map[string]interface{}
@@ -365,28 +377,39 @@ func GetEntrada(entradaId int) (consultaEntrada map[string]interface{}, outputEr
 
 			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(movimientoId)
 
-			if response, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil { // (2) error servicio caido
-
-				if response.StatusCode == 200 { // (3) error estado de la solicitud
-					consultaEntrada = make(map[string]interface{})
-					consultaEntrada = map[string]interface{}{"TipoMovimiento": data[0], "Movimiento": movimientoArka}
-					return consultaEntrada, nil
-
-				} else {
-					logs.Info("Error (3) estado de la solicitud")
-					outputError = map[string]interface{}{"Function": "GetEntrada:GetEntrada", "Error": response.Status}
-					return nil, outputError
-				}
+			if response, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil && response.StatusCode == 200 { // (2) error servicio caido
+				consultaEntrada = make(map[string]interface{})
+				consultaEntrada = map[string]interface{}{"TipoMovimiento": data[0], "Movimiento": movimientoArka}
+				return consultaEntrada, nil
 			} else {
-				logs.Info("Error (2) servicio caido")
-				logs.Debug(err)
-				outputError = map[string]interface{}{"Function": "GetEntrada", "Error": err}
+				if err == nil {
+					err = fmt.Errorf("undesired Status Code: %s", response.Status)
+				}
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetEntrada - request.GetJsonTest(urlcrud, &movimientoArka)",
+					"err":     err,
+					"status:": "502",
+				}
 				return nil, outputError
 			}
 		} else {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetEntrada - request.GetJson(urlcrud, &tipoMovimiento)",
+				"err":     err,
+				"status":  "502",
+			}
 			return nil, outputError
 		}
 	} else {
+		err := errors.New("entradaId MUST be > 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetEntrada - entradaId > 0",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 }
@@ -487,15 +510,15 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 
 	if id, err := actaRecibido.GetIdElementoPlaca(placa); err == nil {
 		if id == "" {
-			err = fmt.Errorf("La placa '%s' no ha sido asignada a una salida", placa)
+			err := fmt.Errorf("La placa '%s' no ha sido asignada a una salida", placa)
 			logs.Error(err)
 			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - id == ''", "status": "404", "err": err}
 			return nil, outputError
 		}
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:" + id
-		fmt.Println(urlelemento)
+		// fmt.Println(urlelemento)
 		if resp, err := request.GetJsonTest(urlelemento, &detalle); err == nil && resp.StatusCode == 200 {
-			logs.Info(detalle)
+			// logs.Info(detalle)
 			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
 			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
 				idtercero := fmt.Sprintf("%v", resultado["funcionario"])
@@ -503,7 +526,7 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 					if len(response) == 0 { // posible validación adicional:  || response["Id"].(string) == "0"
 						err := fmt.Errorf("Respuesta inesperada en la respuesta de la función GetNombreTerceroById")
 						logs.Error(err)
-						outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - tercerosHelper.GetNombreTerceroById(idtercero)", "status": "404", "err": err}
+						outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - len(response) == 0", "status": "404", "err": err}
 						return nil, outputError
 					}
 					var nombrecompleto = response["NombreCompleto"].(string)
@@ -514,10 +537,9 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 					return nil, err
 				}
 			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - actaRecibido.GetIdElementoPlaca(placa);", "status": "500", "err": err}
-				return nil, outputError
+				return nil, err
 			}
+
 		} else {
 			if err == nil {
 				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
@@ -527,9 +549,7 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 			return nil, outputError
 		}
 	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{"funcion": "GetEncargadoElemento", "status": "502", "err": err}
-		return nil, outputError
+		return nil, err
 	}
 }
 
@@ -539,7 +559,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "Anular entrada - Unhandled Error!",
+				"funcion": "AnularEntrada - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -958,7 +978,7 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "Get Movimientos By Acta - Unhandled Error!",
+				"funcion": "GetMovimientosByActa - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}

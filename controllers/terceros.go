@@ -79,8 +79,28 @@ func (c *TercerosController) GetAll() {
 // @Success 200 {object} []string
 // @router /tipo/ [get]
 func (c *TercerosController) GetTipos() {
-	c.Data["json"] = tercerosHelper.GetTipos()
-	c.ServeJSON()
+
+	// Puede que ni sea necesario en este controlador, pero se coloca por lineamiento...
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	if v, err := tercerosHelper.GetTipos(); err == nil {
+		c.Data["json"] = v
+		c.ServeJSON()
+	} else {
+		panic(err)
+	}
 }
 
 // GetByTipo ...
@@ -161,7 +181,7 @@ func (c *TercerosController) GetByTipoAndID() {
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "/GetByTipoAndID - strconv.Atoi(idQuery)",
+			"funcion": "GetByTipoAndID - strconv.Atoi(idQuery)",
 			"err":     err,
 			"status":  "400",
 		})
@@ -170,9 +190,9 @@ func (c *TercerosController) GetByTipoAndID() {
 	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
 		if v, err := helper(id); err == nil {
 			if len(v) == 0 {
-				err := fmt.Errorf("len(v) == 0")
+				err := fmt.Errorf("no se encontró un Tercero tipo '%s' con id '%d'", tipo, id)
 				panic(map[string]interface{}{
-					"funcion": "/GetByTipoAndID",
+					"funcion": "GetByTipoAndID - len(v) == 0",
 					"err":     err,
 					"status":  "404",
 				})

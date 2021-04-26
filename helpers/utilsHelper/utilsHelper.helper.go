@@ -13,7 +13,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/ConvertirInterfaceMap - Unhandled Error!",
+				"funcion": "ConvertirInterfaceMap - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -25,7 +25,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 		if err2 := json.Unmarshal(jsonString, &Salida); err2 != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/ConvertirInterfaceMap - json.Unmarshal(jsonString, &Salida)",
+				"funcion": "ConvertirInterfaceMap - json.Unmarshal(jsonString, &Salida)",
 				"err":     err,
 				"status":  "500",
 			}
@@ -34,7 +34,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/ConvertirInterfaceMap - json.Marshal(Objeto)",
+			"funcion": "ConvertirInterfaceMap - json.Marshal(Objeto)",
 			"err":     err,
 			"status":  "500",
 		}
@@ -57,11 +57,28 @@ func ConvertirInterfaceArrayMap(Objeto_ interface{}) (Salida []map[string]interf
 }
 
 // ConvertirStringJson
-func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, err error) {
+func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "ConvertirStringJson - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	str := fmt.Sprintf("%v", Objeto_)
 	if err := json.Unmarshal([]byte(str), &Salida); err != nil {
-		panic(err.Error())
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "ConvertirStringJson - json.Unmarshal([]byte(str), &Salida)",
+			"err":     err,
+			"status":  "500",
+		}
+		return nil, outputError
 	}
 	return Salida, nil
 
