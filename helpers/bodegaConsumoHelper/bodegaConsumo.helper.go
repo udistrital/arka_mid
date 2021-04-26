@@ -489,8 +489,6 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 
 				if Elemento, err := UltimoMovimientoKardex(idCatalogo); err == nil {
 					Elementos = append(Elementos, Elemento)
-				} else {
-					return nil, err
 				}
 			}
 
@@ -546,6 +544,17 @@ func UltimoMovimientoKardex(id_catalogo int) (Elemento_Movimiento map[string]int
 	url3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "elemento?query=Id:" + idStr
 	// logs.Debug("url3:", url3)
 	if res, err := request.GetJsonTest(url3, &elemento_catalogo); err == nil && res.StatusCode == 200 {
+
+		if len(elemento_catalogo) != 1 || len(elemento_catalogo[0]) == 0 {
+			err = fmt.Errorf("No hay un elemento del Catalogo de Elementos con id:%s", idStr)
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "UltimoMovimientoKardex - len(elemento_catalogo) != 1 || len(elemento_catalogo[0]) == 0",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
+		}
 
 		// fmt.Println(elemento_catalogo)
 		var ultimo_movimiento_kardex []map[string]interface{}
