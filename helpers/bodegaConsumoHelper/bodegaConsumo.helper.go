@@ -488,7 +488,11 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 				}
 
 				if Elemento, err := UltimoMovimientoKardex(idCatalogo); err == nil {
-					Elementos = append(Elementos, Elemento)
+					if s, ok := Elemento["SaldoCantidad"]; ok {
+						if v, ok := s.(float64); ok && v > 0 {
+							Elementos = append(Elementos, Elemento)
+						}
+					}
 				}
 			}
 
