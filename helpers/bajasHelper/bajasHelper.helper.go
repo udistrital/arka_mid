@@ -118,7 +118,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllSolicitudes",
+				"funcion": "GetAllSolicitudes - Uncaught Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -138,7 +138,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 		if len(Solicitudes) == 0 || len(Solicitudes[0]) == 0 {
 			logs.Warn(err)
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllSolicitudes",
+				"funcion": "GetAllSolicitudes - len(Solicitudes) == 0 || len(Solicitudes[0]) == 0",
 				"err":     "sin",
 				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
 			}
@@ -161,7 +161,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 			} else {
 				logs.Error(err)
 				outputError = map[string]interface{}{
-					"funcion": "/GetAllSolicitudes",
+					"funcion": "GetAllSolicitudes - utilsHelper.ConvertirStringJson(solicitud[\"Detalle\"])",
 					"err":     err,
 					"status":  "500",
 				}
@@ -172,7 +172,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 			} else {
 				logs.Error(err)
 				outputError = map[string]interface{}{
-					"funcion": "/GetAllSolicitudes",
+					"funcion": "GetAllSolicitudes - utilsHelper.ConvertirInterfaceMap(solicitud[\"EstadoMovimientoId\"])",
 					"err":     err,
 					"status":  "500",
 				}
@@ -183,8 +183,8 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
-				} else {
-					return nil, err
+					// } else {
+					// 	return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -193,8 +193,8 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 							if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
 								Tercero_ = Tercero
 								Terceros = append(Terceros, Tercero)
-							} else {
-								return nil, err
+								// } else {
+								// 	return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
@@ -212,8 +212,8 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 					if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						Tercero_ = Tercero
 						Terceros = append(Terceros, Tercero)
-					} else {
-						return nil, err
+						// } else {
+						// 	return nil, err
 					}
 				}
 			}
@@ -222,8 +222,8 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 					Revisor_ = Tercero
 					Terceros = append(Terceros, Tercero)
-				} else {
-					return nil, err
+					// } else {
+					// 	return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
@@ -232,8 +232,8 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 							if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 								Revisor_ = Tercero
 								Terceros = append(Terceros, Tercero)
-							} else {
-								return nil, err
+								// } else {
+								// 	return nil, err
 							}
 						} else {
 							Revisor_ = Tercero
@@ -251,8 +251,8 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 					if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						Revisor_ = Tercero
 						Terceros = append(Terceros, Tercero)
-					} else {
-						return nil, err
+						// } else {
+						// 	return nil, err
 					}
 				}
 			}
