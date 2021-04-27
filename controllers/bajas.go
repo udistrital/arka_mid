@@ -40,7 +40,7 @@ func (c *BajaController) GetElemento() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
@@ -88,7 +88,7 @@ func (c *BajaController) GetSolicitud() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
@@ -123,12 +123,11 @@ func (c *BajaController) GetAll() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("500")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
 
-	fmt.Println("hola en el controlador")
 	l, err := bajasHelper.GetAllSolicitudes()
 	if err != nil {
 		panic(err)

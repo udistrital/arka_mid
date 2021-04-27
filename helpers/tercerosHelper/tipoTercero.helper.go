@@ -14,11 +14,24 @@ var diccionarioTipoHelper = map[string](func(int) ([]map[string]interface{}, map
 }
 
 // GetTipos retorna la lista de tipos que pueden ser usados con GetHelperTipo
-func GetTipos() (tercero []string) {
+func GetTipos() (tercero []string, outputError map[string]interface{}) {
+
+	// Puede que ni sea necesario en este helper, pero se coloca por lineamiento...
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetTipos - Unhandled Error!",
+				"err":     err,
+				"status":  "500", // Error no manejado!
+			}
+			panic(outputError)
+		}
+	}()
+
 	for k := range diccionarioTipoHelper {
 		tercero = append(tercero, k)
 	}
-	return tercero
+	return tercero, nil
 }
 
 // GetHelperTipo trae los terceros con el criterio especificado.
@@ -28,7 +41,7 @@ func GetHelperTipo(tipo string) (helper func(int) ([]map[string]interface{}, map
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetHelperTipo",
+				"funcion": "GetHelperTipo - Unhandled Error!",
 				"err":     err,
 				"status":  "500", // Error no manejado!
 			}
@@ -44,8 +57,8 @@ func GetHelperTipo(tipo string) (helper func(int) ([]map[string]interface{}, map
 	logs.Error(err)
 
 	return nil, map[string]interface{}{
-		"funcion": "/GetHelperTipo",
+		"funcion": "GetHelperTipo - found := diccionarioTipoHelper[tipo]",
 		"err":     err,
-		"status":  "501",
+		"status":  "404",
 	}
 }
