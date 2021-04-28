@@ -11,6 +11,7 @@ import (
 
 	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -248,8 +249,8 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 
 		if keys := len(Elementos[0]); keys != 0 {
 
-			elementosActaBuffer := make(map[int](map[string]interface{}))
-			subgruposCatalogoBuffer := make(map[int](map[string]interface{}))
+			elementosActaBuffer := make(map[int]interface{})
+			subgruposCatalogoBuffer := make(map[int]interface{})
 
 			for i, elemento := range Elementos {
 				void := true
@@ -264,7 +265,10 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 					continue
 				}
 
-				if detalle, err := bufferElementoActa(elementoActaId, elementosActaBuffer); err == nil && detalle != nil {
+				urlElemento := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento"
+				urlElemento += "?query=Id:" + strconv.Itoa(elementoActaId)
+				urlElemento += "&fields=Id,Nombre,Marca,Serie,SubgrupoCatalogoId"
+				if detalle, err := utilsHelper.BufferGet(elementoActaId, elementosActaBuffer, urlElemento); err == nil && detalle != nil {
 
 					var subgrupoCatalogoId int
 					if v, err := strconv.Atoi(fmt.Sprintf("%v", detalle["SubgrupoCatalogoId"])); err == nil && v > 0 {
@@ -276,7 +280,9 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 						continue
 					}
 
-					if subgrupo, err := bufferSubgrupoCatalogo(subgrupoCatalogoId, subgruposCatalogoBuffer); err == nil && subgrupo != nil {
+					urlSubgrupo := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo"
+					urlSubgrupo += "?query=Id:" + strconv.Itoa(subgrupoCatalogoId)
+					if subgrupo, err := utilsHelper.BufferGet(subgrupoCatalogoId, subgruposCatalogoBuffer, urlSubgrupo); err == nil && subgrupo != nil {
 						Elementos[i]["Nombre"] = detalle["Nombre"]
 						Elementos[i]["Marca"] = detalle["Marca"]
 						Elementos[i]["Serie"] = detalle["Serie"]
