@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -33,20 +34,36 @@ func (c *ActaRecibidoController) URLMapping() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *ActaRecibidoController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	fmt.Println(c.GetFile("archivo"))
 	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
 		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = Archivo
 		} else {
-			c.Data["system"] = err
-			c.Abort("400")
+			panic(err)
 		}
 	} else {
 		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("400")
+		panic(map[string]interface{}{
+			"funcion": "Post",
+			"err":     err,
+			"status":  "400",
+		})
 	}
 	c.ServeJSON()
 }
@@ -59,13 +76,22 @@ func (c *ActaRecibidoController) Post() {
 // @router / [get]
 func (c *ActaRecibidoController) GetAll() {
 
-	fmt.Println("hola")
-	l, err := actaRecibido.GetAllParametrosActa()
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	if l, err := actaRecibido.GetAllParametrosActa(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = l
 	}
@@ -75,7 +101,7 @@ func (c *ActaRecibidoController) GetAll() {
 // GetActasByTipo ...
 // @Title GetActasRecibidoTipo
 // @Description Devuelve las todas las actas de recibido
-// @Param	id		path 	string	true		"id del acta"
+// @Param	tipo		path 	string	true		"Estado del acta"
 // @Success 200 {object} models.Acta_recibido
 // @Failure 403
 // @router /get_actas_recibido_tipo/:tipo [get]
@@ -85,18 +111,29 @@ func (c *ActaRecibidoController) GetActasByTipo() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "GetActasByTipo" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Error no manejado!
 			}
 		}
 	}()
 
-	tipoStr := c.Ctx.Input.Param(":tipo")
-	tipo, _ := strconv.Atoi(tipoStr)
+	var tipo int
+
+	if v, err := c.GetInt(":tipo"); err == nil {
+		tipo = v
+	} else {
+		err := fmt.Errorf("{tipo} must be an Integer")
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "GetActasByTipo",
+			"err":     err,
+			"status":  "400",
+		})
+	}
 
 	if v, err := actaRecibido.GetActasRecibidoTipo(tipo); err == nil {
 		c.Data["json"] = v
@@ -124,7 +161,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -138,16 +175,14 @@ func (c *ActaRecibidoController) GetElementosActa() {
 	var id int
 	if idTest, err := strconv.Atoi(idStr); err == nil && idTest > 0 {
 		id = idTest
-	} else if err != nil {
-		panic(map[string]interface{}{
-			"funcion": "GetElementosActa",
-			"err":     err,
-			"status":  "400",
-		})
 	} else {
+		if err == nil {
+			err = fmt.Errorf("the Id MUST be greater than 0 - Got:%v", idStr)
+		}
+		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "GetElementosActa",
-			"err":     "The Id MUST be greater than 0",
+			"funcion": "GetElementosActa - strconv.Atoi(idStr)",
+			"err":     err,
 			"status":  "400",
 		})
 	}
@@ -194,7 +229,7 @@ func (c *ActaRecibidoController) GetSoportesActa() {
 		id = idTest
 	} else {
 		if err == nil {
-			err = fmt.Errorf("The Id MUST be greater than 0 - Got: %s", idStr)
+			err = fmt.Errorf("the Id MUST be greater than 0 - Got: %s", idStr)
 		}
 		panic(map[string]interface{}{
 			"funcion": "GetSoportesActa",
@@ -219,13 +254,22 @@ func (c *ActaRecibidoController) GetSoportesActa() {
 // @router /elementosconsumo/ [get]
 func (c *ActaRecibidoController) GetAllElementosConsumo() {
 
-	fmt.Println("hola hola")
-	l, err := actaRecibido.GetAllElementosConsumo()
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500")
+			}
+		}
+	}()
+
+	if l, err := actaRecibido.GetAllElementosConsumo(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = l
 	}
@@ -274,9 +318,11 @@ func (c *ActaRecibidoController) GetAllActas() {
 		}
 
 		if !valido {
+			err := errors.New("bad syntax. States MUST be comma separated")
+			logs.Error(err)
 			panic(map[string]interface{}{
-				"funcion": "GetAllActas",
-				"err":     "Bad syntax. Acts MUST be comma separated",
+				"funcion": "GetAllActas - c.GetString(\"states\")",
+				"err":     err,
 				"status":  "400",
 			})
 		}
@@ -292,9 +338,11 @@ func (c *ActaRecibidoController) GetAllActas() {
 			valido = true
 		}
 		if !valido {
+			err := errors.New("user not specified in parameter value")
+			logs.Error(err)
 			panic(map[string]interface{}{
-				"funcion": "GetAllActas",
-				"err":     "Bad syntax",
+				"funcion": "GetAllActas - c.GetString(\"u\")",
+				"err":     err,
 				"status":  "400",
 			})
 		}

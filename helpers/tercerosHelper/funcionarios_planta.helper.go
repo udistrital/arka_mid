@@ -16,7 +16,7 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetFuncionariosPlanta",
+				"funcion": "/GetFuncionariosPlanta - Uncaught Error!",
 				"err":     err,
 				"status":  "500", // Error no manejado!
 			}
@@ -87,12 +87,14 @@ func GetFuncionariosPlanta(idTercero int) (terceros []map[string]interface{}, ou
 			if len(vinculaciones) == 0 || vinculaciones[0].Id == 0 {
 				continue
 			}
-			// fmt.Println("paramId:", paramId, "#vinculaciones: ", len(vinculaciones))
+			// fmt.Println("paramId:", paramID, "#vinculaciones: ", len(vinculaciones))
 
+			// Lo siguiente es para que no se vuelva a agregar un tercero
+			// cuando el tercero tenga más de una vinculación
 			for _, vincul := range vinculaciones {
 				add := true
 				for _, tercero := range terceros {
-					if vincul.Id == tercero["Id"] {
+					if mTercero := tercero["TerceroPrincipal"].(*models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
 						add = false
 						break
 					}

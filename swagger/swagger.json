@@ -89,8 +89,8 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
-                        "description": "id del acta",
+                        "name": "tipo",
+                        "description": "Estado del acta",
                         "required": true,
                         "type": "string"
                     }
@@ -462,6 +462,16 @@
                 ],
                 "description": "Devuelve las todas las actas de recibido",
                 "operationId": "CatalogoElementosController.GetCuentasSubgrupoById",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "subgroup id",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
@@ -505,6 +515,40 @@
                     },
                     "404": {
                         "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/elemento/": {
+            "post": {
+                "tags": [
+                    "elemento"
+                ],
+                "description": "create Salida",
+                "operationId": "ElementoController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Salida content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SalidaGeneral"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TrSalida2"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
                     }
                 }
             }
@@ -561,6 +605,35 @@
                 }
             }
         },
+        "/entrada/anular/{id}": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "anular Entrada by id",
+                "operationId": "EntradaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ConsultaEntrada"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/entrada/encargado/{placa}": {
             "get": {
                 "tags": [
@@ -580,6 +653,32 @@
                 "responses": {
                     "200": {
                         "description": "{\"funcionario\": \"string\"}"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/entrada/movimientos/{acta_recibido_id}": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "return movimientos asociados a un acta",
+                "operationId": "EntradaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "acta_recibido_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{object]"
                     },
                     "404": {
                         "description": "not found resource"
@@ -947,14 +1046,18 @@
             "title": "AsignacionEspacioFisicoDependencia",
             "type": "object",
             "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
                 "DependenciaId": {
                     "$ref": "#/definitions/models.Dependencia"
                 },
+                "DocumentoSoporte": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "EspacioFisicoId": {
                     "$ref": "#/definitions/models.EspacioFisico"
-                },
-                "Estado": {
-                    "type": "string"
                 },
                 "FechaFin": {
                     "type": "string",
@@ -1339,11 +1442,19 @@
             "title": "EspacioFisico",
             "type": "object",
             "properties": {
-                "Codigo": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
                     "type": "string"
                 },
-                "Estado": {
-                    "type": "string"
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
                 },
                 "Id": {
                     "type": "integer",
@@ -1838,6 +1949,20 @@
             "title": "TipoEspacio",
             "type": "object",
             "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
                 "Id": {
                     "type": "integer",
                     "format": "int64"
@@ -1930,6 +2055,10 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
+        },
+        {
+            "name": "elemento",
+            "description": "SalidaController operations for Salida\n"
         },
         {
             "name": "parametros_soporte",

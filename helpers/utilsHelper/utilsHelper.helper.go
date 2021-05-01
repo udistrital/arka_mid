@@ -13,7 +13,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/ConvertirInterfaceMap - Unhandled Error!",
+				"funcion": "ConvertirInterfaceMap - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -25,7 +25,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 		if err2 := json.Unmarshal(jsonString, &Salida); err2 != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/ConvertirInterfaceMap - json.Unmarshal(jsonString, &Salida)",
+				"funcion": "ConvertirInterfaceMap - json.Unmarshal(jsonString, &Salida)",
 				"err":     err,
 				"status":  "500",
 			}
@@ -34,7 +34,7 @@ func ConvertirInterfaceMap(Objeto interface{}) (Salida map[string]interface{}, o
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/ConvertirInterfaceMap - json.Marshal(Objeto)",
+			"funcion": "ConvertirInterfaceMap - json.Marshal(Objeto)",
 			"err":     err,
 			"status":  "500",
 		}
@@ -57,11 +57,28 @@ func ConvertirInterfaceArrayMap(Objeto_ interface{}) (Salida []map[string]interf
 }
 
 // ConvertirStringJson
-func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, err error) {
+func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "ConvertirStringJson - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	str := fmt.Sprintf("%v", Objeto_)
 	if err := json.Unmarshal([]byte(str), &Salida); err != nil {
-		panic(err.Error())
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "ConvertirStringJson - json.Unmarshal([]byte(str), &Salida)",
+			"err":     err,
+			"status":  "500",
+		}
+		return nil, outputError
 	}
 	return Salida, nil
 
@@ -69,6 +86,10 @@ func ConvertirStringJson(Objeto_ interface{}) (Salida map[string]interface{}, er
 
 // ArrayFind
 func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) (Busqueda map[string]interface{}, err error) {
+
+	if len(Objeto__) == 0 {
+		return nil, nil
+	}
 
 	Busqueda_ := make(map[string]interface{}, 0)
 	if keys := len(Objeto__[0]); keys != 0 {
@@ -85,4 +106,24 @@ func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) (B
 	}
 
 	return Busqueda_, nil
+}
+
+// KeysValuesMap descompone un mapeo en dos arreglos con sus claves y valores
+func KeysValuesMap(m map[interface{}]interface{}) (keys []interface{}, vals []interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			panic(map[string]interface{}{
+				"funcion": "KeysValuesMap - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			})
+		}
+	}()
+
+	for k, v := range m {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	return
 }

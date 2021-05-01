@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 
 	// "github.com/udistrital/utils_oas/formatdata"
@@ -38,12 +39,12 @@ func (c *SalidaController) Post() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
@@ -57,11 +58,7 @@ func (c *SalidaController) Post() {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else if err != nil {
-			panic(map[string]interface{}{
-				"funcion": "Post",
-				"err":     err,
-				"status":  "502",
-			})
+			panic(err)
 		} else {
 			panic(map[string]interface{}{
 				"funcion": "Post",
@@ -70,9 +67,10 @@ func (c *SalidaController) Post() {
 			})
 		}
 	} else {
+		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "Post",
-			"err":     "JSON mal estructurado",
+			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
 			"status":  "400",
 		})
 	}
@@ -87,14 +85,36 @@ func (c *SalidaController) Post() {
 // @Failure 404 not found resource
 // @router /:id [get]
 func (c *SalidaController) GetSalida() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := salidaHelper.GetSalida(id)
-	if err != nil {
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		if err == nil {
+			err = errors.New("id MUST be > 0")
+		}
 		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+		panic(map[string]interface{}{
+			"funcion": "GetSalida - strconv.Atoi(idStr)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+	if v, err := salidaHelper.GetSalida(id); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
@@ -113,12 +133,12 @@ func (c *SalidaController) GetSalidas() {
 		if err := recover(); err != nil {
 			logs.Error(err)
 			localError := err.(map[string]interface{})
-			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()

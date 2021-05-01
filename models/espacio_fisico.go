@@ -1,9 +1,13 @@
 package models
 
+import "time"
+
 type EspacioFisico struct {
-	Id          int
-	Estado      string
-	TipoEspacio *TipoEspacio
-	Nombre      string
-	Codigo      string
+	Id                int
+	Nombre            string
+	CodigoAbreviacion string
+	Activo            bool
+	TipoEspacio       *TipoEspacio
+	FechaCreacion     time.Time
+	FechaModificacion time.Time
 }

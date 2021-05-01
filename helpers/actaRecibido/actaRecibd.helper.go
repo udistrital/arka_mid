@@ -1,6 +1,8 @@
 package actaRecibido
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -17,9 +19,9 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetActasRecibidoTipo",
+				"funcion": "/GetActasRecibidoTipo - Unhandled Error!",
 				"err":     err,
-				"status":  "502",
+				"status":  "500",
 			}
 			panic(outputError)
 		}
@@ -31,59 +33,83 @@ func GetActasRecibidoTipo(tipoActa int) (actasRecibido []models.ActaRecibidoUbic
 	)
 	if tipoActa != 0 { // (1) error parametro
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?query=EstadoActaId.Id:" + strconv.Itoa(tipoActa) + ",Activo:True&limit=-1"
-		logs.Debug(urlcrud)
+		// logs.Debug(urlcrud)
 		if response, err := request.GetJsonTest(urlcrud, &historicoActa); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-			logs.Debug(historicoActa[0].EstadoActaId)
+			// logs.Debug(historicoActa[0].EstadoActaId)
+			// logs.Debug("Estado:", tipoActa, "- Actas:", len(historicoActa), "- Id_acta[0]:", historicoActa[0].Id)
 
 			if len(historicoActa) == 0 || historicoActa[0].Id == 0 {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetActasRecibidoTipo",
-					"err":     err,
-					"status":  "200",
-				}
-				return nil, outputError
+				return nil, nil
 			}
+			// logs.Debug(historicoActa, "- len:", len(historicoActa))
 
-			if response.StatusCode == 200 { // (3) error estado de la solicitud
-				for _, acta := range historicoActa {
-					// UBICACION
-					ubicacion, err := ubicacionHelper.GetUbicacion(acta.ActaRecibidoId.UbicacionId)
+			for _, acta := range historicoActa {
+				var ubicacion *models.AsignacionEspacioFisicoDependencia
+				if id := acta.ActaRecibidoId.UbicacionId; id > 0 {
+					if ubicaciones, err := ubicacionHelper.GetAsignacionSedeDependencia(strconv.Itoa(id)); err == nil {
+						if jsonString, err := json.Marshal(ubicaciones); err == nil {
+							if err := json.Unmarshal(jsonString, &ubicacion); err != nil {
+								logs.Error(err)
+								return nil, map[string]interface{}{
+									"funcion": "GetActasRecibidoTipo",
+									"err":     err,
+									"status":  "500",
+								}
+							}
+						} else {
+							logs.Error(err)
+							return nil, map[string]interface{}{
+								"funcion": "GetActasRecibidoTipo",
+								"err":     err,
+								"status":  "500",
+							}
+						}
 
-					if err != nil {
-						panic(err)
+					} else {
+						logs.Error(err)
+						return nil, map[string]interface{}{
+							"funcion": "GetActasRecibidoTipo",
+							"err":     err,
+							"status":  "502",
+						}
 					}
-
-					logs.Debug(ubicacion)
-
-					actaRecibidoAux := models.ActaRecibidoUbicacion{
-						Id:                acta.ActaRecibidoId.Id,
-						RevisorId:         acta.ActaRecibidoId.RevisorId,
-						FechaCreacion:     acta.ActaRecibidoId.FechaCreacion,
-						FechaModificacion: acta.ActaRecibidoId.FechaModificacion,
-						FechaVistoBueno:   acta.ActaRecibidoId.FechaVistoBueno,
-						Observaciones:     acta.ActaRecibidoId.Observaciones,
-						Activo:            acta.ActaRecibidoId.Activo,
-						EstadoActaId:      acta.EstadoActaId,
-						UbicacionId:       ubicacion[0],
-					}
-
-					actasRecibido = append(actasRecibido, actaRecibidoAux)
 				}
-				return actasRecibido, nil
-			} else {
-				logs.Info("Error (3) estado de la solicitud")
-				outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo:GetActasRecibidoTipo", "Error": response.Status}
-				return nil, outputError
+
+				actaRecibidoAux := models.ActaRecibidoUbicacion{
+					Id:                acta.ActaRecibidoId.Id,
+					RevisorId:         acta.ActaRecibidoId.RevisorId,
+					FechaCreacion:     acta.ActaRecibidoId.FechaCreacion,
+					FechaModificacion: acta.ActaRecibidoId.FechaModificacion,
+					FechaVistoBueno:   acta.ActaRecibidoId.FechaVistoBueno,
+					Observaciones:     acta.ActaRecibidoId.Observaciones,
+					Activo:            acta.ActaRecibidoId.Activo,
+					EstadoActaId:      acta.EstadoActaId,
+					UbicacionId:       ubicacion,
+				}
+
+				actasRecibido = append(actasRecibido, actaRecibidoAux)
 			}
+			return actasRecibido, nil
 		} else {
-			logs.Info("Error (2) servicio caido")
-			outputError = map[string]interface{}{"Function": "GetActasRecibidoTipo", "Error": err}
+			if err == nil {
+				err = fmt.Errorf("Error (3) estado de la solicitud: %s", response.Status)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "/GetActasRecibidoTipo",
+				"err":     err,
+				"status:": "502",
+			}
 			return nil, outputError
 		}
 	} else {
-		logs.Info("Error (1) Parametro")
-		outputError = map[string]interface{}{"Function": "FuncionalidadMidController:getUserAgora", "Error": "null parameter"}
+		err := fmt.Errorf("Error (1) Parametro")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "/GetActasRecibidoTipo",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 

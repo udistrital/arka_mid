@@ -3,10 +3,11 @@ package models
 import "time"
 
 type AsignacionEspacioFisicoDependencia struct {
-	Id          		int
-	Estado      		string
-	FechaInicio 		time.Time
-	FechaFin			time.Time
-	EspacioFisicoId 	*EspacioFisico
-	DependenciaId		*Dependencia
+	Id               int
+	EspacioFisicoId  *EspacioFisico
+	DependenciaId    *Dependencia
+	Activo           bool
+	FechaInicio      time.Time
+	FechaFin         time.Time
+	DocumentoSoporte int
 }

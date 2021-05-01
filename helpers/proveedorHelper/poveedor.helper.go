@@ -11,6 +11,8 @@ import (
 )
 
 // GetProveedorById Retorna los datos de un proveedor a partir del Id como proveedor
+// NOTA: Esta función está DEPRECADA, en términos que a medio plazo se registrarán
+// los proveedores en Terceros. En lo posible usar Terceros API
 func GetProveedorById(proveedorId int) (proveedor []*models.Proveedor, outputError map[string]interface{}) {
 
 	defer func() {
@@ -62,32 +64,67 @@ func GetProveedorById(proveedorId int) (proveedor []*models.Proveedor, outputErr
 }
 
 // GetProveedorByDoc Retorna los datos de un proveedor a partir del # de documento
-func GetProveedorByDoc(docNum string) (proveedor []*models.Proveedor, outputError map[string]interface{}) {
+// NOTA: Esta función está DEPRECADA, en términos que a medio plazo se registrarán
+// los proveedores en Terceros. En lo posible usar Terceros API
+func GetProveedorByDoc(docNum string) (proveedor *models.Proveedor, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetProveedorByDoc", "err": err, "status": "502"}
+			outputError = map[string]interface{}{
+				"funcion": "GetProveedorByDoc - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
 			panic(outputError)
 		}
 	}()
 
 	if docNum != "" { // (1) error parametro
-		if response, err := request.GetJsonTest("http://"+beego.AppConfig.String("administrativaService")+"informacion_proveedor?query=NumDocumento:"+docNum, &proveedor); err == nil { // (2) error servicio caido
-			if response.StatusCode == 200 { // (3) error estado de la solicitud
-				return proveedor, nil
-			} else {
-				outputError = map[string]interface{}{"funcion": "GetProveedorByDoc", "err": "Error (3) estado de la solicitud", "status": response.Status}
-				logs.Error(outputError)
-				return nil, outputError
+		var proveedores []*models.Proveedor
+		urlProveedor := "http://" + beego.AppConfig.String("administrativaService") + "informacion_proveedor?query=NumDocumento:" + docNum
+		if response, err := request.GetJsonTest(urlProveedor, &proveedores); err == nil && response.StatusCode == 200 { // (2) error servicio caido
+			status := "500"
+			if len(proveedores) == 1 && proveedores[0].Id > 0 {
+				return proveedores[0], nil
+			} else if len(proveedores) == 0 || proveedores[0].Id == 0 {
+				err = fmt.Errorf("Proveedor con Doc.Num.: '%s' no registrado", docNum)
+				status = "404"
+			} else { // len(proveedores) > 1
+				n := len(proveedores)
+				s := ""
+				if n >= 10 {
+					s = " (o más)"
+				}
+				err = fmt.Errorf("Proveedor con Doc.Num.: '%s' registrado %d%s veces", docNum, n, s)
+				status = "409"
 			}
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetProveedorByDoc - len(proveedores) == 0 || proveedores[0].Id == 0",
+				"err":     err,
+				"status":  status,
+			}
+			return nil, outputError
 		} else {
-			outputError = map[string]interface{}{"funcion": "GetProveedorByDoc", "err": err, "status": "502"}
-			logs.Error(outputError)
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetProveedorByDoc - request.GetJsonTest(urlProveedor, &proveedores)",
+				"err":     err,
+				"status":  "502",
+			}
 			return nil, outputError
 		}
 	} else {
-		outputError = map[string]interface{}{"funcion": "GetProveedorByDoc", "err": "Error (1) Parametro", "status": "400"}
-		logs.Error(outputError)
+		err := fmt.Errorf("No se especificó un documento")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetProveedorByDoc - docNum != \"\"",
+			"err":     err,
+			"status":  "400",
+		}
 		return nil, outputError
 	}
 }

@@ -10,12 +10,12 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-func GetJefes(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
+func GetOrdenadores(idTercero int) (terceros []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetJefes",
+				"funcion": "/GetOrdenadores - Uncaught Error!",
 				"err":     err,
 				"status":  "500", // Error no manejado!
 			}
@@ -27,8 +27,8 @@ func GetJefes(idTercero int) (terceros []map[string]interface{}, outputError map
 
 	// Los siguientes son los códigos de los registros de la tabla "parametro" de la API
 	// de parámetros, cuyo tipo_parámetro_id sea el asociado a Cargos.
-	// Específicamente los códigos de parámetros que se asignen a jefes de oficina
-	codigosParametroCargos := []string{"JO"}
+	// Específicamente los códigos de parámetros que se asignen a ordenadores de gastos
+	codigosParametroCargos := []string{"R", "VA", "VAF", "D", "DI"}
 	CodigoTipoParamCargo := "C"
 	CodigoAreaTipo := "C"
 	parametroCargoID := make(map[string]int)
@@ -60,7 +60,7 @@ func GetJefes(idTercero int) (terceros []map[string]interface{}, outputError map
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/GetJefes - request.GetJsonTest(urlParametros, &respBody)",
+			"funcion": "/GetOrdenadores - request.GetJsonTest(urlParametros, &respBody)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -87,12 +87,14 @@ func GetJefes(idTercero int) (terceros []map[string]interface{}, outputError map
 			if len(vinculaciones) == 0 || vinculaciones[0].Id == 0 {
 				continue
 			}
-			// fmt.Println("paramId:", paramId, "#vinculaciones: ", len(vinculaciones))
+			// fmt.Println("paramId:", paramID, "#vinculaciones: ", len(vinculaciones))
 
+			// Lo siguiente es para que no se vuelva a agregar un tercero
+			// cuando el tercero tenga más de una vinculación
 			for _, vincul := range vinculaciones {
 				add := true
 				for _, tercero := range terceros {
-					if vincul.Id == tercero["Id"] {
+					if mTercero := tercero["TerceroPrincipal"].(*models.Tercero); vincul.TerceroPrincipalId.Id == mTercero.Id {
 						add = false
 						break
 					}
@@ -111,7 +113,7 @@ func GetJefes(idTercero int) (terceros []map[string]interface{}, outputError map
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "/GetJefes - request.GetJsonTest(urlTerceros, &vinculaciones)",
+				"funcion": "/GetOrdenadores - request.GetJsonTest(urlTerceros, &vinculaciones)",
 				"err":     err,
 				"status":  "502",
 			}

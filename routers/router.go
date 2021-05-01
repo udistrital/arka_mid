@@ -25,6 +25,11 @@ func init() {
 				&controllers.EntradaController{},
 			),
 		),
+		beego.NSNamespace("/elemento",
+			beego.NSInclude(
+				&controllers.ElementoController{},
+			),
+		),
 		beego.NSNamespace("/parametros_soporte",
 			beego.NSInclude(
 				&controllers.ParametrosController{},

@@ -43,7 +43,7 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500") // Unhandled Error!
 			}
 		}
 	}()
@@ -52,16 +52,17 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 	var id int
 	if idConv, err := strconv.Atoi(idStr); err == nil && idConv > 0 {
 		id = idConv
-	} else if err != nil {
-		panic(err)
 	} else {
+		if err == nil {
+			err = fmt.Errorf("ID MUST be an integer > 0")
+		}
 		panic(map[string]interface{}{
 			"funcion": "GetOneSolicitud",
-			"err":     "ID MUST be positive",
+			"err":     err,
 			"status":  "400",
 		})
 	}
-	logs.Info(fmt.Sprintf("id: %d", id))
+	// logs.Info(fmt.Sprintf("id: %d", id))
 
 	if v, err := bodegaConsumoHelper.GetSolicitudById(id); err == nil {
 		c.Data["json"] = v
@@ -79,11 +80,22 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 // @router /elementos_sin_asignar/ [get]
 func (c *BodegaConsumoController) GetElementos() {
 
-	v, err := bodegaConsumoHelper.GetElementosSinAsignar()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BodegaConsumoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
+	if v, err := bodegaConsumoHelper.GetElementosSinAsignar(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
@@ -98,11 +110,22 @@ func (c *BodegaConsumoController) GetElementos() {
 // @router /aperturas_kardex/ [get]
 func (c *BodegaConsumoController) GetAperturasKardex() {
 
-	v, err := bodegaConsumoHelper.GetAperturasKardex()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BodegaConsumoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
+	if v, err := bodegaConsumoHelper.GetAperturasKardex(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
@@ -118,15 +141,30 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 // @router /existencias_kardex/ [get]
 func (c *BodegaConsumoController) GetAllExistencias() {
 
-	v, err := bodegaConsumoHelper.GetExistenciasKardex()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BodegaConsumoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500")
+			}
+		}
+	}()
+
+	if v, err := bodegaConsumoHelper.GetExistenciasKardex(); err != nil {
+		panic(err)
 	} else {
-		c.Data["json"] = v
+		if len(v) == 0 || v == nil {
+			c.Ctx.Output.Body([]byte("[]"))
+		} else {
+			c.Data["json"] = v
+			c.ServeJSON()
+		}
 	}
-	c.ServeJSON()
 }
 
 // Put ...

@@ -28,12 +28,23 @@ func (c *ParametrosController) URLMapping() {
 // @Failure 404 not found resource
 // @router / [get]
 func (c *ParametrosController) GetAll() {
-	l, err := actaRecibido.GetAllParametrosSoporte()
-	if err != nil {
-		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("404")
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ParametrosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	if l, err := actaRecibido.GetAllParametrosSoporte(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = l
 	}
@@ -50,6 +61,20 @@ func (c *ParametrosController) GetAll() {
 // @router /post_asignacion_espacio_fisico_dependencia/ [post]
 func (c *ParametrosController) PostAsignacionEspacioDependencia() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ParametrosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	var v models.GetSedeDependencia
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
 		if res, err := actaRecibido.GetAsignacionSedeDependencia(v); err == nil {
@@ -59,14 +84,15 @@ func (c *ParametrosController) PostAsignacionEspacioDependencia() {
 			}
 			c.Data["json"] = res
 		} else {
-			c.Data["system"] = err
-			c.Abort("400")
+			panic(err)
 		}
 	} else {
 		logs.Error(err)
-		//c.Data["development"] = map[string]interface{}{"Code": "000", "Body": err.Error(), "Type": "error"}
-		c.Data["system"] = err
-		c.Abort("400")
+		panic(map[string]interface{}{
+			"funcion": "PostAsignacionEspacioDependencia - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "500",
+		})
 	}
 	c.ServeJSON()
 }
