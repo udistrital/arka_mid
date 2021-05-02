@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 func TestGetUnidad(t *testing.T) {
 
 	if valor, err := unidadHelper.GetUnidad(1); err != nil {
-		t.Error("No se pudo consultar la ubicacion", err)
+		t.Error("No se pudo consultar la unidad", err)
 		t.Fail()
 	} else {
 		t.Log(valor)
