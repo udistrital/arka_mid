@@ -118,7 +118,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllSolicitudes",
+				"funcion": "GetAllSolicitudes - Uncaught Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -138,16 +138,12 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 		if len(Solicitudes) == 0 || len(Solicitudes[0]) == 0 {
 			logs.Warn(err)
 			outputError = map[string]interface{}{
-				"funcion": "/GetAllSolicitudes",
+				"funcion": "GetAllSolicitudes - len(Solicitudes) == 0 || len(Solicitudes[0]) == 0",
 				"err":     "sin",
 				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
 			}
 			return nil, outputError
 		}
-	
-
-
-
 
 		for _, solicitud := range Solicitudes {
 
@@ -165,7 +161,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 			} else {
 				logs.Error(err)
 				outputError = map[string]interface{}{
-					"funcion": "/GetAllSolicitudes",
+					"funcion": "GetAllSolicitudes - utilsHelper.ConvertirStringJson(solicitud[\"Detalle\"])",
 					"err":     err,
 					"status":  "500",
 				}
@@ -176,7 +172,7 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 			} else {
 				logs.Error(err)
 				outputError = map[string]interface{}{
-					"funcion": "/GetAllSolicitudes",
+					"funcion": "GetAllSolicitudes - utilsHelper.ConvertirInterfaceMap(solicitud[\"EstadoMovimientoId\"])",
 					"err":     err,
 					"status":  "500",
 				}
@@ -187,30 +183,18 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
 					Tercero_ = Tercero
 					Terceros = append(Terceros, Tercero)
-				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllSolicitudes",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					// } else {
+					// 	return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
 					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
 						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
+							if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
 								Tercero_ = Tercero
 								Terceros = append(Terceros, Tercero)
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllSolicitudes",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+								// } else {
+								// 	return nil, err
 							}
 						} else {
 							Tercero_ = Tercero
@@ -225,49 +209,31 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 						return nil, outputError
 					}
 				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
+					if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						Tercero_ = Tercero
 						Terceros = append(Terceros, Tercero)
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						// } else {
+						// 	return nil, err
 					}
 				}
 			}
 
 			if Terceros == nil {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
+				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 					Revisor_ = Tercero
 					Terceros = append(Terceros, Tercero)
-				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllSolicitudes",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					// } else {
+					// 	return nil, err
 				}
 			} else {
 				if keys := len(Terceros[0]); keys != 0 {
 					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
+							if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 								Revisor_ = Tercero
 								Terceros = append(Terceros, Tercero)
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllSolicitudes",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
+								// } else {
+								// 	return nil, err
 							}
 						} else {
 							Revisor_ = Tercero
@@ -282,17 +248,11 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 						return nil, outputError
 					}
 				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
+					if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						Revisor_ = Tercero
 						Terceros = append(Terceros, Tercero)
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						// } else {
+						// 	return nil, err
 					}
 				}
 			}
@@ -434,8 +394,8 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 		if data_, err := utilsHelper.ConvertirStringJson(data["Detalle"]); err == nil {
 
 			if Sede, Dependencia, Ubicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(fmt.Sprintf("%v", data_["Ubicacion"])); err == nil {
-				if Funcionario, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
-					if Revisor, err := tercerosHelper.GetNombreTerceroById2(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
+				if Funcionario, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
+					if Revisor, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						if Elementos, err := utilsHelper.ConvertirInterfaceArrayMap(data_["Elementos"]); err == nil {
 							for _, elemento := range Elementos {
 								id_, _ := strconv.Atoi(fmt.Sprintf("%v", elemento["Id"]))
@@ -475,22 +435,10 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 							return nil, outputError
 						}
 					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/TraerDetalle",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+						return nil, err
 					}
 				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/TraerDetalle",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					return nil, err
 				}
 			} else {
 				logs.Error(err)

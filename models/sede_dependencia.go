@@ -1,6 +1,6 @@
 package models
 
 type GetSedeDependencia struct {
-	Sede 			*EspacioFisico
-	Dependencia 	*Dependencia
+	Sede        *EspacioFisico
+	Dependencia *Dependencia
 }

@@ -61,8 +61,8 @@ paths:
       operationId: ActaRecibidoController.GetActasRecibidoTipo
       parameters:
       - in: path
-        name: id
-        description: id del acta
+        name: tipo
+        description: Estado del acta
         required: true
         type: string
       responses:
@@ -81,11 +81,13 @@ paths:
       parameters:
       - in: query
         name: states
-        description: If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        description: If specified, returns only acts with the specified state(s) from
+          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
         type: string
       - in: query
         name: u
-        description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
+        description: WSO2 User. When specified, acts will be filtered upon the available
+          roles for the specified user
         type: string
       responses:
         "200":
@@ -139,20 +141,27 @@ paths:
       description: get Soportes by id
       operationId: ActaRecibidoController.Get Soportes
       parameters:
-      - in: body
-        name: body
-        description: "true"
-        schema:
-          $ref: '#/definitions/models.Entrada'
+      - in: path
+        name: id
+        description: Acta Id
+        required: true
+        type: integer
+        format: int64
       responses:
         "200":
           description: ""
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.AsignacionEspacioFisicoDependencia'
+              $ref: '#/definitions/models.SoporteActaProveedor'
+        "400":
+          description: ID MUST be greater than 0
         "404":
           description: not found resource
+        "500":
+          description: Internal Error
+        "502":
+          description: External API Error
   /bajas_elementos/elemento/{id}:
     get:
       tags:
@@ -208,47 +217,6 @@ paths:
           description: '"Unknown API Error"'
         "502":
           description: '"External API Error"'
-  /bodega_consumo/{id}:
-    put:
-      tags:
-      - bodega_consumo
-      description: update the Bodega-Consumo
-      operationId: BodegaConsumoController.Put
-      parameters:
-      - in: path
-        name: id
-        description: The id you want to update
-        required: true
-        type: string
-      - in: body
-        name: body
-        description: body for Bodega-Consumo content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Bodega-Consumo'
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
-        "403":
-          description: :id is not int
-    delete:
-      tags:
-      - bodega_consumo
-      description: delete the Bodega-Consumo
-      operationId: BodegaConsumoController.Delete
-      parameters:
-      - in: path
-        name: id
-        description: The id you want to delete
-        required: true
-        type: string
-      responses:
-        "200":
-          description: '{string} delete success!'
-        "403":
-          description: id is empty
   /bodega_consumo/aperturas_kardex/:
     get:
       tags:
@@ -318,12 +286,14 @@ paths:
     post:
       tags:
       - catalogo_elementos
-      description: Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas asociadas a subgrupos
+      description: Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas
+        asociadas a subgrupos
       operationId: CatalogoElementosController.Create
       parameters:
       - in: body
         name: body
-        description: body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos, cada subgrupo debe llevar un Id definido)
+        description: body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos,
+          cada subgrupo debe llevar un Id definido)
         required: true
         schema:
           $ref: '#/definitions/models.Tr_cuentas_subgrupo'
@@ -351,6 +321,13 @@ paths:
       - catalogo_elementos
       description: Devuelve las todas las actas de recibido
       operationId: CatalogoElementosController.GetCuentasSubgrupoById
+      parameters:
+      - in: path
+        name: id
+        description: subgroup id
+        required: true
+        type: integer
+        format: int64
       responses:
         "200":
           description: ""
@@ -369,6 +346,28 @@ paths:
           description: '{}'
         "404":
           description: not found resource
+  /elemento/:
+    post:
+      tags:
+      - elemento
+      description: create Salida
+      operationId: ElementoController.Create
+      parameters:
+      - in: body
+        name: body
+        description: body for Salida content
+        required: true
+        schema:
+          $ref: '#/definitions/models.SalidaGeneral'
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.TrSalida2'
+        "403":
+          description: body is empty
   /entrada/:
     get:
       tags:
@@ -422,6 +421,25 @@ paths:
             $ref: '#/definitions/models.ConsultaEntrada'
         "404":
           description: not found resource
+  /entrada/anular/{id}:
+    get:
+      tags:
+      - entrada
+      description: anular Entrada by id
+      operationId: EntradaController.Get User
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.ConsultaEntrada'
+        "404":
+          description: not found resource
   /entrada/encargado/{placa}:
     get:
       tags:
@@ -437,6 +455,23 @@ paths:
       responses:
         "200":
           description: '{"funcionario": "string"}'
+        "404":
+          description: not found resource
+  /entrada/movimientos/{acta_recibido_id}:
+    get:
+      tags:
+      - entrada
+      description: return movimientos asociados a un acta
+      operationId: EntradaController.Get User
+      parameters:
+      - in: path
+        name: acta_recibido_id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{object]'
         "404":
           description: not found resource
   /parametros_soporte/:
@@ -532,44 +567,6 @@ paths:
             $ref: '#/definitions/models.TrSalida'
         "404":
           description: not found resource
-  /terceros/:
-    get:
-      tags:
-      - terceros
-      description: get Terceros
-      operationId: TercerosController.GetAll
-      parameters:
-      - in: query
-        name: query
-        description: Filter. e.g. col1:v1,col2:v2 ...
-        type: string
-      - in: query
-        name: fields
-        description: Fields returned. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: sortby
-        description: Sorted-by fields. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: order
-        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
-        type: string
-      - in: query
-        name: limit
-        description: Limit the size of result set. Must be an integer
-        type: string
-      - in: query
-        name: offset
-        description: Start position of result set. Must be an integer
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Terceros'
-        "403":
-          description: ""
   /terceros/{id}:
     get:
       tags:
@@ -589,49 +586,86 @@ paths:
             $ref: '#/definitions/models.Terceros'
         "403":
           description: :id is empty
-    put:
+  /terceros/tipo/:
+    get:
       tags:
       - terceros
-      description: update the Terceros
-      operationId: TercerosController.Put
-      parameters:
-      - in: path
-        name: id
-        description: The id you want to update
-        required: true
-        type: string
-      - in: body
-        name: body
-        description: body for Terceros content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Terceros'
+      description: List the Tercero types that can be used to gather Terceros by {tipo}
+      operationId: TercerosController.GetAll
       responses:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Terceros'
-        "403":
-          description: :id is not int
-    delete:
+            type: array
+            items:
+              type: string
+  /terceros/tipo/{tipo}:
+    get:
       tags:
       - terceros
-      description: delete the Terceros
-      operationId: TercerosController.Delete
+      description: get Terceros with the specified {tipo}
+      operationId: TercerosController.GetAll
       parameters:
       - in: path
-        name: id
-        description: The id you want to delete
+        name: tipo
+        description: Tercero type available from /tipo/
         required: true
         type: string
       responses:
         "200":
-          description: '{string} delete success!'
-        "403":
-          description: id is empty
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/map[string]interface{}'
+        "500":
+          description: Internal Error
+        "501":
+          description: '{tipo} Not Implemented'
+        "502":
+          description: Error with external API
+  /terceros/tipo/{tipo}/{id}:
+    get:
+      tags:
+      - terceros
+      description: get Terceros with the specified {tipo} and {id} of a record in
+        terceros table from Terceros CRUD API
+      operationId: TercerosController.GetAll
+      parameters:
+      - in: path
+        name: tipo
+        description: Tercero type available from /tipo/
+        required: true
+        type: string
+      - in: path
+        name: id
+        description: ID. MUST be greater than 0
+        required: true
+        type: integer
+        format: int32
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/map[string]interface{}'
+        "400":
+          description: Wrong ID
+        "404":
+          description: ID with {tipo} Not Found
+        "500":
+          description: Internal Error
+        "501":
+          description: '{tipo} Not Implemented'
+        "502":
+          description: Error with external API
 definitions:
   '{}':
     title: '{}'
+    type: object
+  map[string]interface{}:
+    title: map[string]interface{}
     type: object
   models.Acta_recibido:
     title: Acta_recibido
@@ -666,12 +700,15 @@ definitions:
     title: AsignacionEspacioFisicoDependencia
     type: object
     properties:
+      Activo:
+        type: boolean
       DependenciaId:
         $ref: '#/definitions/models.Dependencia'
+      DocumentoSoporte:
+        type: integer
+        format: int64
       EspacioFisicoId:
         $ref: '#/definitions/models.EspacioFisico'
-      Estado:
-        type: string
       FechaFin:
         type: string
         format: datetime
@@ -945,10 +982,16 @@ definitions:
     title: EspacioFisico
     type: object
     properties:
-      Codigo:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
         type: string
-      Estado:
+      FechaCreacion:
         type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64
@@ -956,6 +999,21 @@ definitions:
         type: string
       TipoEspacio:
         $ref: '#/definitions/models.TipoEspacio'
+  models.Estado:
+    title: Estado
+    type: object
+    properties:
+      Abreviatura:
+        type: string
+      ClaseParametro:
+        type: string
+      DescripcionParametro:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      ValorParametro:
+        type: string
   models.EstadoElemento:
     title: EstadoElemento
     type: object
@@ -1092,6 +1150,58 @@ definitions:
         type: string
       RolOrdenadorGasto:
         type: string
+  models.Proveedor:
+    title: Proveedor
+    type: object
+    properties:
+      Anexorup:
+        type: string
+      Anexorut:
+        type: string
+      ClasificacionEvaluacion:
+        type: string
+      Correo:
+        type: string
+      Descripcion:
+        type: string
+      Direccion:
+        type: string
+      Estado:
+        $ref: '#/definitions/models.Estado'
+      FechaRegistro:
+        type: string
+      FechaUltimaModificacion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      IdCiudadContacto:
+        type: integer
+        format: int64
+      IdEntidadBancaria:
+        type: integer
+        format: int64
+      NomAsesor:
+        type: string
+      NomProveedor:
+        type: string
+      NumCuentaBancaria:
+        type: string
+      NumDocumento:
+        type: string
+      PuntajeEvaluacion:
+        type: integer
+        format: int64
+      RegimenContributivo:
+        type: string
+      TelAsesor:
+        type: string
+      TipoCuentaBancaria:
+        type: string
+      Tipopersona:
+        type: string
+      Web:
+        type: string
   models.Salida:
     title: Salida
     type: object
@@ -1128,6 +1238,30 @@ definitions:
       ProveedorId:
         type: integer
         format: int64
+  models.SoporteActaProveedor:
+    title: SoporteActaProveedor
+    type: object
+    properties:
+      ActaRecibidoId:
+        $ref: '#/definitions/models.ActaRecibido'
+      Activo:
+        type: boolean
+      Consecutivo:
+        type: string
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      FechaSoporte:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      ProveedorId:
+        $ref: '#/definitions/models.Proveedor'
   models.Supervisor:
     title: Supervisor
     type: object
@@ -1203,6 +1337,16 @@ definitions:
     title: TipoEspacio
     type: object
     properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64
@@ -1263,6 +1407,9 @@ tags:
 - name: entrada
   description: |
     EntradaController operations for Entrada
+- name: elemento
+  description: |
+    SalidaController operations for Salida
 - name: parametros_soporte
   description: |
     ParametrosController operations for Parametros

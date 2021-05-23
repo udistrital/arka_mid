@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 
 // GetCuentaContable ...
 func TestGetCuentaContable(t *testing.T) {
-	valor, err := cuentasContablesHelper.GetCuentaContable(1)
+	valor, err := cuentasContablesHelper.GetCuentaContable("4")
 	if err != nil {
 		t.Error("No se pudo consultar las cuentas contables", err)
 		t.Fail()

@@ -15,11 +15,22 @@ type Subgrupo struct {
 	Id                int
 	Nombre            string
 	Descripcion       string
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
+	FechaCreacion     string
+	FechaModificacion string
 	Activo            bool
-	Codigo            int
-	TipoBienId        *TipoBien
+	Codigo            string
+	TipoNivelId       *TipoNivel
+}
+
+type TipoNivel struct {
+	Id                int
+	Nombre            string
+	Descripcion       string
+	CodigoAbreviacion string
+	Orden             float64
+	Activo            bool
+	FechaCreacion     string
+	FechaModificacion string
 }
 
 type SubgrupoTransaccion struct {
@@ -36,7 +47,7 @@ type SubgrupoCuentas struct {
 	FechaModificacion time.Time
 	Activo            bool
 	Codigo            int
-	CuentasAsociadas  []CuentasGrupo
+	CuentasAsociadas  []CuentaSubgrupo
 }
 type SubgrupoCuentasModelo struct {
 	Id                int

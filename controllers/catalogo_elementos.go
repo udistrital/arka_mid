@@ -32,13 +32,37 @@ func (c *CatalogoElementosController) URLMapping() {
 // @Failure 404 not found resource
 // @router /:id [get]
 func (c *CatalogoElementosController) GetAll() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := catalogoElementosHelper.GetCatalogoById(id)
-	if err != nil {
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		if err == nil {
+			err = fmt.Errorf("id must be > 0")
+		}
 		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+		panic(map[string]interface{}{
+			"funcion": "GetAll - strconv.Atoi(idStr)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	if v, err := catalogoElementosHelper.GetCatalogoById(id); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
@@ -48,17 +72,44 @@ func (c *CatalogoElementosController) GetAll() {
 // GetOne ...
 // @Title GetCuentasSubgrupoById
 // @Description Devuelve las todas las actas de recibido
+// @Param	id		path 	int	true		"subgroup id"
 // @Success 200 {object} models.Acta_recibido
 // @Failure 403
 // @router /cuentas_contables/:id [get]
 func (c *CatalogoElementosController) GetOne() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id)
-	if err != nil {
+	var id int
+	if v, err := strconv.Atoi(idStr); err == nil && v > 0 {
+		id = v
+	} else {
+		if err == nil {
+			err = fmt.Errorf("id MUST be > 0")
+		}
 		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+		panic(map[string]interface{}{
+			"funcion": "GetOne - strconv.Atoi(idStr)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	if v, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
@@ -72,11 +123,22 @@ func (c *CatalogoElementosController) GetOne() {
 // @Failure 404 not found resource
 // @router /movimientos_kronos/
 func (c *CatalogoElementosController) GetAll2() {
-	v, err := catalogoElementosHelper.GetMovimientosKronos()
-	if err != nil {
-		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	if v, err := catalogoElementosHelper.GetMovimientosKronos(); err != nil {
+		panic(err)
 	} else {
 		c.Data["json"] = v
 	}
@@ -91,6 +153,21 @@ func (c *CatalogoElementosController) GetAll2() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *CatalogoElementosController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
 	//esto deberia ser un get ya que es una consulta y recibir de a un id
 	//var arreglosubgrupos []models.Subgrupo
 	var arreglosubgrupos []models.SubgrupoCuentasModelo
@@ -98,8 +175,17 @@ func (c *CatalogoElementosController) Post() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &arreglosubgrupos); err == nil {
 		if data, err := catalogoElementosHelper.GetTipoMovimiento(arreglosubgrupos); err == nil {
 			c.Data["json"] = data
+		} else {
+			panic(err)
 		}
 		c.ServeJSON()
+	} else {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &arreglosubgrupos)",
+			"err":     err,
+			"status":  "400",
+		})
 	}
 
 }
