@@ -21,6 +21,7 @@ todo/todo
 !.env
 lastupdate.*
 .vscode/
+arka_mid
 main
 .scannerwork/
 swagger/**
