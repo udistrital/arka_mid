@@ -16,6 +16,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -40,8 +41,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 	// PARTE "0": Buffers, para evitar repetir consultas...
 	var Historico []map[string]interface{}
-	Terceros := make(map[int](map[string]interface{}))
-	Ubicaciones := make(map[int](map[string]interface{}))
+	Terceros := make(map[int]interface{})
+	Ubicaciones := make(map[int]interface{})
 
 	consultasTerceros := 0
 	consultasUbicaciones := 0
@@ -335,23 +336,53 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 
-			idRev := int(acta["RevisorId"].(float64))
-			if v, err := findAndAddTercero(idRev, Terceros, &consultasTerceros, &evTerceros); err == nil {
-				editor = v
-			} else {
-				return nil, err
+			reqTercero := func(id string) func() (interface{}, map[string]interface{}) {
+				return func() (interface{}, map[string]interface{}) {
+					if Tercero, err := tercerosHelper.GetNombreTerceroById(id); err == nil {
+						return Tercero, nil
+					} else {
+						return nil, err
+					}
+				}
 			}
 
-			idUb := int(acta["UbicacionId"].(float64))
-			if v, err := findAndAddUbicacion(idUb, Ubicaciones, &consultasUbicaciones, &evUbicaciones); err == nil {
-				preUbicacion = v
-			} else {
-				return nil, err
+			idRevStr := fmt.Sprintf("%v", acta["RevisorId"])
+			if idRev, err := strconv.Atoi(idRevStr); err == nil {
+				if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRevStr), &consultasTerceros, &evTerceros); err == nil {
+					if v2, ok := v.(map[string]interface{}); ok {
+						editor = v2
+					}
+				}
 			}
 
-			var tmpAsignadoId = int(acta["PersonaAsignada"].(float64))
-			if v, err := findAndAddTercero(tmpAsignadoId, Terceros, &consultasTerceros, &evTerceros); err == nil {
-				asignado = v
+			idUbStr := fmt.Sprintf("%v", acta["UbicacionId"])
+			reqUbicacion := func() (interface{}, map[string]interface{}) {
+				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idUbStr); err == nil {
+					return ubicacion, nil
+				} else {
+					logs.Error(err)
+					return nil, map[string]interface{}{
+						"funcion": "findAndAddUbicacion - ubicacionHelper.GetAsignacionSedeDependencia(idStr)",
+						"err":     err,
+						"status":  "502",
+					}
+				}
+			}
+			if idUb, err := strconv.Atoi(idUbStr); err == nil {
+				if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
+					if v2, ok := v.(map[string]interface{}); ok {
+						preUbicacion = v2
+					}
+				}
+			}
+
+			idAsignadoStr := fmt.Sprintf("%v", acta["PersonaAsignada"])
+			if idAsignado, err := strconv.Atoi(idAsignadoStr); err == nil {
+				if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignadoStr), &consultasTerceros, &evTerceros); err == nil {
+					if v2, ok := v.(map[string]interface{}); ok {
+						asignado = v2
+					}
+				}
 			}
 
 			if preUbicacion != nil {

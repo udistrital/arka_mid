@@ -58,8 +58,9 @@ steps:
   when:
     branch:
     - develop
-    - release/*
+    - hotfix/*
     - master
+    - release/*
     event:
     - push
 
@@ -80,6 +81,7 @@ steps:
     branch:
     - develop
     - feature/*
+    - hotfix/*
     - release/*
     event:
     - push
@@ -95,6 +97,7 @@ steps:
     branch:
     - develop
     - feature/*
+    - hotfix/*
     - release/*
 
 - name: publish_to_ecr_release

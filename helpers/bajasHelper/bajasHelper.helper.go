@@ -127,8 +127,6 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 	}()
 
 	var Solicitudes []map[string]interface{}
-	var Terceros []map[string]interface{}
-	var Ubicaciones []map[string]interface{}
 
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatotipoMovimientoId.CodigoAbreviacion:SOL_BAJA,Activo:true&limit=-1"
 
@@ -144,6 +142,9 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 			}
 			return nil, outputError
 		}
+
+		tercerosBuffer := make(map[int]interface{})
+		ubicacionesBuffer := make(map[int]interface{})
 
 		for _, solicitud := range Solicitudes {
 
@@ -179,147 +180,44 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 				return nil, outputError
 			}
 
-			if Terceros == nil {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
-					Tercero_ = Tercero
-					Terceros = append(Terceros, Tercero)
-					// } else {
-					// 	return nil, err
-				}
-			} else {
-				if keys := len(Terceros[0]); keys != 0 {
-					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
-						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
-								Tercero_ = Tercero
-								Terceros = append(Terceros, Tercero)
-								// } else {
-								// 	return nil, err
-							}
-						} else {
-							Tercero_ = Tercero
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
+			requestTercero := func(id string) func() (interface{}, map[string]interface{}) {
+				return func() (interface{}, map[string]interface{}) {
+					if Tercero, err := tercerosHelper.GetNombreTerceroById(id); err == nil {
+						return Tercero, nil
 					}
-				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
-						Tercero_ = Tercero
-						Terceros = append(Terceros, Tercero)
-						// } else {
-						// 	return nil, err
+					return nil, nil
+				}
+			}
+
+			funcionarioIDstr := fmt.Sprintf("%v", data_["Funcionario"])
+			if funcionarioID, err := strconv.Atoi(funcionarioIDstr); err == nil {
+				if v, err := utilsHelper.BufferGeneric(funcionarioID, tercerosBuffer, requestTercero(funcionarioIDstr), nil, nil); err == nil {
+					if v2, ok := v.(map[string]interface{}); ok {
+						Tercero_ = v2
 					}
 				}
 			}
 
-			if Terceros == nil {
-				if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
-					Revisor_ = Tercero
-					Terceros = append(Terceros, Tercero)
-					// } else {
-					// 	return nil, err
-				}
-			} else {
-				if keys := len(Terceros[0]); keys != 0 {
-					if Tercero, err := utilsHelper.ArrayFind(Terceros, "Id", fmt.Sprintf("%v", data_["Revisor"])); err == nil {
-						if keys := len(Tercero); keys == 0 {
-							if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
-								Revisor_ = Tercero
-								Terceros = append(Terceros, Tercero)
-								// } else {
-								// 	return nil, err
-							}
-						} else {
-							Revisor_ = Tercero
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				} else {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
-						Revisor_ = Tercero
-						Terceros = append(Terceros, Tercero)
-						// } else {
-						// 	return nil, err
+			revisorIDstr := fmt.Sprintf("%v", data_["Revisor"])
+			if revisorID, err := strconv.Atoi(revisorIDstr); err == nil {
+				if v, err := utilsHelper.BufferGeneric(revisorID, tercerosBuffer, requestTercero(revisorIDstr), nil, nil); err == nil {
+					if v2, ok := v.(map[string]interface{}); ok {
+						Revisor_ = v2
 					}
 				}
 			}
 
-			if Ubicaciones == nil {
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["Ubicacion"])); err == nil {
-					fmt.Println(ubicacion)
-					if keys := len(ubicacion); keys != 0 {
-						Ubicacion_ = ubicacion
-						Ubicaciones = append(Ubicaciones, ubicacion)
-					}
-
-				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "/GetAllSolicitudes",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+			ubicacionIdStr := fmt.Sprintf("%v", data_["Ubicacion"])
+			requestUbicacion := func() (interface{}, map[string]interface{}) {
+				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(ubicacionIdStr); err == nil {
+					return ubicacion, nil
 				}
-			} else {
-				if keys := len(Ubicaciones[0]); keys != 0 {
-					if ubicacion, err := utilsHelper.ArrayFind(Ubicaciones, "Id", fmt.Sprintf("%v", data_["Ubicacion"])); err == nil {
-						if keys := len(ubicacion); keys == 0 {
-							if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["Ubicacion"])); err == nil {
-								fmt.Println(ubicacion)
-								if keys := len(ubicacion); keys != 0 {
-									Ubicacion_ = ubicacion
-									Ubicaciones = append(Ubicaciones, ubicacion)
-								}
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "/GetAllSolicitudes",
-									"err":     err,
-									"status":  "502",
-								}
-								return nil, outputError
-							}
-						} else {
-							Ubicacion_ = ubicacion
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				} else {
-					if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(fmt.Sprintf("%v", data_["Ubicacion"])); err == nil {
-						fmt.Println(ubicacion)
-						if keys := len(ubicacion); keys != 0 {
-							Ubicacion_ = ubicacion
-							Ubicaciones = append(Ubicaciones, ubicacion)
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+				return nil, nil
+			}
+			if ubicacionId, err := strconv.Atoi(ubicacionIdStr); err == nil {
+				if v, err := utilsHelper.BufferGeneric(ubicacionId, ubicacionesBuffer, requestUbicacion, nil, nil); err == nil {
+					if v2, ok := v.(map[string]interface{}); ok {
+						Ubicacion_ = v2
 					}
 				}
 			}
