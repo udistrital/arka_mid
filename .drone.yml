@@ -97,6 +97,7 @@ steps:
     branch:
     - develop
     - feature/*
+    - hotfix/*
     - release/*
 
 - name: publish_to_ecr_release
@@ -114,7 +115,7 @@ steps:
       - release
   when:
     branch:
-    - develop
+    - release/*
     event:
     - push
 
