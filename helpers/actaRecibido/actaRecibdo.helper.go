@@ -224,7 +224,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		var estados []string
 		if contratista {
-			estados = append(estados, "En Elaboracion", "En Modificacion")
+			estados = append(estados, "Registrada", "En Elaboracion", "En Modificacion")
 		} else if proveedor {
 			estados = append(estados, "En Elaboracion")
 		}
