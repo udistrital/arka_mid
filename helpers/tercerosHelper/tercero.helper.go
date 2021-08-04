@@ -147,14 +147,58 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 }
 
 func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputError map[string]interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetTerceroByDoc - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=Activo:true,"
 	urltercero += "Numero:" + doc
 	var terceros []*models.DatosIdentificacion
 
 	if resp, err := request.GetJsonTest(urltercero, &terceros); err == nil && resp.StatusCode == 200 {
-		return terceros[0], nil
+		if len(terceros) == 1 {
+			return terceros[0], nil
+		} else if len(terceros) == 0 {
+			err := fmt.Errorf("El documento '%s' aún no está asignado a un registro en Terceros", doc)
+			outputError = map[string]interface{}{
+				"funcion": "GetTerceroByDoc - len(datosTerceros) == 1 ",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
+		} else { // len(terceros) > 1
+			q := len(terceros)
+			s := ""
+			if q >= 10 {
+				s = " - o más"
+			}
+			err := fmt.Errorf("El Documento '%s' tiene más de un registro en Terceros (%d registros%s)", doc, q, s)
+			logs.Warn(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetTerceroByDoc - len(datosTerceros) == 1 && datosTerceros[0].TerceroId != nil",
+				"err":     err,
+				"status":  "409",
+			}
+			return nil, outputError
+		}
+
+	} else {
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetTerceroByUsuarioWSO2 - request.GetJsonTest(urltercero, &datosTerceros)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 
-	var vacio models.DatosIdentificacion
-	return &vacio, nil
 }
