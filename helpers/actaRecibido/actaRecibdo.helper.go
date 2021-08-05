@@ -129,11 +129,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 			if proveedor || contratista {
-				if data, err := tercerosHelper.GetTerceroByUsuarioWSO2(usrWSO2); err == nil {
-					if v, ok := data["Id"].(int); ok {
-						idTercero = v
-						// Terceros[v] = data // Se podría agregar de una vez, pero no incluye el documento
-					}
+				// fmt.Println(usr.Documento)
+				if data, err := tercerosHelper.GetTerceroByDoc(usr.Documento); err == nil {
+					// fmt.Println(data.TerceroId.Id)
+					idTercero = data.TerceroId.Id
 				} else {
 					return nil, err
 				}

@@ -9,7 +9,6 @@ services:
       - gosrc:/go
       - .:/go/src/${API_BASE_DIR}/${API_NAME}
     env_file: 
-      - custom.env
       - .env
     ports:
       - "${PORT}:${PORT}"
