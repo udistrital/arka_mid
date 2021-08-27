@@ -196,56 +196,6 @@ func (c *ActaRecibidoController) GetElementosActa() {
 	c.ServeJSON()
 }
 
-// GetSoportesActa ...
-// @Title Get Soportes
-// @Description get Soportes by id
-// @Param	id	path 	int	true "Acta Id"
-// @Success 200 {object} []models.SoporteActaProveedor
-// @Failure 400 ID MUST be greater than 0
-// @Failure 404 not found resource
-// @Failure 500 Internal Error
-// @Failure 502 External API Error
-// @router /get_soportes_acta/:id [get]
-func (c *ActaRecibidoController) GetSoportesActa() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
-
-	idStr := c.Ctx.Input.Param(":id")
-	var id int
-
-	if idTest, err := strconv.Atoi(idStr); err == nil && idTest > 0 {
-		id = idTest
-	} else {
-		if err == nil {
-			err = fmt.Errorf("the Id MUST be greater than 0 - Got: %s", idStr)
-		}
-		panic(map[string]interface{}{
-			"funcion": "GetSoportesActa",
-			"err":     err,
-			"status":  "400",
-		})
-	}
-
-	if v, err := actaRecibido.GetSoportes(id); err == nil {
-		c.Data["json"] = v
-	} else {
-		panic(err)
-	}
-	c.ServeJSON()
-}
-
 // GetAllElementosConsumo ...
 // @Title GetAllElementosConsumo
 // @Description Trae todos los elementos de consumo
