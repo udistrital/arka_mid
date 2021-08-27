@@ -1017,7 +1017,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 }
 
 // GetElementos ...
-func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError map[string]interface{}) {
+func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -1033,17 +1033,18 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 	var (
 		urlcrud   string
 		elementos []models.Elemento
-		auxE      models.ElementosActa
-		soporte   *models.SoporteActaProveedor
+		auxE      models.DetalleElemento
 	)
+
+	unidades := make(map[int]interface{})
+	consultasUnidades := 0
+	evUnidades := 0
+
 	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=SoporteActaId.ActaRecibidoId.Id:" + strconv.Itoa(actaId) +
-			",Activo:True&limit=-1"
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
+		urlcrud += "&limit=-1"
 		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
-			// Solicita información unidad elemento
-			// urlcrud = "http://" + beego.AppConfig.String("administrativaService") + "/unidad/"
-			// fmt.Printf("#Elementos: %v\n", len(elementos))
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
 				err := fmt.Errorf("no elements for Act #%d (or Act not found)", actaId)
@@ -1056,33 +1057,48 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				return nil, outputError
 			}
 
-			for k, elemento := range elementos {
-				fmt.Printf("#Elemento: %v\n", k)
+			for _, elemento := range elementos {
+
+				var unidad *models.Unidad
+
+				idUnidad := elemento.UnidadMedida
+				reqUnidad := func() (interface{}, map[string]interface{}) {
+					if unidad_, err := unidadHelper.GetUnidad(idUnidad); err == nil && len(unidad_) > 0 {
+						return unidad_[0], nil
+					} else if err != nil {
+						return nil, err
+					} else {
+						logs.Error(err)
+						return nil, map[string]interface{}{
+							"funcion": "GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
+							"err":     err,
+							"status":  "500",
+						}
+					}
+				}
+
+				if v, err := utilsHelper.BufferGeneric(idUnidad, unidades, reqUnidad, &consultasUnidades, &evUnidades); err == nil {
+					if v != nil {
+						if jsonString, err := json.Marshal(v); err == nil {
+							if err := json.Unmarshal(jsonString, &unidad); err != nil {
+								logs.Error(err)
+								outputError = map[string]interface{}{
+									"funcion": "GetElementos - json.Unmarshal(jsonString, &unidad)",
+									"err":     err,
+									"status":  "500",
+								}
+								return nil, outputError
+							}
+						}
+					}
+				}
 
 				auxE.Id = elemento.Id
 				auxE.Nombre = elemento.Nombre
 				auxE.Cantidad = elemento.Cantidad
 				auxE.Marca = elemento.Marca
 				auxE.Serie = elemento.Serie
-
-				// UNIDAD DE MEDIDA
-				if elemento.UnidadMedida > 0 {
-					if unidad, err := unidadHelper.GetUnidad(elemento.UnidadMedida); err == nil && len(unidad) > 0 {
-						auxE.UnidadMedida = unidad[0]
-					} else if err != nil {
-						return nil, err
-					} else {
-						err := fmt.Errorf("UnidadMedida '%d' Not Found", elemento.UnidadMedida)
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				}
-
+				auxE.UnidadMedida = unidad
 				auxE.ValorUnitario = elemento.ValorUnitario
 				auxE.Subtotal = elemento.Subtotal
 				auxE.Descuento = elemento.Descuento
@@ -1094,36 +1110,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 				auxE.Verificado = elemento.Verificado
 				auxE.TipoBienId = elemento.TipoBienId
 				auxE.EstadoElementoId = elemento.EstadoElementoId
-				// SOPORTE
-				soporte = new(models.SoporteActaProveedor)
-
-				if elemento.SoporteActaId.ProveedorId > 0 {
-					if proveedor, err := proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId); err == nil && len(proveedor) > 0 {
-						fmt.Printf("proveedor: %#v\n", proveedor[0])
-						soporte.ProveedorId = proveedor[0]
-					} else if err != nil {
-						return nil, err
-					} else {
-						err := fmt.Errorf("ProveedorId '%d' Not Found", elemento.SoporteActaId.ProveedorId)
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "GetElementos - proveedorHelper.GetProveedorById(elemento.SoporteActaId.ProveedorId)",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				}
-
-				soporte.Id = elemento.SoporteActaId.Id
-				soporte.ActaRecibidoId = elemento.SoporteActaId.ActaRecibidoId
-				soporte.Consecutivo = elemento.SoporteActaId.Consecutivo
-				soporte.Activo = elemento.SoporteActaId.Activo
-				soporte.FechaCreacion = elemento.SoporteActaId.FechaCreacion
-				soporte.FechaModificacion = elemento.SoporteActaId.FechaModificacion
-				soporte.FechaSoporte = elemento.SoporteActaId.FechaSoporte
-				auxE.SoporteActaId = soporte
-
+				auxE.ActaRecibidoId = elemento.ActaRecibidoId
 				auxE.Placa = elemento.Placa
 				auxE.Activo = elemento.Activo
 				auxE.FechaCreacion = elemento.FechaCreacion
@@ -1133,6 +1120,7 @@ func GetElementos(actaId int) (elementosActa []models.ElementosActa, outputError
 
 			}
 
+			logs.Info("consultasTerceros:", consultasUnidades, " - Evitadas: ", evUnidades)
 			return elementosActa, nil
 		} else {
 			if err == nil {
