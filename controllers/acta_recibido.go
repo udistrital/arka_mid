@@ -98,52 +98,6 @@ func (c *ActaRecibidoController) GetAll() {
 	c.ServeJSON()
 }
 
-// GetActasByTipo ...
-// @Title GetActasRecibidoTipo
-// @Description Devuelve las todas las actas de recibido
-// @Param	tipo		path 	string	true		"Estado del acta"
-// @Success 200 {object} models.Acta_recibido
-// @Failure 403
-// @router /get_actas_recibido_tipo/:tipo [get]
-func (c *ActaRecibidoController) GetActasByTipo() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
-
-	var tipo int
-
-	if v, err := c.GetInt(":tipo"); err == nil {
-		tipo = v
-	} else {
-		err := fmt.Errorf("{tipo} must be an Integer")
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetActasByTipo",
-			"err":     err,
-			"status":  "400",
-		})
-	}
-
-	if v, err := actaRecibido.GetActasRecibidoTipo(tipo); err == nil {
-		c.Data["json"] = v
-		c.Ctx.Output.SetStatus(200)
-	} else {
-		panic(err)
-	}
-	c.ServeJSON()
-}
-
 // GetElementosActa ...
 // @Title Get Elementos
 // @Description get Elementos by id
