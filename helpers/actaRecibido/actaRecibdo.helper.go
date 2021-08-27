@@ -14,7 +14,6 @@ import (
 	"github.com/tealeg/xlsx"
 
 	"github.com/udistrital/arka_mid/helpers/autenticacion"
-	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/unidadHelper"
@@ -172,7 +171,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
-	urlEstados += "&fields=ActaRecibidoId,EstadoActaId&query=Activo:true"
+	urlEstados += "&query=Activo:true"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
 		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
@@ -234,7 +233,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			if !proveedor {
 				// Si no es proveedor, agregar de una vez el filtro del contratista
 				// pues sería la única razón para que se ejecute este "for"
-				urlContProv += ",ActaRecibidoId__PersonaAsignada:" + fmt.Sprint(idTercero)
+				urlContProv += ",PersonaAsignadaId:" + fmt.Sprint(idTercero)
 			}
 			urlContProv = strings.ReplaceAll(urlContProv, " ", "%20")
 			// logs.Debug("urlContProv:", urlContProv, "- estado:", estado)
@@ -264,7 +263,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			agregar := false
 			if proveedor {
 				var soportes []map[string]interface{}
-				urlSoporteActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta"
+				urlSoporteActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta"
 				urlSoporteActa += "?fields=Id" // Realmente no importan los campos, lo que importa es la asociacion con el proveedor y el acta
 				urlSoporteActa += "&query=Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(idActa)
 				urlSoporteActa += ",ProveedorId:" + fmt.Sprint(idTercero)
@@ -318,7 +317,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var ubicacionData map[string]interface{}
 			var editor map[string]interface{}
 			var preUbicacion map[string]interface{}
-			// var oldAsignado *models.Proveedor // "old": de proveedores, se va a eliminar
 			var asignado map[string]interface{}
 
 			preUbicacion = nil
@@ -345,7 +343,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idRevStr := fmt.Sprintf("%v", acta["RevisorId"])
+			idRevStr := strconv.Itoa(int(historicos["RevisorId"].(float64)))
 			if idRev, err := strconv.Atoi(idRevStr); err == nil {
 				if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRevStr), &consultasTerceros, &evTerceros); err == nil {
 					if v2, ok := v.(map[string]interface{}); ok {
@@ -354,7 +352,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idUbStr := fmt.Sprintf("%v", acta["UbicacionId"])
+			idUbStr := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
 			reqUbicacion := func() (interface{}, map[string]interface{}) {
 				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idUbStr); err == nil {
 					return ubicacion, nil
@@ -375,7 +373,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idAsignadoStr := fmt.Sprintf("%v", acta["PersonaAsignada"])
+			idAsignadoStr := strconv.Itoa(int(historicos["PersonaAsignadaId"].(float64)))
 			if idAsignado, err := strconv.Atoi(idAsignadoStr); err == nil {
 				if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignadoStr), &consultasTerceros, &evTerceros); err == nil {
 					if v2, ok := v.(map[string]interface{}); ok {
@@ -401,30 +399,26 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 					"Nombre": "Ubicacion No Especificada",
 				}
 			}
-			// fmt.Println(ubicacionData)
+
 			Acta := map[string]interface{}{
-				"UbicacionId":       ubicacionData["Nombre"],
-				"Activo":            acta["Activo"],
-				"FechaCreacion":     acta["FechaCreacion"],
-				"FechaVistoBueno":   acta["FechaVistoBueno"],
-				"FechaModificacion": acta["FechaModificacion"],
 				"Id":                acta["Id"],
-				"Observaciones":     acta["Observaciones"],
+				"UbicacionId":       ubicacionData["Nombre"],
+				"FechaCreacion":     strings.Split(acta["FechaCreacion"].(string), "T")[0],
+				"FechaVistoBueno":   strings.Split(historicos["FechaVistoBueno"].(string), "T")[0],
+				"FechaModificacion": strings.Split(historicos["FechaModificacion"].(string), "T")[0],
+				"Observaciones":     historicos["Observaciones"],
 				"RevisorId":         editor["NombreCompleto"],
-				// "oldAsignada":       oldAsignado.NomProveedor,
-				"PersonaAsignada": asignado["NombreCompleto"],
-				// "PersonaAsignadaId": tmpAsignadoId,
-				"Estado": estado["Nombre"],
+				"PersonaAsignada":   asignado["NombreCompleto"],
+				"Estado":            estado["Nombre"],
+				"EstadoActaId":      estado,
 			}
-			// fmt.Println("Es esto")
-			// fmt.Println(Acta)
+
 			historicoActa = append(historicoActa, Acta)
 		}
 
 		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)
 		logs.Info("consultasUbicaciones:", consultasUbicaciones, " - Evitadas: ", evUbicaciones)
 		logs.Info("consultasProveedores:", consultasProveedores, " - Evitadas: ", evProveedores)
-		// formatdata.JsonPrint(Proveedores)
 		logs.Info(len(historicoActa), "actas")
 		return historicoActa, nil
 
