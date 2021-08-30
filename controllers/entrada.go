@@ -49,7 +49,8 @@ func (c *EntradaController) Post() {
 
 	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if respuesta, err := entradaHelper.AddEntrada(v); err == nil && respuesta != nil {
+		//	if respuesta, err := entradaHelper.AddEntrada(v); err == nil && respuesta != nil {
+		if respuesta, err := entradaHelper.MvtoContableEntrada(v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {
