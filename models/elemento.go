@@ -18,7 +18,6 @@ type Elemento struct {
 	ValorFinal         float64
 	SubgrupoCatalogoId int
 	Verificado         bool
-	TipoBienId         *TipoBien
 	EstadoElementoId   *EstadoElemento
 	ActaRecibidoId     *ActaRecibido
 	Placa              string
@@ -33,7 +32,7 @@ type DetalleElemento struct {
 	Cantidad           int
 	Marca              string
 	Serie              string
-	UnidadMedida       *Unidad
+	UnidadMedida       int
 	ValorUnitario      float64
 	Subtotal           float64
 	Descuento          float64
@@ -41,9 +40,7 @@ type DetalleElemento struct {
 	PorcentajeIvaId    int
 	ValorIva           float64
 	ValorFinal         float64
-	SubgrupoCatalogoId int
-	Verificado         bool
-	TipoBienId         *TipoBien
+	SubgrupoCatalogoId *DetalleSubgrupo
 	EstadoElementoId   *EstadoElemento
 	ActaRecibidoId     *ActaRecibido
 	Placa              string

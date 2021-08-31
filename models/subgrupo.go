@@ -12,14 +12,12 @@ type SubgrupoModelo struct {
 	Codigo            int
 }
 type Subgrupo struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	FechaCreacion     string
-	FechaModificacion string
-	Activo            bool
-	Codigo            string
-	TipoNivelId       *TipoNivel
+	Id          int
+	Nombre      string
+	Descripcion string
+	Activo      bool
+	Codigo      string
+	TipoNivelId *TipoNivel
 }
 
 type TipoNivel struct {
@@ -68,4 +66,14 @@ type SubgrupoCuentasMovimiento struct {
 	Activo            bool
 	Codigo            int
 	CuentasAsociadas  []CuentasGrupoMovimiento
+}
+
+type DetalleSubgrupo struct {
+	Id           int
+	Depreciacion bool
+	Valorizacion bool
+	Deterioro    bool
+	Activo       bool
+	SubgrupoId   *Subgrupo
+	TipoBienId   *TipoBien
 }
