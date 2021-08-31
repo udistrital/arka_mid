@@ -218,6 +218,7 @@ func asientoContable(totales map[int]float64, tipomvto string) {
 		logs.Info("Problema con la api de consecutivos")
 		panic(err.Error())
 	}
+	//hoy quito este quemado.
 	infoComprobante.TipoComprobanteId = "5e17ae257c844810afd94369"
 	infoComprobante.ComprobanteId = "5e17ae567c844810afd9436a"
 	etiquetas, err := json.Marshal(infoComprobante)
@@ -230,18 +231,22 @@ func asientoContable(totales map[int]float64, tipomvto string) {
 	mvto.ConsecutivoId = int(idconsecutivo)
 	mvto.Descripcion = "Asiento contable"
 	mvto.Etiquetas = string(etiquetas)
+	//hoy quito este quemado
 	mvto.FechaTransaccion = "2021-02-12T01:10:06.478Z"
 
 	for clave, _ := range totales {
 		logs.Info("entra aqui")
 		urlcuentas := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo/?query=SubgrupoId.Id:" + strconv.Itoa(clave) + ",Activo:true,SubtipoMovimientoId:" + tipomvto
+		logs.Info(urlcuentas)
 		if response, err := request.GetJsonTest(urlcuentas, &elemento); err == nil {
 			logs.Info("entra aqui 1")
 			if response.StatusCode == 200 {
+				logs.Info("entra aqui 2")
 				for _, element := range elemento {
 					if len(element) == 0 {
 						return
 					} else {
+						logs.Info("entra aqui 3")
 						//						cuentacredito := "1-6-55-11-14"
 						cuentacredito := element["CuentaCreditoId"].(string)
 						//						cuentadebito := "1-6-55-11-14"
@@ -250,8 +255,8 @@ func asientoContable(totales map[int]float64, tipomvto string) {
 						nombrecuentadebito := ""
 						nombrecuentacredito := ""
 
-						logs.Info("http://" + beego.AppConfig.String("cuentasContablesCrudService") + "nodo_cuenta_contable/" + cuentadebito)
-						if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("cuentasContablesCrudService")+"nodo_cuenta_contable/"+cuentadebito, &respuesta_peticion); err == nil {
+						logs.Info("http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentadebito)
+						if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("cuentasContablesService")+"nodo_cuenta_contable/"+cuentadebito, &respuesta_peticion); err == nil {
 							nombrecuentadebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
 						} else {
 							logs.Info("problema api consulta de cuentas cuenta debito")
@@ -259,7 +264,7 @@ func asientoContable(totales map[int]float64, tipomvto string) {
 							return
 						}
 
-						logs.Info("http://" + beego.AppConfig.String("cuentasContablesCrudService") + "nodo_cuenta_contable/" + cuentacredito)
+						logs.Info("http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentacredito)
 						if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("cuentasContablesService")+"/nodo_cuenta_contable/"+cuentacredito, &respuesta_peticion); err == nil {
 							nombrecuentacredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
 						} else {
@@ -287,16 +292,12 @@ func asientoContable(totales map[int]float64, tipomvto string) {
 					}
 
 				}
-				resultado, err := json.Marshal(mvto)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				logs.Info(string(resultado[:]))
-				/*					apiMvtoContables := "http://" + beego.AppConfig.String("midMovtosContablesService") + "transaccion_movimientos/transaccion_movimientos/"
-									if err := request.SendJson(apiMvtoContables, "POST", &res, &mvto); err == nil {
-										logs.Info("Termino bien")
-									}*/
+				//				formatdata.JsonPrint(mvto)
+				apiMvtoContables := "http://" + beego.AppConfig.String("midMovtosContablesService") + "transaccion_movimientos/transaccion_movimientos/"
+				logs.Info(fmt.Sprintf("apiMvtoContables: %s - body: %v", apiMvtoContables, mvto))
+				/*					if err := request.SendJson(apiMvtoContables, "POST", &res, &mvto); err == nil {
+									logs.Info("Termino bien")
+								}*/
 
 			} else {
 				logs.Info("Problemas en este if")
@@ -306,7 +307,6 @@ func asientoContable(totales map[int]float64, tipomvto string) {
 			logs.Info("Problemas capturando las cuentas del subgrupo")
 		}
 	}
-
 }
 
 func MvtoContableEntrada(data models.Movimiento) (result map[string]interface{}, outputError map[string]interface{}) {
@@ -327,6 +327,8 @@ func MvtoContableEntrada(data models.Movimiento) (result map[string]interface{},
 		elementosActa []models.ElementosActa
 	)
 
+	subTipoMovto := strconv.Itoa(data.IdTipoMovimiento)
+	logs.Info("el verdadero tipo de movimiento", subTipoMovto)
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
 		panic(err.Error())
@@ -339,7 +341,6 @@ func MvtoContableEntrada(data models.Movimiento) (result map[string]interface{},
 		",Activo:True&limit=-1"
 
 	fmt.Println("El crud:", urlcrud)
-	subTipoMovto := ""
 	if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
 
 		for k, elemento := range elementos {
@@ -365,10 +366,10 @@ func MvtoContableEntrada(data models.Movimiento) (result map[string]interface{},
 			contenidoActa.Activo = elemento.Activo
 			contenidoActa.FechaCreacion = elemento.FechaCreacion
 			contenidoActa.FechaModificacion = elemento.FechaModificacion
+			logs.Info("El elemento: ", elemento)
 			elementosActa = append(elementosActa, contenidoActa)
-			subTipoMovto = strconv.Itoa(contenidoActa.SubgrupoCatalogoId)
 		}
-
+		logs.Info("El subtipodemovimiento: ", subTipoMovto)
 		resultado := groupBy(elementosActa)
 		asientoContable(resultado, subTipoMovto)
 

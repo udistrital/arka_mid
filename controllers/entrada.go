@@ -47,8 +47,13 @@ func (c *EntradaController) Post() {
 		}
 	}()
 
+	//Validar que el tercero exista en terceros api.
+	//Crear una nueva carpeta de helpers contabilidad ahí adentro crear contabilidad.go
+
 	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+
+		logs.Info("Lo que llega", v)
 		//	if respuesta, err := entradaHelper.AddEntrada(v); err == nil && respuesta != nil {
 		if respuesta, err := entradaHelper.MvtoContableEntrada(v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
