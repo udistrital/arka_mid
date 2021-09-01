@@ -25,33 +25,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// ARCHIVO: actaRecibd.helper.go
-
-// TestGetActasRecibidoTipo ...
-func TestGetActasRecibidoTipo(t *testing.T) {
-	valor, err := actaRecibido.GetActasRecibidoTipo(5)
-	if err != nil {
-		t.Error("No se pudo consultar las actas de recibido por tipo", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetActasRecibidoTipo Finalizado Correctamente (OK)")
-	}
-}
-
-// TestGetElementoById ...
-func TestGetElementoById(t *testing.T) {
-	id := "1"
-	valor, err := actaRecibido.GetElementoById(id)
-	if err != nil {
-		t.Error("No se pudo consultar el elemento con id:", id, "- err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetElementoById Finalizado Correctamente (OK)")
-	}
-}
-
 // ARCHIVO: actaRecibdo.helper.go
 
 // TestGetAllActasRecibidoActivas ...
@@ -131,19 +104,6 @@ func TestGetElementos(t *testing.T) {
 	} else {
 		t.Log(valor)
 		t.Log("TestGetElementos Finalizado Correctamente (OK)")
-	}
-}
-
-// TestGetSoportes ...
-func TestGetSoportes(t *testing.T) {
-	id := 14
-	valor, err := actaRecibido.GetSoportes(id)
-	if err != nil {
-		t.Error("No se pudo consultar los soportes del acta de recibido", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetSoportes Finalizado Correctamente (OK)")
 	}
 }
 
