@@ -299,7 +299,7 @@ func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, out
 				outputError = map[string]interface{}{
 					"funcion": "GetDetalleSubgrupo - request.GetJsonTest(urlSubgrupo, &subgrupo) / response.StatusCode == 200",
 					"err":     err,
-					"status":  "500",
+					"status":  "502",
 				}
 				return nil, outputError
 			}
