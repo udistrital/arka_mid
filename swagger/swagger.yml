@@ -823,8 +823,6 @@ definitions:
       Subtotal:
         type: number
         format: double
-      TipoBienId:
-        $ref: '#/definitions/models.TipoBien'
       UnidadMedida:
         type: integer
         format: int64
@@ -1134,30 +1132,6 @@ definitions:
         format: int64
       Nombre:
         type: string
-  models.TipoBien:
-    title: TipoBien
-    type: object
-    properties:
-      Activo:
-        type: boolean
-      CodigoAbreviacion:
-        type: string
-      Descripcion:
-        type: string
-      FechaCreacion:
-        type: string
-        format: datetime
-      FechaModificacion:
-        type: string
-        format: datetime
-      Id:
-        type: integer
-        format: int64
-      Nombre:
-        type: string
-      Orden:
-        type: number
-        format: double
   models.TipoEntrada:
     title: TipoEntrada
     type: object
