@@ -272,3 +272,54 @@ func GetTipoMovimiento(arreglosubgrupos []models.SubgrupoCuentasModelo) (subgrup
 
 	return subgrupos, nil
 }
+
+func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, outputError map[string]interface{}) {
+	if subgrupoId > 0 {
+
+		defer func() {
+			if err := recover(); err != nil {
+				outputError = map[string]interface{}{
+					"funcion": "/GetDetalleSubgrupo - Unhandled Error!",
+					"err":     err,
+					"status":  "500",
+				}
+				panic(outputError)
+			}
+		}()
+
+		urlSubgrupo := "http://" + beego.AppConfig.String("catalogoElementosService") + "detalle_subgrupo?"
+		urlSubgrupo += "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
+		urlSubgrupo += "&fields=SubgrupoId,TipoBienId"
+		if response, err := request.GetJsonTest(urlSubgrupo, &subgrupo); err == nil {
+			if response.StatusCode == 200 {
+				return subgrupo, nil
+			} else {
+				err := fmt.Errorf("Undesired Status: %s", response.Status)
+				logs.Error(err)
+				outputError = map[string]interface{}{
+					"funcion": "GetDetalleSubgrupo - request.GetJsonTest(urlSubgrupo, &subgrupo) / response.StatusCode == 200",
+					"err":     err,
+					"status":  "500",
+				}
+				return nil, outputError
+			}
+		} else {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetUnidad - request.GetJsonTest(urlSubgrupo, &subgrupo)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
+		}
+	} else {
+		err := fmt.Errorf("subgrupoId MUST be greater than 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetDetalleSubgrupo",
+			"err":     err,
+			"status":  "400",
+		}
+		return nil, outputError
+	}
+}

@@ -14,9 +14,9 @@ import (
 	"github.com/tealeg/xlsx"
 
 	"github.com/udistrital/arka_mid/helpers/autenticacion"
+	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
-	"github.com/udistrital/arka_mid/helpers/unidadHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 
@@ -400,11 +400,16 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
+			fVistoBueno := strings.Split(historicos["FechaVistoBueno"].(string), "T")[0]
+			if fVistoBueno == "0001-01-01" {
+				fVistoBueno = ""
+			}
+
 			Acta := map[string]interface{}{
 				"Id":                acta["Id"],
 				"UbicacionId":       ubicacionData["Nombre"],
 				"FechaCreacion":     strings.Split(acta["FechaCreacion"].(string), "T")[0],
-				"FechaVistoBueno":   strings.Split(historicos["FechaVistoBueno"].(string), "T")[0],
+				"FechaVistoBueno":   fVistoBueno,
 				"FechaModificacion": strings.Split(historicos["FechaModificacion"].(string), "T")[0],
 				"Observaciones":     historicos["Observaciones"],
 				"RevisorId":         editor["NombreCompleto"],
@@ -745,6 +750,9 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 					for i, cell := range row.Cells {
 						elementos[i] = cell.String()
 					}
+
+					var tarifaIva int
+					var vlrIva float64
 					if elementos[0] != "Totales" {
 						vlrcantidad, err := strconv.ParseInt(elementos[6], 10, 64)
 						if err == nil {
@@ -780,6 +788,8 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 									if valor == int64(valor_iva.Tarifa) {
 										elementos[12] = strconv.FormatFloat(vlrdcto*float64(valor)/100, 'f', 2, 64)
 										elementos[11] = strconv.Itoa(valor_iva.Tarifa)
+										vlrIva = vlrdcto * float64(valor) / 100
+										tarifaIva = valor_iva.Tarifa
 									}
 								}
 							} else {
@@ -810,23 +820,34 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						}
 
 						convertir3 := elementos[2]
+
+						var subgrupoId *models.Subgrupo
+						var tipoBien *models.TipoBien
+						tipoBien = new(models.TipoBien)
+						subgrupoId = new(models.Subgrupo)
+						var subgrupo = map[string]interface{}{
+							"SubgrupoId": subgrupoId,
+							"TipoBienId": tipoBien,
+						}
 						if err == nil {
 							logs.Info(convertir3)
 							for _, consumo := range SubgruposConsumo {
 								if convertir3 == consumo["Nombre"] {
-									elementos[2] = fmt.Sprintf("%v", consumo["Id"])
+									subgrupo = consumo
 									elementos[1] = strconv.Itoa(1)
 								}
 							}
 							for _, consumoC := range SubgruposConsumoControlado {
 								if convertir3 == consumoC["Nombre"] {
 									elementos[2] = fmt.Sprintf("%v", consumoC["Id"])
+									subgrupo = consumoC
 									elementos[1] = strconv.Itoa(2)
 								}
 							}
 							for _, devolutivo := range SubgruposDevolutivo {
 								if convertir3 == devolutivo["Nombre"] {
 									elementos[2] = fmt.Sprintf("%v", devolutivo["Id"])
+									subgrupo = devolutivo
 									elementos[1] = strconv.Itoa(3)
 								}
 							}
@@ -835,20 +856,19 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						}
 
 						Elemento = append(Elemento, map[string]interface{}{
-							"NivelInventariosId": elementos[0],
-							"TipoBienId":         elementos[1],
-							"SubgrupoCatalogoId": elementos[2],
+							"Id":                 0,
+							"SubgrupoCatalogoId": subgrupo,
 							"Nombre":             elementos[3],
 							"Marca":              elementos[4],
 							"Serie":              elementos[5],
-							"Cantidad":           elementos[6],
+							"Cantidad":           vlrcantidad,
 							"UnidadMedida":       elementos[7],
-							"ValorUnitario":      elementos[8],
-							"Subtotal":           elementos[9],
-							"Descuento":          elementos[10],
-							"PorcentajeIvaId":    elementos[11],
-							"ValorIva":           elementos[12],
-							"ValorTotal":         elementos[13],
+							"ValorUnitario":      vlrunitario,
+							"Subtotal":           vlrsubtotal,
+							"Descuento":          vlrdcto,
+							"PorcentajeIvaId":    tarifaIva,
+							"ValorIva":           vlrIva,
+							"ValorTotal":         vlrtotal,
 						})
 					} else {
 						Respuesta = append(Respuesta, map[string]interface{}{
@@ -1036,9 +1056,9 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 		auxE      models.DetalleElemento
 	)
 
-	unidades := make(map[int]interface{})
-	consultasUnidades := 0
-	evUnidades := 0
+	subgrupos := make(map[int]interface{})
+	consultasSubgrupos := 0
+	evSubgrupos := 0
 
 	if actaId > 0 { // (1) error parametro
 		// Solicita información elementos acta
@@ -1047,47 +1067,56 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
-				err := fmt.Errorf("no elements for Act #%d (or Act not found)", actaId)
-				logs.Warn(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetElementos - len(elementos) == 0 || elementos[0].Id == 0",
-					"err":     err,
-					"status":  "204",
-				}
-				return nil, outputError
+
+				elemento := *&[]models.DetalleElemento{}
+
+				return elemento, nil
 			}
 
 			for _, elemento := range elementos {
 
-				var unidad *models.Unidad
+				var subgrupoId *models.Subgrupo
+				subgrupoId = new(models.Subgrupo)
+				var tipoBienId *models.TipoBien
+				tipoBienId = new(models.TipoBien)
 
-				idUnidad := elemento.UnidadMedida
-				reqUnidad := func() (interface{}, map[string]interface{}) {
-					if unidad_, err := unidadHelper.GetUnidad(idUnidad); err == nil && len(unidad_) > 0 {
-						return unidad_[0], nil
+				subgrupo := *&models.DetalleSubgrupo{
+					SubgrupoId: subgrupoId,
+					TipoBienId: tipoBienId,
+				}
+
+				subgrupo.TipoBienId = tipoBienId
+				subgrupo.SubgrupoId = subgrupoId
+
+				idSubgrupo := elemento.SubgrupoCatalogoId
+				reqSubgrupo := func() (interface{}, map[string]interface{}) {
+					if detalleSubgrupo_, err := catalogoElementosHelper.GetDetalleSubgrupo(idSubgrupo); err == nil && len(detalleSubgrupo_) > 0 {
+						return detalleSubgrupo_[0], nil
 					} else if err != nil {
 						return nil, err
 					} else {
 						logs.Error(err)
 						return nil, map[string]interface{}{
-							"funcion": "GetElementos - unidadHelper.GetUnidad(elemento.UnidadMedida)",
+							"funcion": "GetElementos - catalogoElementosHelper.GetDetalleSubgrupo(idSubgrupo)",
 							"err":     err,
 							"status":  "500",
 						}
 					}
 				}
 
-				if v, err := utilsHelper.BufferGeneric(idUnidad, unidades, reqUnidad, &consultasUnidades, &evUnidades); err == nil {
-					if v != nil {
-						if jsonString, err := json.Marshal(v); err == nil {
-							if err := json.Unmarshal(jsonString, &unidad); err != nil {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "GetElementos - json.Unmarshal(jsonString, &unidad)",
-									"err":     err,
-									"status":  "500",
+				if idSubgrupo > 0 {
+					if v, err := utilsHelper.BufferGeneric(idSubgrupo, subgrupos, reqSubgrupo, &consultasSubgrupos, &evSubgrupos); err == nil {
+						if v != nil {
+							if jsonString, err := json.Marshal(v); err == nil {
+								if err := json.Unmarshal(jsonString, &subgrupo); err != nil {
+									logs.Error(err)
+									outputError = map[string]interface{}{
+										"funcion": "GetElementos - json.Unmarshal(jsonString, &subgrupo)",
+										"err":     err,
+										"status":  "500",
+									}
+									return nil, outputError
 								}
-								return nil, outputError
 							}
 						}
 					}
@@ -1098,7 +1127,7 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 				auxE.Cantidad = elemento.Cantidad
 				auxE.Marca = elemento.Marca
 				auxE.Serie = elemento.Serie
-				auxE.UnidadMedida = unidad
+				auxE.UnidadMedida = elemento.UnidadMedida
 				auxE.ValorUnitario = elemento.ValorUnitario
 				auxE.Subtotal = elemento.Subtotal
 				auxE.Descuento = elemento.Descuento
@@ -1106,9 +1135,7 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 				auxE.PorcentajeIvaId = elemento.PorcentajeIvaId
 				auxE.ValorIva = elemento.ValorIva
 				auxE.ValorFinal = elemento.ValorFinal
-				auxE.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
-				auxE.Verificado = elemento.Verificado
-				auxE.TipoBienId = elemento.TipoBienId
+				auxE.SubgrupoCatalogoId = &subgrupo
 				auxE.EstadoElementoId = elemento.EstadoElementoId
 				auxE.ActaRecibidoId = elemento.ActaRecibidoId
 				auxE.Placa = elemento.Placa
@@ -1120,7 +1147,7 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 
 			}
 
-			logs.Info("consultasTerceros:", consultasUnidades, " - Evitadas: ", evUnidades)
+			logs.Info("consultasSubgrupos:", consultasSubgrupos, " - Evitadas: ", evSubgrupos)
 			return elementosActa, nil
 		} else {
 			if err == nil {

@@ -1,7 +1,5 @@
 package models
 
-import "time"
-
 type TipoBien struct {
 	Id                int
 	Nombre            string
@@ -9,6 +7,6 @@ type TipoBien struct {
 	CodigoAbreviacion string
 	Orden             float64
 	Activo            bool
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
+	// FechaCreacion     time.Time
+	// FechaModificacion time.Time
 }
