@@ -463,8 +463,8 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 
 	} else { // Si desde el cliente NO se envía el id del movimiento, se hace el POST
 
-		fmt.Println("Registrar entrada")
 		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/"
+		fmt.Println("Registrar entrada", actaRecibidoId, urlcrud, actaRecibido)
 
 		// Solicita información acta
 
