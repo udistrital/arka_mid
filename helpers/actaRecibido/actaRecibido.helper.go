@@ -396,7 +396,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			} else {
 				ubicacionData = map[string]interface{}{
-					"Nombre": "Ubicacion No Especificada",
+					"Nombre": "",
 				}
 			}
 
@@ -1067,7 +1067,10 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
-				return nil, nil
+
+				elemento := *&[]models.DetalleElemento{}
+
+				return elemento, nil
 			}
 
 			for _, elemento := range elementos {
