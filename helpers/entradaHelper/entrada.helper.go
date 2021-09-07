@@ -949,7 +949,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 
 																										// Se crea map para agrupar los valores totales según el código del subgrupo
 																										mapSubgruposTotales := map[int]float64{}
-																										for _, elemento := range transaccionActaRecibido.SoportesActa[0].Elementos { // Proceso para registrar el movimiento contable para cada elemento
+																										for _, elemento := range transaccionActaRecibido.Elementos { // Proceso para registrar el movimiento contable para cada elemento
 																											if mapSubgruposTotales[elemento.SubgrupoCatalogoId] == 0 {
 																												mapSubgruposTotales[elemento.SubgrupoCatalogoId] = elemento.ValorTotal
 																											} else {

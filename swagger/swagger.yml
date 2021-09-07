@@ -53,25 +53,6 @@ paths:
             $ref: '#/definitions/models.Elemento'
         "404":
           description: not found resource
-  /acta_recibido/get_actas_recibido_tipo/{tipo}:
-    get:
-      tags:
-      - acta_recibido
-      description: Devuelve las todas las actas de recibido
-      operationId: ActaRecibidoController.GetActasRecibidoTipo
-      parameters:
-      - in: path
-        name: tipo
-        description: Estado del acta
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Acta_recibido'
-        "403":
-          description: ""
   /acta_recibido/get_all_actas/:
     get:
       tags:
@@ -134,34 +115,6 @@ paths:
           description: Internal Error
         "502":
           description: Error with external API
-  /acta_recibido/get_soportes_acta/{id}:
-    get:
-      tags:
-      - acta_recibido
-      description: get Soportes by id
-      operationId: ActaRecibidoController.Get Soportes
-      parameters:
-      - in: path
-        name: id
-        description: Acta Id
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/models.SoporteActaProveedor'
-        "400":
-          description: ID MUST be greater than 0
-        "404":
-          description: not found resource
-        "500":
-          description: Internal Error
-        "502":
-          description: External API Error
   /bajas_elementos/elemento/{id}:
     get:
       tags:
@@ -682,20 +635,11 @@ definitions:
       FechaModificacion:
         type: string
         format: datetime
-      FechaVistoBueno:
-        type: string
-        format: datetime
       Id:
         type: integer
         format: int64
-      Observaciones:
-        type: string
-      RevisorId:
-        type: integer
-        format: int64
-      UbicacionId:
-        type: integer
-        format: int64
+      TipoActaId:
+        $ref: '#/definitions/models.TipoActa'
   models.AsignacionEspacioFisicoDependencia:
     title: AsignacionEspacioFisicoDependencia
     type: object
@@ -841,6 +785,8 @@ definitions:
     title: Elemento
     type: object
     properties:
+      ActaRecibidoId:
+        $ref: '#/definitions/models.ActaRecibido'
       Activo:
         type: boolean
       Cantidad:
@@ -871,16 +817,12 @@ definitions:
         format: int64
       Serie:
         type: string
-      SoporteActaId:
-        $ref: '#/definitions/models.SoporteActa'
       SubgrupoCatalogoId:
         type: integer
         format: int64
       Subtotal:
         type: number
         format: double
-      TipoBienId:
-        $ref: '#/definitions/models.TipoBien'
       UnidadMedida:
         type: integer
         format: int64
@@ -904,6 +846,8 @@ definitions:
     properties:
       Activo:
         type: boolean
+      Codigo:
+        type: string
       Descripcion:
         type: string
       Id:
@@ -999,21 +943,6 @@ definitions:
         type: string
       TipoEspacio:
         $ref: '#/definitions/models.TipoEspacio'
-  models.Estado:
-    title: Estado
-    type: object
-    properties:
-      Abreviatura:
-        type: string
-      ClaseParametro:
-        type: string
-      DescripcionParametro:
-        type: string
-      Id:
-        type: integer
-        format: int64
-      ValorParametro:
-        type: string
   models.EstadoElemento:
     title: EstadoElemento
     type: object
@@ -1150,58 +1079,6 @@ definitions:
         type: string
       RolOrdenadorGasto:
         type: string
-  models.Proveedor:
-    title: Proveedor
-    type: object
-    properties:
-      Anexorup:
-        type: string
-      Anexorut:
-        type: string
-      ClasificacionEvaluacion:
-        type: string
-      Correo:
-        type: string
-      Descripcion:
-        type: string
-      Direccion:
-        type: string
-      Estado:
-        $ref: '#/definitions/models.Estado'
-      FechaRegistro:
-        type: string
-      FechaUltimaModificacion:
-        type: string
-      Id:
-        type: integer
-        format: int64
-      IdCiudadContacto:
-        type: integer
-        format: int64
-      IdEntidadBancaria:
-        type: integer
-        format: int64
-      NomAsesor:
-        type: string
-      NomProveedor:
-        type: string
-      NumCuentaBancaria:
-        type: string
-      NumDocumento:
-        type: string
-      PuntajeEvaluacion:
-        type: integer
-        format: int64
-      RegimenContributivo:
-        type: string
-      TelAsesor:
-        type: string
-      TipoCuentaBancaria:
-        type: string
-      Tipopersona:
-        type: string
-      Web:
-        type: string
   models.Salida:
     title: Salida
     type: object
@@ -1213,55 +1090,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.TrSalida'
-  models.SoporteActa:
-    title: SoporteActa
-    type: object
-    properties:
-      ActaRecibidoId:
-        $ref: '#/definitions/models.ActaRecibido'
-      Activo:
-        type: boolean
-      Consecutivo:
-        type: string
-      FechaCreacion:
-        type: string
-        format: datetime
-      FechaModificacion:
-        type: string
-        format: datetime
-      FechaSoporte:
-        type: string
-        format: datetime
-      Id:
-        type: integer
-        format: int64
-      ProveedorId:
-        type: integer
-        format: int64
-  models.SoporteActaProveedor:
-    title: SoporteActaProveedor
-    type: object
-    properties:
-      ActaRecibidoId:
-        $ref: '#/definitions/models.ActaRecibido'
-      Activo:
-        type: boolean
-      Consecutivo:
-        type: string
-      FechaCreacion:
-        type: string
-        format: datetime
-      FechaModificacion:
-        type: string
-        format: datetime
-      FechaSoporte:
-        type: string
-        format: datetime
-      Id:
-        type: integer
-        format: int64
-      ProveedorId:
-        $ref: '#/definitions/models.Proveedor'
   models.Supervisor:
     title: Supervisor
     type: object
@@ -1283,8 +1111,8 @@ definitions:
   models.Terceros:
     title: Terceros
     type: object
-  models.TipoBien:
-    title: TipoBien
+  models.TipoActa:
+    title: TipoActa
     type: object
     properties:
       Activo:
@@ -1304,9 +1132,6 @@ definitions:
         format: int64
       Nombre:
         type: string
-      Orden:
-        type: number
-        format: double
   models.TipoEntrada:
     title: TipoEntrada
     type: object

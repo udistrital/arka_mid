@@ -22,5 +22,6 @@ type ElementoCatalogo struct {
 	Id          uint
 	Nombre      string
 	Descripcion string
+	Codigo      string
 	Activo      bool
 }
