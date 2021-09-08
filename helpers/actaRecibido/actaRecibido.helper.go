@@ -1067,10 +1067,7 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
-
-				elemento := *&[]models.DetalleElemento{}
-
-				return elemento, nil
+				return nil, nil
 			}
 
 			for _, elemento := range elementos {
