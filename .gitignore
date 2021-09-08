@@ -21,6 +21,7 @@ todo/todo
 !.env
 lastupdate.*
 .vscode/
+*.swp
 arka_mid
 main
 .scannerwork/
