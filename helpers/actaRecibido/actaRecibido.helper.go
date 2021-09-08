@@ -396,7 +396,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			} else {
 				ubicacionData = map[string]interface{}{
-					"Nombre": "Ubicacion No Especificada",
+					"Nombre": "",
 				}
 			}
 

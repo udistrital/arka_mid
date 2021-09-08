@@ -143,7 +143,11 @@ func (c *ActaRecibidoController) GetElementosActa() {
 	// fmt.Printf("id: %v\n", id)
 
 	if v, err := actaRecibido.GetElementos(id); err == nil {
-		c.Data["json"] = v
+		if v != nil {
+			c.Data["json"] = v
+		} else {
+			c.Data["json"] = []interface{}{}
+		}
 	} else {
 		panic(err)
 	}
