@@ -203,8 +203,10 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 				}
 			}
-			apiMvtoContables := "http://" + beego.AppConfig.String("midMovtosContablesService") + "transaccion_movimientos/transaccion_movimientos/"
+			apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
 			logs.Info(fmt.Sprintf("apiMvtoContables: %s - body: %v", apiMvtoContables, transaccion))
+			outputError = map[string]interface{}{"funcion": "asientoContable - en desarrollo", "status": "500", "err": err}
+			return nil, outputError
 
 			/*	este es el post de la contabilidad if err := request.SendJson(apiMvtoContables, "POST", &res, &mvto); err == nil {
 				logs.Info("Termino bien")

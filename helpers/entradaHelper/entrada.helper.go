@@ -240,17 +240,17 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 						Activo:       true,
 						MovimientoId: &movimientoEntrada,
 					}
-
 					fmt.Print(soporteMovimiento, resS)
-					if err = request.SendJson(urlcrud, "POST", &resS, &soporteMovimiento); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "AddEntrada - request.SendJson(urlcrud, \"POST\", &resS, &soporteMovimiento)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
+					/*
+						if err = request.SendJson(urlcrud, "POST", &resS, &soporteMovimiento); err != nil {
+							logs.Error(err)
+							outputError = map[string]interface{}{
+								"funcion": "AddEntrada - request.SendJson(urlcrud, \"POST\", &resS, &soporteMovimiento)",
+								"err":     err,
+								"status":  "502",
+							}
+							return nil, outputError
+						}*/
 				}
 
 				// Envia información movimientos Kronos
@@ -318,26 +318,20 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 					actaRecibido.UltimoEstado.EstadoActaId.Id = 6
 					actaRecibido.UltimoEstado.Id = 0
 
-					if err = request.SendJson(urlcrud, "PUT", &resA, &actaRecibido); err == nil {
-						body := res
-						body["Acta"] = resA
-						resultado = body
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &resA, &actaRecibido)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-
-					outputError = map[string]interface{}{
-						"funcion": "AddEntrada - prueba desarrollo, &resA, &actaRecibido)",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					/*
+						if err = request.SendJson(urlcrud, "PUT", &resA, &actaRecibido); err == nil {
+							body := res
+							body["Acta"] = resA
+							resultado = body
+						} else {
+							logs.Error(err)
+							outputError = map[string]interface{}{
+								"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &resA, &actaRecibido)",
+								"err":     err,
+								"status":  "502",
+							}
+							return nil, outputError
+						}*/
 
 				} else {
 					logs.Error(err)
