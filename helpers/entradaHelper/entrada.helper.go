@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -133,8 +132,8 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 									}
 									return nil, outputError
 								}
-								log.Print(idMovArka, procesoExterno)
-								log.Print("por el put")
+								logs.Debug(idMovArka, procesoExterno)
+								logs.Debug("por el put")
 								outputError = map[string]interface{}{
 									"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &resM, &movimientosKronos)",
 									"err":     err,
@@ -218,10 +217,10 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 
 	} else { // Si desde el cliente NO se envía el id del movimiento, se hace el POST
 
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/"
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
 		// Solicita información acta
 
-		if err := request.GetJson(urlcrud+strconv.Itoa(int(actaRecibidoId)), &actaRecibido); err == nil {
+		if err := request.GetJson(urlcrud, &actaRecibido); err == nil {
 
 			// Envia información entrada
 			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
@@ -240,7 +239,8 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 						Activo:       true,
 						MovimientoId: &movimientoEntrada,
 					}
-					fmt.Print(soporteMovimiento, resS)
+					//					fmt.Print(soporteMovimiento, resS)
+					logs.Debug(soporteMovimiento, resS)
 					/*
 						if err = request.SendJson(urlcrud, "POST", &resS, &soporteMovimiento); err != nil {
 							logs.Error(err)
@@ -302,7 +302,8 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 						}
 						groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
 					}
-					fmt.Println(resA)
+					//fmt.Println(resA)
+					logs.Debug(resA)
 					if res, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
 						if outputError == nil {
 							outputError = map[string]interface{}{
