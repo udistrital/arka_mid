@@ -134,7 +134,8 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "tipo_comprobante"
 	if err := request.GetJson(urlcrud, &resMap); err == nil { // Para obtener código del tipo de comprobante
 		for _, sliceTipoComprobante := range resMap["Body"].([]interface{}) {
-			if sliceTipoComprobante.(map[string]interface{})["TipoDocumento"] == "E" {
+
+			if valor, ok := sliceTipoComprobante.(map[string]interface{})["TipoDocumento"]; ok && valor == "E" {
 				if jsonString, err = json.Marshal(sliceTipoComprobante); err == nil {
 					if err = json.Unmarshal(jsonString, &tipoComprobanteContable); err == nil {
 						resMap = make(map[string]interface{})
@@ -181,17 +182,35 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 				} else {
 					nombrecuentadebito := ""
 					nombrecuentacredito := ""
-					if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("cuentasContablesService")+"nodo_cuenta_contable/"+element["CuentaDebitoId"].(string), &respuesta_peticion); err == nil {
+					urlcuenta := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaDebitoId"].(string)
+					if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
 						nombrecuentadebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
 					} else {
-						outputError = map[string]interface{}{"funcion": "asientoContable - request.GetJsonTest(\"http://\"+beego.AppConfig.String(\"cuentasContablesService\")+ \"nodo_cuenta_contable/\"+cuentadebito, entrada.asientoContable;", "status": "500", "err": err}
+						if err == nil {
+							err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
+						}
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "GetCuentaContable -  if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion);)",
+							"err":     err,
+							"status":  "502",
+						}
 						return nil, outputError
 					}
 
-					if _, err := request.GetJsonTest("http://"+beego.AppConfig.String("cuentasContablesService")+"nodo_cuenta_contable/"+element["CuentaCreditoId"].(string), &respuesta_peticion); err == nil {
+					urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaCreditoId"].(string)
+					if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
 						nombrecuentacredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
 					} else {
-						outputError = map[string]interface{}{"funcion": "asientoContable - request.GetJsonTest(\"http://\"+beego.AppConfig.String(\"cuentasContablesService\")+ \"nodo_cuenta_contable/\"+cuentacredito, entrada.asientoContable;", "status": "500", "err": err}
+						if err == nil {
+							err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
+						}
+						logs.Error(err)
+						outputError = map[string]interface{}{
+							"funcion": "GetCuentaContable -  if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion);)",
+							"err":     err,
+							"status":  "502",
+						}
 						return nil, outputError
 					}
 
@@ -224,7 +243,15 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 				logs.Info("Termino bien")
 			}*/
 		} else {
-			outputError = map[string]interface{}{"funcion": "asientoContable - if respuesta, err := request.GetJsonTest(urlcuentas, &elemento);", "status": "502", "err": err}
+			if err == nil {
+				err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
+			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AsientoContable - if respuesta, err := request.GetJsonTest(urlcuentas, &elemento);",
+				"err":     err,
+				"status":  "502",
+			}
 			return nil, outputError
 		}
 	}
