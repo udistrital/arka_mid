@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/common/log"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
@@ -235,13 +237,20 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 				}
 			}
 			apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
-			logs.Info(fmt.Sprintf("apiMvtoContables: %s - body: %v", apiMvtoContables, transaccion))
 			outputError = map[string]interface{}{"funcion": "asientoContable - en desarrollo", "status": "500", "err": err}
-			return nil, outputError
+			//			return nil, outputError
 
-			/*	este es el post de la contabilidad if err := request.SendJson(apiMvtoContables, "POST", &res, &mvto); err == nil {
-				logs.Info("Termino bien")
-			}*/
+			if err := request.SendJson(apiMvtoContables, "POST", &res, &transaccion); err != nil || respuesta.StatusCode != 200 {
+				if err == nil {
+					err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "AsientoContable - if respuesta, err := request.GetJsonTest(urlcuentas, &elemento);",
+						"err":     err,
+						"status":  "502",
+					}
+				}
+			}
 		} else {
 			if err == nil {
 				err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
@@ -255,5 +264,6 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			return nil, outputError
 		}
 	}
+	log.Info("correcto")
 	return res, nil
 }
