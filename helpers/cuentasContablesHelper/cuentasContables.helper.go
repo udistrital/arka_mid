@@ -54,7 +54,7 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]inter
 	}
 }
 
-// realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
+// AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
 func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto string) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
@@ -88,7 +88,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		resultado, _ := res["Data"].(map[string]interface{})
 		idconsecutivo = resultado["Id"].(float64)
 	} else {
-		outputError = map[string]interface{}{"funcion": "asientoContable -response, err := request.SendJson(apiCons,", "status": "500", "err": err}
+		outputError = map[string]interface{}{"funcion": "asientoContable - request.SendJson(apiCons, \"POST\", &res, &consec)", "status": "500", "err": err}
 		return nil, outputError
 	}
 
@@ -98,35 +98,34 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	//captura el id del movimiento credito
 	urlcrud := "http://" + beego.AppConfig.String("parametrosService") + "parametro?query=CodigoAbreviacion:MCD"
 	if err := request.GetJson(urlcrud, &resMap); err != nil { // Get parámetro tipo movimiento contable débito
-		outputError = map[string]interface{}{"funcion": "asientoContable - if err := request.GetJson(urlcrud, &resMap);", "status": "502", "err": err}
+		outputError = map[string]interface{}{"funcion": "asientoContable - request.GetJson(urlcrud, &resMap)", "status": "502", "err": err}
 		return nil, outputError
 	}
 
 	if jsonString, err1 = json.Marshal(resMap["Data"]); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - if jsonString, err1 = json.Marshal(resMap[\"Data\"]);", "status": "500", "err": err1}
+		outputError = map[string]interface{}{"funcion": "asientoContable - json.Marshal(resMap[\"Data\"])", "status": "500", "err": err1}
 		return nil, outputError
 	}
 	var parametro []models.Parametro
 	if err1 = json.Unmarshal(jsonString, &parametro); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - if err1 = json.Unmarshal(jsonString, &parametro);", "status": "500", "err": err1}
+		outputError = map[string]interface{}{"funcion": "asientoContable - json.Unmarshal(jsonString, &parametro)", "status": "500", "err": err1}
 		return nil, outputError
 	}
-	//	resMap = make(map[string]interface{})
 	parametroTipoDebito = parametro[0]
 
 	//captura el id del movimiento debito
 	urlcrud = "http://" + beego.AppConfig.String("parametrosService") + "parametro?query=CodigoAbreviacion:MCC"
 	if err1 = request.GetJson(urlcrud, &resMap); err1 != nil { // Get parámetro tipo movimiento contable débito
-		outputError = map[string]interface{}{"funcion": "asientoContable - if err1 = request.GetJson(urlcrud, &resMap);", "status": "502", "err": err1}
+		outputError = map[string]interface{}{"funcion": "asientoContable - request.GetJson(urlcrud, &resMap)", "status": "502", "err": err1}
 		return nil, outputError
 	}
 
 	if jsonString, err1 = json.Marshal(resMap["Data"]); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - if jsonString, err1 = json.Marshal(resMap[\"Data\"]);", "status": "500", "err": err1}
+		outputError = map[string]interface{}{"funcion": "asientoContable - json.Marshal(resMap[\"Data\"])", "status": "500", "err": err1}
 		return nil, outputError
 	}
 	if err1 = json.Unmarshal(jsonString, &parametro); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - if err1 = json.Unmarshal(jsonString, &parametro);", "status": "500", "err": err1}
+		outputError = map[string]interface{}{"funcion": "asientoContable - json.Unmarshal(jsonString, &parametro)", "status": "500", "err": err1}
 		return nil, outputError
 	}
 
@@ -143,7 +142,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 						resMap = make(map[string]interface{})
 					} else {
 						logs.Error(err)
-						outputError = map[string]interface{}{"funcion": "asientoContable - if err = json.Unmarshal(jsonString, &tipoComprobanteContable);", "status": "500", "err": err}
+						outputError = map[string]interface{}{"funcion": "asientoContable -json.Unmarshal(jsonString, &tipoComprobanteContable)", "status": "500", "err": err}
 						return nil, outputError
 					}
 				} else {
