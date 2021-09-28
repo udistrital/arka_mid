@@ -470,6 +470,11 @@ paths:
       - salida
       description: get Entradas
       operationId: SalidaController.Get User
+      parameters:
+      - in: query
+        name: tramite_only
+        description: Retornar salidas únicamente en estado En Trámite
+        type: boolean
       responses:
         "200":
           description: ""
