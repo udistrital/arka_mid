@@ -47,7 +47,7 @@ func TestGetSalida(t *testing.T) {
 // GetAsignacionSedeDependencia ...
 func TestGetSalidas(t *testing.T) {
 
-	if salidas, err := salidaHelper.GetSalidas(); err != nil {
+	if salidas, err := salidaHelper.GetSalidas(false); err != nil {
 		t.Error("No se pudo consultar las salidas", err)
 		t.Fail()
 	} else {
