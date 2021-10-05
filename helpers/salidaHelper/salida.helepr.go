@@ -303,9 +303,9 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 	}()
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1"
 	urlcrud += "&query=EstadoMovimientoId__Nombre:Salida%20Aceptada,Activo:true"
-	if !tramiteOnly {
-		urlcrud += ",EstadoMovimientoId__Nombre:Salida%20Aprobada"
-	}
+	// if !tramiteOnly {
+	// 	urlcrud += ",EstadoMovimientoId__Nombre:Salida%20Aprobada"
+	// }
 
 	var salidas_ []map[string]interface{}
 	if resp, err := request.GetJsonTest(urlcrud, &salidas_); err == nil && resp.StatusCode == 200 {
