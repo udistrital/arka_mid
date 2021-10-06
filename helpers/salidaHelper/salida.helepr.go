@@ -303,6 +303,8 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 	}()
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1"
 	urlcrud += "&query=EstadoMovimientoId__Nombre:Salida%20Aceptada,Activo:true"
+
+	// Descomentar una vez este valor sea agregado a la tabla paramétrica estado_movimiento
 	// if !tramiteOnly {
 	// 	urlcrud += ",EstadoMovimientoId__Nombre:Salida%20Aprobada"
 	// }
