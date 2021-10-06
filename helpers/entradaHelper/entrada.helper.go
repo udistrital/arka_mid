@@ -49,7 +49,7 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 		resA         map[string]interface{}
 		resM         map[string]interface{}
 		resS         map[string]interface{}
-		actaRecibido []models.TransaccionActaRecibido
+		actaRecibido models.TransaccionActaRecibido
 		resultado    map[string]interface{}
 	)
 
@@ -289,10 +289,10 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 				if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
 					// Cambia estado acta
 					urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
-					actaRecibido[0].UltimoEstado.EstadoActaId.Id = 6
-					actaRecibido[0].UltimoEstado.Id = 0
+					actaRecibido.UltimoEstado.EstadoActaId.Id = 6
+					actaRecibido.UltimoEstado.Id = 0
 
-					if err = request.SendJson(urlcrud, "PUT", &resA, &actaRecibido[0]); err == nil {
+					if err = request.SendJson(urlcrud, "PUT", &resA, &actaRecibido); err == nil {
 						body := res
 						body["Acta"] = resA
 						resultado = body
