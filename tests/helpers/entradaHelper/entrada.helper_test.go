@@ -36,21 +36,6 @@ func TestGetEntrada(t *testing.T) {
 	}
 }
 
-func TestGetEntradas(t *testing.T) {
-	valor, err := entradaHelper.GetEntradas()
-	if err != nil || valor == nil {
-		if err != nil {
-			t.Error("No se pudo consultar entrada err", err)
-		} else {
-			t.Error("No se pudo consultar el valor de la entrada", err)
-		}
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetEntrada Finalizado Correctamente (OK)")
-	}
-}
-
 func TestAnularEntrada(t *testing.T) {
 	valor, err := entradaHelper.AnularEntrada(1)
 	if err != nil || valor == nil {

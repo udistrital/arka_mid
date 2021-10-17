@@ -322,18 +322,6 @@ paths:
         "403":
           description: body is empty
   /entrada/:
-    get:
-      tags:
-      - entrada
-      description: get Entradas
-      operationId: EntradaController.Get User
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.ConsultaEntrada'
-        "404":
-          description: not found resource
     post:
       tags:
       - entrada

@@ -118,36 +118,6 @@ func (c *EntradaController) GetEntrada() {
 	c.ServeJSON()
 }
 
-// GetEntradas ...
-// @Title Get User
-// @Description get Entradas
-// @Success 200 {object} models.ConsultaEntrada
-// @Failure 404 not found resource
-// @router / [get]
-func (c *EntradaController) GetEntradas() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
-
-	if v, err := entradaHelper.GetEntradas(); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = v
-	}
-	c.ServeJSON()
-}
-
 // GetEncargadoElemento ...
 // @Title Get User
 // @Description get Entradas
