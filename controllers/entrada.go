@@ -60,6 +60,19 @@ func (c *EntradaController) Post() {
 	}()
 
 	if entradaId > 0 {
+		if respuesta, err := entradaHelper.AprobarEntrada(entradaId, tipoMovimientoId); err == nil && respuesta != nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = respuesta
+		} else {
+			if err == nil {
+				panic(map[string]interface{}{
+					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId, tipoMovimientoId)",
+					"err":     err,
+					"status":  "400",
+				})
+			}
+			panic(err)
+		}
 	} else {
 		var v models.Movimiento
 		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
