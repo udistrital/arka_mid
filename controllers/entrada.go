@@ -25,8 +25,10 @@ func (c *EntradaController) URLMapping() {
 
 // Post ...
 // @Title Post
-// @Description create Entrada
-// @Param	body		body 	models.Entrada	true		"body for Entrada content"
+// @Description Transaccion entrada. Estado de registro o aprobacion
+// @Param	entradaId		 query 	string			false		"Id del movimiento que se desea aprobar"
+// @Param	tipoMovimientoId query 	string			false		"TipoMovimientoId de api movimientos_crud"
+// @Param	body			 body 	models.Entrada	false		"Detalles de la entrada. Se valida solo si el id es 0"
 // @Success 201 {object} models.Entrada
 // @Failure 403 body is empty
 // @Failure 400 the request contains incorrect syntax

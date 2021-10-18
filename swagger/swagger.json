@@ -487,14 +487,25 @@
                 "tags": [
                     "entrada"
                 ],
-                "description": "create Entrada",
+                "description": "Transaccion entrada. Estado de registro o aprobacion",
                 "operationId": "EntradaController.Post",
                 "parameters": [
                     {
+                        "in": "query",
+                        "name": "entradaId",
+                        "description": "Id del movimiento que se desea aprobar",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "tipoMovimientoId",
+                        "description": "TipoMovimientoId de api movimientos_crud",
+                        "type": "string"
+                    },
+                    {
                         "in": "body",
                         "name": "body",
-                        "description": "body for Entrada content",
-                        "required": true,
+                        "description": "Detalles de la entrada. Se valida solo si el id es 0",
                         "schema": {
                             "$ref": "#/definitions/models.Entrada"
                         }
@@ -1498,10 +1509,6 @@
                     "$ref": "#/definitions/models.FormatoTipoMovimiento"
                 },
                 "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "IdTipoMovimiento": {
                     "type": "integer",
                     "format": "int64"
                 },
