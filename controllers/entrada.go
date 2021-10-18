@@ -34,6 +34,16 @@ func (c *EntradaController) URLMapping() {
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
+	var entradaId int = 0
+	var tipoMovimientoId int = 0
+
+	if v, err := c.GetInt("entradaId"); err == nil {
+		entradaId = v
+	}
+
+	if v, err := c.GetInt("tipoMovimientoId"); err == nil {
+		tipoMovimientoId = v
+	}
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -49,29 +59,33 @@ func (c *EntradaController) Post() {
 		}
 	}()
 
-	var v models.Movimiento
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if respuesta, err := entradaHelper.AddEntrada(v); err == nil && respuesta != nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = respuesta
-		} else {
-			if err == nil {
-				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.AddEntrada(v)",
-					"err":     err,
-					"status":  "400",
-				})
-			}
-			panic(err)
-		}
+	if entradaId > 0 {
 	} else {
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-			"err":     err,
-			"status":  "400",
-		})
+		var v models.Movimiento
+		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+			if respuesta, err := entradaHelper.RegistrarEntrada(v); err == nil && respuesta != nil {
+				c.Ctx.Output.SetStatus(201)
+				c.Data["json"] = respuesta
+			} else {
+				if err == nil {
+					panic(map[string]interface{}{
+						"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
+						"err":     err,
+						"status":  "400",
+					})
+				}
+				panic(err)
+			}
+		} else {
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+				"err":     err,
+				"status":  "400",
+			})
+		}
 	}
+
 	c.ServeJSON()
 }
 

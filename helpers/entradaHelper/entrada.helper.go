@@ -29,13 +29,13 @@ type Consecutivo struct {
 	Activo      bool
 }
 
-// AddEntrada Transacción para registrar la información de una entrada
-func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputError map[string]interface{}) {
+// RegistrarEntrada Crea registro de entrada en estado en trámite
+func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "AddEntrada - Unhandled Error!",
+				"funcion": "RegistrarEntrada - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -44,13 +44,11 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 	}()
 
 	var (
-		urlcrud      string
-		res          map[string]interface{}
-		resA         map[string]interface{}
-		resM         map[string]interface{}
-		resS         map[string]interface{}
-		actaRecibido models.TransaccionActaRecibido
-		resultado    map[string]interface{}
+		urlcrud             string
+		res                 map[string]interface{}
+		actaRecibido        models.TransaccionActaRecibido
+		resultado           map[string]interface{}
+		resEstadoMovimiento []models.EstadoMovimiento
 	)
 
 	detalleJSON := map[string]interface{}{}
@@ -69,7 +67,7 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "AddEntrada - request.SendJson(apiCons, \"POST\", &res, &consec)",
+			"funcion": "RegistrarEntrada - request.SendJson(apiCons, \"POST\", &res, &consec)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -80,7 +78,7 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 	if err1 != nil {
 		logs.Error(err1)
 		outputError = map[string]interface{}{
-			"funcion": "AddEntrada - json.Marshal(detalleJSON)",
+			"funcion": "RegistrarEntrada - json.Marshal(detalleJSON)",
 			"err":     err1,
 			"status":  "500",
 		}
@@ -88,203 +86,98 @@ func AddEntrada(data models.Movimiento) (result map[string]interface{}, outputEr
 	}
 	data.Detalle = string(jsonData[:])
 
-	// Solicita información acta
-
+	// Consulta el acta
 	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
+	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
+	if err := request.GetJson(urlcrud, &actaRecibido); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarEntrada - request.GetJson(urlcrud, &actaRecibido)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
 
-	if data.Id > 0 { // Si desde el cliente se envía el id del movimiento, se hace el put
-		fmt.Println("Editar Entrada")
-		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(data.Id))
+	// Crea registro en api movimientos_arka_crud
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Entrada%20En%20Trámite"
+	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarEntrada - request.GetJson(urlcrud, &resEstadoMovimiento)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	data.EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
 
-		if err := request.SendJson(urlcrud, "PUT", &res, &data); err == nil {
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
+	if err := request.SendJson(urlcrud, "POST", &res, &data); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarEntrada - request.SendJson(urlcrud, \"POST\", &res, &data)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	resultado["MovimientoId"] = res["Id"]
 
-			urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(int(data.Id))
+	// Crea registro en table soporte_movimiento si es necesario
+	if data.SoporteMovimientoId != 0 {
+		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento"
 
-			var data0 map[string]interface{}
-			if _, err := request.GetJsonTest(urlcrud, &data0); err == nil {
-				var data1 map[string]interface{}
-				if jsonString, err := json.Marshal(data0); err == nil {
-					if err := json.Unmarshal(jsonString, &data1); err == nil {
-						var data2 = data1["Body"]
-						var data3 []map[string]interface{}
-						if jsonString1, err := json.Marshal(data2); err == nil {
-							if err := json.Unmarshal(jsonString1, &data3); err == nil {
+		idEntrada := int(res["Id"].(float64))
+		movimientoEntrada := models.Movimiento{Id: idEntrada}
+		soporteMovimiento := models.SoporteMovimiento{
+			DocumentoId:  data.SoporteMovimientoId,
+			Activo:       true,
+			MovimientoId: &movimientoEntrada,
+		}
 
-								urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(int(data.Id))
-
-								procesoExterno := data.Id
-								var formatoArka map[string]interface{}
-								var idMovArka int
-
-								if jsonString, err := json.Marshal(res["FormatoTipoMovimientoId"]); err == nil {
-									if err := json.Unmarshal(jsonString, &formatoArka); err == nil {
-										idMovArka = int(formatoArka["Id"].(float64))
-									} else {
-										logs.Error(err)
-										outputError = map[string]interface{}{
-											"funcion": "AddEntrada - json.Unmarshal(jsonString, &formatoArka)",
-											"err":     err,
-											"status":  "500",
-										}
-										return nil, outputError
-									}
-								} else {
-									logs.Error(err)
-									outputError = map[string]interface{}{
-										"funcion": "AddEntrada - json.Marshal(res[\"FormatoTipoMovimientoId\"])",
-										"err":     err,
-										"status":  "500",
-									}
-									return nil, outputError
-								}
-
-								tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
-								movimientosKronos := models.MovimientoProcesoExterno{
-									Id:                       int(data3[0]["Id"].(float64)),
-									TipoMovimientoId:         &tipo,
-									ProcesoExterno:           int64(procesoExterno),
-									Activo:                   true,
-									MovimientoProcesoExterno: idMovArka,
-								}
-								if err = request.SendJson(urlcrud, "PUT", &resM, &movimientosKronos); err == nil {
-									resultado = resM
-								} else {
-									logs.Error(err)
-									outputError = map[string]interface{}{
-										"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &resM, &movimientosKronos)",
-										"err":     err,
-										"status":  "502",
-									}
-									return nil, outputError
-								}
-							} else {
-								logs.Error(err)
-								outputError = map[string]interface{}{
-									"funcion": "AddEntrada - json.Unmarshal(jsonString1, &data3)",
-									"err":     err,
-									"status":  "500",
-								}
-								return nil, outputError
-							}
-						} else {
-							logs.Error(err)
-							outputError = map[string]interface{}{
-								"funcion": "AddEntrada - json.Marshal(data2)",
-								"err":     err,
-								"status":  "500",
-							}
-							return nil, outputError
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "AddEntrada - json.Unmarshal(jsonString, &data1)",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "AddEntrada - json.Marshal(data0)",
-						"err":     err,
-						"status":  "500",
-					}
-					return nil, outputError
-				}
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "AddEntrada - request.GetJsonTest(urlcrud, &data0)",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
-			}
-		} else {
+		if err := request.SendJson(urlcrud, "POST", &res, &soporteMovimiento); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "AddEntrada - request.SendJson(urlcrud, \"PUT\", &res, &data)",
+				"funcion": "RegistrarEntrada - request.SendJson(urlcrud, \"POST\", &resS, &soporteMovimiento)",
 				"err":     err,
 				"status":  "502",
 			}
 			return nil, outputError
 		}
-		return resultado, nil
+	}
 
-	} else { // Si desde el cliente NO se envía el id del movimiento, se hace el POST
-		fmt.Println("Registrar entrada")
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/"
+	// Actualiza el estado del acta
+	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
+	actaRecibido.UltimoEstado.EstadoActaId.Id = 6
+	actaRecibido.UltimoEstado.Id = 0
 
-		// Solicita información acta
+	if err := request.SendJson(urlcrud, "PUT", &res, &actaRecibido); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &actaRecibido)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
 
-		if err := request.GetJson(urlcrud+strconv.Itoa(int(actaRecibidoId)), &actaRecibido); err == nil {
-			// Envia información entrada
-			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
+	return resultado, nil
+}
 
-			if err = request.SendJson(urlcrud, "POST", &res, &data); err == nil {
-				// Si la entrada tiene soportes
-				if data.SoporteMovimientoId != 0 {
-					// Envia información soporte (Si tiene)
-					urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento"
+// AprobarEntrada Actualiza una entrada a estado aprobada y hace los respectivos registros en kronos y transacciones contables
+func AprobarEntrada(entradaId int, tipoMovimientoId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
-					idEntrada := int(res["Id"].(float64))
-
-					movimientoEntrada := models.Movimiento{Id: idEntrada}
-					soporteMovimiento := models.SoporteMovimiento{
-						DocumentoId:  data.SoporteMovimientoId,
-						Activo:       true,
-						MovimientoId: &movimientoEntrada,
-					}
-
-					if err = request.SendJson(urlcrud, "POST", &resS, &soporteMovimiento); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "AddEntrada - request.SendJson(urlcrud, \"POST\", &resS, &soporteMovimiento)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-				}
-
-				// Envia información movimientos Kronos
-				urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
-
-				procesoExterno := int64(res["Id"].(float64))
-
-				var formatoArka map[string]interface{}
-				var idMovArka int
-
-				if jsonString, err := json.Marshal(res["FormatoTipoMovimientoId"]); err == nil {
-					if err := json.Unmarshal(jsonString, &formatoArka); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "AddEntrada - json.Unmarshal(jsonString, &formatoArka)",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-					idMovArka = int(formatoArka["Id"].(float64))
-				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "AddEntrada - json.Marshal(res[\"FormatoTipoMovimientoId\"])",
-						"err":     err,
-						"status":  "500",
-					}
-					return nil, outputError
-				}
-
-				tipo := models.TipoMovimiento{Id: data.IdTipoMovimiento}
-				movimientosKronos := models.MovimientoProcesoExterno{
-					TipoMovimientoId:         &tipo,
-					ProcesoExterno:           procesoExterno,
-					Activo:                   true,
-					MovimientoProcesoExterno: idMovArka,
-				}
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "AprobarEntrada - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 				if err = request.SendJson(urlcrud, "POST", &resM, &movimientosKronos); err == nil {
 					// Cambia estado acta
