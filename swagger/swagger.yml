@@ -332,10 +332,6 @@ paths:
         name: entradaId
         description: Id del movimiento que se desea aprobar
         type: string
-      - in: query
-        name: tipoMovimientoId
-        description: TipoMovimientoId de api movimientos_crud
-        type: string
       - in: body
         name: body
         description: Detalles de la entrada. Se valida solo si el id es 0
@@ -350,25 +346,6 @@ paths:
           description: the request contains incorrect syntax
         "403":
           description: body is empty
-  /entrada/{id}:
-    get:
-      tags:
-      - entrada
-      description: get Entrada by id
-      operationId: EntradaController.Get User
-      parameters:
-      - in: path
-        name: id
-        description: The key for staticblock
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.ConsultaEntrada'
-        "404":
-          description: not found resource
   /entrada/anular/{id}:
     get:
       tags:

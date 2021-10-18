@@ -2,8 +2,8 @@ package entradaHelper
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -166,7 +166,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 }
 
 // AprobarEntrada Actualiza una entrada a estado aprobada y hace los respectivos registros en kronos y transacciones contables
-func AprobarEntrada(entradaId int, tipoMovimientoId int) (result map[string]interface{}, outputError map[string]interface{}) {
+func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -182,13 +182,13 @@ func AprobarEntrada(entradaId int, tipoMovimientoId int) (result map[string]inte
 	var (
 		urlcrud             string
 		res                 map[string]interface{}
-		movArka             models.Movimiento
+		movArka             []models.Movimiento
 		resultado           map[string]interface{}
 		resEstadoMovimiento []models.EstadoMovimiento
 	)
 
 	// Se cambia el estado del movimiento en movimientos_arka_crud
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(entradaId))
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + strconv.Itoa(int(entradaId))
 	if err := request.GetJson(urlcrud, &movArka); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -210,8 +210,8 @@ func AprobarEntrada(entradaId int, tipoMovimientoId int) (result map[string]inte
 		return nil, outputError
 	}
 
-	movArka.EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
-	if err := request.SendJson(urlcrud, "PUT", &res, &movArka); err != nil {
+	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
+	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
@@ -222,12 +222,31 @@ func AprobarEntrada(entradaId int, tipoMovimientoId int) (result map[string]inte
 	}
 
 	// Crea registro en movimientos_crud
+	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:" + movArka[0].FormatoTipoMovimientoId.Nombre
+	if err := request.GetJson(urlcrud, &res); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - request.GetJson(urlcrud, &res)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	} else if reflect.TypeOf(res["Body"]).Kind() != reflect.Slice {
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - No se encuentra tipo_movimiento en api movimientos_crud",
+			"err":     err,
+			"status":  "502",
+		}
+		logs.Error(outputError)
+		return nil, outputError
+	}
+
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
 	procesoExterno := int64(entradaId)
-	idMovArka := int(movArka.FormatoTipoMovimientoId.Id)
-	tipo := models.TipoMovimiento{Id: tipoMovimientoId}
+	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
+	tipoMovimientoId := models.TipoMovimiento{Id: int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64))}
 	movimientosKronos := models.MovimientoProcesoExterno{
-		TipoMovimientoId:         &tipo,
+		TipoMovimientoId:         &tipoMovimientoId,
 		ProcesoExterno:           procesoExterno,
 		Activo:                   true,
 		MovimientoProcesoExterno: idMovArka,
@@ -246,81 +265,6 @@ func AprobarEntrada(entradaId int, tipoMovimientoId int) (result map[string]inte
 	// Falta el paso de la transacción contable
 
 	return resultado, nil
-}
-
-// GetEntrada ...
-func GetEntrada(entradaId int) (consultaEntrada map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetEntrada - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	var (
-		urlcrud        string
-		tipoMovimiento map[string]interface{}
-		movimientoArka map[string]interface{}
-	)
-
-	if entradaId > 0 { // (1) error parametro
-		// Solicita información Movimientos KRONOS
-		urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(entradaId) + ",TipoMovimientoId.Acronimo:e_arka,Activo:true"
-		if err := request.GetJson(urlcrud, &tipoMovimiento); err == nil {
-			// Solicita información movimientos ARKA de acuedo a la información consultada por movimientos kronos
-			var data []map[string]interface{}
-			var movimientoId int
-
-			if jsonString, err := json.Marshal(tipoMovimiento["Body"]); err == nil {
-				if err := json.Unmarshal(jsonString, &data); err == nil {
-					for _, movimiento := range data {
-						movimientoId = int(movimiento["ProcesoExterno"].(float64))
-					}
-				}
-			}
-
-			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(movimientoId)
-
-			if response, err := request.GetJsonTest(urlcrud, &movimientoArka); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-				consultaEntrada = make(map[string]interface{})
-				consultaEntrada = map[string]interface{}{"TipoMovimiento": data[0], "Movimiento": movimientoArka}
-				return consultaEntrada, nil
-			} else {
-				if err == nil {
-					err = fmt.Errorf("undesired Status Code: %s", response.Status)
-				}
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetEntrada - request.GetJsonTest(urlcrud, &movimientoArka)",
-					"err":     err,
-					"status:": "502",
-				}
-				return nil, outputError
-			}
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetEntrada - request.GetJson(urlcrud, &tipoMovimiento)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-	} else {
-		err := errors.New("entradaId MUST be > 0")
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetEntrada - entradaId > 0",
-			"err":     err,
-			"status":  "400",
-		}
-		return nil, outputError
-	}
 }
 
 //GetEncargadoElemento busca al encargado de un elemento

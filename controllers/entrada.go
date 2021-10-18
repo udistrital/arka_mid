@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -27,7 +26,6 @@ func (c *EntradaController) URLMapping() {
 // @Title Post
 // @Description Transaccion entrada. Estado de registro o aprobacion
 // @Param	entradaId		 query 	string			false		"Id del movimiento que se desea aprobar"
-// @Param	tipoMovimientoId query 	string			false		"TipoMovimientoId de api movimientos_crud"
 // @Param	body			 body 	models.Entrada	false		"Detalles de la entrada. Se valida solo si el id es 0"
 // @Success 201 {object} models.Entrada
 // @Failure 403 body is empty
@@ -35,14 +33,9 @@ func (c *EntradaController) URLMapping() {
 // @router / [post]
 func (c *EntradaController) Post() {
 	var entradaId int = 0
-	var tipoMovimientoId int = 0
 
 	if v, err := c.GetInt("entradaId"); err == nil {
 		entradaId = v
-	}
-
-	if v, err := c.GetInt("tipoMovimientoId"); err == nil {
-		tipoMovimientoId = v
 	}
 
 	defer func() {
@@ -60,13 +53,13 @@ func (c *EntradaController) Post() {
 	}()
 
 	if entradaId > 0 {
-		if respuesta, err := entradaHelper.AprobarEntrada(entradaId, tipoMovimientoId); err == nil && respuesta != nil {
+		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {
 			if err == nil {
 				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId, tipoMovimientoId)",
+					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId)",
 					"err":     err,
 					"status":  "400",
 				})
@@ -99,51 +92,6 @@ func (c *EntradaController) Post() {
 		}
 	}
 
-	c.ServeJSON()
-}
-
-// GetEntrada ...
-// @Title Get User
-// @Description get Entrada by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.ConsultaEntrada
-// @Failure 404 not found resource
-// @router /:id [get]
-func (c *EntradaController) GetEntrada() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
-
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil || id <= 0 {
-		if err == nil {
-			err = errors.New("id MUST be > 0")
-		}
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetEntrada - err != nil || id <= 0",
-			"err":     err,
-			"status":  "400",
-		})
-	}
-
-	if v, err := entradaHelper.GetEntrada(id); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = v
-	}
 	c.ServeJSON()
 }
 
