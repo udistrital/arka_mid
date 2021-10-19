@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prometheus/common/log"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
