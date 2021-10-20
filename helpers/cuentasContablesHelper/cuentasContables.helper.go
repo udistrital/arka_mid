@@ -258,6 +258,6 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			return nil, outputError
 		}
 	}
-	log.Info("correcto")
+	logs.Info("correcto")
 	return res, nil
 }
