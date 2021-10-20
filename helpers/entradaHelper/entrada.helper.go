@@ -170,9 +170,9 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		urlcrud             string
 		res                 map[string]interface{}
 		movArka             []models.Movimiento
-		resultado           map[string]interface{}
 		resEstadoMovimiento []models.EstadoMovimiento
 	)
+	resultado := make(map[string]interface{})
 
 	// Se cambia el estado del movimiento en movimientos_arka_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + strconv.Itoa(int(entradaId))
@@ -197,6 +197,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(entradaId))
 	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
 	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
 		logs.Error(err)
@@ -210,6 +211,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	// Crea registro en movimientos_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:" + movArka[0].FormatoTipoMovimientoId.Nombre
+	urlcrud = strings.ReplaceAll(urlcrud, " ", "%20")
 	if err := request.GetJson(urlcrud, &res); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -249,6 +251,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
+	resultado["movimientoArka"] = movArka[0]
 	// Falta el paso de la transacción contable
 
 	return resultado, nil
