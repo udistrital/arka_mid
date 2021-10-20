@@ -3,8 +3,14 @@ package utilsHelper
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/request"
 )
 
 // ConvertirInterfaceMap
@@ -126,4 +132,28 @@ func KeysValuesMap(m map[interface{}]interface{}) (keys []interface{}, vals []in
 		vals = append(vals, v)
 	}
 	return
+}
+
+func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecutivo string, err error) {
+
+	var res map[string]interface{}
+
+	year, _, _ := time.Now().Date()
+	data := models.Consecutivo{
+		Id:          0,
+		ContextoId:  contextoId,
+		Year:        year,
+		Consecutivo: 0,
+		Descripcion: descripcion,
+		Activo:      true,
+	}
+	url := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
+
+	if err := request.SendJson(url, "POST", &res, &data); err == nil {
+		consecutivo = prefix + "-" + fmt.Sprintf("%05.0f", res["Data"].(map[string]interface{})["Consecutivo"]) + "-" + strconv.Itoa(year)
+	} else if strings.Contains(err.Error(), "invalid character") {
+		logs.Error(err)
+		consecutivo, err = GetConsecutivo(prefix, contextoId, descripcion)
+	}
+	return consecutivo, err
 }
