@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -25,13 +24,19 @@ func (c *EntradaController) URLMapping() {
 
 // Post ...
 // @Title Post
-// @Description create Entrada
-// @Param	body		body 	models.Entrada	true		"body for Entrada content"
+// @Description Transaccion entrada. Estado de registro o aprobacion
+// @Param	entradaId		 query 	string			false		"Id del movimiento que se desea aprobar"
+// @Param	body			 body 	models.Entrada	false		"Detalles de la entrada. Se valida solo si el id es 0"
 // @Success 201 {object} models.Entrada
 // @Failure 403 body is empty
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
+	var entradaId int = 0
+
+	if v, err := c.GetInt("entradaId"); err == nil {
+		entradaId = v
+	}
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -47,19 +52,14 @@ func (c *EntradaController) Post() {
 		}
 	}()
 
-	//Validar que el tercero exista en terceros api.
-	//Crear una nueva carpeta de helpers contabilidad ahí adentro crear contabilidad.go
-
-	var v models.Movimiento
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-
-		if respuesta, err := entradaHelper.AddEntrada(v); err == nil && respuesta != nil {
+	if entradaId > 0 {
+		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {
 			if err == nil {
 				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.AddEntrada(v)",
+					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId)",
 					"err":     err,
 					"status":  "400",
 				})
@@ -67,88 +67,31 @@ func (c *EntradaController) Post() {
 			panic(err)
 		}
 	} else {
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-			"err":     err,
-			"status":  "400",
-		})
-	}
-	c.ServeJSON()
-}
-
-// GetEntrada ...
-// @Title Get User
-// @Description get Entrada by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.ConsultaEntrada
-// @Failure 404 not found resource
-// @router /:id [get]
-func (c *EntradaController) GetEntrada() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
+		var v models.Movimiento
+		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+			if respuesta, err := entradaHelper.RegistrarEntrada(v); err == nil && respuesta != nil {
+				c.Ctx.Output.SetStatus(201)
+				c.Data["json"] = respuesta
 			} else {
-				c.Abort("500") // Error no manejado!
+				if err == nil {
+					panic(map[string]interface{}{
+						"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
+						"err":     err,
+						"status":  "400",
+					})
+				}
+				panic(err)
 			}
-		}
-	}()
-
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil || id <= 0 {
-		if err == nil {
-			err = errors.New("id MUST be > 0")
-		}
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetEntrada - err != nil || id <= 0",
-			"err":     err,
-			"status":  "400",
-		})
-	}
-
-	if v, err := entradaHelper.GetEntrada(id); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = v
-	}
-	c.ServeJSON()
-}
-
-// GetEntradas ...
-// @Title Get User
-// @Description get Entradas
-// @Success 200 {object} models.ConsultaEntrada
-// @Failure 404 not found resource
-// @router / [get]
-func (c *EntradaController) GetEntradas() {
-
-	defer func() {
-		if err := recover(); err != nil {
+		} else {
 			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
+			panic(map[string]interface{}{
+				"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+				"err":     err,
+				"status":  "400",
+			})
 		}
-	}()
-
-	if v, err := entradaHelper.GetEntradas(); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = v
 	}
+
 	c.ServeJSON()
 }
 

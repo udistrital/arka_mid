@@ -170,7 +170,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
-	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1"
+	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&sortby=ActaRecibidoId__Id&order=desc"
 	urlEstados += "&query=Activo:true"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
@@ -751,62 +751,44 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 						elementos[i] = cell.String()
 					}
 
-					var tarifaIva int
-					var vlrIva float64
+					var vlrcantidad int64
+					var tarifaIva float64
+					var vlrsubtotal float64
+					var vlrdcto float64
+					var vlrunitario float64
+					var vlrIva = float64(-1)
+
 					if elementos[0] != "Totales" {
-						vlrcantidad, err := strconv.ParseInt(elementos[6], 10, 64)
-						if err == nil {
-						} else {
+						if vlrcantidad, err = strconv.ParseInt(elementos[6], 10, 64); err != nil {
 							vlrcantidad = 0
-							logs.Warn(err)
 						}
 
-						vlrunitario, err := strconv.ParseFloat(elementos[8], 64)
-						if err == nil {
-						} else {
+						if vlrunitario, err = strconv.ParseFloat(elementos[8], 64); err != nil {
 							vlrunitario = float64(0)
-							logs.Warn(err)
 						}
 
-						vlrsubtotal := float64(0)
 						vlrsubtotal = float64(vlrunitario) * float64(vlrcantidad)
-						elementos[9] = strconv.FormatFloat(vlrsubtotal, 'f', 2, 64)
 
-						vlrdcto, err := strconv.ParseFloat(elementos[10], 64)
-						if err == nil {
-							vlrdcto = vlrsubtotal - vlrdcto
-						} else {
+						if vlrdcto, err = strconv.ParseFloat(elementos[10], 64); err != nil {
 							vlrdcto = float64(0)
-							logs.Warn(err)
 						}
 
-						convertir := strings.Split(elementos[11], ".")
-						if err == nil {
-							valor, err := strconv.ParseInt(convertir[0], 10, 64)
-							if err == nil {
-								for _, valor_iva := range IvaTest {
-									if valor == int64(valor_iva.Tarifa) {
-										elementos[12] = strconv.FormatFloat(vlrdcto*float64(valor)/100, 'f', 2, 64)
-										elementos[11] = strconv.Itoa(valor_iva.Tarifa)
-										vlrIva = vlrdcto * float64(valor) / 100
-										tarifaIva = valor_iva.Tarifa
-									}
+						if tarifaIva, err = strconv.ParseFloat(strings.ReplaceAll(elementos[11], "%", ""), 64); err == nil {
+							for _, valor_iva := range IvaTest {
+								if tarifaIva == float64(valor_iva.Tarifa) {
+									vlrIva = (vlrsubtotal - vlrdcto) * float64(tarifaIva) / 100
 								}
-							} else {
-								logs.Warn(err)
+							}
+							if vlrIva == -1 {
+								tarifaIva = 0
+								vlrIva = 0
 							}
 						} else {
-							logs.Warn(err)
+							tarifaIva = 0
+							vlrIva = 0
 						}
 
-						vlrtotal, err := strconv.ParseFloat(elementos[12], 64)
-						if err == nil {
-							vlrtotal = vlrdcto + vlrtotal
-							elementos[13] = strconv.FormatFloat(vlrtotal, 'f', 2, 64)
-						} else {
-							vlrtotal = float64(0)
-							logs.Warn(err)
-						}
+						vlrtotal := (vlrsubtotal - vlrdcto) * (1 + float64(tarifaIva)/100)
 
 						convertir2 := strings.ToUpper(elementos[7])
 						if err == nil {
@@ -876,7 +858,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							"Campos":    campos,
 							"Elementos": Elemento,
 						})
-
+						break
 					}
 				}
 			}

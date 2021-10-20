@@ -2,7 +2,6 @@ package salidaHelper
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -204,14 +203,15 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 				for i, elemento := range data_ {
 
 					var elemento_ []map[string]interface{}
-					urlcrud_ := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Id:" + fmt.Sprintf("%v", elemento["ElementoActaId"]) + "&fields=Id,Nombre,TipoBienId,Marca,Serie,Placa,SubgrupoCatalogoId"
+					urlcrud_ := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Id:" + fmt.Sprintf("%v", elemento["ElementoActaId"]) + "&fields=Id,Nombre,Marca,Serie,Placa,SubgrupoCatalogoId"
 					if _, err := request.GetJsonTest(urlcrud_, &elemento_); err == nil {
-						var subgrupo_ map[string]interface{}
-						urlcrud_2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + fmt.Sprintf("%v", elemento_[0]["SubgrupoCatalogoId"])
+						var subgrupo_ []map[string]interface{}
+
+						urlcrud_2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "detalle_subgrupo?query=SubgrupoId__Id:" + fmt.Sprintf("%v", elemento_[0]["SubgrupoCatalogoId"])
 						if _, err := request.GetJsonTest(urlcrud_2, &subgrupo_); err == nil {
 							data_[i]["Nombre"] = elemento_[0]["Nombre"]
-							data_[i]["TipoBienId"] = elemento_[0]["TipoBienId"]
-							data_[i]["SubgrupoCatalogoId"] = subgrupo_
+							data_[i]["TipoBienId"] = subgrupo_[0]["TipoBienId"]
+							data_[i]["SubgrupoCatalogoId"] = subgrupo_[0]["SubgrupoId"]
 							data_[i]["Marca"] = elemento_[0]["Marca"]
 							data_[i]["Serie"] = elemento_[0]["Serie"]
 							data_[i]["Placa"] = elemento_[0]["Placa"]
@@ -289,7 +289,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 	}
 }
 
-func GetSalidas() (Salidas []map[string]interface{}, outputError map[string]interface{}) {
+func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -301,22 +301,20 @@ func GetSalidas() (Salidas []map[string]interface{}, outputError map[string]inte
 			panic(outputError)
 		}
 	}()
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1"
+	urlcrud += "&query=EstadoMovimientoId__Nombre:Salida%20Aceptada,Activo:true"
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatoTipoMovimientoId.CodigoAbreviacion__contains:SAL,FormatoTipoMovimientoId.Descripcion__contains:guardar,Activo:true&limit=-1"
+	// Descomentar una vez este valor sea agregado a la tabla paramétrica estado_movimiento
+	// if !tramiteOnly {
+	// 	urlcrud += ",EstadoMovimientoId__Nombre:Salida%20Aprobada"
+	// }
 
 	var salidas_ []map[string]interface{}
 	if resp, err := request.GetJsonTest(urlcrud, &salidas_); err == nil && resp.StatusCode == 200 {
 		logs.Info(fmt.Sprintf("#Salidas %d:  %v", len(salidas_), salidas_))
 
 		if len(salidas_) == 0 || len(salidas_[0]) == 0 {
-			err := errors.New("There's currently no outs records")
-			logs.Warn(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetSalidas - len(salidas_) == 0 || len(salidas_[0]) == 0",
-				"err":     err,
-				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
-			}
-			return nil, outputError
+			return nil, nil
 		}
 
 		for _, salida := range salidas_ {
@@ -362,6 +360,14 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 		}
 	}()
 
+	sedeVacia := map[string]interface{}{
+		"Id": 0,
+	}
+	ubicacionVacia := map[string]interface{}{
+		"DependenciaId":   0,
+		"EspacioFisicoId": 0,
+	}
+
 	if jsonString, err := json.Marshal(salida); err == nil {
 
 		var data map[string]interface{}
@@ -379,55 +385,59 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 				var tercero []map[string]interface{}
 				var ubicacion []map[string]interface{}
 				var sede []map[string]interface{}
+				if data2["ubicacion"] != nil {
+					if _, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil {
 
-				if _, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil {
+						var ubicacion2 map[string]interface{}
+						if jsonString3, err := json.Marshal(ubicacion[0]["EspacioFisicoId"]); err == nil {
+							if err2 := json.Unmarshal(jsonString3, &ubicacion2); err2 == nil {
+								str2 := fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"])
 
-					var ubicacion2 map[string]interface{}
-					if jsonString3, err := json.Marshal(ubicacion[0]["EspacioFisicoId"]); err == nil {
-						if err2 := json.Unmarshal(jsonString3, &ubicacion2); err2 == nil {
-							str2 := fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"])
+								z := strings.Split(str2, "")
 
-							z := strings.Split(str2, "")
+								urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
 
-							urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
+								if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
+									logs.Error(err)
+									outputError = map[string]interface{}{
+										"funcion": "TraerDetalle - request.GetJsonTest(urlcrud4, &sede)",
+										"err":     err,
+										"status":  "502",
+									}
+									return nil, outputError
+								}
 
-							if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
-								logs.Error(err)
+							} else {
+								logs.Error(err2)
 								outputError = map[string]interface{}{
-									"funcion": "TraerDetalle - request.GetJsonTest(urlcrud4, &sede)",
-									"err":     err,
-									"status":  "502",
+									"funcion": "TraerDetalle - json.Unmarshal(jsonString3, &ubicacion2)",
+									"err":     err2,
+									"status":  "500",
 								}
 								return nil, outputError
 							}
-
 						} else {
-							logs.Error(err2)
+							logs.Error(err)
 							outputError = map[string]interface{}{
-								"funcion": "TraerDetalle - json.Unmarshal(jsonString3, &ubicacion2)",
-								"err":     err2,
+								"funcion": "TraerDetalle - json.Marshal(ubicacion[0][\"EspacioFisicoId\"])",
+								"err":     err,
 								"status":  "500",
 							}
 							return nil, outputError
 						}
+
 					} else {
 						logs.Error(err)
 						outputError = map[string]interface{}{
-							"funcion": "TraerDetalle - json.Marshal(ubicacion[0][\"EspacioFisicoId\"])",
+							"funcion": "TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
 							"err":     err,
-							"status":  "500",
+							"status":  "502",
 						}
 						return nil, outputError
 					}
-
 				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+					sede = append(sede, sedeVacia)
+					ubicacion = append(ubicacion, ubicacionVacia)
 				}
 
 				Salida2 := map[string]interface{}{
@@ -441,7 +451,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 					"Activo":                  data["Activo"],
 					"MovimientoPadreId":       data["MovimientoPadreId"],
 					"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
-					"EstadoMovimientoId":      data["EstadoMovimientoId"],
+					"EstadoMovimientoId":      data["EstadoMovimientoId"].(map[string]interface{})["Id"],
 				}
 
 				if data2["funcionario"] != nil {

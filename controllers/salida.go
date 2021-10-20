@@ -124,6 +124,7 @@ func (c *SalidaController) GetSalida() {
 // GetSalidas ...
 // @Title Get User
 // @Description get Entradas
+// @Param	tramite_only		query	bool false	"Retornar salidas únicamente en estado En Trámite"
 // @Success 200 {object} []models.Movimiento
 // @Failure 404 not found resource
 // @router / [get]
@@ -142,9 +143,17 @@ func (c *SalidaController) GetSalidas() {
 			}
 		}
 	}()
+	var tramiteOnly bool
 
-	if v, err := salidaHelper.GetSalidas(); err == nil {
-		c.Data["json"] = v
+	if v, err := c.GetBool("tramite_only"); err == nil {
+		tramiteOnly = v
+	}
+	if v, err := salidaHelper.GetSalidas(tramiteOnly); err == nil {
+		if v != nil {
+			c.Data["json"] = v
+		} else {
+			c.Data["json"] = []interface{}{}
+		}
 	} else {
 		panic(err)
 	}

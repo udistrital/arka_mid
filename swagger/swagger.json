@@ -483,36 +483,23 @@
             }
         },
         "/entrada/": {
-            "get": {
-                "tags": [
-                    "entrada"
-                ],
-                "description": "get Entradas",
-                "operationId": "EntradaController.Get User",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ConsultaEntrada"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            },
             "post": {
                 "tags": [
                     "entrada"
                 ],
-                "description": "create Entrada",
+                "description": "Transaccion entrada. Estado de registro o aprobacion",
                 "operationId": "EntradaController.Post",
                 "parameters": [
                     {
+                        "in": "query",
+                        "name": "entradaId",
+                        "description": "Id del movimiento que se desea aprobar",
+                        "type": "string"
+                    },
+                    {
                         "in": "body",
                         "name": "body",
-                        "description": "body for Entrada content",
-                        "required": true,
+                        "description": "Detalles de la entrada. Se valida solo si el id es 0",
                         "schema": {
                             "$ref": "#/definitions/models.Entrada"
                         }
@@ -615,35 +602,6 @@
                 }
             }
         },
-        "/entrada/{id}": {
-            "get": {
-                "tags": [
-                    "entrada"
-                ],
-                "description": "get Entrada by id",
-                "operationId": "EntradaController.Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ConsultaEntrada"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/parametros_soporte/": {
             "get": {
                 "tags": [
@@ -708,6 +666,14 @@
                 ],
                 "description": "get Entradas",
                 "operationId": "SalidaController.Get User",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "tramite_only",
+                        "description": "Retornar salidas únicamente en estado En Trámite",
+                        "type": "boolean"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
@@ -1508,10 +1474,6 @@
                     "$ref": "#/definitions/models.FormatoTipoMovimiento"
                 },
                 "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "IdTipoMovimiento": {
                     "type": "integer",
                     "format": "int64"
                 },
