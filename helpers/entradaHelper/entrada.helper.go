@@ -255,29 +255,27 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
-	//	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
-	//	procesoExterno := int64(entradaId)
-	//	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
+	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
+	procesoExterno := int64(entradaId)
+	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
 	tipoMovimientoId := models.TipoMovimiento{Id: int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64))}
 	fmt.Print(tipoMovimientoId)
-	/*	movimientosKronos := models.MovimientoProcesoExterno{
+	movimientosKronos := models.MovimientoProcesoExterno{
 		TipoMovimientoId:         &tipoMovimientoId,
 		ProcesoExterno:           procesoExterno,
 		Activo:                   true,
 		MovimientoProcesoExterno: idMovArka,
-	}*/
+	}
 
-	/*
-		if err := request.SendJson(urlcrud, "POST", &res, &movimientosKronos); err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"POST\", &resM, &movimientosKronos)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
+	if err := request.SendJson(urlcrud, "POST", &res, &movimientosKronos); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"POST\", &resM, &movimientosKronos)",
+			"err":     err,
+			"status":  "502",
 		}
-	*/
+		return nil, outputError
+	}
 	// Falta el paso de la transacción contable
 
 	var groups = make(map[int]float64)
