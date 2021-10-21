@@ -50,9 +50,6 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 	var (
 		urlcrud             string
 		res                 map[string]interface{}
-		resA                map[string]interface{}
-		resM                map[string]interface{}
-		resS                map[string]interface{}
 		actaRecibido        models.TransaccionActaRecibido
 		resultado           map[string]interface{}
 		resEstadoMovimiento []models.EstadoMovimiento
@@ -63,7 +60,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		panic(err.Error())
 	}
 	year, _, _ := time.Now().Date()
-	consec := models.Consecutivo{0, 1, year, 0, "Entradas", true}
+	consec := models.Consecutivo{Id: 0, ContextoId: 1, Year: year, Consecutivo: 0, Descripcion: "Entradas", Activo: true}
 	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
 	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
 		resultado, _ := res["Data"].(map[string]interface{})
@@ -185,11 +182,13 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}()
 
 	var (
-		urlcrud             string
-		res                 map[string]interface{}
-		movArka             []models.Movimiento
-		resultado           map[string]interface{}
-		resEstadoMovimiento []models.EstadoMovimiento
+		urlcrud                 string
+		res                     map[string]interface{}
+		movArka                 []models.Movimiento
+		resultado               map[string]interface{}
+		resEstadoMovimiento     []models.EstadoMovimiento
+		detalleMovimiento       map[string]interface{}
+		transaccionActaRecibido models.TransaccionActaRecibido
 	)
 
 	// Se cambia el estado del movimiento en movimientos_arka_crud
@@ -204,6 +203,15 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
+	if err := json.Unmarshal([]byte(movArka[0].Detalle), &detalleMovimiento); err == nil {
+		var resTrActa []models.TransaccionActaRecibido
+
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
+			transaccionActaRecibido = resTrActa[0]
+		}
+	}
+
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Entrada%20Aprobada"
 	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
 		logs.Error(err)
@@ -216,16 +224,17 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
-	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
-			"err":     err,
-			"status":  "502",
+	/*
+		if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
-		return nil, outputError
-	}
-
+	*/
 	// Crea registro en movimientos_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:" + movArka[0].FormatoTipoMovimientoId.Nombre
 	if err := request.GetJson(urlcrud, &res); err != nil {
@@ -246,29 +255,53 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
-	procesoExterno := int64(entradaId)
-	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
+	//	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
+	//	procesoExterno := int64(entradaId)
+	//	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
 	tipoMovimientoId := models.TipoMovimiento{Id: int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64))}
-	movimientosKronos := models.MovimientoProcesoExterno{
+	fmt.Print(tipoMovimientoId)
+	/*	movimientosKronos := models.MovimientoProcesoExterno{
 		TipoMovimientoId:         &tipoMovimientoId,
 		ProcesoExterno:           procesoExterno,
 		Activo:                   true,
 		MovimientoProcesoExterno: idMovArka,
-	}
+	}*/
 
-	if err := request.SendJson(urlcrud, "POST", &res, &movimientosKronos); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"POST\", &resM, &movimientosKronos)",
-			"err":     err,
-			"status":  "502",
+	/*
+		if err := request.SendJson(urlcrud, "POST", &res, &movimientosKronos); err != nil {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"POST\", &resM, &movimientosKronos)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
-		return nil, outputError
-	}
-
+	*/
 	// Falta el paso de la transacción contable
 
+	var groups = make(map[int]float64)
+	for _, elemento := range transaccionActaRecibido.Elementos {
+		x := float64(0)
+		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
+			x = val
+		}
+		groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
+	}
+
+	/*
+		//fmt.Println(resA)
+		if res, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
+			if outputError == nil {
+				outputError = map[string]interface{}{
+					"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
+					"err":     res,
+					"status":  "502",
+				}
+			}
+			return nil, outputError
+		}
+	*/
 	return resultado, nil
 }
 

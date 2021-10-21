@@ -79,7 +79,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 
 	//consecutivo del asiento
 	year, _, _ := time.Now().Date()
-	consec := models.Consecutivo{0, 1, year, 0, "CNTB", true}
+	consec := models.Consecutivo{Id: 0, ContextoId: 1, Year: year, Consecutivo: 0, Descripcion: "CNTB", Activo: true}
 	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
 	idconsecutivo := float64(0)
 	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
