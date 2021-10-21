@@ -172,7 +172,6 @@ func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecut
 			"err":     err,
 			"status":  "502",
 		}
-		return consecutivo, outputError
 	}
 	return consecutivo, outputError
 }
