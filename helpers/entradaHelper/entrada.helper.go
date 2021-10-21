@@ -182,13 +182,11 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}()
 
 	var (
-		urlcrud                 string
-		res                     map[string]interface{}
-		movArka                 []models.Movimiento
-		resultado               map[string]interface{}
-		resEstadoMovimiento     []models.EstadoMovimiento
-		detalleMovimiento       map[string]interface{}
-		transaccionActaRecibido models.TransaccionActaRecibido
+		urlcrud             string
+		res                 map[string]interface{}
+		movArka             []models.Movimiento
+		resultado           map[string]interface{}
+		resEstadoMovimiento []models.EstadoMovimiento
 	)
 
 	// Se cambia el estado del movimiento en movimientos_arka_crud
@@ -203,15 +201,6 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
-	if err := json.Unmarshal([]byte(movArka[0].Detalle), &detalleMovimiento); err == nil {
-		var resTrActa []models.TransaccionActaRecibido
-
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
-			transaccionActaRecibido = resTrActa[0]
-		}
-	}
-
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Entrada%20Aprobada"
 	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
 		logs.Error(err)
@@ -224,17 +213,15 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
-	/*
-		if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
+	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
+			"err":     err,
+			"status":  "502",
 		}
-	*/
+		return nil, outputError
+	}
 	// Crea registro en movimientos_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:" + movArka[0].FormatoTipoMovimientoId.Nombre
 	if err := request.GetJson(urlcrud, &res); err != nil {
@@ -278,27 +265,41 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 	// Falta el paso de la transacción contable
 
-	var groups = make(map[int]float64)
-	for _, elemento := range transaccionActaRecibido.Elementos {
-		x := float64(0)
-		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
-			x = val
-		}
-		groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
-	}
-
 	/*
-		//fmt.Println(resA)
-		if res, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
-			if outputError == nil {
-				outputError = map[string]interface{}{
-					"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
-					"err":     res,
-					"status":  "502",
-				}
+
+		detalleMovimiento       map[string]interface{}
+		transaccionActaRecibido models.TransaccionActaRecibido
+
+		if err := json.Unmarshal([]byte(movArka[0].Detalle), &detalleMovimiento); err == nil {
+			var resTrActa []models.TransaccionActaRecibido
+
+			urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+			if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
+				transaccionActaRecibido = resTrActa[0]
 			}
-			return nil, outputError
 		}
+
+		var groups = make(map[int]float64)
+		for _, elemento := range transaccionActaRecibido.Elementos {
+			x := float64(0)
+			if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
+				x = val
+			}
+			groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
+		}
+
+
+			//fmt.Println(resA)
+			if res, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
+				if outputError == nil {
+					outputError = map[string]interface{}{
+						"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
+						"err":     res,
+						"status":  "502",
+					}
+				}
+				return nil, outputError
+			}
 	*/
 	return resultado, nil
 }
