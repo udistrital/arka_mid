@@ -24,15 +24,6 @@ import (
 	"github.com/udistrital/utils_oas/time_bogota"
 )
 
-type Consecutivo struct {
-	Id          int
-	ContextoId  int
-	Year        int
-	Consecutivo int
-	Descripcion string
-	Activo      bool
-}
-
 // RegistrarEntrada Crea registro de entrada en estado en trámite
 func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, outputError map[string]interface{}) {
 
@@ -51,31 +42,28 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		urlcrud             string
 		res                 map[string]interface{}
 		actaRecibido        models.TransaccionActaRecibido
-		resultado           map[string]interface{}
 		resEstadoMovimiento []models.EstadoMovimiento
 	)
+	resultado := make(map[string]interface{})
 
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
 		panic(err.Error())
 	}
-	year, _, _ := time.Now().Date()
-	consec := models.Consecutivo{Id: 0, ContextoId: 1, Year: year, Consecutivo: 0, Descripcion: "Entradas", Activo: true}
-	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
-	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
-		resultado, _ := res["Data"].(map[string]interface{})
-		numeroentrada := fmt.Sprintf("%05.0f", resultado["Consecutivo"]) + "-" + strconv.Itoa(year)
-		vconsecutivo := detalleJSON["consecutivo"].(string) + "-" + numeroentrada
-		detalleJSON["consecutivo"] = vconsecutivo
-	} else {
+
+	if consecutivo, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "RegistrarEntrada - request.SendJson(apiCons, \"POST\", &res, &consec)",
+			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo()",
 			"err":     err,
 			"status":  "502",
 		}
 		return nil, outputError
+	} else {
+		detalleJSON["consecutivo"] = consecutivo
+		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
+
 	var jsonData []byte
 	jsonData, err1 := json.Marshal(detalleJSON)
 	if err1 != nil {
@@ -185,9 +173,9 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		urlcrud             string
 		res                 map[string]interface{}
 		movArka             []models.Movimiento
-		resultado           map[string]interface{}
 		resEstadoMovimiento []models.EstadoMovimiento
 	)
+	resultado := make(map[string]interface{})
 
 	// Se cambia el estado del movimiento en movimientos_arka_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + strconv.Itoa(int(entradaId))
@@ -212,6 +200,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(entradaId))
 	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
 	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
 		logs.Error(err)
@@ -224,6 +213,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 	// Crea registro en movimientos_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:" + movArka[0].FormatoTipoMovimientoId.Nombre
+	urlcrud = strings.ReplaceAll(urlcrud, " ", "%20")
 	if err := request.GetJson(urlcrud, &res); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -263,6 +253,8 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 		return nil, outputError
 	}
+
+	resultado["movimientoArka"] = movArka[0]
 	// Falta el paso de la transacción contable
 
 	/*
@@ -495,7 +487,14 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																							}
 
 																							year, _, _ := time.Now().Date()
-																							postConsecutivo := models.Consecutivo{0, 199, year, 0, "Ajustes Arka", true}
+																							postConsecutivo := models.Consecutivo{
+																								Id:          0,
+																								ContextoId:  199,
+																								Year:        year,
+																								Consecutivo: 0,
+																								Descripcion: "Ajustes Arka",
+																								Activo:      true,
+																							}
 																							urlcrud = "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
 																							if err = request.SendJson(urlcrud, "POST", &resMap, &postConsecutivo); err == nil {
 																								if consecutivoId, err = strconv.Atoi(fmt.Sprint(resMap["Data"].(map[string]interface{})["Id"])); err == nil {
