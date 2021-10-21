@@ -2,6 +2,7 @@ package entradaHelper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -50,7 +51,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 	if consecutivo, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo()",
+			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(detalleJSON[\"consecutivo\"].(string), 216, \"Registro Entrada Arka\")",
 			"err":     err,
 			"status":  "502",
 		}
@@ -69,7 +70,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 			"err":     err1,
 			"status":  "500",
 		}
-		panic(err1.Error())
+		return nil, outputError
 	}
 	data.Detalle = string(jsonData[:])
 
@@ -88,12 +89,21 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 
 	// Crea registro en api movimientos_arka_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Entrada%20En%20Trámite"
-	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
+	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - request.GetJson(urlcrud, &resEstadoMovimiento)",
 			"err":     err,
 			"status":  "502",
+		}
+		return nil, outputError
+	} else if len(resEstadoMovimiento) == 0 {
+		err = errors.New("len(resEstadoMovimiento) == 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarEntrada - request.GetJson(urlcrud, &resEstadoMovimiento)",
+			"err":     err,
+			"status":  "404",
 		}
 		return nil, outputError
 	}
@@ -187,12 +197,21 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Entrada%20Aprobada"
-	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
+	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "AprobarEntrada - request.GetJson(urlcrud, &resEstadoMovimiento)",
 			"err":     err,
 			"status":  "502",
+		}
+		return nil, outputError
+	} else if len(resEstadoMovimiento) == 0 {
+		err = errors.New("len(resEstadoMovimiento) == 0")
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - request.GetJson(urlcrud, &resEstadoMovimiento)",
+			"err":     err,
+			"status":  "404",
 		}
 		return nil, outputError
 	}
@@ -221,12 +240,13 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 		return nil, outputError
 	} else if reflect.TypeOf(res["Body"]).Kind() != reflect.Slice {
+		err = errors.New("no se encuentra tipo_movimiento en api movimientos_crud")
+		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "AprobarEntrada - No se encuentra tipo_movimiento en api movimientos_crud",
+			"funcion": "AprobarEntrada - reflect.TypeOf(res[\"Body\"]).Kind() != reflect.Slice",
 			"err":     err,
-			"status":  "502",
+			"status":  "404",
 		}
-		logs.Error(outputError)
 		return nil, outputError
 	}
 

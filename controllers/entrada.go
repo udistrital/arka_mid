@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -32,11 +33,6 @@ func (c *EntradaController) URLMapping() {
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
-	var entradaId int = 0
-
-	if v, err := c.GetInt("entradaId"); err == nil {
-		entradaId = v
-	}
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -52,6 +48,11 @@ func (c *EntradaController) Post() {
 		}
 	}()
 
+	var entradaId int = 0
+
+	if v, err := c.GetInt("entradaId"); err == nil {
+		entradaId = v
+	}
 	if entradaId > 0 {
 		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
@@ -72,15 +73,18 @@ func (c *EntradaController) Post() {
 			if respuesta, err := entradaHelper.RegistrarEntrada(v); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
+			} else if err != nil {
+				panic(map[string]interface{}{
+					"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
+					"err":     err,
+					"status":  "400",
+				})
 			} else {
-				if err == nil {
-					panic(map[string]interface{}{
-						"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
-						"err":     err,
-						"status":  "400",
-					})
-				}
-				panic(err)
+				panic(map[string]interface{}{
+					"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
+					"err":     errors.New("No se obtuvo respuesta al registrar la entrada"),
+					"status":  "404",
+				})
 			}
 		} else {
 			logs.Error(err)
