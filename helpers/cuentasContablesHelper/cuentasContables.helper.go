@@ -233,9 +233,13 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 				}
 			}
+
 			apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
 			outputError = map[string]interface{}{"funcion": "asientoContable - en desarrollo", "status": "500", "err": err}
 			//			return nil, outputError
+
+			fmt.Println("******* transaccion ************ ", transaccion)
+			logs.Info(fmt.Sprintf("apiMvtoContables: body: %v", transaccion))
 
 			if err := request.SendJson(apiMvtoContables, "POST", &res, &transaccion); err != nil {
 				logs.Error(err)
