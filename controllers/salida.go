@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
-	"github.com/udistrital/arka_mid/models"
 )
 
 // SalidaController operations for Salida
@@ -21,19 +19,19 @@ type SalidaController struct {
 
 // URLMapping ...
 func (c *SalidaController) URLMapping() {
-	c.Mapping("Post", c.Post)
+	c.Mapping("Put", c.Put)
 	c.Mapping("Get", c.GetSalida)
 	c.Mapping("GetAll", c.GetSalidas)
 }
 
-// Post ...
-// @Title Create
-// @Description create Salida
-// @Param	body		body 	models.SalidaGeneral	true		"body for Salida content"
-// @Success 200 {object} []models.TrSalida2
+// Put ...
+// @Title Aprobar salida
+// @Description Aprueba una salida y realiza la transaccion contable correspondiente
+// @Param	id	path 	string	true		"MovimientoId de la salida a aprobar"
+// @Success 200 {object} map[string]interface{}
 // @Failure 403 body is empty
-// @router / [post]
-func (c *SalidaController) Post() {
+// @router /:id [put]
+func (c *SalidaController) Put() {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -49,27 +47,32 @@ func (c *SalidaController) Post() {
 		}
 	}()
 
-	// fmt.Printf("body: %v\n", c.Ctx.Input.RequestBody)
-	var v models.SalidaGeneral
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		// fmt.Printf("valores: %#v\n", v)
-		// formatdata.JsonPrint(v)
-		if respuesta, err := salidaHelper.AddSalida(&v); err == nil && respuesta != nil {
+	idStr := c.Ctx.Input.Param(":id")
+
+	if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+		if respuesta, err := salidaHelper.AprobarSalida(id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else if err != nil {
-			panic(err)
+			panic(map[string]interface{}{
+				"funcion": "Put - salidaHelper.AprobarSalida(id)",
+				"err":     err,
+				"status":  "400",
+			})
 		} else {
 			panic(map[string]interface{}{
-				"funcion": "Post",
-				"err":     "No hubo respuesta",
+				"funcion": "Put - salidaHelper.AprobarSalida(id)",
+				"err":     errors.New("No se obtuvo respuesta al aprobar la salida"),
 				"status":  "404",
 			})
 		}
 	} else {
+		if err == nil {
+			err = errors.New("Invalid Id")
+		}
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"funcion": "Put - strconv.Atoi(idStr)",
 			"err":     err,
 			"status":  "400",
 		})

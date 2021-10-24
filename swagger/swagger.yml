@@ -456,27 +456,6 @@ paths:
               $ref: '#/definitions/models.Movimiento'
         "404":
           description: not found resource
-    post:
-      tags:
-      - salida
-      description: create Salida
-      operationId: SalidaController.Create
-      parameters:
-      - in: body
-        name: body
-        description: body for Salida content
-        required: true
-        schema:
-          $ref: '#/definitions/models.SalidaGeneral'
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/models.TrSalida2'
-        "403":
-          description: body is empty
   /salida/{id}:
     get:
       tags:
@@ -497,6 +476,24 @@ paths:
             $ref: '#/definitions/models.TrSalida'
         "404":
           description: not found resource
+    put:
+      tags:
+      - salida
+      description: Aprueba una salida y realiza la transaccion contable correspondiente
+      operationId: SalidaController.Aprobar salida
+      parameters:
+      - in: path
+        name: id
+        description: MovimientoId de la salida a aprobar
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/map[string]interface{}'
+        "403":
+          description: body is empty
   /terceros/{id}:
     get:
       tags:

@@ -84,13 +84,13 @@ func AsignarPlaca(m *models.Elemento) (resultado map[string]interface{}, outputE
 	}
 }
 
-// AddEntrada Transacción para registrar la información de una salida
-func AddSalida(m *models.SalidaGeneral) (resultado []map[string]interface{}, outputError map[string]interface{}) {
+// AprobarSalida Aprobacion de una salida
+func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "AddSalida - Unhandled Error!",
+				"funcion": "AprobarSalida - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -301,7 +301,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 			panic(outputError)
 		}
 	}()
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?sortby=Id&order=desc&limit=20"
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1"
 	urlcrud += "&query=Activo:true,EstadoMovimientoId__Nombre"
 
 	if tramiteOnly {
