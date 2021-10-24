@@ -301,13 +301,14 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 			panic(outputError)
 		}
 	}()
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1"
-	urlcrud += "&query=EstadoMovimientoId__Nombre:Salida%20Aceptada,Activo:true"
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?sortby=Id&order=desc&limit=20"
+	urlcrud += "&query=Activo:true,EstadoMovimientoId__Nombre"
 
-	// Descomentar una vez este valor sea agregado a la tabla paramétrica estado_movimiento
-	// if !tramiteOnly {
-	// 	urlcrud += ",EstadoMovimientoId__Nombre:Salida%20Aprobada"
-	// }
+	if tramiteOnly {
+		urlcrud += ":Salida%20En%20Trámite"
+	} else {
+		urlcrud += "__startswith:Salida"
+	}
 
 	var salidas_ []map[string]interface{}
 	if resp, err := request.GetJsonTest(urlcrud, &salidas_); err == nil && resp.StatusCode == 200 {
