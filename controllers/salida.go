@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
+	"github.com/udistrital/arka_mid/models"
 )
 
 // SalidaController operations for Salida
@@ -19,9 +21,62 @@ type SalidaController struct {
 
 // URLMapping ...
 func (c *SalidaController) URLMapping() {
+	c.Mapping("Post", c.Post)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Get", c.GetSalida)
 	c.Mapping("GetAll", c.GetSalidas)
+}
+
+// Post ...
+// @Title Post transaccion salidas asociadas a una entrada
+// @Description Genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_Crud
+// @Param	body		body 	models.SalidaGeneral	true		"Informacion de las salidas y elementos asociados a cada una de ellas"
+// @Success 200 {object} models.SalidaGeneral
+// @Failure 403 body is empty
+// @router / [post]
+func (c *SalidaController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
+	var v models.SalidaGeneral
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if respuesta, err := salidaHelper.PostTrSalidas(&v); err == nil && respuesta != nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = respuesta
+		} else if err != nil {
+			panic(map[string]interface{}{
+				"funcion": "Post - salidaHelper.PostTrSalidas(&v)",
+				"err":     err,
+				"status":  "400",
+			})
+		} else {
+			panic(map[string]interface{}{
+				"funcion": "Post - salidaHelper.PostTrSalidas(&v)",
+				"err":     errors.New("No se obtuvo respuesta al registrar la(s) salida(s)"),
+				"status":  "404",
+			})
+		}
+	} else {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+	c.ServeJSON()
 }
 
 // Put ...
