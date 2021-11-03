@@ -108,21 +108,17 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 	resultado = make(map[string]interface{})
 
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Salida%20En%20Trámite"
-	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "PostTrSalidas - request.GetJson(urlcrud, &resEstadoMovimiento)",
-			"err":     err,
-			"status":  "502",
+	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
+		status := "502"
+		if err == nil {
+			err = errors.New("len(resEstadoMovimiento) == 0")
+			status = "404"
 		}
-		return nil, outputError
-	} else if len(resEstadoMovimiento) == 0 {
-		err = errors.New("len(resEstadoMovimiento) == 0")
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "PostTrSalidas - request.GetJson(urlcrud, &resEstadoMovimiento)",
 			"err":     err,
-			"status":  "404",
+			"status":  status,
 		}
 		return nil, outputError
 	}
@@ -577,6 +573,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 					"MovimientoPadreId":       data["MovimientoPadreId"],
 					"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
 					"EstadoMovimientoId":      data["EstadoMovimientoId"].(map[string]interface{})["Id"],
+					"Consecutivo":             data2["consecutivo"],
 				}
 
 				if data2["funcionario"] != nil {

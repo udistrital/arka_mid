@@ -74,17 +74,19 @@ func (c *SalidaController) Post() {
 			if respuesta, err := salidaHelper.PostTrSalidas(&v); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
-			} else if err != nil {
+			} else {
+				status := "400"
+				if err == nil {
+					err = map[string]interface{}{
+						"err": errors.New("No se obtuvo respuesta al registrar la(s) salida(s)"),
+					}
+					status = "404"
+				}
+				logs.Error(err)
 				panic(map[string]interface{}{
 					"funcion": "Post - salidaHelper.PostTrSalidas(&v)",
 					"err":     err,
-					"status":  "400",
-				})
-			} else {
-				panic(map[string]interface{}{
-					"funcion": "Post - salidaHelper.PostTrSalidas(&v)",
-					"err":     errors.New("No se obtuvo respuesta al registrar la(s) salida(s)"),
-					"status":  "404",
+					"status":  status,
 				})
 			}
 		} else {
