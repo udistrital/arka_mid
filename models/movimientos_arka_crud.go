@@ -58,3 +58,11 @@ type SoporteMovimiento struct {
 	FechaModificacion time.Time
 	MovimientoId      *Movimiento
 }
+
+type TrSalida struct {
+	Salida    *Movimiento
+	Elementos []*ElementosMovimiento
+}
+type SalidaGeneral struct {
+	Salidas []*TrSalida
+}
