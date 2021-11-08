@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/time_bogota"
@@ -78,16 +78,32 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	)
 
 	//consecutivo del asiento
-	year, _, _ := time.Now().Date()
-	consec := models.Consecutivo{Id: 0, ContextoId: 1, Year: year, Consecutivo: 0, Descripcion: "CNTB", Activo: true}
-	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
-	idconsecutivo := float64(0)
-	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
-		resultado, _ := res["Data"].(map[string]interface{})
-		idconsecutivo = resultado["Id"].(float64)
-	} else {
-		outputError = map[string]interface{}{"funcion": "asientoContable - request.SendJson(apiCons, \"POST\", &res, &consec)", "status": "500", "err": err}
+	/*
+		year, _, _ := time.Now().Date()
+		consec := models.Consecutivo{Id: 0, ContextoId: 1, Year: year, Consecutivo: 0, Descripcion: "CNTB", Activo: true}
+		apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
+		idconsecutivo := float64(0)
+		if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
+			resultado, _ := res["Data"].(map[string]interface{})
+			idconsecutivo = resultado["Id"].(float64)
+		} else {
+			outputError = map[string]interface{}{"funcion": "asientoContable - request.SendJson(apiCons, \"POST\", &res, &consec)", "status": "500", "err": err}
+			return nil, outputError
+		}
+	*/
+
+	idconsecutivo := int(0)
+	if _, idconsecutivo1, err := utilsHelper.GetConsecutivo("", 1, "CNTB"); err != nil {
+
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo()",
+			"err":     err,
+			"status":  "502",
+		}
 		return nil, outputError
+	} else {
+		idconsecutivo = idconsecutivo1
 	}
 
 	var jsonString []byte
@@ -165,7 +181,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	}
 
 	transaccion.Activo = true
-	transaccion.ConsecutivoId = int(idconsecutivo)
+	transaccion.ConsecutivoId = idconsecutivo
 	transaccion.Descripcion = descripcionMovto
 	transaccion.Etiquetas = string(jsonString)
 	transaccion.FechaTransaccion = time_bogota.Tiempo_bogota()
@@ -248,6 +264,10 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					"err":     err,
 					"status":  "502",
 				}
+			} else {
+				logs.Info("Transaccion contable")
+				res["resultadoTransaccion"] = transaccion
+				return res, nil
 			}
 		} else {
 			if err == nil {

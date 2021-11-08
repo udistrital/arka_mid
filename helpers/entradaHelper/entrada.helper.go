@@ -52,7 +52,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		panic(err.Error())
 	}
 
-	if consecutivo, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
+	if consecutivo, _, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo()",
@@ -239,6 +239,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	procesoExterno := int64(entradaId)
 	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
 	tipoMovimientoId := models.TipoMovimiento{Id: int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64))}
+	tipomvto := strconv.Itoa(int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64)))
 	movimientosKronos := models.MovimientoProcesoExterno{
 		TipoMovimientoId:         &tipoMovimientoId,
 		ProcesoExterno:           procesoExterno,
@@ -272,6 +273,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	var groups = make(map[int]float64)
+	i := 0
 	for _, elemento := range transaccionActaRecibido.Elementos {
 		fmt.Println("entra:")
 		x := float64(0)
@@ -279,9 +281,15 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 			x = val
 		}
 		groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
+		i++
 	}
-	tipomvto := strconv.Itoa(int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64)))
-	if res, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
+	if i == 0 {
+		return resultado, nil
+	}
+
+	fmt.Println("en este punto falla:")
+	fmt.Println("si en este punto falla:")
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
 		if outputError == nil {
 			outputError = map[string]interface{}{
 				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
@@ -290,7 +298,10 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 			}
 		}
 		return nil, outputError
+	} else {
+		resultado["transaccionContable"] = resA["resultadoTransaccion"]
 	}
+	//logs.Info(fmt.Sprintf("%+v", resultado["transaccionContable"]))
 	return resultado, nil
 }
 
