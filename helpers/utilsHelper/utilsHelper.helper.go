@@ -134,7 +134,18 @@ func KeysValuesMap(m map[interface{}]interface{}) (keys []interface{}, vals []in
 	return
 }
 
-func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecutivo string, consecutivoId int, err error) {
+func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecutivo string, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetConsecutivo - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
 
 	var res map[string]interface{}
 
@@ -151,10 +162,18 @@ func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecut
 
 	if err := request.SendJson(url, "POST", &res, &data); err == nil {
 		consecutivo = prefix + "-" + fmt.Sprintf("%05.0f", res["Data"].(map[string]interface{})["Consecutivo"]) + "-" + strconv.Itoa(year)
-		consecutivoId = int(res["Data"].(map[string]interface{})["Id"].(float64))
+		// es temporal juandavid esta linea sobra, es dentro de mi desarrollo
+		// consecutivoId = int(res["Data"].(map[string]interface{})["Id"].(float64))
 	} else if strings.Contains(err.Error(), "invalid character") {
 		logs.Error(err)
-		consecutivo, consecutivoId, err = GetConsecutivo(prefix, contextoId, descripcion)
+		consecutivo, outputError = GetConsecutivo(prefix, contextoId, descripcion)
+	} else {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetConsecutivo - request.SendJson(url, \"POST\", &res, &data)",
+			"err":     err,
+			"status":  "502",
+		}
 	}
-	return consecutivo, consecutivoId, err
+	return consecutivo, outputError
 }

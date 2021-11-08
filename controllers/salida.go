@@ -27,10 +27,11 @@ func (c *SalidaController) URLMapping() {
 }
 
 // Post ...
-// @Title Create
-// @Description create Salida
-// @Param	body		body 	models.SalidaGeneral	true		"body for Salida content"
-// @Success 200 {object} []models.TrSalida2
+// @Title Post transaccion salidas asociadas a una entrada
+// @Description Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
+// @Param	salidaId	query 	string					false		"Id del movimiento que se desea aprobar"
+// @Param	body		body 	models.SalidaGeneral	true		"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
+// @Success 200 {object} models.SalidaGeneral
 // @Failure 403 body is empty
 // @router / [post]
 func (c *SalidaController) Post() {
@@ -48,32 +49,56 @@ func (c *SalidaController) Post() {
 			}
 		}
 	}()
+	var salidaId int = 0
 
-	// fmt.Printf("body: %v\n", c.Ctx.Input.RequestBody)
-	var v models.SalidaGeneral
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		// fmt.Printf("valores: %#v\n", v)
-		// formatdata.JsonPrint(v)
-		if respuesta, err := salidaHelper.AddSalida(&v); err == nil && respuesta != nil {
+	if v, err := c.GetInt("salidaId"); err == nil {
+		salidaId = v
+	}
+	if salidaId > 0 {
+		if respuesta, err := salidaHelper.AprobarSalida(salidaId); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
-		} else if err != nil {
-			panic(err)
 		} else {
-			panic(map[string]interface{}{
-				"funcion": "Post",
-				"err":     "No hubo respuesta",
-				"status":  "404",
-			})
+			if err == nil {
+				panic(map[string]interface{}{
+					"funcion": "Post - salidaHelper.AprobarSalida(salidaId)",
+					"err":     errors.New("No se obtuvo respuesta al aprobar la salida"),
+					"status":  "404",
+				})
+			}
+			panic(err)
 		}
 	} else {
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-			"err":     err,
-			"status":  "400",
-		})
+		var v models.SalidaGeneral
+		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+			if respuesta, err := salidaHelper.PostTrSalidas(&v); err == nil && respuesta != nil {
+				c.Ctx.Output.SetStatus(201)
+				c.Data["json"] = respuesta
+			} else {
+				status := "400"
+				if err == nil {
+					err = map[string]interface{}{
+						"err": errors.New("No se obtuvo respuesta al registrar la(s) salida(s)"),
+					}
+					status = "404"
+				}
+				logs.Error(err)
+				panic(map[string]interface{}{
+					"funcion": "Post - salidaHelper.PostTrSalidas(&v)",
+					"err":     err,
+					"status":  status,
+				})
+			}
+		} else {
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+				"err":     err,
+				"status":  "400",
+			})
+		}
 	}
+
 	c.ServeJSON()
 }
 

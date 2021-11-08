@@ -693,13 +693,19 @@
                 "tags": [
                     "salida"
                 ],
-                "description": "create Salida",
-                "operationId": "SalidaController.Create",
+                "description": "Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud",
+                "operationId": "SalidaController.Post transaccion salidas asociadas a una entrada",
                 "parameters": [
+                    {
+                        "in": "query",
+                        "name": "salidaId",
+                        "description": "Id del movimiento que se desea aprobar",
+                        "type": "string"
+                    },
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "body for Salida content",
+                        "description": "Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.SalidaGeneral"
@@ -710,10 +716,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.TrSalida2"
-                            }
+                            "$ref": "#/definitions/models.SalidaGeneral"
                         }
                     },
                     "403": {
@@ -1489,38 +1492,6 @@
                 }
             }
         },
-        "models.MovimientoProcesoExterno": {
-            "title": "MovimientoProcesoExterno",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "MovimientoProcesoExterno": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "ProcesoExterno": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "TipoMovimientoId": {
-                    "$ref": "#/definitions/models.TipoMovimiento"
-                }
-            }
-        },
         "models.OrdenadorGasto": {
             "title": "OrdenadorGasto",
             "type": "object",
@@ -1680,39 +1651,6 @@
                 }
             }
         },
-        "models.TipoMovimiento": {
-            "title": "TipoMovimiento",
-            "type": "object",
-            "properties": {
-                "Acronimo": {
-                    "type": "string"
-                },
-                "Activo": {
-                    "type": "boolean"
-                },
-                "Descripcion": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                },
-                "Parametros": {
-                    "type": "string"
-                }
-            }
-        },
         "models.TrSalida": {
             "title": "TrSalida",
             "type": "object",
@@ -1730,21 +1668,7 @@
         },
         "models.TrSalida2": {
             "title": "TrSalida2",
-            "type": "object",
-            "properties": {
-                "Elementos": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.ElementosMovimiento"
-                    }
-                },
-                "MovimientosKronos": {
-                    "$ref": "#/definitions/models.MovimientoProcesoExterno"
-                },
-                "Salida": {
-                    "$ref": "#/definitions/models.Movimiento"
-                }
-            }
+            "type": "object"
         },
         "models.Tr_cuentas_subgrupo": {
             "title": "Tr_cuentas_subgrupo",
