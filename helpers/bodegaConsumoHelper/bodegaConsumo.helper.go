@@ -243,7 +243,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 
 	// fmt.Println("aaaaaaaaaaaaaaaaaaaaa")
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?limit=-1"
-	url += "&query=Activo:true,MovimientoId.FormatoTipoMovimientoId.Id:9"
+	url += "&query=Activo:true,MovimientoId__FormatoTipoMovimientoId__Nombre:Salida%20de%20Consumo,MovimientoId__EstadoMovimientoId__Nombre:Salida%20Aprobada"
 	// logs.Debug("url:", url)
 	if res, err := request.GetJsonTest(url, &Elementos); err == nil && res.StatusCode == 200 {
 
