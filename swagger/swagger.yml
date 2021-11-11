@@ -820,8 +820,6 @@ definitions:
       ValorUnitario:
         type: number
         format: double
-      Verificado:
-        type: boolean
   models.ElementoCatalogo:
     title: ElementoCatalogo
     type: object

@@ -1203,9 +1203,6 @@
                 "ValorUnitario": {
                     "type": "number",
                     "format": "double"
-                },
-                "Verificado": {
-                    "type": "boolean"
                 }
             }
         },
