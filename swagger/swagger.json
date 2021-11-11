@@ -1228,6 +1228,9 @@
                 },
                 "Nombre": {
                     "type": "string"
+                },
+                "SubgrupoId": {
+                    "$ref": "#/definitions/models.Subgrupo"
                 }
             }
         },
@@ -1527,6 +1530,31 @@
                 }
             }
         },
+        "models.Subgrupo": {
+            "title": "Subgrupo",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Codigo": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "TipoNivelId": {
+                    "$ref": "#/definitions/models.TipoNivel"
+                }
+            }
+        },
         "models.Supervisor": {
             "title": "Supervisor",
             "type": "object",
@@ -1648,6 +1676,32 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TipoNivel": {
+            "title": "TipoNivel",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Orden": {
+                    "type": "number",
+                    "format": "double"
                 }
             }
         },

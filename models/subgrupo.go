@@ -11,25 +11,6 @@ type SubgrupoModelo struct {
 	Activo            bool
 	Codigo            int
 }
-type Subgrupo struct {
-	Id          int
-	Nombre      string
-	Descripcion string
-	Activo      bool
-	Codigo      string
-	TipoNivelId *TipoNivel
-}
-
-type TipoNivel struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	CodigoAbreviacion string
-	Orden             float64
-	Activo            bool
-	FechaCreacion     string
-	FechaModificacion string
-}
 
 type SubgrupoTransaccion struct {
 	data     *Subgrupo
@@ -66,14 +47,4 @@ type SubgrupoCuentasMovimiento struct {
 	Activo            bool
 	Codigo            int
 	CuentasAsociadas  []CuentasGrupoMovimiento
-}
-
-type DetalleSubgrupo struct {
-	Id           int
-	Depreciacion bool
-	Valorizacion bool
-	Deterioro    bool
-	Activo       bool
-	SubgrupoId   *Subgrupo
-	TipoBienId   *TipoBien
 }

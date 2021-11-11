@@ -837,6 +837,8 @@ definitions:
         format: int32
       Nombre:
         type: string
+      SubgrupoId:
+        $ref: '#/definitions/models.Subgrupo'
   models.ElementoSolicitud:
     title: ElementoSolicitud
     type: object
@@ -1046,6 +1048,23 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.TrSalida'
+  models.Subgrupo:
+    title: Subgrupo
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      Codigo:
+        type: string
+      Descripcion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      TipoNivelId:
+        $ref: '#/definitions/models.TipoNivel'
   models.Supervisor:
     title: Supervisor
     type: object
@@ -1133,6 +1152,24 @@ definitions:
         format: int64
       Nombre:
         type: string
+  models.TipoNivel:
+    title: TipoNivel
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      Orden:
+        type: number
+        format: double
   models.Tr_cuentas_subgrupo:
     title: Tr_cuentas_subgrupo
     type: object
