@@ -48,31 +48,31 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		panic(err.Error())
 	}
 
-	if consecutivo, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
+	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", 216, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(detalleJSON[\"consecutivo\"].(string), 216, \"Registro Entrada Arka\")",
+			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(\"%05.0f\", 216, \"Registro Entrada Arka\")",
 			"err":     err,
 			"status":  "502",
 		}
 		return nil, outputError
 	} else {
+		consecutivo = "P8-" + consecutivo + "-" + strconv.Itoa((time.Now().Year()))
 		detalleJSON["consecutivo"] = consecutivo
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
 
-	var jsonData []byte
-	jsonData, err1 := json.Marshal(detalleJSON)
-	if err1 != nil {
-		logs.Error(err1)
+	if jsonData, err := json.Marshal(detalleJSON); err != nil {
+		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - json.Marshal(detalleJSON)",
-			"err":     err1,
+			"err":     err,
 			"status":  "500",
 		}
 		return nil, outputError
+	} else {
+		data.Detalle = string(jsonData[:])
 	}
-	data.Detalle = string(jsonData[:])
 
 	// Consulta el acta
 	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
