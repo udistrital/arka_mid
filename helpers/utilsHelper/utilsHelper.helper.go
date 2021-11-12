@@ -3,7 +3,6 @@ package utilsHelper
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -134,7 +133,7 @@ func KeysValuesMap(m map[interface{}]interface{}) (keys []interface{}, vals []in
 	return
 }
 
-func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecutivo string, outputError map[string]interface{}) {
+func GetConsecutivo(format string, contextoId int, descripcion string) (consecutivo string, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -149,7 +148,7 @@ func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecut
 
 	var res map[string]interface{}
 
-	year, _, _ := time.Now().Date()
+	year := time.Now().Year()
 	data := models.Consecutivo{
 		Id:          0,
 		ContextoId:  contextoId,
@@ -161,10 +160,10 @@ func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecut
 	url := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
 
 	if err := request.SendJson(url, "POST", &res, &data); err == nil {
-		consecutivo = prefix + "-" + fmt.Sprintf("%05.0f", res["Data"].(map[string]interface{})["Consecutivo"]) + "-" + strconv.Itoa(year)
+		consecutivo = fmt.Sprintf(format, res["Data"].(map[string]interface{})["Consecutivo"])
 	} else if strings.Contains(err.Error(), "invalid character") {
 		logs.Error(err)
-		consecutivo, outputError = GetConsecutivo(prefix, contextoId, descripcion)
+		consecutivo, outputError = GetConsecutivo(format, contextoId, descripcion)
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -174,4 +173,8 @@ func GetConsecutivo(prefix string, contextoId int, descripcion string) (consecut
 		}
 	}
 	return consecutivo, outputError
+}
+
+func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFormat string) {
+	return prefix + consecutivo + suffix
 }

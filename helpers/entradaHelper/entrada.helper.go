@@ -48,35 +48,36 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		panic(err.Error())
 	}
 
-	if consecutivo, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
+	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
+	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(detalleJSON[\"consecutivo\"].(string), 216, \"Registro Entrada Arka\")",
+			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(\"%05.0f\", ctxConsecutivo, \"Registro Entrada Arka\")",
 			"err":     err,
 			"status":  "502",
 		}
 		return nil, outputError
 	} else {
+		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["consecutivo"] = consecutivo
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
 
-	var jsonData []byte
-	jsonData, err1 := json.Marshal(detalleJSON)
-	if err1 != nil {
-		logs.Error(err1)
+	if jsonData, err := json.Marshal(detalleJSON); err != nil {
+		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - json.Marshal(detalleJSON)",
-			"err":     err1,
+			"err":     err,
 			"status":  "500",
 		}
 		return nil, outputError
+	} else {
+		data.Detalle = string(jsonData[:])
 	}
-	data.Detalle = string(jsonData[:])
 
 	// Consulta el acta
 	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
-	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
+	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId)) + "?elementos=false"
 	if err := request.GetJson(urlcrud, &actaRecibido); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -142,6 +143,18 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 			}
 			return nil, outputError
 		}
+	}
+
+	if elementos, err := asignarPlacaActa(actaRecibidoId); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarEntrada - asignarPlacaActa(actaRecibidoId)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	} else {
+		actaRecibido.Elementos = elementos
 	}
 
 	// Actualiza el estado del acta
@@ -275,6 +288,70 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	// Falta el paso de la transacción contable
 
 	return resultado, nil
+}
+
+func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "asignarPlacaActa - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
+	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId); err != nil {
+		outputError = map[string]interface{}{
+			"funcion": "asignarPlacaActa - actaRecibido.GetElementos(actaRecibidoId)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	} else {
+		for _, elemento := range detalleElementos {
+			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca == true {
+				if placa, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "asignarPlacaActa - utilsHelper.GetConsecutivo(\"%05.0f\", ctxPlaca, \"Registro Placa Arka\")",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
+				} else {
+					year, month, day := time.Now().Date()
+					elemento.Placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa, "")
+					elemento_ := models.Elemento{
+						Id:                 elemento.Id,
+						Nombre:             elemento.Nombre,
+						Cantidad:           elemento.Cantidad,
+						Marca:              elemento.Marca,
+						Serie:              elemento.Serie,
+						UnidadMedida:       elemento.UnidadMedida,
+						ValorUnitario:      elemento.ValorUnitario,
+						Subtotal:           elemento.Subtotal,
+						Descuento:          elemento.Descuento,
+						ValorTotal:         elemento.ValorTotal,
+						PorcentajeIvaId:    elemento.PorcentajeIvaId,
+						ValorIva:           elemento.ValorIva,
+						ValorFinal:         elemento.ValorFinal,
+						Placa:              elemento.Placa,
+						SubgrupoCatalogoId: elemento.SubgrupoCatalogoId.SubgrupoId.Id,
+						EstadoElementoId:   &models.EstadoElemento{Id: elemento.EstadoElementoId.Id},
+						ActaRecibidoId:     &models.ActaRecibido{Id: elemento.ActaRecibidoId.Id},
+						Activo:             true,
+					}
+					elementos = append(elementos, &elemento_)
+				}
+			}
+		}
+		return elementos, nil
+	}
+
 }
 
 //GetEncargadoElemento busca al encargado de un elemento
@@ -843,4 +920,8 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 		return nil, outputError
 	}
 	return res, nil
+}
+
+func getTipoComprobanteEntradas() string {
+	return "P8"
 }

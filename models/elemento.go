@@ -17,7 +17,6 @@ type Elemento struct {
 	ValorIva           float64
 	ValorFinal         float64
 	SubgrupoCatalogoId int
-	Verificado         bool
 	EstadoElementoId   *EstadoElemento
 	ActaRecibidoId     *ActaRecibido
 	Placa              string
