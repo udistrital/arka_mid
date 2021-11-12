@@ -123,6 +123,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 		return nil, outputError
 	}
 
+	ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
 	for _, salida := range m.Salidas {
 
 		detalle := map[string]interface{}{}
@@ -136,16 +137,16 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", 230, "Registro Salida Arka"); err != nil {
+		if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", 230, \"Registro Salida Arka\")",
+				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
 				"err":     err,
 				"status":  "502",
 			}
 			return nil, outputError
 		} else {
-			consecutivo = "H21-" + consecutivo + "-" + strconv.Itoa((time.Now().Year()))
+			consecutivo = utilsHelper.FormatConsecutivo("H21-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 			detalle["consecutivo"] = consecutivo
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
 				logs.Error(err)

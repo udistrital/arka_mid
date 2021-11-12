@@ -174,3 +174,7 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 	}
 	return consecutivo, outputError
 }
+
+func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFormat string) {
+	return prefix + consecutivo + suffix
+}

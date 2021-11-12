@@ -48,16 +48,17 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		panic(err.Error())
 	}
 
-	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", 216, "Registro Entrada Arka"); err != nil {
+	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
+	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(\"%05.0f\", 216, \"Registro Entrada Arka\")",
+			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(\"%05.0f\", ctxConsecutivo, \"Registro Entrada Arka\")",
 			"err":     err,
 			"status":  "502",
 		}
 		return nil, outputError
 	} else {
-		consecutivo = "P8-" + consecutivo + "-" + strconv.Itoa((time.Now().Year()))
+		consecutivo = utilsHelper.FormatConsecutivo("P8-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["consecutivo"] = consecutivo
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
@@ -302,6 +303,7 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 		}
 	}()
 
+	ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
 	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId); err != nil {
 		outputError = map[string]interface{}{
 			"funcion": "asignarPlacaActa - actaRecibido.GetElementos(actaRecibidoId)",
@@ -312,17 +314,17 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 	} else {
 		for _, elemento := range detalleElementos {
 			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca == true {
-				if placa, err := utilsHelper.GetConsecutivo("%05.0f", 8524, "Registro Placa Arka"); err != nil {
+				if placa, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
-						"funcion": "asignarPlacaActa - utilsHelper.GetConsecutivo(\"%05.0f\", 8524, \"Registro Placa Arka\")",
+						"funcion": "asignarPlacaActa - utilsHelper.GetConsecutivo(\"%05.0f\", ctxPlaca, \"Registro Placa Arka\")",
 						"err":     err,
 						"status":  "502",
 					}
 					return nil, outputError
 				} else {
 					year, month, day := time.Now().Date()
-					elemento.Placa = strconv.Itoa(year) + fmt.Sprintf("%02d", int(month)) + fmt.Sprintf("%02d", day) + placa
+					elemento.Placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa, "")
 					elemento_ := models.Elemento{
 						Id:                 elemento.Id,
 						Nombre:             elemento.Nombre,
