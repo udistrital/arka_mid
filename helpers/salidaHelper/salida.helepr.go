@@ -146,7 +146,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			}
 			return nil, outputError
 		} else {
-			consecutivo = utilsHelper.FormatConsecutivo("H21-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+			consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 			detalle["consecutivo"] = consecutivo
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
 				logs.Error(err)
@@ -625,4 +625,8 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 		}
 		return nil, outputError
 	}
+}
+
+func getTipoComprobanteSalidas() string {
+	return "H21"
 }

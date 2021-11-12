@@ -58,7 +58,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		}
 		return nil, outputError
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo("P8-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["consecutivo"] = consecutivo
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
@@ -920,4 +920,8 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 		return nil, outputError
 	}
 	return res, nil
+}
+
+func getTipoComprobanteEntradas() string {
+	return "P8"
 }
