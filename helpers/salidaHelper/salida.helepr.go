@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -515,11 +516,10 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 						if jsonString3, err := json.Marshal(ubicacion[0]["EspacioFisicoId"]); err == nil {
 							if err2 := json.Unmarshal(jsonString3, &ubicacion2); err2 == nil {
 								str2 := fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"])
+								rgxp := regexp.MustCompile("[0-9]")
+								str2 = rgxp.ReplaceAllString(str2, "")
 
-								z := strings.Split(str2, "")
-
-								urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
-
+								urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + str2
 								if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
 									logs.Error(err)
 									outputError = map[string]interface{}{
