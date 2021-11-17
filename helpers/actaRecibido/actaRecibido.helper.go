@@ -21,6 +21,8 @@ import (
 	"github.com/udistrital/arka_mid/models"
 
 	// "github.com/udistrital/utils_oas/formatdata"
+	"net/url"
+
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -218,91 +220,32 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 	} else if contratista || proveedor {
 
-		histMap := make(map[int](map[string]interface{})) // mapeo "idActa --> historico_acta activo"
-
-		var estados []string
+		urlEstados += ",EstadoActaId__Nombre"
 		if contratista {
-			estados = append(estados, "En Elaboracion", "En Modificacion")
+			urlEstados += "__in:" + url.QueryEscape("En Elaboracion;En Modificacion")
+			urlEstados += ",PersonaAsignadaId:" + fmt.Sprint(idTercero)
 		} else if proveedor {
-			estados = append(estados, "En Elaboracion")
+			urlEstados += ":" + url.QueryEscape("En Elaboracion")
+			urlEstados += ",ProveedorId:" + fmt.Sprint(idTercero)
 		}
 
-		for _, estado := range estados {
-			var hists []map[string]interface{}
-			urlContProv := urlEstados + ",EstadoActaId__Nombre:" + estado
-			if !proveedor {
-				// Si no es proveedor, agregar de una vez el filtro del contratista
-				// pues sería la única razón para que se ejecute este "for"
-				urlContProv += ",PersonaAsignadaId:" + fmt.Sprint(idTercero)
+		var hists []map[string]interface{}
+		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
+			if len(hists) == 0 || len(hists[0]) == 0 {
+				return nil, nil
 			}
-			urlContProv = strings.ReplaceAll(urlContProv, " ", "%20")
-			// logs.Debug("urlContProv:", urlContProv, "- estado:", estado)
-			if resp, err := request.GetJsonTest(urlContProv, &hists); err == nil && resp.StatusCode == 200 {
-				if len(hists) == 0 || len(hists[0]) == 0 {
-					continue
-				}
-				for _, hist := range hists {
-					idActa := int(hist["ActaRecibidoId"].(map[string]interface{})["Id"].(float64))
-					histMap[idActa] = hist
-				}
-			} else {
-				if err == nil {
-					err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-				}
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlContProv, &hists)",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
+			Historico = append(Historico, hists...)
+		} else {
+			if err == nil {
+				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 			}
-		}
-
-		for idActa, hist := range histMap {
-			agregar := false
-			if proveedor {
-				var soportes []map[string]interface{}
-				urlSoporteActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta"
-				urlSoporteActa += "?fields=Id" // Realmente no importan los campos, lo que importa es la asociacion con el proveedor y el acta
-				urlSoporteActa += "&query=Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(idActa)
-				urlSoporteActa += ",ProveedorId:" + fmt.Sprint(idTercero)
-				// logs.Debug("urlSoporteActa:", urlSoporteActa)
-				if resp, err := request.GetJsonTest(urlSoporteActa, &soportes); err == nil && resp.StatusCode == 200 {
-					if len(soportes) >= 1 {
-						for _, soporte := range soportes {
-							if len(soporte) > 0 {
-								agregar = true
-								break
-							}
-						}
-					}
-				} else {
-					if err == nil {
-						err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-					}
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlSoporteActa, &soportes)",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
-				}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlContProv, &hists)",
+				"err":     err,
+				"status":  "502",
 			}
-			if !agregar && contratista {
-				if proveedor {
-					if idTercero == int(hist["ActaRecibidoId"].(map[string]interface{})["PersonaAsignada"].(float64)) {
-						agregar = true
-					}
-				} else {
-					// Las actas (historicos activos) ya se trajeron filtradas por contratista
-					agregar = true
-				}
-			}
-			if agregar {
-				Historico = append(Historico, hist)
-			}
+			return nil, outputError
 		}
 
 	}
