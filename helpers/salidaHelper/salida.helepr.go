@@ -14,6 +14,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -195,12 +196,47 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}()
 
 	var (
-		urlcrud             string
-		res                 map[string]interface{}
-		resEstadoMovimiento []models.EstadoMovimiento
-		movArka             []models.Movimiento
+		urlcrud                 string
+		res                     map[string]interface{}
+		resEstadoMovimiento     []models.EstadoMovimiento
+		movArka                 []models.Movimiento
+		detalleMovimiento       map[string]interface{}
+		transaccionActaRecibido models.TransaccionActaRecibido
 	)
 	resultado := make(map[string]interface{})
+
+	logs.Debug("********* PASO *********************")
+
+	var detalle []map[string]interface{}
+
+	urlelemento := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=MovimientoId:" + strconv.Itoa(salidaId)
+	if resp, err := request.GetJsonTest(urlelemento, &detalle); err == nil && resp.StatusCode == 200 {
+	} else {
+		if err == nil {
+			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		}
+		outputError = map[string]interface{}{"funcion": "AprobarSalida - request.GetJsonTest(urlelemento, &detalle)", "status": "500", "err": err}
+		return nil, outputError
+	}
+
+	/*
+		var groupscatalogo = make(map[int]float64)
+		i := 0
+		for _, elemento := range transaccionActaRecibido.Elementos {
+			fmt.Println("entra:")
+			x := float64(0)
+			if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
+				x = val
+			}
+			groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
+			i++
+		}
+	*/
+
+	//	var groupscatalogo = make(map[int]float64)
+	for i := 0; i < len(detalle); i++ {
+		logs.Debug("****** el valor *******", detalle[i]["ElementoCatalogoId"].(float64))
+	}
 
 	// Se cambia el estado del movimiento en movimientos_arka_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + strconv.Itoa(int(salidaId))
@@ -273,6 +309,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
 	procesoExterno := int64(salidaId)
 	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
+	tipomvto := strconv.Itoa(int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64)))
 	tipoMovimientoId := models.TipoMovimiento{Id: int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64))}
 	movimientosKronos := models.MovimientoProcesoExterno{
 		TipoMovimientoId:         &tipoMovimientoId,
@@ -291,9 +328,52 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return nil, outputError
 	}
 
+	if err := json.Unmarshal([]byte(movArka[0].Detalle), &detalleMovimiento); err == nil {
+		var resTrActa models.TransaccionActaRecibido
+
+		logs.Debug("********* 1 *********************", fmt.Sprint(detalleMovimiento["acta_recibido_id"]))
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
+			transaccionActaRecibido = resTrActa
+		} else {
+
+			transaccionActaRecibido = resTrActa
+		}
+		logs.Debug("********* 2 *********************", resTrActa)
+	}
+
 	resultado["movimientoArka"] = movArka[0]
 
 	// Transaccion contable
+
+	logs.Debug("********* Llega *********************")
+	var groups = make(map[int]float64)
+	i := 0
+	for _, elemento := range transaccionActaRecibido.Elementos {
+		fmt.Println("entra:")
+		x := float64(0)
+		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
+			x = val
+		}
+		groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
+		i++
+	}
+	if i == 0 {
+		return resultado, nil
+	}
+
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
+		if outputError == nil {
+			outputError = map[string]interface{}{
+				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
+				"err":     res,
+				"status":  "502",
+			}
+		}
+		return nil, outputError
+	} else {
+		resultado["transaccionContable"] = resA["resultadoTransaccion"]
+	}
 
 	return resultado, nil
 }

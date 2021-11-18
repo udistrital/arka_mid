@@ -92,8 +92,8 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		}
 	*/
 
-	idconsecutivo := int(0)
-	if _, idconsecutivo1, err := utilsHelper.GetConsecutivo("", 1, "CNTB"); err != nil {
+	idconsecutivo := ""
+	if idconsecutivo1, err := utilsHelper.GetConsecutivo("", 1, "CNTB"); err != nil {
 
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -180,8 +180,9 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		return nil, outputError
 	}
 
+	intcons, _ := strconv.Atoi(idconsecutivo)
+	transaccion.ConsecutivoId = intcons
 	transaccion.Activo = true
-	transaccion.ConsecutivoId = idconsecutivo
 	transaccion.Descripcion = descripcionMovto
 	transaccion.Etiquetas = string(jsonString)
 	transaccion.FechaTransaccion = time_bogota.Tiempo_bogota()

@@ -53,7 +53,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		panic(err.Error())
 	}
 
-	if consecutivo, _, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
+	if consecutivo, err := utilsHelper.GetConsecutivo(detalleJSON["consecutivo"].(string), 216, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(detalleJSON[\"consecutivo\"].(string), 216, \"Registro Entrada Arka\")",
