@@ -3,6 +3,8 @@ package utilsHelper
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -177,4 +179,68 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 
 func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFormat string) {
 	return prefix + consecutivo + suffix
+}
+
+func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetSedeDependenciaUbicacion - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+	var (
+		urlcrud   string
+		ubicacion []map[string]interface{}
+		sede      []map[string]interface{}
+	)
+	resultado := make(map[string]interface{})
+
+	urlcrud = "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia"
+	urlcrud += "?query=Id:" + strconv.Itoa(ubicacionId)
+
+	if _, err := request.GetJsonTest(urlcrud, &ubicacion); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetSedeDependenciaUbicacion - request.GetJsonTest(urlcrud, &ubicacion)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	resultado["Ubicacion"] = ubicacion[0]["EspacioFisicoId"]
+	resultado["Dependencia"] = ubicacion[0]["DependenciaId"]
+
+	if espFisico, err := ConvertirInterfaceMap(ubicacion[0]["EspacioFisicoId"]); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetSedeDependenciaUbicacion - utilsHelper.ConvertirInterfaceMap(ubicacion[0][\"EspacioFisicoId\"])",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	} else {
+		rgxp := regexp.MustCompile("[0-9]")
+		strSede := espFisico["CodigoAbreviacion"].(string)
+		strSede = rgxp.ReplaceAllString(strSede, "")
+		urlcrud = "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + strSede
+	}
+
+	if _, err := request.GetJsonTest(urlcrud, &sede); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "TraerDetalle - request.GetJsonTest(urlcrud4, &sede)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	resultado["Sede"] = sede[0]
+
+	return resultado, nil
 }
