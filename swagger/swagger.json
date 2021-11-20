@@ -925,14 +925,6 @@
         }
     },
     "definitions": {
-        "14268.0xc000a08780.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "14311.0xc000a087e0.false": {
-            "title": "false",
-            "type": "object"
-        },
         "map[string]interface{}": {
             "title": "map[string]interface{}",
             "type": "object"
@@ -1168,6 +1160,9 @@
             "title": "DetalleTraslado",
             "type": "object",
             "properties": {
+                "Consecutivo": {
+                    "type": "string"
+                },
                 "Elementos": {
                     "type": "array",
                     "items": {
@@ -1176,17 +1171,20 @@
                     }
                 },
                 "FuncionarioDestino": {
-                    "$ref": "#/definitions/14311.0xc000a087e0.false"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "FuncionarioOrigen": {
-                    "$ref": "#/definitions/14268.0xc000a08780.false"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "Id": {
                     "type": "integer",
                     "format": "int64"
                 },
                 "MovimientoId": {
-                    "$ref": "#/definitions/models.Tercero"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "Observaciones": {
                     "type": "string"
@@ -1648,53 +1646,6 @@
                 }
             }
         },
-        "models.Tercero": {
-            "title": "Tercero",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "FechaCreacion": {
-                    "type": "string"
-                },
-                "FechaModificacion": {
-                    "type": "string"
-                },
-                "FechaNacimiento": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "LugarOrigen": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "NombreCompleto": {
-                    "type": "string"
-                },
-                "PrimerApellido": {
-                    "type": "string"
-                },
-                "PrimerNombre": {
-                    "type": "string"
-                },
-                "SegundoApellido": {
-                    "type": "string"
-                },
-                "SegundoNombre": {
-                    "type": "string"
-                },
-                "TipoContribuyenteId": {
-                    "$ref": "#/definitions/models.TipoContribuyente"
-                },
-                "UsuarioWSO2": {
-                    "type": "string"
-                }
-            }
-        },
         "models.Terceros": {
             "title": "Terceros",
             "type": "object"
@@ -1719,34 +1670,6 @@
                 "FechaModificacion": {
                     "type": "string",
                     "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.TipoContribuyente": {
-            "title": "TipoContribuyente",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "CodigoAbreviacion": {
-                    "type": "string"
-                },
-                "Descripcion": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string"
-                },
-                "FechaModificacion": {
-                    "type": "string"
                 },
                 "Id": {
                     "type": "integer",
