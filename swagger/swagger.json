@@ -893,9 +893,46 @@
                     }
                 }
             }
+        },
+        "/traslados/{id}": {
+            "get": {
+                "tags": [
+                    "traslados"
+                ],
+                "description": "get Salida by id",
+                "operationId": "TrasladosController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "movimientoId del traslado en el api movimientos_arka_crud",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.DetalleTraslado"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "14268.0xc000a08780.false": {
+            "title": "false",
+            "type": "object"
+        },
+        "14311.0xc000a087e0.false": {
+            "title": "false",
+            "type": "object"
+        },
         "map[string]interface{}": {
             "title": "map[string]interface{}",
             "type": "object"
@@ -1124,6 +1161,39 @@
                 },
                 "TelefonoDependencia": {
                     "type": "string"
+                }
+            }
+        },
+        "models.DetalleTraslado": {
+            "title": "DetalleTraslado",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "FuncionarioDestino": {
+                    "$ref": "#/definitions/14311.0xc000a087e0.false"
+                },
+                "FuncionarioOrigen": {
+                    "$ref": "#/definitions/14268.0xc000a08780.false"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.Tercero"
+                },
+                "Observaciones": {
+                    "type": "string"
+                },
+                "Ubicacion": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
@@ -1578,6 +1648,53 @@
                 }
             }
         },
+        "models.Tercero": {
+            "title": "Tercero",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "FechaCreacion": {
+                    "type": "string"
+                },
+                "FechaModificacion": {
+                    "type": "string"
+                },
+                "FechaNacimiento": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "LugarOrigen": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NombreCompleto": {
+                    "type": "string"
+                },
+                "PrimerApellido": {
+                    "type": "string"
+                },
+                "PrimerNombre": {
+                    "type": "string"
+                },
+                "SegundoApellido": {
+                    "type": "string"
+                },
+                "SegundoNombre": {
+                    "type": "string"
+                },
+                "TipoContribuyenteId": {
+                    "$ref": "#/definitions/models.TipoContribuyente"
+                },
+                "UsuarioWSO2": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Terceros": {
             "title": "Terceros",
             "type": "object"
@@ -1602,6 +1719,34 @@
                 "FechaModificacion": {
                     "type": "string",
                     "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TipoContribuyente": {
+            "title": "TipoContribuyente",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string"
+                },
+                "FechaModificacion": {
+                    "type": "string"
                 },
                 "Id": {
                     "type": "integer",
