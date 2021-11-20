@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"fmt"
+	"errors"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -15,7 +15,7 @@ type TrasladosController struct {
 
 // URLMapping ...
 func (c *TrasladosController) URLMapping() {
-	c.Mapping("GetTr", c.GetTraslado)
+	c.Mapping("Get", c.GetTraslado)
 }
 
 // GetTraslado ...
@@ -36,31 +36,29 @@ func (c *TrasladosController) GetTraslado() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("500") // Unhandled Error!
+				c.Abort("500")
 			}
 		}
 	}()
 
 	idStr := c.Ctx.Input.Param(":id")
-	logs.Info(idStr)
-	var id int
-	if idConv, err := strconv.Atoi(idStr); err == nil && idConv > 0 {
-		id = idConv
-	} else if err != nil {
-		panic(err)
-	} else {
+	if trasladoId, err := strconv.Atoi(idStr); err != nil || trasladoId == 0 {
+		if err == nil {
+			err = errors.New("El id del movimiento no puede ser cero")
+		}
+		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "GetDetalleTraslado",
-			"err":     "El ID debe ser mayor a 0",
+			"funcion": "GetTraslado - strconv.Atoi(idStr)",
+			"err":     err,
 			"status":  "400",
 		})
-	}
-	fmt.Println(id)
-
-	if v, err := trasladoshelper.GetDetalleTraslado(id); err == nil {
-		c.Data["json"] = v
 	} else {
-		panic(err)
+		if v, err := trasladoshelper.GetDetalleTraslado(trasladoId); err == nil {
+			c.Data["json"] = v
+		} else {
+			panic(err)
+		}
+		c.ServeJSON()
 	}
-	c.ServeJSON()
+
 }

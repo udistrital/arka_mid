@@ -69,10 +69,11 @@ type SalidaGeneral struct {
 
 type DetalleTraslado struct {
 	Id                 int
-	FuncionarioOrigen  map[string]interface{}
-	FuncionarioDestino map[string]interface{}
+	FuncionarioOrigen  int
+	FuncionarioDestino int
 	Elementos          []int
 	Ubicacion          int
 	Observaciones      string
 	MovimientoId       int
+	Consecutivo        string
 }
