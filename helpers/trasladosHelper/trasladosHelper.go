@@ -124,6 +124,8 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 	var (
 		urlcrud  string
 		response []map[string]interface{}
+		cargo    []map[string]interface{}
+		correo   []map[string]interface{}
 	)
 
 	Tercero = make(map[string]interface{})
@@ -144,7 +146,7 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 	// Consulta correo
 	urlcrud = "http://" + beego.AppConfig.String("tercerosService") + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
 	urlcrud += "&query=Activo%3Atrue,InfoComplementariaId__Nombre__icontains%3Acorreo,TerceroId__Id%3A" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &response); err != nil {
+	if err := request.GetJson(urlcrud, &correo); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "GetDetalleFuncionario - request.GetJson(urlcrud, &response2)",
@@ -153,11 +155,11 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 		}
 		return nil, outputError
 	}
-	Tercero["Correo"] = response
+	Tercero["Correo"] = correo
 
 	// Consulta cargo
 	urlcrud = "http://" + beego.AppConfig.String("tercerosMidService") + "propiedad/cargo/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &response); err != nil {
+	if err := request.GetJson(urlcrud, &cargo); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "GetDetalleFuncionario - request.GetJson(urlcrud, &response3)",
@@ -166,7 +168,7 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 		}
 		return nil, outputError
 	}
-	Tercero["Cargo"] = response
+	Tercero["Cargo"] = cargo
 
 	return Tercero, nil
 }

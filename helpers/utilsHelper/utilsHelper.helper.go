@@ -213,7 +213,7 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion map[string]i
 		return nil, outputError
 	}
 
-	resultado["Ubicacion"] = ubicacion[0]["EspacioFisicoId"]
+	resultado["Ubicacion"] = ubicacionId
 	resultado["Dependencia"] = ubicacion[0]["DependenciaId"]
 
 	if espFisico, err := ConvertirInterfaceMap(ubicacion[0]["EspacioFisicoId"]); err != nil {
