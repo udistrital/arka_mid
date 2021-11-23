@@ -279,6 +279,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"],
         beego.ControllerComments{
+            Method: "Post",
+            Router: "/",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"],
+        beego.ControllerComments{
             Method: "GetTraslado",
             Router: "/:id",
             AllowHTTPMethods: []string{"get"},

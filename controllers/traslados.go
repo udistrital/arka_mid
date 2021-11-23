@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	trasladoshelper "github.com/udistrital/arka_mid/helpers/trasladosHelper"
+	"github.com/udistrital/arka_mid/models"
 )
 
 type TrasladosController struct {
@@ -15,7 +17,63 @@ type TrasladosController struct {
 
 // URLMapping ...
 func (c *TrasladosController) URLMapping() {
+	c.Mapping("Post", c.Post)
 	c.Mapping("Get", c.GetTraslado)
+}
+
+// Post ...
+// @Title Post Traslado
+// @Description Genera el consecutivo y hace el respectivo registro en api movimientos_arka_crud
+// @Param	body		body 	models.Movimiento	true		"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
+// @Success 200 {object} models.Movimiento
+// @Failure 403 body is empty
+// @router / [post]
+func (c *TrasladosController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TrasladosController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500")
+			}
+		}
+	}()
+
+	var v models.Movimiento
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if respuesta, err := trasladoshelper.RegistrarTraslado(&v); err == nil && respuesta != nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = respuesta
+		} else {
+			status := "400"
+			if err == nil {
+				err = map[string]interface{}{
+					"err": errors.New("No se obtuvo respuesta al registrar el traslado"),
+				}
+				status = "404"
+			}
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "trasladoshelper.RegistrarTraslado(&v)",
+				"err":     err,
+				"status":  status,
+			})
+		}
+	} else {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	c.ServeJSON()
 }
 
 // GetTraslado ...

@@ -595,6 +595,27 @@ paths:
           description: '{tipo} Not Implemented'
         "502":
           description: Error with external API
+  /traslados/:
+    post:
+      tags:
+      - traslados
+      description: Genera el consecutivo y hace el respectivo registro en api movimientos_arka_crud
+      operationId: TrasladosController.Post Traslado
+      parameters:
+      - in: body
+        name: body
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si el id es 0
+        required: true
+        schema:
+          $ref: '#/definitions/models.Movimiento'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Movimiento'
+        "403":
+          description: body is empty
   /traslados/{id}:
     get:
       tags:

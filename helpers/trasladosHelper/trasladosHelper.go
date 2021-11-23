@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -104,7 +105,7 @@ func GetDetalleTraslado(id int) (Traslado map[string]interface{}, outputError ma
 	} else {
 		Traslado["Elementos"] = elementos
 	}
-
+	Traslado["Detalle"] = movimiento.Detalle
 	Traslado["Observaciones"] = movimiento.Observacion
 
 	return Traslado, nil
@@ -232,6 +233,73 @@ func GetElementosTraslado(ids []int) (Elementos []map[string]interface{}, output
 	return
 }
 
+// RegistrarEntrada Crea registro de entrada en estado en trámite
+func RegistrarTraslado(data *models.Movimiento) (result map[string]interface{}, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "RegistrarTraslado - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	var (
+		urlcrud string
+		res     map[string]interface{}
+	)
+	resultado := make(map[string]interface{})
+
+	detalleJSON := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
+		panic(err.Error())
+	}
+
+	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
+	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarTraslado - utilsHelper.GetConsecutivo(\"%05.0f\", ctxConsecutivo, \"Registro Traslado Arka\")",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	} else {
+		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		detalleJSON["Consecutivo"] = consecutivo
+	}
+
+	if jsonData, err := json.Marshal(detalleJSON); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarTraslado - json.Marshal(detalleJSON)",
+			"err":     err,
+			"status":  "500",
+		}
+		return nil, outputError
+	} else {
+		data.Detalle = string(jsonData[:])
+	}
+
+	// Crea registro en api movimientos_arka_crud
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
+	if err := request.SendJson(urlcrud, "POST", &res, &data); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarTraslado - request.SendJson(urlcrud, \"POST\", &res, &data)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	resultado = res
+
+	return resultado, nil
+}
+
 func arrayToString(a []int, delim string) string {
 	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }
@@ -244,4 +312,8 @@ func findIdInArray(idsList []map[string]interface{}, id int) (i int) {
 		}
 	}
 	return -1
+}
+
+func getTipoComprobanteTraslados() string {
+	return "T"
 }
