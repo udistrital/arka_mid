@@ -502,6 +502,32 @@ paths:
             $ref: '#/definitions/models.TrSalida'
         "404":
           description: not found resource
+    put:
+      tags:
+      - salida
+      description: Realiza la aprobacion de una salida en caso de especificarse un
+        Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo
+        registro en api movimientos_arka_crud
+      operationId: SalidaController.Post transaccion salidas asociadas a una entrada
+      parameters:
+      - in: query
+        name: salidaId
+        description: Id del movimiento que se desea aprobar
+        type: string
+      - in: body
+        name: body
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si el id es 0
+        required: true
+        schema:
+          $ref: '#/definitions/models.SalidaGeneral'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.SalidaGeneral'
+        "403":
+          description: body is empty
   /terceros/{id}:
     get:
       tags:
