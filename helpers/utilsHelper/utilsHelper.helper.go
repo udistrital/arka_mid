@@ -181,7 +181,7 @@ func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFo
 	return prefix + consecutivo + suffix
 }
 
-func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion map[string]interface{}, outputError map[string]interface{}) {
+func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.DetalleSedeDependencia, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -195,10 +195,10 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion map[string]i
 	}()
 	var (
 		urlcrud   string
-		ubicacion []map[string]interface{}
-		sede      []map[string]interface{}
+		ubicacion []*models.AsignacionEspacioFisicoDependencia
+		sede      []*models.EspacioFisico
 	)
-	resultado := make(map[string]interface{})
+	resultado := new(models.DetalleSedeDependencia)
 
 	urlcrud = "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia"
 	urlcrud += "?query=Id:" + strconv.Itoa(ubicacionId)
@@ -213,17 +213,11 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion map[string]i
 		return nil, outputError
 	}
 
-	resultado["Ubicacion"] = ubicacionId
-	resultado["Dependencia"] = ubicacion[0]["DependenciaId"]
+	resultado.Ubicacion = ubicacionId
+	resultado.Dependencia = ubicacion[0].DependenciaId
 
-	if espFisico, err := ConvertirInterfaceMap(ubicacion[0]["EspacioFisicoId"]); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetSedeDependenciaUbicacion - utilsHelper.ConvertirInterfaceMap(ubicacion[0][\"EspacioFisicoId\"])",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if espFisico, err := ConvertirInterfaceMap(ubicacion[0].EspacioFisicoId); err != nil {
+		return nil, err
 	} else {
 		rgxp := regexp.MustCompile("[0-9]")
 		strSede := espFisico["CodigoAbreviacion"].(string)
@@ -240,7 +234,21 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion map[string]i
 		}
 		return nil, outputError
 	}
-	resultado["Sede"] = sede[0]
+	resultado.Sede = sede[0]
 
 	return resultado, nil
+}
+
+func ArrayToString(a []int, delim string) string {
+	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
+}
+
+// findIdInArray Retorna la posicion en que se encuentra el id específicado
+func FindIdInArray(idsList []*models.Elemento, id int) (i int) {
+	for i, id_ := range idsList {
+		if int(id_.Id) == id {
+			return i
+		}
+	}
+	return -1
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -16,7 +15,7 @@ import (
 )
 
 // GetDetalle Consulta los funcionarios, ubicación y elementos asociados a un traslado
-func GetDetalleTraslado(id int) (Traslado map[string]interface{}, outputError map[string]interface{}) {
+func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -30,7 +29,7 @@ func GetDetalleTraslado(id int) (Traslado map[string]interface{}, outputError ma
 		movimiento models.Movimiento
 		detalle    models.DetalleTraslado
 	)
-	Traslado = make(map[string]interface{})
+	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(id)
@@ -56,64 +55,40 @@ func GetDetalleTraslado(id int) (Traslado map[string]interface{}, outputError ma
 
 	// Se consulta el detalle del funcionario origen
 	if origen, err := GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleTraslado - GetDetalleFuncionario(detalle.FuncionarioOrigen)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return nil, err
 	} else {
-		Traslado["FuncionarioOrigen"] = origen
+		Traslado.FuncionarioOrigen = origen
 	}
 
 	// Se consulta el detalle del funcionario destino
 	if destino, err := GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleTraslado - GetDetalleFuncionario(detalle.FuncionarioDestino)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return nil, err
 	} else {
-		Traslado["FuncionarioDestino"] = destino
+		Traslado.FuncionarioDestino = destino
 	}
 
 	// Se consulta la sede, dependencia correspondiente a la ubicacion
 	if ubicacionDetalle, err := utilsHelper.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleTraslado - GetSedeDependenciaUbicacion(detalle.Ubicacion)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return nil, err
 	} else {
-		Traslado["Ubicacion"] = ubicacionDetalle
+		Traslado.Ubicacion = ubicacionDetalle
 	}
 
 	// Se consultan los detalles de los elementos del traslado
 	if elementos, err := GetElementosTraslado(detalle.Elementos); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleTraslado - GetElementosTraslado(detalle.Elementos)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return nil, err
 	} else {
-		Traslado["Elementos"] = elementos
+		Traslado.Elementos = elementos
 	}
-	Traslado["Detalle"] = movimiento.Detalle
-	Traslado["Observaciones"] = movimiento.Observacion
+	Traslado.Detalle = movimiento.Detalle
+	Traslado.Observaciones = movimiento.Observacion
 
 	return Traslado, nil
 
 }
 
-// GetDetalle Consulta los funcionarios, ubicación y elementos asociados a un traslado
-func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError map[string]interface{}) {
+// GetDetalle Consulta El nombre, número de identificación, correo y cargo asociado a un funcionario
+func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionario, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -124,12 +99,12 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 
 	var (
 		urlcrud  string
-		response []map[string]interface{}
-		cargo    []map[string]interface{}
-		correo   []map[string]interface{}
+		response []*models.DetalleTercero
+		cargo    []*models.Parametro
+		correo   []*models.InfoComplementariaTercero
 	)
 
-	Tercero = make(map[string]interface{})
+	DetalleFuncionario = new(models.DetalleFuncionario)
 
 	// Consulta información general y documento de identidad
 	urlcrud = "http://" + beego.AppConfig.String("tercerosMidService") + "tipo/funcionarios/" + strconv.Itoa(id)
@@ -142,7 +117,7 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 		}
 		return nil, outputError
 	}
-	Tercero["Tercero"] = response
+	DetalleFuncionario.Tercero = response
 
 	// Consulta correo
 	urlcrud = "http://" + beego.AppConfig.String("tercerosService") + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
@@ -156,7 +131,7 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 		}
 		return nil, outputError
 	}
-	Tercero["Correo"] = correo
+	DetalleFuncionario.Correo = correo
 
 	// Consulta cargo
 	urlcrud = "http://" + beego.AppConfig.String("tercerosMidService") + "propiedad/cargo/" + strconv.Itoa(id)
@@ -169,12 +144,12 @@ func GetDetalleFuncionario(id int) (Tercero map[string]interface{}, outputError 
 		}
 		return nil, outputError
 	}
-	Tercero["Cargo"] = cargo
+	DetalleFuncionario.Cargo = cargo
 
-	return Tercero, nil
+	return DetalleFuncionario, nil
 }
 
-func GetElementosTraslado(ids []int) (Elementos []map[string]interface{}, outputError map[string]interface{}) {
+func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -185,12 +160,12 @@ func GetElementosTraslado(ids []int) (Elementos []map[string]interface{}, output
 
 	var (
 		urlcrud   string
-		response  []map[string]interface{}
-		elementos []map[string]interface{}
+		response  []*models.Elemento
+		elementos []*models.DetalleElementoPlaca
 	)
 
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
-	urlcrud += "&query=Id__in:" + url.QueryEscape(arrayToString(ids, ";"))
+	urlcrud += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, ";"))
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -203,11 +178,11 @@ func GetElementosTraslado(ids []int) (Elementos []map[string]interface{}, output
 
 	idsActa := []int{}
 	for _, val := range elementos {
-		idsActa = append(idsActa, int(val["ElementoActaId"].(float64)))
+		idsActa = append(idsActa, int(val.ElementoActaId))
 	}
 
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?limit=-1&fields=Id,Placa,Nombre,Marca&sortby=Id&order=desc"
-	urlcrud += "&query=Id__in:" + url.QueryEscape(arrayToString(idsActa, ";"))
+	urlcrud += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(idsActa, ";"))
 	if err := request.GetJson(urlcrud, &response); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -219,13 +194,13 @@ func GetElementosTraslado(ids []int) (Elementos []map[string]interface{}, output
 	}
 
 	for _, elemento := range elementos {
-		if i := findIdInArray(response, int(elemento["ElementoActaId"].(float64))); i > -1 {
+		if i := utilsHelper.FindIdInArray(response, int(elemento.ElementoActaId)); i > -1 {
 			if len(response) > 1 {
 				response = append(response[:i], response[i+1:]...)
 			}
-			elemento["Placa"] = response[i]["Placa"]
-			elemento["Nombre"] = response[i]["Nombre"]
-			elemento["Marca"] = response[i]["Marca"]
+			elemento.Placa = response[i].Placa
+			elemento.Nombre = response[i].Nombre
+			elemento.Marca = response[i].Marca
 		}
 	}
 
@@ -233,8 +208,8 @@ func GetElementosTraslado(ids []int) (Elementos []map[string]interface{}, output
 	return
 }
 
-// RegistrarEntrada Crea registro de entrada en estado en trámite
-func RegistrarTraslado(data *models.Movimiento) (result map[string]interface{}, outputError map[string]interface{}) {
+// RegistrarEntrada Crea registro de traslado en estado en trámite
+func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -249,9 +224,9 @@ func RegistrarTraslado(data *models.Movimiento) (result map[string]interface{}, 
 
 	var (
 		urlcrud string
-		res     map[string]interface{}
+		res     *models.Movimiento
 	)
-	resultado := make(map[string]interface{})
+	result = new(models.Movimiento)
 
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
@@ -260,13 +235,7 @@ func RegistrarTraslado(data *models.Movimiento) (result map[string]interface{}, 
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
 	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "RegistrarTraslado - utilsHelper.GetConsecutivo(\"%05.0f\", ctxConsecutivo, \"Registro Traslado Arka\")",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return nil, err
 	} else {
 		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["Consecutivo"] = consecutivo
@@ -295,23 +264,9 @@ func RegistrarTraslado(data *models.Movimiento) (result map[string]interface{}, 
 		}
 		return nil, outputError
 	}
-	resultado = res
+	result = res
 
-	return resultado, nil
-}
-
-func arrayToString(a []int, delim string) string {
-	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
-}
-
-// findIdInArray Retorna la posicion en que se encuentra el id específicado
-func findIdInArray(idsList []map[string]interface{}, id int) (i int) {
-	for i, id_ := range idsList {
-		if int(id_["Id"].(float64)) == id {
-			return i
-		}
-	}
-	return -1
+	return result, nil
 }
 
 func getTipoComprobanteTraslados() string {

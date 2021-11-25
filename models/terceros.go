@@ -2,6 +2,8 @@
 
 package models
 
+import "time"
+
 // "time"
 
 type DatosIdentificacion struct {
@@ -88,4 +90,68 @@ type Vinculacion struct {
 	Activo                 bool
 	FechaCreacion          string
 	FechaModificacion      string
+}
+
+type GrupoInfoComplementaria struct {
+	Id                int
+	Nombre            string
+	Descripcion       string
+	CodigoAbreviacion string
+	Activo            bool
+}
+
+type InfoComplementariaTercero struct {
+	Id                       int
+	TerceroId                *Tercero
+	InfoComplementariaId     *InfoComplementaria
+	Dato                     string
+	Activo                   bool
+	InfoCompleTerceroPadreId *InfoComplementariaTercero
+}
+
+type InfoComplementaria struct {
+	Id                        int
+	Nombre                    string
+	CodigoAbreviacion         string
+	Activo                    bool
+	TipoDeDato                string
+	GrupoInfoComplementariaId *GrupoInfoComplementaria
+}
+
+type SeguridadSocialTercero struct {
+	Id                     int
+	TerceroId              *Tercero
+	TerceroEntidadId       *Tercero
+	Activo                 bool
+	FechaInicioVinculacion *time.Time
+	FechaFinVinculacion    *time.Time
+}
+
+type TerceroFamiliar struct {
+	Id                int
+	TerceroId         *Tercero
+	TerceroFamiliarId *Tercero
+	TipoParentescoId  *TipoParentesco
+	CodigoAbreviacion string
+	Activo            bool
+}
+
+type TipoParentesco struct {
+	Id                int
+	Nombre            string
+	Descripcion       string
+	CodigoAbreviacion string
+	Activo            bool
+}
+
+type DetalleTercero struct {
+	Tercero         *Tercero
+	TipoVinculacion int
+	DependenciaId   int
+	Identificacion  *DatosIdentificacion
+}
+type DetalleFuncionario struct {
+	Tercero []*DetalleTercero
+	Correo  []*InfoComplementariaTercero
+	Cargo   []*Parametro
 }

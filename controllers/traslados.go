@@ -78,9 +78,9 @@ func (c *TrasladosController) Post() {
 
 // GetTraslado ...
 // @Title Get User
-// @Description get Salida by id
+// @Description get Traslado by id
 // @Param	id		path 	string	true		"movimientoId del traslado en el api movimientos_arka_crud"
-// @Success 200 {object} models.DetalleTraslado
+// @Success 200 {object} models.TrTraslado
 // @Failure 404 not found resource
 // @router /:id [get]
 func (c *TrasladosController) GetTraslado() {

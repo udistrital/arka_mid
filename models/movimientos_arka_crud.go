@@ -77,3 +77,20 @@ type DetalleTraslado struct {
 	MovimientoId       int
 	Consecutivo        string
 }
+
+type DetalleElementoPlaca struct {
+	Id             int
+	ElementoActaId int
+	Placa          string
+	Nombre         string
+	Marca          string
+}
+
+type TrTraslado struct {
+	Detalle            string
+	Observaciones      string
+	Elementos          []*DetalleElementoPlaca
+	FuncionarioOrigen  *DetalleFuncionario
+	FuncionarioDestino *DetalleFuncionario
+	Ubicacion          *DetalleSedeDependencia
+}

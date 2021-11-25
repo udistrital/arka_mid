@@ -505,14 +505,13 @@ paths:
     put:
       tags:
       - salida
-      description: Realiza la aprobacion de una salida en caso de especificarse un
-        Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo
-        registro en api movimientos_arka_crud
+      description: genera los consecutivos de las nuevas salidas generadas y hace
+        el put en el api movimientos_arka_crud
       operationId: SalidaController.Post transaccion salidas asociadas a una entrada
       parameters:
       - in: query
         name: salidaId
-        description: Id del movimiento que se desea aprobar
+        description: Id de la salida original
         type: string
       - in: body
         name: body
@@ -646,7 +645,7 @@ paths:
     get:
       tags:
       - traslados
-      description: get Salida by id
+      description: get Traslado by id
       operationId: TrasladosController.Get User
       parameters:
       - in: path
@@ -658,7 +657,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.DetalleTraslado'
+            $ref: '#/definitions/models.TrTraslado'
         "404":
           description: not found resource
 definitions:
@@ -688,6 +687,24 @@ definitions:
         format: int64
       TipoActaId:
         $ref: '#/definitions/models.TipoActa'
+  models.AreaTipo:
+    title: AreaTipo
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      NumeroOrden:
+        type: number
+        format: double
   models.AsignacionEspacioFisicoDependencia:
     title: AsignacionEspacioFisicoDependencia
     type: object
@@ -816,6 +833,36 @@ definitions:
       ValorContrato:
         type: integer
         format: int64
+  models.DatosIdentificacion:
+    title: DatosIdentificacion
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CiudadExpedicion:
+        type: integer
+        format: int64
+      DigitoVerificacion:
+        type: integer
+        format: int64
+      DocumentoSoporte:
+        type: integer
+        format: int64
+      FechaCreacion:
+        type: string
+      FechaExpedicion:
+        type: string
+      FechaModificacion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Numero:
+        type: string
+      TerceroId:
+        $ref: '#/definitions/models.Tercero'
+      TipoDocumentoId:
+        $ref: '#/definitions/models.TipoDocumento'
   models.Dependencia:
     title: Dependencia
     type: object
@@ -829,32 +876,61 @@ definitions:
         type: string
       TelefonoDependencia:
         type: string
-  models.DetalleTraslado:
-    title: DetalleTraslado
+  models.DetalleElementoPlaca:
+    title: DetalleElementoPlaca
     type: object
     properties:
-      Consecutivo:
-        type: string
-      Elementos:
-        type: array
-        items:
-          type: integer
-          format: int64
-      FuncionarioDestino:
-        type: integer
-        format: int64
-      FuncionarioOrigen:
+      ElementoActaId:
         type: integer
         format: int64
       Id:
         type: integer
         format: int64
-      MovimientoId:
+      Marca:
+        type: string
+      Nombre:
+        type: string
+      Placa:
+        type: string
+  models.DetalleFuncionario:
+    title: DetalleFuncionario
+    type: object
+    properties:
+      Cargo:
+        type: array
+        items:
+          $ref: '#/definitions/models.Parametro'
+      Correo:
+        type: array
+        items:
+          $ref: '#/definitions/models.InfoComplementariaTercero'
+      Tercero:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleTercero'
+  models.DetalleSedeDependencia:
+    title: DetalleSedeDependencia
+    type: object
+    properties:
+      Dependencia:
+        $ref: '#/definitions/models.Dependencia'
+      Sede:
+        $ref: '#/definitions/models.EspacioFisico'
+      Ubicacion:
         type: integer
         format: int64
-      Observaciones:
-        type: string
-      Ubicacion:
+  models.DetalleTercero:
+    title: DetalleTercero
+    type: object
+    properties:
+      DependenciaId:
+        type: integer
+        format: int64
+      Identificacion:
+        $ref: '#/definitions/models.DatosIdentificacion'
+      Tercero:
+        $ref: '#/definitions/models.Tercero'
+      TipoVinculacion:
         type: integer
         format: int64
   models.Elemento:
@@ -1006,19 +1082,23 @@ definitions:
         type: boolean
       CodigoAbreviacion:
         type: string
-      FechaCreacion:
+      Descripcion:
         type: string
-        format: datetime
-      FechaModificacion:
-        type: string
-        format: datetime
       Id:
         type: integer
         format: int64
       Nombre:
         type: string
+      TipoEdificacionId:
+        type: integer
+        format: int64
       TipoEspacio:
         $ref: '#/definitions/models.TipoEspacio'
+      TipoEspacioFisicoId:
+        $ref: '#/definitions/models.TipoEspacioFisicoV2'
+      TipoTerrenoId:
+        type: integer
+        format: int64
   models.EstadoElemento:
     title: EstadoElemento
     type: object
@@ -1088,6 +1168,55 @@ definitions:
       NumeroOrden:
         type: number
         format: double
+  models.GrupoInfoComplementaria:
+    title: GrupoInfoComplementaria
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+  models.InfoComplementaria:
+    title: InfoComplementaria
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      GrupoInfoComplementariaId:
+        $ref: '#/definitions/models.GrupoInfoComplementaria'
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      TipoDeDato:
+        type: string
+  models.InfoComplementariaTercero:
+    title: InfoComplementariaTercero
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      Dato:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      InfoCompleTerceroPadreId:
+        $ref: '#/definitions/models.InfoComplementariaTercero'
+      InfoComplementariaId:
+        $ref: '#/definitions/models.InfoComplementaria'
+      TerceroId:
+        $ref: '#/definitions/models.Tercero'
   models.Movimiento:
     title: Movimiento
     type: object
@@ -1129,6 +1258,28 @@ definitions:
         type: string
       RolOrdenadorGasto:
         type: string
+  models.Parametro:
+    title: Parametro
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      NumeroOrden:
+        type: number
+        format: double
+      ParametroPadreId:
+        $ref: '#/definitions/models.Parametro'
+      TipoParametroId:
+        $ref: '#/definitions/models.TipoParametro'
   models.Salida:
     title: Salida
     type: object
@@ -1175,6 +1326,38 @@ definitions:
         type: string
       Sede:
         type: string
+  models.Tercero:
+    title: Tercero
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      FechaCreacion:
+        type: string
+      FechaModificacion:
+        type: string
+      FechaNacimiento:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      LugarOrigen:
+        type: integer
+        format: int64
+      NombreCompleto:
+        type: string
+      PrimerApellido:
+        type: string
+      PrimerNombre:
+        type: string
+      SegundoApellido:
+        type: string
+      SegundoNombre:
+        type: string
+      TipoContribuyenteId:
+        $ref: '#/definitions/models.TipoContribuyente'
+      UsuarioWSO2:
+        type: string
   models.Terceros:
     title: Terceros
     type: object
@@ -1199,6 +1382,47 @@ definitions:
         format: int64
       Nombre:
         type: string
+  models.TipoContribuyente:
+    title: TipoContribuyente
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      FechaCreacion:
+        type: string
+      FechaModificacion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+  models.TipoDocumento:
+    title: TipoDocumento
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      FechaCreacion:
+        type: string
+      FechaModificacion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      NumeroOrden:
+        type: integer
+        format: int64
   models.TipoEntrada:
     title: TipoEntrada
     type: object
@@ -1244,6 +1468,21 @@ definitions:
         format: int64
       Nombre:
         type: string
+  models.TipoEspacioFisicoV2:
+    title: TipoEspacioFisicoV2
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
   models.TipoNivel:
     title: TipoNivel
     type: object
@@ -1262,6 +1501,30 @@ definitions:
       Orden:
         type: number
         format: double
+  models.TipoParametro:
+    title: TipoParametro
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      AreaTipoId:
+        $ref: '#/definitions/models.AreaTipo'
+      CodigoAbreviacion:
+        type: string
+      Descripcion:
+        type: string
+      FechaCreacion:
+        type: string
+      FechaModificacion:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
+      NumeroOrden:
+        type: number
+        format: double
   models.Tr_cuentas_subgrupo:
     title: Tr_cuentas_subgrupo
     type: object
@@ -1278,6 +1541,24 @@ definitions:
   models.TrSalida2:
     title: TrSalida2
     type: object
+  models.TrTraslado:
+    title: TrTraslado
+    type: object
+    properties:
+      Detalle:
+        type: string
+      Elementos:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleElementoPlaca'
+      FuncionarioDestino:
+        $ref: '#/definitions/models.DetalleFuncionario'
+      FuncionarioOrigen:
+        $ref: '#/definitions/models.DetalleFuncionario'
+      Observaciones:
+        type: string
+      Ubicacion:
+        $ref: '#/definitions/models.DetalleSedeDependencia'
 tags:
 - name: acta_recibido
   description: |
