@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -28,22 +28,16 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	}()
 
 	var (
-		urlcrud    string
-		movimiento models.Movimiento
+		movimiento *models.Movimiento
 		detalle    models.DetalleTraslado
 	)
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &movimiento); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleTraslado - request.GetJson(urlcrud, &movimiento)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if movimientoA, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+		return nil, err
+	} else {
+		movimiento = movimientoA
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
@@ -154,10 +148,6 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 		}
 	}()
 
-	var (
-		urlcrud string
-		res     *models.Movimiento
-	)
 	result = new(models.Movimiento)
 
 	detalleJSON := map[string]interface{}{}
@@ -186,19 +176,11 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
-	if err := request.SendJson(urlcrud, "POST", &res, &data); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "RegistrarTraslado - request.SendJson(urlcrud, \"POST\", &res, &data)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if res, err := movimientosArkaHelper.PostMovimiento(data); err != nil {
+		return nil, err
+	} else {
+		return res, nil
 	}
-	result = res
-
-	return result, nil
 }
 
 func getTipoComprobanteTraslados() string {

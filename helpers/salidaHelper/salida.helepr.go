@@ -15,6 +15,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -197,30 +198,20 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 	}()
 
 	var (
-		resEstadoMovimiento []models.EstadoMovimiento
-		salidaOriginal      *models.Movimiento
-		res                 *models.Movimiento
-		urlcrud             string
+		estadoMovimiento *models.EstadoMovimiento
+		salidaOriginal   *models.Movimiento
+		res              *models.SalidaGeneral
+		urlcrud          string
 	)
 
 	resultado = make(map[string]interface{})
 
 	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Salida%20En%20Trámite"
-	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
-		status := "502"
-		if err == nil {
-			err = errors.New("len(resEstadoMovimiento) == 0")
-			status = "404"
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "PutTrSalidas - request.GetJson(urlcrud, &resEstadoMovimiento)",
-			"err":     err,
-			"status":  status,
-		}
-		return nil, outputError
+	if estadosMovimiento, err := movimientosArkaHelper.GetAllEstadoMovimiento("Salida%20En%20Trámite"); err != nil {
+		return nil, err
+	} else {
+		estadoMovimiento = estadosMovimiento[0]
 	}
 
 	// En caso de generarse más de una salida, se debe actualizar
@@ -228,7 +219,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 	if len(m.Salidas) == 1 {
 		// Si no se generan nuevas salidas, simplemente se debe actualizar el funcionario y la ubicación del movimiento original
 
-		m.Salidas[0].Salida.EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
+		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
 		urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(salidaId)
 		if err := request.SendJson(urlcrud, "PUT", &res, &m.Salidas[0].Salida); err != nil {
 			status := "502"
@@ -249,16 +240,11 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		// Se consulta la salida original
 		ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
 
-		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(salidaId)
-		if err := request.GetJson(urlcrud, &salidaOriginal); err != nil {
-			status := "502"
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "PutTrSalidas - request.GetJson(urlcrud, &salidaOriginal)",
-				"err":     err,
-				"status":  status,
-			}
-			return nil, outputError
+		// Se consulta el movimiento
+		if movimientoA, err := movimientosArkaHelper.GetMovimientoById(salidaId); err != nil {
+			return nil, err
+		} else {
+			salidaOriginal = movimientoA
 		}
 
 		detalleOriginal := map[string]interface{}{}
