@@ -9,6 +9,9 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
+	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -54,21 +57,21 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	}
 
 	// Se consulta el detalle del funcionario origen
-	if origen, err := GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
+	if origen, err := tercerosMidHelper.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioOrigen = origen
 	}
 
 	// Se consulta el detalle del funcionario destino
-	if destino, err := GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
+	if destino, err := tercerosMidHelper.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioDestino = destino
 	}
 
 	// Se consulta la sede, dependencia correspondiente a la ubicacion
-	if ubicacionDetalle, err := utilsHelper.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
+	if ubicacionDetalle, err := ubicacionHelper.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
 		return nil, err
 	} else {
 		Traslado.Ubicacion = ubicacionDetalle
@@ -87,68 +90,6 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 }
 
-// GetDetalle Consulta El nombre, número de identificación, correo y cargo asociado a un funcionario
-func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionario, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetDetalleFuncionario", "err": err, "status": "502"}
-			panic(outputError)
-		}
-	}()
-
-	var (
-		urlcrud  string
-		response []*models.DetalleTercero
-		cargo    []*models.Parametro
-		correo   []*models.InfoComplementariaTercero
-	)
-
-	DetalleFuncionario = new(models.DetalleFuncionario)
-
-	// Consulta información general y documento de identidad
-	urlcrud = "http://" + beego.AppConfig.String("tercerosMidService") + "tipo/funcionarios/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &response); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleFuncionario - request.GetJson(urlcrud, &response1)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-	DetalleFuncionario.Tercero = response
-
-	// Consulta correo
-	urlcrud = "http://" + beego.AppConfig.String("tercerosService") + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
-	urlcrud += "&query=Activo%3Atrue,InfoComplementariaId__Nombre__icontains%3Acorreo,TerceroId__Id%3A" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &correo); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleFuncionario - request.GetJson(urlcrud, &response2)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-	DetalleFuncionario.Correo = correo
-
-	// Consulta cargo
-	urlcrud = "http://" + beego.AppConfig.String("tercerosMidService") + "propiedad/cargo/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &cargo); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleFuncionario - request.GetJson(urlcrud, &response3)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-	DetalleFuncionario.Cargo = cargo
-
-	return DetalleFuncionario, nil
-}
-
 func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
 	defer func() {
@@ -160,7 +101,6 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 
 	var (
 		urlcrud   string
-		response  []*models.Elemento
 		elementos []*models.DetalleElementoPlaca
 	)
 
@@ -181,26 +121,18 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 		idsActa = append(idsActa, int(val.ElementoActaId))
 	}
 
-	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?limit=-1&fields=Id,Placa,Nombre,Marca&sortby=Id&order=desc"
-	urlcrud += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(idsActa, ";"))
-	if err := request.GetJson(urlcrud, &response); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetElementosTraslado - request.GetJson(urlcrud, &response)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	for _, elemento := range elementos {
-		if i := utilsHelper.FindIdInArray(response, int(elemento.ElementoActaId)); i > -1 {
-			if len(response) > 1 {
-				response = append(response[:i], response[i+1:]...)
+	if response, err := actaRecibido.GetElementosByIds(idsActa); err != nil {
+		return nil, err
+	} else {
+		for _, elemento := range elementos {
+			if i := utilsHelper.FindIdInArray(response, int(elemento.ElementoActaId)); i > -1 {
+				if len(response) > 1 {
+					response = append(response[:i], response[i+1:]...)
+				}
+				elemento.Placa = response[i].Placa
+				elemento.Nombre = response[i].Nombre
+				elemento.Marca = response[i].Marca
 			}
-			elemento.Placa = response[i].Placa
-			elemento.Nombre = response[i].Nombre
-			elemento.Marca = response[i].Marca
 		}
 	}
 

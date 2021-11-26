@@ -35,11 +35,11 @@ func TestGetAsignacionSedeDependencia(t *testing.T) {
 // GetAsignacionSedeDependencia ...
 func TestGetSedeDependenciaUbicacion(t *testing.T) {
 
-	if s, d, u, err := ubicacionHelper.GetSedeDependenciaUbicacion("2"); err != nil {
+	if s, err := ubicacionHelper.GetSedeDependenciaUbicacion(2); err != nil {
 		t.Error("No se pudo consultar la ubicacion", err)
 		t.Fail()
 	} else {
-		t.Log(s, d, u)
+		t.Log(s)
 		t.Log("TestGetSedeDependenciaUbicacion Finalizado Correctamente")
 	}
 }
