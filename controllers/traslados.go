@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -46,30 +45,26 @@ func (c *TrasladosController) Post() {
 
 	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if respuesta, err := trasladoshelper.RegistrarTraslado(&v); err == nil && respuesta != nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = respuesta
-		} else {
-			status := "400"
-			if err == nil {
-				err = map[string]interface{}{
-					"err": errors.New("No se obtuvo respuesta al registrar el traslado"),
-				}
-				status = "404"
-			}
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "trasladoshelper.RegistrarTraslado(&v)",
-				"err":     err,
-				"status":  status,
-			})
-		}
-	} else {
 		logs.Error(err)
 		panic(map[string]interface{}{
 			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
 			"err":     err,
 			"status":  "400",
+		})
+	}
+
+	if respuesta, err := trasladoshelper.RegistrarTraslado(&v); err == nil && respuesta != nil {
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "trasladoshelper.RegistrarTraslado(&v)",
+			"err":     errors.New("No se obtuvo respuesta al registrar el traslado"),
+			"status":  "404",
 		})
 	}
 
@@ -79,7 +74,7 @@ func (c *TrasladosController) Post() {
 // GetTraslado ...
 // @Title Get User
 // @Description get Traslado by id
-// @Param	id		path 	string	true		"movimientoId del traslado en el api movimientos_arka_crud"
+// @Param	id	path	int	true	"movimientoId del traslado en el api movimientos_arka_crud"
 // @Success 200 {object} models.TrTraslado
 // @Failure 404 not found resource
 // @router /:id [get]
@@ -99,24 +94,35 @@ func (c *TrasladosController) GetTraslado() {
 		}
 	}()
 
-	idStr := c.Ctx.Input.Param(":id")
-	if trasladoId, err := strconv.Atoi(idStr); err != nil || trasladoId == 0 {
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("El id del movimiento no puede ser cero")
+			err = errors.New("Se debe especificar un traslado válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "GetTraslado - strconv.Atoi(idStr)",
+			"funcion": "GetTraslado - GetInt(\":id\")",
 			"err":     err,
 			"status":  "400",
 		})
 	} else {
-		if v, err := trasladoshelper.GetDetalleTraslado(trasladoId); err == nil {
-			c.Data["json"] = v
-		} else {
+		id = v
+	}
+
+	if respuesta, err := trasladoshelper.GetDetalleTraslado(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
 			panic(err)
 		}
-		c.ServeJSON()
+
+		panic(map[string]interface{}{
+			"funcion": "GetTraslado - trasladoshelper.GetDetalleTraslado(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar el traslado"),
+			"status":  "404",
+		})
 	}
+
+	c.ServeJSON()
 
 }

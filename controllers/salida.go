@@ -188,10 +188,10 @@ func (c *SalidaController) GetSalidas() {
 }
 
 // Put ...
-// @Title Post transaccion salidas asociadas a una entrada
+// @Title Put transaccion salidas generadas a partir de otra
 // @Description genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
-// @Param	salidaId	query 	string					false		"Id de la salida original"
-// @Param	body		body 	models.SalidaGeneral	true		"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
+// @Param	id		path 	int						true	"Id de la salida original"
+// @Param	body	body 	models.SalidaGeneral	true	"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
 // @Success 200 {object} models.SalidaGeneral
 // @Failure 403 body is empty
 // @router /:id [put]
@@ -211,45 +211,43 @@ func (c *SalidaController) Put() {
 		}
 	}()
 
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-
-	if id > 0 {
-		var v models.SalidaGeneral
-		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := salidaHelper.PutTrSalidas(&v, id); err == nil && respuesta != nil {
-				c.Ctx.Output.SetStatus(201)
-				c.Data["json"] = respuesta
-			} else {
-				status := "400"
-				if err == nil {
-					err = map[string]interface{}{
-						"err": errors.New("No se obtuvo respuesta al actualizar la salida"),
-					}
-					status = "404"
-				}
-				logs.Error(err)
-				panic(map[string]interface{}{
-					"funcion": "Put - salidaHelper.PutTrSalidas(&v, id)",
-					"err":     err,
-					"status":  status,
-				})
-			}
-		} else {
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-				"err":     err,
-				"status":  "400",
-			})
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar una salida válida")
 		}
-	} else {
-		err := errors.New("Se debe especificar una salida válida")
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "Put - id < 0",
+			"funcion": "Put - GetInt(\":id\")",
 			"err":     err,
 			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	var v models.SalidaGeneral
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	if respuesta, err := salidaHelper.PutTrSalidas(&v, id); err == nil && respuesta != nil {
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "Put - salidaHelper.PutTrSalidas(&v, id)",
+			"err":     errors.New("No se obtuvo respuesta al actualizar la salida"),
+			"status":  "404",
 		})
 	}
 

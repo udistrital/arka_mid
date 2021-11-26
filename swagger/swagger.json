@@ -759,13 +759,15 @@
                     "salida"
                 ],
                 "description": "genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud",
-                "operationId": "SalidaController.Post transaccion salidas asociadas a una entrada",
+                "operationId": "SalidaController.Put transaccion salidas generadas a partir de otra",
                 "parameters": [
                     {
-                        "in": "query",
-                        "name": "salidaId",
+                        "in": "path",
+                        "name": "id",
                         "description": "Id de la salida original",
-                        "type": "string"
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
                     },
                     {
                         "in": "body",
@@ -973,7 +975,8 @@
                         "name": "id",
                         "description": "movimientoId del traslado en el api movimientos_arka_crud",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
