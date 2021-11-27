@@ -14,7 +14,7 @@ func GetAllEstadoMovimiento(nombre string) (estado []*models.EstadoMovimiento, o
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetAllEstadoMovimiento", "err": err, "status": "502"}
+			outputError = map[string]interface{}{"funcion": "/GetAllEstadoMovimiento", "err": err, "status": "500"}
 			panic(outputError)
 		}
 	}()
@@ -41,11 +41,12 @@ func GetAllEstadoMovimiento(nombre string) (estado []*models.EstadoMovimiento, o
 	}
 	return resEstadoMovimiento, nil
 }
+
 func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetMovimientoById", "err": err, "status": "502"}
+			outputError = map[string]interface{}{"funcion": "/GetMovimientoById", "err": err, "status": "500"}
 			panic(outputError)
 		}
 	}()
@@ -69,7 +70,7 @@ func PostMovimiento(movimiento *models.Movimiento) (movimientoR *models.Movimien
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/PostMovimiento", "err": err, "status": "502"}
+			outputError = map[string]interface{}{"funcion": "/PostMovimiento", "err": err, "status": "500"}
 			panic(outputError)
 		}
 	}()

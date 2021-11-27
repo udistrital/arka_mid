@@ -65,25 +65,24 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 	var (
 		urlcrud   string
 		ubicacion []*models.AsignacionEspacioFisicoDependencia
-		sede      []*models.EspacioFisico
 	)
 	resultado := new(models.DetalleSedeDependencia)
 
-	urlcrud = "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia"
-	urlcrud += "?query=Id:" + strconv.Itoa(ubicacionId)
-
-	if _, err := request.GetJsonTest(urlcrud, &ubicacion); err != nil {
+	urlcrud = "?query=Id:" + strconv.Itoa(ubicacionId)
+	if ubicacion_, err := GetAllAsignacion(urlcrud); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetSedeDependenciaUbicacion - request.GetJsonTest(urlcrud, &ubicacion)",
+			"funcion": "GetSedeDependenciaUbicacion - GetAllAsignacion(urlcrud)",
 			"err":     err,
 			"status":  "502",
 		}
 		return nil, outputError
+	} else {
+		ubicacion = ubicacion_
 	}
 
-	resultado.Ubicacion = ubicacionId
 	resultado.Dependencia = ubicacion[0].DependenciaId
+	resultado.Ubicacion = ubicacionId
 
 	if espFisico, err := utilsHelper.ConvertirInterfaceMap(ubicacion[0].EspacioFisicoId); err != nil {
 		return nil, err
@@ -91,19 +90,14 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 		rgxp := regexp.MustCompile("[0-9]")
 		strSede := espFisico["CodigoAbreviacion"].(string)
 		strSede = rgxp.ReplaceAllString(strSede, "")
-		urlcrud = "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + strSede
+		urlcrud = "?query=CodigoAbreviacion:" + strSede
 	}
 
-	if _, err := request.GetJsonTest(urlcrud, &sede); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "TraerDetalle - request.GetJsonTest(urlcrud4, &sede)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if sede_, err := GetAllEspacioFisico(urlcrud); err != nil {
+		return nil, err
+	} else {
+		resultado.Sede = sede_[0]
 	}
-	resultado.Sede = sede[0]
 
 	return resultado, nil
 }

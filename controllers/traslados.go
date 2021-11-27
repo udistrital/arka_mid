@@ -44,7 +44,7 @@ func (c *TrasladosController) Post() {
 	}()
 
 	var v models.Movimiento
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		logs.Error(err)
 		panic(map[string]interface{}{
 			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
