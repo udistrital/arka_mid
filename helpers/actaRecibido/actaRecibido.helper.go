@@ -222,7 +222,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		urlEstados += ",EstadoActaId__Nombre"
 		if contratista {
-			urlEstados += "__in:" + url.QueryEscape("En Elaboracion;En Modificacion")
+			urlEstados += "__in:" + url.QueryEscape("En Elaboracion|En Modificacion")
 			urlEstados += ",PersonaAsignadaId:" + fmt.Sprint(idTercero)
 		} else if proveedor {
 			urlEstados += ":" + url.QueryEscape("En Elaboracion")
