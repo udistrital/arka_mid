@@ -178,3 +178,17 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFormat string) {
 	return prefix + consecutivo + suffix
 }
+
+func ArrayToString(a []int, delim string) string {
+	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
+}
+
+// findIdInArray Retorna la posicion en que se encuentra el id específicado
+func FindIdInArray(idsList []*models.Elemento, id int) (i int) {
+	for i, id_ := range idsList {
+		if int(id_.Id) == id {
+			return i
+		}
+	}
+	return -1
+}

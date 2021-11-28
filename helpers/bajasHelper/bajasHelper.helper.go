@@ -291,7 +291,7 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 
 		if data_, err := utilsHelper.ConvertirStringJson(data["Detalle"]); err == nil {
 
-			if Sede, Dependencia, Ubicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(fmt.Sprintf("%v", data_["Ubicacion"])); err == nil {
+			if detalleUbicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(data_["Ubicacion"].(float64))); err == nil {
 				if Funcionario, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
 					if Revisor, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
 						if Elementos, err := utilsHelper.ConvertirInterfaceArrayMap(data_["Elementos"]); err == nil {
@@ -309,9 +309,9 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 							}
 							Solicitud = map[string]interface{}{
 								"Id":                data["Id"],
-								"Sede":              Sede,
-								"Dependencia":       Dependencia,
-								"Ubicacion":         Ubicacion,
+								"Sede":              detalleUbicacion.Sede,
+								"Dependencia":       detalleUbicacion.Dependencia,
+								"Ubicacion":         detalleUbicacion.Ubicacion,
 								"Funcionario":       Funcionario,
 								"Revisor":           Revisor,
 								"FechaCreacion":     data["FechaCreacion"],

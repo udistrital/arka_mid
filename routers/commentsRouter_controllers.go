@@ -241,6 +241,15 @@ func init() {
             Filters: nil,
             Params: nil})
 
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:SalidaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:SalidaController"],
+        beego.ControllerComments{
+            Method: "Put",
+            Router: "/:id",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TercerosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TercerosController"],
         beego.ControllerComments{
             Method: "GetOne",
@@ -272,6 +281,24 @@ func init() {
         beego.ControllerComments{
             Method: "GetByTipoAndID",
             Router: "/tipo/:tipo/:id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"],
+        beego.ControllerComments{
+            Method: "Post",
+            Router: "/",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"],
+        beego.ControllerComments{
+            Method: "GetTraslado",
+            Router: "/:id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,

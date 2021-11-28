@@ -24,6 +24,7 @@ func (c *SalidaController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Get", c.GetSalida)
 	c.Mapping("GetAll", c.GetSalidas)
+	c.Mapping("Put", c.Put)
 }
 
 // Post ...
@@ -184,4 +185,71 @@ func (c *SalidaController) GetSalidas() {
 	}
 	c.ServeJSON()
 
+}
+
+// Put ...
+// @Title Put transaccion salidas generadas a partir de otra
+// @Description genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
+// @Param	id		path 	int						true	"Id de la salida original"
+// @Param	body	body 	models.SalidaGeneral	true	"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
+// @Success 200 {object} models.SalidaGeneral
+// @Failure 403 body is empty
+// @router /:id [put]
+func (c *SalidaController) Put() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500")
+			}
+		}
+	}()
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar una salida válida")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Put - GetInt(\":id\")",
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	var v models.SalidaGeneral
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	if respuesta, err := salidaHelper.PutTrSalidas(&v, id); err == nil && respuesta != nil {
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "Put - salidaHelper.PutTrSalidas(&v, id)",
+			"err":     errors.New("No se obtuvo respuesta al actualizar la salida"),
+			"status":  "404",
+		})
+	}
+
+	c.ServeJSON()
 }

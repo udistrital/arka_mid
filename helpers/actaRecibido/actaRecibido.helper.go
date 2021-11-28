@@ -222,7 +222,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 		urlEstados += ",EstadoActaId__Nombre"
 		if contratista {
-			urlEstados += "__in:" + url.QueryEscape("En Elaboracion;En Modificacion")
+			urlEstados += "__in:" + url.QueryEscape("En Elaboracion|En Modificacion")
 			urlEstados += ",PersonaAsignadaId:" + fmt.Sprint(idTercero)
 		} else if proveedor {
 			urlEstados += ":" + url.QueryEscape("En Elaboracion")
@@ -1178,4 +1178,36 @@ func GetAllElementosConsumo() (elementos []map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
+}
+
+func GetElementosByIds(ids []int) (elementos []*models.Elemento, outputError map[string]interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetElementosByIds - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	var (
+		urlcrud  string
+		response []*models.Elemento
+	)
+
+	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?limit=-1&fields=Id,Placa,Nombre,Marca&sortby=Id&order=desc"
+	urlcrud += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, ";"))
+	if err := request.GetJson(urlcrud, &response); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetElementosByIds - request.GetJson(urlcrud, &response)",
+			"err":     err,
+			"status":  "502",
+		}
+		return make([]*models.Elemento, 0), outputError
+	}
+
+	return response, nil
 }

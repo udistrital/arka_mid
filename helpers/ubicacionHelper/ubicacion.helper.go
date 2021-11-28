@@ -1,13 +1,14 @@
 package ubicacionHelper
 
 import (
-	"fmt"
-	"strings"
+	"regexp"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -49,74 +50,48 @@ func GetAsignacionSedeDependencia(Id string) (Relacion map[string]interface{}, o
 	}
 }
 
-func GetSedeDependenciaUbicacion(Id string) (Sede map[string]interface{}, Dependencia map[string]interface{}, Ubicacion map[string]interface{}, outputError map[string]interface{}) {
+func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.DetalleSedeDependencia, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "/GetSedeDependenciaUbicacion",
+				"funcion": "GetSedeDependenciaUbicacion - Unhandled Error!",
 				"err":     err,
-				"status":  "404",
+				"status":  "500",
 			}
 			panic(outputError)
 		}
 	}()
+	var (
+		urlcrud   string
+		ubicacion []*models.AsignacionEspacioFisicoDependencia
+	)
+	resultado := new(models.DetalleSedeDependencia)
 
-	var Ubicacion_ []map[string]interface{}
-
-	urlcrud := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + Id
-
-	if _, err := request.GetJsonTest(urlcrud, &Ubicacion_); err == nil { // (2) error servicio caido
-
-		if data, err := utilsHelper.ConvertirInterfaceMap(Ubicacion_[0]["DependenciaId"]); err == nil {
-			Dependencia = data
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "/GetSedeDependenciaUbicacion",
-				"err":     err,
-				"status":  "500",
-			}
-			return nil, nil, nil, outputError
-		}
-
-		if data, err := utilsHelper.ConvertirInterfaceMap(Ubicacion_[0]["EspacioFisicoId"]); err == nil {
-			Ubicacion = data
-
-			str2 := fmt.Sprintf("%v", data["CodigoAbreviacion"])
-			z := strings.Split(str2, "")
-			var sede []map[string]interface{}
-			urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
-
-			if _, err := request.GetJsonTest(urlcrud4, &sede); err == nil {
-				Sede = sede[0]
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetSedeDependenciaUbicacion",
-					"err":     err,
-					"status":  "404",
-				}
-				return nil, nil, nil, outputError
-			}
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "/GetSedeDependenciaUbicacion",
-				"err":     err,
-				"status":  "500",
-			}
-			return nil, nil, nil, outputError
-		}
+	urlcrud = "?query=Id:" + strconv.Itoa(ubicacionId)
+	if ubicacion_, err := GetAllAsignacion(urlcrud); err != nil {
+		return nil, err
 	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "/GetSedeDependenciaUbicacion",
-			"err":     err,
-			"status":  "404",
-		}
-		return nil, nil, nil, outputError
+		ubicacion = ubicacion_
 	}
-	return Sede, Dependencia, Ubicacion, nil
 
+	resultado.Dependencia = ubicacion[0].DependenciaId
+	resultado.Ubicacion = ubicacionId
+
+	if espFisico, err := utilsHelper.ConvertirInterfaceMap(ubicacion[0].EspacioFisicoId); err != nil {
+		return nil, err
+	} else {
+		rgxp := regexp.MustCompile("[0-9]")
+		strSede := espFisico["CodigoAbreviacion"].(string)
+		strSede = rgxp.ReplaceAllString(strSede, "")
+		urlcrud = "?query=CodigoAbreviacion:" + strSede
+	}
+
+	if sede_, err := GetAllEspacioFisico(urlcrud); err != nil {
+		return nil, err
+	} else {
+		resultado.Sede = sede_[0]
+	}
+
+	return resultado, nil
 }

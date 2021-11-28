@@ -66,3 +66,31 @@ type TrSalida struct {
 type SalidaGeneral struct {
 	Salidas []*TrSalida
 }
+
+type DetalleTraslado struct {
+	Id                 int
+	FuncionarioOrigen  int
+	FuncionarioDestino int
+	Elementos          []int
+	Ubicacion          int
+	Observaciones      string
+	MovimientoId       int
+	Consecutivo        string
+}
+
+type DetalleElementoPlaca struct {
+	Id             int
+	ElementoActaId int
+	Placa          string
+	Nombre         string
+	Marca          string
+}
+
+type TrTraslado struct {
+	Detalle            string
+	Observaciones      string
+	Elementos          []*DetalleElementoPlaca
+	FuncionarioOrigen  *DetalleFuncionario
+	FuncionarioDestino *DetalleFuncionario
+	Ubicacion          *DetalleSedeDependencia
+}
