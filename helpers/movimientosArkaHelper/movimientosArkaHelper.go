@@ -93,3 +93,51 @@ func PostMovimiento(movimiento *models.Movimiento) (movimientoR *models.Movimien
 
 	return res, nil
 }
+
+func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGeneral, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/PutTrSalida", "err": err, "status": "500"}
+			panic(outputError)
+		}
+	}()
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/"
+	if err := request.SendJson(urlcrud, "PUT", &trResultado, &trSalida); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "PutTrSalida - request.SendJson(movArka, \"PUT\", &trResultado, &trSalida)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	return trResultado, nil
+
+}
+
+func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (movimientoRes *models.Movimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/PutMovimiento", "err": err, "status": "500"}
+			panic(outputError)
+		}
+	}()
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(movimientoId)
+	if err := request.SendJson(urlcrud, "PUT", &movimientoRes, &movimiento); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "PutMovimiento - request.SendJson(urlcrud, \"PUT\", &res, &m.Salidas[0].Salida)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	return movimientoRes, nil
+
+}

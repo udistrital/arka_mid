@@ -200,8 +200,6 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 	var (
 		estadoMovimiento *models.EstadoMovimiento
 		salidaOriginal   *models.Movimiento
-		res              *models.SalidaGeneral
-		urlcrud          string
 	)
 
 	resultado = make(map[string]interface{})
@@ -220,18 +218,11 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		// Si no se generan nuevas salidas, simplemente se debe actualizar el funcionario y la ubicación del movimiento original
 
 		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
-		urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(salidaId)
-		if err := request.SendJson(urlcrud, "PUT", &res, &m.Salidas[0].Salida); err != nil {
-			status := "502"
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "PutTrSalidas - request.SendJson(urlcrud, \"PUT\", &res, &m.Salidas[0].Salida)",
-				"err":     err,
-				"status":  status,
-			}
-			return nil, outputError
+		if salida_, err := movimientosArkaHelper.PutMovimiento(m.Salidas[0].Salida, salidaId); err != nil {
+			return nil, err
+		} else {
+			resultado["trSalida"] = salida_
 		}
-		resultado["trSalida"] = res
 		return resultado, nil
 	} else {
 
@@ -347,19 +338,13 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		}
 
 		// Hace el put api movimientos_arka_crud
-		urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/"
-		if err := request.SendJson(urlcrud, "PUT", &res, &m); err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "PutTrSalidas - request.SendJson(movArka, \"PUT\", &res, &m)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
+		if trRes, err := movimientosArkaHelper.PutTrSalida(m); err != nil {
+			return nil, err
+		} else {
+			resultado["trSalida"] = trRes
 		}
 	}
 
-	resultado["trSalida"] = res
 	return resultado, nil
 }
 

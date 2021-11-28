@@ -70,13 +70,7 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 
 	urlcrud = "?query=Id:" + strconv.Itoa(ubicacionId)
 	if ubicacion_, err := GetAllAsignacion(urlcrud); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetSedeDependenciaUbicacion - GetAllAsignacion(urlcrud)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return nil, err
 	} else {
 		ubicacion = ubicacion_
 	}

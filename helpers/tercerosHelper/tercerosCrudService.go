@@ -14,7 +14,7 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetCorreo", "err": err, "status": "502"}
+			outputError = map[string]interface{}{"funcion": "/GetCorreo", "err": err, "status": "500"}
 			panic(outputError)
 		}
 	}()
