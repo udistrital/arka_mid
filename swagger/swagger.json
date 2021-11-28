@@ -175,22 +175,23 @@
                 "tags": [
                     "bajas_elementos"
                 ],
-                "description": "get Salida by id",
-                "operationId": "BajaController.Get User",
+                "description": "get Baja",
+                "operationId": "BajaController.Get All",
                 "parameters": [
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "The key for staticblock",
+                        "description": "movimientoId del traslado en el api movimientos_arka_crud",
                         "required": true,
-                        "type": "string"
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.Baja"
                         }
                     },
                     "404": {

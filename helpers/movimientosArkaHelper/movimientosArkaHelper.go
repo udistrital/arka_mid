@@ -2,6 +2,7 @@ package movimientosArkaHelper
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -40,6 +41,39 @@ func GetAllEstadoMovimiento(nombre string) (estado []*models.EstadoMovimiento, o
 		return nil, outputError
 	}
 	return resEstadoMovimiento, nil
+}
+
+func GetAllElementosMovimiento(query string) (estado []*models.ElementosMovimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetAllElementosMovimiento", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
+
+	var (
+		resMovimiento []*models.ElementosMovimiento
+		urlcrud       string
+	)
+
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?" + query
+	fmt.Println(urlcrud)
+	if err := request.GetJson(urlcrud, &resMovimiento); err != nil || len(resMovimiento) == 0 {
+		status := "502"
+		if err == nil {
+			err = errors.New("len(resMovimiento) == 0")
+			status = "404"
+		}
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllElementosMovimiento - request.GetJson(urlcrud, &resMovimiento)",
+			"err":     err,
+			"status":  status,
+		}
+		return nil, outputError
+	}
+	return resMovimiento, nil
 }
 
 func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {

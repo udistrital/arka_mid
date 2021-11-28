@@ -962,7 +962,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 }
 
 // GetElementos ...
-func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputError map[string]interface{}) {
+func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElemento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -985,10 +985,17 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 	consultasSubgrupos := 0
 	evSubgrupos := 0
 
-	if actaId > 0 { // (1) error parametro
+	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
-		urlcrud += "&limit=-1"
+
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?limit=-1&query=Activo:True,"
+
+		if actaId > 0 {
+			urlcrud += "ActaRecibidoId__Id:" + strconv.Itoa(actaId)
+		} else {
+			urlcrud += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+		}
+
 		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
@@ -1065,7 +1072,7 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 				auxE.FechaCreacion = elemento.FechaCreacion
 				auxE.FechaModificacion = elemento.FechaModificacion
 
-				elementosActa = append(elementosActa, auxE)
+				elementosActa = append(elementosActa, &auxE)
 
 			}
 

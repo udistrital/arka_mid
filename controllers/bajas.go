@@ -2,6 +2,7 @@ package controllers
 
 import (
 	// "encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -20,6 +21,7 @@ type BajaController struct {
 // URLMapping ...
 func (c *BajaController) URLMapping() {
 	c.Mapping("Get", c.GetElemento)
+	c.Mapping("GetElemento", c.GetDetalleElemento)
 }
 
 // GetElemento ...
@@ -129,6 +131,53 @@ func (c *BajaController) GetAll() {
 	}()
 
 	l, err := bajasHelper.GetAllSolicitudes()
+	if err != nil {
+		panic(err)
+	} else {
+		c.Data["json"] = l
+	}
+	c.ServeJSON()
+}
+
+// GetDetalleElemento ...
+// @Title Get All
+// @Description get Baja
+// @Param	id	path	int	true	"movimientoId del traslado en el api movimientos_arka_crud"
+// @Success 200 {object} models.Baja
+// @Failure 404 not found resource
+// @router /elemento/:id [get]
+func (c *BajaController) GetDetalleElemento() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Unhandled Error!
+			}
+		}
+	}()
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un traslado válido")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "GetTraslado - GetInt(\":id\")",
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	l, err := bajasHelper.GetDetalleElemento(id)
 	if err != nil {
 		panic(err)
 	} else {

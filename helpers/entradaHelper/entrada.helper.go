@@ -304,7 +304,7 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 	}()
 
 	ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
-	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId); err != nil {
+	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
 		outputError = map[string]interface{}{
 			"funcion": "asignarPlacaActa - actaRecibido.GetElementos(actaRecibidoId)",
 			"err":     err,

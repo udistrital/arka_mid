@@ -94,3 +94,14 @@ type TrTraslado struct {
 	FuncionarioDestino *DetalleFuncionario
 	Ubicacion          *DetalleSedeDependencia
 }
+
+type DetalleElementoBaja struct {
+	Id                 int
+	Placa              string
+	Nombre             string
+	Marca              string
+	Serie              string
+	SubgrupoCatalogoId *DetalleSubgrupo
+	Salida             *Movimiento
+	Ubicacion          *DetalleSedeDependencia
+}

@@ -11,10 +11,13 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -365,4 +368,60 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 		}
 		return nil, outputError
 	}
+}
+
+func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetDetalleElemento", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
+
+	var (
+		// movimiento *models.Movimiento
+		elemento           []*models.DetalleElemento
+		elementoMovimiento []*models.ElementosMovimiento
+		ubicacion          *models.DetalleSedeDependencia
+	)
+	Elemento = new(models.DetalleElementoBaja)
+
+	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
+	ids := []int{id}
+	if elemento_, err := actaRecibido.GetElementos(0, ids); err != nil {
+		return nil, err
+	} else {
+		elemento = elemento_
+	}
+
+	query := "sortby=Id&order=desc&query=ElementoActaId:" + strconv.Itoa(id)
+	if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		elementoMovimiento = elementoMovimiento_
+	}
+
+	detalleJSON := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(elementoMovimiento[0].MovimientoId.Detalle), &detalleJSON); err != nil {
+		panic(err.Error())
+	}
+
+	if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {
+		return nil, err
+	} else {
+		ubicacion = ubicacion_
+	}
+
+	Elemento.Id = elementoMovimiento[0].Id
+	Elemento.Placa = elemento[0].Placa
+	Elemento.Nombre = elemento[0].Nombre
+	Elemento.Marca = elemento[0].Marca
+	Elemento.Serie = elemento[0].Serie
+	Elemento.SubgrupoCatalogoId = elemento[0].SubgrupoCatalogoId
+	Elemento.Salida = elementoMovimiento[0].MovimientoId
+	Elemento.Ubicacion = ubicacion
+
+	fmt.Println(elemento, elementoMovimiento)
+	return Elemento, nil
 }
