@@ -69,9 +69,9 @@ Pruebas unitarias
 ```
 ## Estado CI
 
-| Develop | Relese 0.4.3 | Master |
+| Develop | Relese 0.5.0 | Master |
 | -- | -- | -- |
-| [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/develop)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/release/0.4.3)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/master)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) |
+| [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/develop)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/release/0.5.0)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/master)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) |
 
 ## Licencia
 
