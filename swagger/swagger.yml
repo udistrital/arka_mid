@@ -922,8 +922,7 @@ definitions:
       Sede:
         $ref: '#/definitions/models.EspacioFisico'
       Ubicacion:
-        type: integer
-        format: int64
+        $ref: '#/definitions/models.AsignacionEspacioFisicoDependencia'
   models.DetalleTercero:
     title: DetalleTercero
     type: object

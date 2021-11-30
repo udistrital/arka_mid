@@ -23,5 +23,5 @@ type TipoEspacioFisicoV2 struct {
 type DetalleSedeDependencia struct {
 	Sede        *EspacioFisico
 	Dependencia *Dependencia
-	Ubicacion   int
+	Ubicacion   *AsignacionEspacioFisicoDependencia
 }

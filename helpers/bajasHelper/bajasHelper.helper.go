@@ -15,6 +15,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -380,10 +381,10 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	}()
 
 	var (
-		// movimiento *models.Movimiento
 		elemento           []*models.DetalleElemento
 		elementoMovimiento []*models.ElementosMovimiento
 		ubicacion          *models.DetalleSedeDependencia
+		funcionario        []*models.DetalleTercero
 	)
 	Elemento = new(models.DetalleElementoBaja)
 
@@ -413,6 +414,12 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 		ubicacion = ubicacion_
 	}
 
+	if funcionario_, err := tercerosMidHelper.GetFuncionario(int(detalleJSON["funcionario"].(float64))); err != nil {
+		return nil, err
+	} else {
+		funcionario = funcionario_
+	}
+
 	Elemento.Id = elementoMovimiento[0].Id
 	Elemento.Placa = elemento[0].Placa
 	Elemento.Nombre = elemento[0].Nombre
@@ -421,6 +428,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	Elemento.SubgrupoCatalogoId = elemento[0].SubgrupoCatalogoId
 	Elemento.Salida = elementoMovimiento[0].MovimientoId
 	Elemento.Ubicacion = ubicacion
+	Elemento.Funcionario = funcionario[0]
 
 	fmt.Println(elemento, elementoMovimiento)
 	return Elemento, nil

@@ -104,4 +104,5 @@ type DetalleElementoBaja struct {
 	SubgrupoCatalogoId *DetalleSubgrupo
 	Salida             *Movimiento
 	Ubicacion          *DetalleSedeDependencia
+	Funcionario        *DetalleTercero
 }
