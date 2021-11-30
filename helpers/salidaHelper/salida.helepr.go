@@ -589,7 +589,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 			panic(outputError)
 		}
 	}()
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=20&sortby=Id&order=desc"
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1&sortby=Id&order=desc"
 	urlcrud += "&query=Activo:true,EstadoMovimientoId__Nombre"
 
 	if tramiteOnly {
