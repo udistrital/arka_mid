@@ -139,13 +139,26 @@ paths:
     get:
       tags:
       - bajas_elementos
-      description: get Baja
+      description: Consulta todas las bajas y permite filtrar por las que estan para
+        revision de almacen o comite
       operationId: BajaController.Get All
+      parameters:
+      - in: query
+        name: revComite
+        description: Indica si se traen las bajas en espera de comite. Tiene prioridad
+          sobre la revision de almacen
+        type: boolean
+      - in: query
+        name: revAlmacen
+        description: Indica si se traen las bajas pendientes por revisar
+        type: boolean
       responses:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Baja'
+            type: array
+            items:
+              $ref: '#/definitions/models.DetalleBaja'
         "404":
           description: not found resource
   /bajas_elementos/solicitud/{id}:
@@ -732,9 +745,6 @@ definitions:
       Id:
         type: integer
         format: int64
-  models.Baja:
-    title: Baja
-    type: object
   models.Bodega-Consumo:
     title: Bodega-Consumo
     type: object

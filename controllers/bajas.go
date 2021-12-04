@@ -110,8 +110,10 @@ func (c *BajaController) GetSolicitud() {
 
 // GetAll ...
 // @Title Get All
-// @Description get Baja
-// @Success 200 {object} models.Baja
+// @Description Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite
+// @Param	revComite	query 	bool	false	"Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen"
+// @Param	revAlmacen	query 	bool	false	"Indica si se traen las bajas pendientes por revisar"
+// @Success 200 {object} []models.DetalleBaja
 // @Failure 404 not found resource
 // @router /solicitud/ [get]
 func (c *BajaController) GetAll() {
@@ -130,11 +132,38 @@ func (c *BajaController) GetAll() {
 		}
 	}()
 
-	l, err := bajasHelper.GetAllSolicitudes()
-	if err != nil {
-		panic(err)
+	revComite := false
+	revAlmacen := false
+	if v, err := c.GetBool("revComite"); err != nil {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "GetAll - GetBool(\"revComite\")",
+			"err":     err,
+			"status":  "400",
+		})
+	} else if v == false {
+		if v, err := c.GetBool("revAlmacen"); err != nil {
+			logs.Error(err)
+			panic(map[string]interface{}{
+				"funcion": "GetAll - GetBool(\"revAlmacen\")",
+				"err":     err,
+				"status":  "400",
+			})
+		} else {
+			revAlmacen = v
+		}
 	} else {
-		c.Data["json"] = l
+		revComite = v
+	}
+
+	if v, err := bajasHelper.GetAllSolicitudes(revComite, revAlmacen); err == nil {
+		if v != nil {
+			c.Data["json"] = v
+		} else {
+			c.Data["json"] = []interface{}{}
+		}
+	} else {
+		panic(err)
 	}
 	c.ServeJSON()
 }

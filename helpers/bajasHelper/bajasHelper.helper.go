@@ -3,6 +3,7 @@ package bajasHelper
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
 
 	// "strings"
@@ -117,7 +118,7 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 	}
 }
 
-func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.DetalleBaja, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -130,56 +131,39 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 		}
 	}()
 
-	var Solicitudes []map[string]interface{}
+	var Solicitudes []*models.Movimiento
 
-	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=FormatotipoMovimientoId.CodigoAbreviacion:SOL_BAJA,Activo:true&limit=-1"
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1&sortby=Id&order=desc" //movimiento?query=FormatotipoMovimientoId.CodigoAbreviacion__istartswith:BJ_,Activo:true&limit=-1"
+	urlcrud += "&query=Activo:true,EstadoMovimientoId__Nombre"
 
-	if _, err := request.GetJsonTest(url, &Solicitudes); err == nil { // (2) error servicio caido
-		fmt.Println("solicitudes: ", Solicitudes)
-
-		if len(Solicitudes) == 0 || len(Solicitudes[0]) == 0 {
-			logs.Warn(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetAllSolicitudes - len(Solicitudes) == 0 || len(Solicitudes[0]) == 0",
-				"err":     "sin",
-				"status":  "200", // TODO: Debería ser un 204 pero el cliente (Angular) se ofende... (hay que hacer varios ajustes)
+	if revComite {
+		urlcrud += url.QueryEscape(":Baja En Comité")
+	} else if revAlmacen {
+		urlcrud += url.QueryEscape(":Baja En Trámite")
+	} else {
+		urlcrud += "__startswith:Baja"
 			}
-			return nil, outputError
+
+	if _, err := request.GetJsonTest(urlcrud, &Solicitudes); err == nil {
+
+		if len(Solicitudes) == 0 {
+			return nil, nil
 		}
 
 		tercerosBuffer := make(map[int]interface{})
-		ubicacionesBuffer := make(map[int]interface{})
 
 		for _, solicitud := range Solicitudes {
 
-			var data_ map[string]interface{}
-			var data2_ map[string]interface{}
-			var data3_ map[string]interface{}
-			var Tercero_ map[string]interface{}
-			var Revisor_ map[string]interface{}
-			var Ubicacion_ map[string]interface{}
+			var detalle *models.FormatoBaja
+			var Tercero_ string
+			var Revisor_ string
 
-			Ubicacion_ = nil
-
-			if data, err := utilsHelper.ConvertirStringJson(solicitud["Detalle"]); err == nil {
-				data_ = data
-			} else {
+			if err := json.Unmarshal([]byte(solicitud.Detalle), &detalle); err != nil {
 				logs.Error(err)
 				outputError = map[string]interface{}{
-					"funcion": "GetAllSolicitudes - utilsHelper.ConvertirStringJson(solicitud[\"Detalle\"])",
+					"funcion": "GetDetalleTraslado - json.Unmarshal([]byte(movimiento.Detalle), &detalle)",
 					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
-			}
-			if data, err := utilsHelper.ConvertirInterfaceMap(solicitud["EstadoMovimientoId"]); err == nil {
-				data2_ = data
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetAllSolicitudes - utilsHelper.ConvertirInterfaceMap(solicitud[\"EstadoMovimientoId\"])",
-					"err":     err,
-					"status":  "500",
+					"status":  "502",
 				}
 				return nil, outputError
 			}
@@ -193,73 +177,42 @@ func GetAllSolicitudes() (historicoActa []map[string]interface{}, outputError ma
 				}
 			}
 
-			funcionarioIDstr := fmt.Sprintf("%v", data_["Funcionario"])
+			funcionarioIDstr := fmt.Sprintf("%v", detalle.Funcionario)
 			if funcionarioID, err := strconv.Atoi(funcionarioIDstr); err == nil {
 				if v, err := utilsHelper.BufferGeneric(funcionarioID, tercerosBuffer, requestTercero(funcionarioIDstr), nil, nil); err == nil {
 					if v2, ok := v.(map[string]interface{}); ok {
-						Tercero_ = v2
+						if v2["NombreCompleto"] != nil {
+							Tercero_ = v2["NombreCompleto"].(string)
+						}
 					}
 				}
 			}
 
-			revisorIDstr := fmt.Sprintf("%v", data_["Revisor"])
+			revisorIDstr := fmt.Sprintf("%v", detalle.Revisor)
 			if revisorID, err := strconv.Atoi(revisorIDstr); err == nil {
 				if v, err := utilsHelper.BufferGeneric(revisorID, tercerosBuffer, requestTercero(revisorIDstr), nil, nil); err == nil {
 					if v2, ok := v.(map[string]interface{}); ok {
-						Revisor_ = v2
+						if v2["NombreCompleto"] != nil {
+							Revisor_ = v2["NombreCompleto"].(string)
 					}
 				}
 			}
-
-			ubicacionIdStr := fmt.Sprintf("%v", data_["Ubicacion"])
-			requestUbicacion := func() (interface{}, map[string]interface{}) {
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(ubicacionIdStr); err == nil {
-					return ubicacion, nil
-				}
-				return nil, nil
-			}
-			if ubicacionId, err := strconv.Atoi(ubicacionIdStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(ubicacionId, ubicacionesBuffer, requestUbicacion, nil, nil); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						Ubicacion_ = v2
-					}
-				}
 			}
 
-			if Ubicacion_ != nil {
-				if jsonString2, err := json.Marshal(Ubicacion_["EspacioFisicoId"]); err == nil {
-					if err2 := json.Unmarshal(jsonString2, &data3_); err2 != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllSolicitudes",
-							"err":     err,
-							"status":  "500",
+			baja := models.DetalleBaja{
+				Id:                 solicitud.Id,
+				Consecutivo:        detalle.Consecutivo,
+				FechaCreacion:      solicitud.FechaCreacion.String(),
+				FechaRevisionA:     detalle.FechaRevisionA,
+				FechaRevisionC:     detalle.FechaRevisionC,
+				Funcionario:        Tercero_,
+				Revisor:            Revisor_,
+				TipoBaja:           solicitud.FormatoTipoMovimientoId.Id,
+				EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
 						}
-						return nil, outputError
+			listBajas = append(listBajas, &baja)
 					}
-				}
-			} else {
-				data3_ = map[string]interface{}{
-					"Nombre": "Ubicacion No Especificada",
-				}
-			}
-
-			fmt.Println(data3_)
-			Acta := map[string]interface{}{
-				"Ubicacion":         data3_["Nombre"],
-				"Activo":            solicitud["Activo"],
-				"FechaCreacion":     solicitud["FechaCreacion"],
-				"FechaVistoBueno":   data_["FechaVistoBueno"],
-				"FechaModificacion": solicitud["FechaModificacion"],
-				"Id":                solicitud["Id"],
-				"Observaciones":     solicitud["Observacion"],
-				"Funcionario":       Tercero_["NombreCompleto"],
-				"Revisor":           Revisor_["NombreCompleto"],
-				"Estado":            data2_["Nombre"],
-			}
-			historicoActa = append(historicoActa, Acta)
-		}
-		return historicoActa, nil
+		return listBajas, nil
 
 	} else {
 		logs.Error(err)
