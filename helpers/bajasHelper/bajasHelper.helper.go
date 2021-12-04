@@ -382,9 +382,9 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 
 	var (
 		elemento           []*models.DetalleElemento
-		elementoMovimiento []*models.ElementosMovimiento
+		elementoMovimiento *models.ElementosMovimiento
 		ubicacion          *models.DetalleSedeDependencia
-		funcionario        []*models.DetalleTercero
+		funcionario        *models.InfoTercero
 	)
 	Elemento = new(models.DetalleElementoBaja)
 
@@ -399,12 +399,14 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	query := "sortby=Id&order=desc&query=ElementoActaId:" + strconv.Itoa(id)
 	if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
+	} else if len(elementoMovimiento_) > 0 {
+		elementoMovimiento = elementoMovimiento_[0]
 	} else {
-		elementoMovimiento = elementoMovimiento_
+		return Elemento, nil
 	}
 
 	detalleJSON := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(elementoMovimiento[0].MovimientoId.Detalle), &detalleJSON); err != nil {
+	if err := json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON); err != nil {
 		panic(err.Error())
 	}
 
@@ -414,22 +416,21 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 		ubicacion = ubicacion_
 	}
 
-	if funcionario_, err := tercerosMidHelper.GetFuncionario(int(detalleJSON["funcionario"].(float64))); err != nil {
+	if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(int(detalleJSON["funcionario"].(float64))); err != nil {
 		return nil, err
 	} else {
 		funcionario = funcionario_
 	}
 
-	Elemento.Id = elementoMovimiento[0].Id
+	Elemento.Id = elementoMovimiento.Id
 	Elemento.Placa = elemento[0].Placa
 	Elemento.Nombre = elemento[0].Nombre
 	Elemento.Marca = elemento[0].Marca
 	Elemento.Serie = elemento[0].Serie
 	Elemento.SubgrupoCatalogoId = elemento[0].SubgrupoCatalogoId
-	Elemento.Salida = elementoMovimiento[0].MovimientoId
+	Elemento.Salida = elementoMovimiento.MovimientoId
 	Elemento.Ubicacion = ubicacion
-	Elemento.Funcionario = funcionario[0]
+	Elemento.Funcionario = funcionario
 
-	fmt.Println(elemento, elementoMovimiento)
 	return Elemento, nil
 }

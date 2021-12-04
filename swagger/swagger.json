@@ -175,13 +175,13 @@
                 "tags": [
                     "bajas_elementos"
                 ],
-                "description": "get Baja",
-                "operationId": "BajaController.Get All",
+                "description": "Get Info relacionada con el historial de un determinado elemento",
+                "operationId": "BajaController.GetElemento",
                 "parameters": [
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "movimientoId del traslado en el api movimientos_arka_crud",
+                        "description": "id del elemento en el api acta_recibido_crud",
                         "required": true,
                         "type": "integer",
                         "format": "int64"
@@ -191,7 +191,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Baja"
+                            "$ref": "#/definitions/models.DetalleElementoBaja"
                         }
                     },
                     "404": {

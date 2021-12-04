@@ -155,3 +155,8 @@ type DetalleFuncionario struct {
 	Correo  []*InfoComplementariaTercero
 	Cargo   []*Parametro
 }
+
+type InfoTercero struct {
+	Tercero        *Tercero
+	Identificacion *DatosIdentificacion
+}

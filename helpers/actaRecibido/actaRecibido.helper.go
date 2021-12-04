@@ -978,7 +978,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 	var (
 		urlcrud   string
 		elementos []models.Elemento
-		auxE      models.DetalleElemento
+		auxE      *models.DetalleElemento
 	)
 
 	subgrupos := make(map[int]interface{})
@@ -988,7 +988,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
 
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?limit=-1&query=Activo:True,"
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?sortby=Id&order=desc&limit=-1&query=Activo:True,"
 
 		if actaId > 0 {
 			urlcrud += "ActaRecibidoId__Id:" + strconv.Itoa(actaId)
@@ -1008,7 +1008,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 				subgrupoId = new(models.Subgrupo)
 				var tipoBienId *models.TipoBien
 				tipoBienId = new(models.TipoBien)
-
+				auxE = new(models.DetalleElemento)
 				subgrupo := *&models.DetalleSubgrupo{
 					SubgrupoId: subgrupoId,
 					TipoBienId: tipoBienId,
@@ -1072,7 +1072,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 				auxE.FechaCreacion = elemento.FechaCreacion
 				auxE.FechaModificacion = elemento.FechaModificacion
 
-				elementosActa = append(elementosActa, &auxE)
+				elementosActa = append(elementosActa, auxE)
 
 			}
 

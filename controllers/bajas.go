@@ -140,10 +140,10 @@ func (c *BajaController) GetAll() {
 }
 
 // GetDetalleElemento ...
-// @Title Get All
-// @Description get Baja
-// @Param	id	path	int	true	"movimientoId del traslado en el api movimientos_arka_crud"
-// @Success 200 {object} models.Baja
+// @Title GetElemento
+// @Description Get Info relacionada con el historial de un determinado elemento
+// @Param	id	path	int	true	"id del elemento en el api acta_recibido_crud"
+// @Success 200 {object} models.DetalleElementoBaja
 // @Failure 404 not found resource
 // @router /elemento/:id [get]
 func (c *BajaController) GetDetalleElemento() {
@@ -165,11 +165,11 @@ func (c *BajaController) GetDetalleElemento() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un traslado válido")
+			err = errors.New("Se debe especificar un elemento válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "GetTraslado - GetInt(\":id\")",
+			"funcion": "GetDetalleElemento - GetInt(\":id\")",
 			"err":     err,
 			"status":  "400",
 		})
