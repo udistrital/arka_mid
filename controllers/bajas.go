@@ -194,9 +194,9 @@ func (c *BajaController) GetElemento() {
 
 // Getsolicitud...
 // @Title Get User
-// @Description get Salida by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Salida
+// @Description consulta detalle de Baja
+// @Param	id	path 	string	true	"Id de la baja en el api movimientos_arka_Crud"
+// @Success 200 {object} models.TrBaja
 // @Failure 404 "not found resource"
 // @Failure 500 "Unknown API Error"
 // @Failure 502 "External API Error"

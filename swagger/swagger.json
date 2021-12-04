@@ -275,13 +275,13 @@
                 "tags": [
                     "bajas_elementos"
                 ],
-                "description": "get Salida by id",
+                "description": "consulta detalle de Baja",
                 "operationId": "BajaController.Get User",
                 "parameters": [
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "The key for staticblock",
+                        "description": "Id de la baja en el api movimientos_arka_Crud",
                         "required": true,
                         "type": "string"
                     }
@@ -290,7 +290,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Salida"
+                            "$ref": "#/definitions/models.TrBaja"
                         }
                     },
                     "404": {

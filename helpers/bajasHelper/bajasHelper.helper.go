@@ -239,7 +239,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 		urlcrud += url.QueryEscape(":Baja En Trámite")
 	} else {
 		urlcrud += "__startswith:Baja"
-			}
+	}
 
 	if _, err := request.GetJsonTest(urlcrud, &Solicitudes); err == nil {
 
@@ -291,9 +291,9 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 					if v2, ok := v.(map[string]interface{}); ok {
 						if v2["NombreCompleto"] != nil {
 							Revisor_ = v2["NombreCompleto"].(string)
+						}
 					}
 				}
-			}
 			}
 
 			baja := models.DetalleBaja{
@@ -306,9 +306,9 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 				Revisor:            Revisor_,
 				TipoBaja:           solicitud.FormatoTipoMovimientoId.Id,
 				EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
-						}
+			}
 			listBajas = append(listBajas, &baja)
-					}
+		}
 		return listBajas, nil
 
 	} else {
@@ -322,7 +322,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 	}
 }
 
-func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
+func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -335,90 +335,71 @@ func TraerDetalle(id int) (Solicitud map[string]interface{}, outputError map[str
 		}
 	}()
 
-	var Elementos__ []map[string]interface{}
+	var (
+		movimiento *models.Movimiento
+		detalle    models.FormatoBaja
+	)
+	Baja = new(models.TrBaja)
 
-	var data map[string]interface{}
-
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + fmt.Sprintf("%v", id)
-
-	if _, err := request.GetJsonTest(urlcrud, &data); err == nil {
-
-		if data_, err := utilsHelper.ConvertirStringJson(data["Detalle"]); err == nil {
-
-			if detalleUbicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(data_["Ubicacion"].(float64))); err == nil {
-				if Funcionario, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Funcionario"])); err == nil {
-					if Revisor, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data_["Revisor"])); err == nil {
-						if Elementos, err := utilsHelper.ConvertirInterfaceArrayMap(data_["Elementos"]); err == nil {
-							for _, elemento := range Elementos {
-								id_, _ := strconv.Atoi(fmt.Sprintf("%v", elemento["Id"]))
-
-								if Elemento_, err := TraerDatosElemento(id_); err == nil {
-
-									Elemento_["Observaciones"] = elemento["Observaciones"]
-									Elemento_["Soporte"] = elemento["Soporte"]
-									Elemento_["TipoBaja"] = elemento["TipoBaja"]
-									Elementos__ = append(Elementos__, Elemento_)
-								}
-
-							}
-							Solicitud = map[string]interface{}{
-								"Id":                data["Id"],
-								"Sede":              detalleUbicacion.Sede,
-								"Dependencia":       detalleUbicacion.Dependencia,
-								"Ubicacion":         detalleUbicacion.Ubicacion,
-								"Funcionario":       Funcionario,
-								"Revisor":           Revisor,
-								"FechaCreacion":     data["FechaCreacion"],
-								"FechaModificacion": data["FechaModificacion"],
-								"FechaVistoBueno":   data_["FechaVistoBueno"],
-								"Estado":            data["FechaCreacion"],
-								"Activo":            data["FechaCreacion"],
-								"Elementos":         Elementos__,
-							}
-							return Solicitud, nil
-
-						} else {
-							logs.Error(err)
-							outputError = map[string]interface{}{
-								"funcion": "/TraerDetalle",
-								"err":     err,
-								"status":  "500",
-							}
-							return nil, outputError
-						}
-					} else {
-						return nil, err
-					}
-				} else {
-					return nil, err
-				}
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/TraerDetalle",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
-			}
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "/TraerDetalle",
-				"err":     err,
-				"status":  "500",
-			}
-			return nil, outputError
-		}
+	// Se consulta el movimiento
+	if movimientoA, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+		return nil, err
 	} else {
+		movimiento = movimientoA
+	}
+
+	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "/TraerDetalle",
+			"funcion": "TraerDetalle - json.Unmarshal([]byte(movimiento.Detalle), &detalle)",
 			"err":     err,
 			"status":  "502",
 		}
 		return nil, outputError
 	}
+
+	// Se consulta el detalle del funcionario solicitante
+	if detalle.Funcionario > 0 {
+		if funcionario, err := tercerosMidHelper.GetInfoTerceroById(detalle.Funcionario); err != nil {
+			return nil, err
+		} else {
+			Baja.Funcionario = funcionario
+		}
+	}
+
+	// Se consulta el detalle del revisor si lo hay
+	if detalle.Revisor > 0 {
+		if revisor, err := tercerosMidHelper.GetInfoTerceroById(detalle.Revisor); err != nil {
+			return nil, err
+		} else {
+			Baja.Revisor = revisor
+		}
+	}
+
+	// Se consulta el detalle de los elementos relacionados en la solicitud
+	if len(detalle.Elementos) > 0 {
+		if elementos, err := GetDetalleElementos(detalle.Elementos); err != nil {
+			return nil, err
+		} else {
+			Baja.Elementos = elementos
+		}
+	}
+
+	// Se consulta el detalle de los elementos relacionados en la solicitud
+	query := "query=MovimientoId__Id:" + strconv.Itoa(id)
+	if soportes, err := movimientosArkaHelper.GetAllSoporteMovimiento(query); err != nil {
+		return nil, err
+	} else if len(soportes) > 0 {
+		Baja.Soporte = soportes[0].DocumentoId
+	}
+
+	Baja.Id = movimiento.Id
+	Baja.TipoBaja = movimiento.FormatoTipoMovimientoId
+	Baja.Consecutivo = detalle.Consecutivo
+	Baja.Observaciones = movimiento.Observacion
+
+	return Baja, nil
+
 }
 
 func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputError map[string]interface{}) {
@@ -483,4 +464,87 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	Elemento.Funcionario = funcionario
 
 	return Elemento, nil
+}
+
+func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetDetalleElementos", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
+
+	var (
+		elementosActa       []*models.DetalleElemento
+		elementosMovimiento []*models.ElementosMovimiento
+	)
+	Elementos = make([]*models.DetalleElementoBaja, 0)
+
+	// Consulta asignación de los elementos
+	query := "sortby=ElementoActaId&order=desc&limit=-1&query=Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+	if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		elementosMovimiento = elementoMovimiento_
+	}
+
+	ids = []int{}
+	for _, el := range elementosMovimiento {
+		ids = append(ids, el.ElementoActaId)
+	}
+
+	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
+	if elemento_, err := actaRecibido.GetElementos(0, ids); err != nil {
+		return nil, err
+	} else {
+		elementosActa = elemento_
+	}
+
+	if len(elementosActa) == len(elementosMovimiento) {
+
+		for i := 0; i < len(elementosActa); i++ {
+			var (
+				ubicacion   *models.DetalleSedeDependencia
+				funcionario *models.InfoTercero
+			)
+			elemento := new(models.DetalleElementoBaja)
+
+			detalleJSON := map[string]interface{}{}
+			if err := json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON); err != nil {
+				panic(err.Error())
+			}
+
+			if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {
+				return nil, err
+			} else {
+				ubicacion = ubicacion_
+			}
+
+			if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(int(detalleJSON["funcionario"].(float64))); err != nil {
+				return nil, err
+			} else {
+				funcionario = funcionario_
+			}
+
+			elemento.Id = elementosMovimiento[i].Id
+			elemento.Placa = elementosActa[i].Placa
+			elemento.Nombre = elementosActa[i].Nombre
+			elemento.Marca = elementosActa[i].Marca
+			elemento.Serie = elementosActa[i].Serie
+			elemento.SubgrupoCatalogoId = elementosActa[i].SubgrupoCatalogoId
+			elemento.Salida = elementosMovimiento[i].MovimientoId
+			elemento.Ubicacion = ubicacion
+			elemento.Funcionario = funcionario
+
+			Elementos = append(Elementos, elemento)
+		}
+	}
+
+	return Elementos, nil
+}
+
+func getTipoComprobanteBajas() string {
+	return "B"
 }
