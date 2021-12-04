@@ -136,6 +136,28 @@ paths:
           description: the request contains incorrect syntax
         "403":
           description: body is empty
+  /bajas_elementos/{id}:
+    put:
+      tags:
+      - bajas_elementos
+      description: Update Baja. Actualiza los detalles de la baja y el documento
+      operationId: BajaController.Put
+      parameters:
+      - in: path
+        name: id
+        description: movimientoId de la baja en el api movimientos_arka_crud
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.TrSoporteMovimiento'
+        "400":
+          description: the request contains incorrect syntax
+        "403":
+          description: body is empty
   /bajas_elementos/elemento/{id}:
     get:
       tags:

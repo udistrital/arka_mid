@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-
-	// "strings"
-	// "reflect"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -22,6 +20,63 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
+
+// RegistrarBaja Crea registro de baja
+func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "RegistrarBaja - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	var movimiento *models.Movimiento
+
+	detalleJSON := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON); err != nil {
+		panic(err.Error())
+	}
+
+	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
+	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Baja Arka"); err != nil {
+		return nil, err
+	} else {
+		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteBajas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		detalleJSON["consecutivo"] = consecutivo
+	}
+
+	if jsonData, err := json.Marshal(detalleJSON); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "RegistrarBaja - json.Marshal(detalleJSON)",
+			"err":     err,
+			"status":  "500",
+		}
+		return nil, outputError
+	} else {
+		baja.Movimiento.Detalle = string(jsonData[:])
+	}
+
+	// Crea registro en api movimientos_arka_crud
+	if movimiento_, err := movimientosArkaHelper.PostMovimiento(baja.Movimiento); err != nil {
+		return nil, err
+	} else {
+		movimiento = movimiento_
+	}
+
+	// Crea registro en table soporte_movimiento si es necesario
+	baja.Soporte.MovimientoId = movimiento
+	if _, err := movimientosArkaHelper.PostSoporteMovimiento(baja.Soporte); err != nil {
+		return nil, err
+	}
+
+	return movimiento, nil
+}
 
 // ActualizarBaja Actualiza información de baja
 func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models.Movimiento, outputError map[string]interface{}) {

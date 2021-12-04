@@ -22,10 +22,62 @@ type BajaController struct {
 // URLMapping ...
 func (c *BajaController) URLMapping() {
 	c.Mapping("Get", c.GetElemento)
+	c.Mapping("Post", c.Post)
 	c.Mapping("Put", c.Put)
 	c.Mapping("GetElemento", c.GetDetalleElemento)
 }
 
+// Post ...
+// @Title Post
+// @Description Registrar Baja. Crea el registro del soporte y crea el consecutivo
+// @Param	body			 body 	models.Movimiento	false	"Informacion de la baja"
+// @Success 201 {object} models.TrSoporteMovimiento
+// @Failure 403 body is empty
+// @Failure 400 the request contains incorrect syntax
+// @router / [post]
+func (c *BajaController) Post() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	var v *models.TrSoporteMovimiento
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if respuesta, err := bajasHelper.RegistrarBaja(v); err == nil && respuesta != nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = respuesta
+		} else {
+			if err != nil {
+				panic(err)
+			}
+
+			panic(map[string]interface{}{
+				"funcion": "Post - bajasHelper.RegistrarBaja(v)",
+				"err":     errors.New("No se obtuvo respuesta al registrar la baja"),
+				"status":  "404",
+			})
+		}
+	} else {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	c.ServeJSON()
+}
 
 // Put ...
 // @Title Put
