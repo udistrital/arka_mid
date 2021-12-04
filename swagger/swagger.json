@@ -170,6 +170,39 @@
                 }
             }
         },
+        "/bajas_elementos/": {
+            "post": {
+                "tags": [
+                    "bajas_elementos"
+                ],
+                "description": "Registrar Baja. Crea el registro del soporte y crea el consecutivo",
+                "operationId": "BajaController.Post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Informacion de la baja",
+                        "schema": {
+                            "$ref": "#/definitions/models.Movimiento"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.TrSoporteMovimiento"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
         "/bajas_elementos/elemento/{id}": {
             "get": {
                 "tags": [
@@ -1308,6 +1341,76 @@
                 }
             }
         },
+        "models.DetalleBaja": {
+            "title": "DetalleBaja",
+            "type": "object",
+            "properties": {
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "EstadoMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string"
+                },
+                "FechaRevisionA": {
+                    "type": "string"
+                },
+                "FechaRevisionC": {
+                    "type": "string"
+                },
+                "Funcionario": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Revisor": {
+                    "type": "string"
+                },
+                "TipoBaja": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.DetalleElementoBaja": {
+            "title": "DetalleElementoBaja",
+            "type": "object",
+            "properties": {
+                "Funcionario": {
+                    "$ref": "#/definitions/models.InfoTercero"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Placa": {
+                    "type": "string"
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SubgrupoCatalogoId": {
+                    "$ref": "#/definitions/models.DetalleSubgrupo"
+                },
+                "Ubicacion": {
+                    "$ref": "#/definitions/models.DetalleSedeDependencia"
+                }
+            }
+        },
         "models.DetalleElementoPlaca": {
             "title": "DetalleElementoPlaca",
             "type": "object",
@@ -1367,6 +1470,34 @@
                 },
                 "Ubicacion": {
                     "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
+                }
+            }
+        },
+        "models.DetalleSubgrupo": {
+            "title": "DetalleSubgrupo",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Depreciacion": {
+                    "type": "boolean"
+                },
+                "Deterioro": {
+                    "type": "boolean"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "SubgrupoId": {
+                    "$ref": "#/definitions/models.Subgrupo"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
+                },
+                "Valorizacion": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1793,6 +1924,18 @@
                 }
             }
         },
+        "models.InfoTercero": {
+            "title": "InfoTercero",
+            "type": "object",
+            "properties": {
+                "Identificacion": {
+                    "$ref": "#/definitions/models.DatosIdentificacion"
+                },
+                "Tercero": {
+                    "$ref": "#/definitions/models.Tercero"
+                }
+            }
+        },
         "models.Movimiento": {
             "title": "Movimiento",
             "type": "object",
@@ -1897,6 +2040,34 @@
                     "items": {
                         "$ref": "#/definitions/models.TrSalida"
                     }
+                }
+            }
+        },
+        "models.SoporteMovimiento": {
+            "title": "SoporteMovimiento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "DocumentoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.Movimiento"
                 }
             }
         },
@@ -2029,6 +2200,41 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TipoBien": {
+            "title": "TipoBien",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NecesitaPlaca": {
+                    "type": "boolean"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Orden": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Reglas": {
+                    "type": "string"
+                },
+                "Tipo_bien_padre": {
+                    "$ref": "#/definitions/models.TipoBien"
                 }
             }
         },
@@ -2239,6 +2445,41 @@
                 }
             }
         },
+        "models.TrBaja": {
+            "title": "TrBaja",
+            "type": "object",
+            "properties": {
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DetalleElementoBaja"
+                    }
+                },
+                "Funcionario": {
+                    "$ref": "#/definitions/models.InfoTercero"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observaciones": {
+                    "type": "string"
+                },
+                "Revisor": {
+                    "$ref": "#/definitions/models.InfoTercero"
+                },
+                "Soporte": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoBaja": {
+                    "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                }
+            }
+        },
         "models.TrSalida": {
             "title": "TrSalida",
             "type": "object",
@@ -2257,6 +2498,18 @@
         "models.TrSalida2": {
             "title": "TrSalida2",
             "type": "object"
+        },
+        "models.TrSoporteMovimiento": {
+            "title": "TrSoporteMovimiento",
+            "type": "object",
+            "properties": {
+                "Movimiento": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Soporte": {
+                    "$ref": "#/definitions/models.SoporteMovimiento"
+                }
+            }
         },
         "models.TrTraslado": {
             "title": "TrTraslado",
@@ -2329,7 +2582,7 @@
         },
         {
             "name": "bajas_elementos",
-            "description": "BajaController operations for Salida\n"
+            "description": "BajaController\n"
         }
     ]
 }

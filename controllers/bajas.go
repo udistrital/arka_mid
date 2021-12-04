@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	// "encoding/json"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -10,10 +10,11 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/bajasHelper"
+	"github.com/udistrital/arka_mid/models"
 	// "github.com/udistrital/arka_mid/models"
 )
 
-// BajaController operations for Salida
+// BajaController
 type BajaController struct {
 	beego.Controller
 }
@@ -21,7 +22,76 @@ type BajaController struct {
 // URLMapping ...
 func (c *BajaController) URLMapping() {
 	c.Mapping("Get", c.GetElemento)
+	c.Mapping("Put", c.Put)
 	c.Mapping("GetElemento", c.GetDetalleElemento)
+}
+
+
+// Put ...
+// @Title Put
+// @Description Update Baja. Actualiza los detalles de la baja y el documento
+// @Param	id	path	int	true	"movimientoId de la baja en el api movimientos_arka_crud"
+// @Success 201 {object} models.TrSoporteMovimiento
+// @Failure 403 body is empty
+// @Failure 400 the request contains incorrect syntax
+// @router /:id [put]
+func (c *BajaController) Put() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("500") // Error no manejado!
+			}
+		}
+	}()
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar una baja válida")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Put - GetInt(\":id\")",
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	var v *models.TrSoporteMovimiento
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if respuesta, err := bajasHelper.ActualizarBaja(v, id); err == nil && respuesta != nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = respuesta
+		} else {
+			if err != nil {
+				panic(err)
+			}
+
+			panic(map[string]interface{}{
+				"funcion": "Put - bajasHelper.ActualizarBaja(v, id)",
+				"err":     errors.New("No se obtuvo respuesta al actualizar la baja"),
+				"status":  "404",
+			})
+		}
+	} else {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	c.ServeJSON()
 }
 
 // GetElemento ...

@@ -23,6 +23,48 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+// ActualizarBaja Actualiza información de baja
+func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models.Movimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "ActualizarBaja - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	var (
+		movimiento *models.Movimiento
+		soporte    *models.SoporteMovimiento
+	)
+
+	// Actualiza registro en api movimientos_arka_crud
+	if movimiento_, err := movimientosArkaHelper.PutMovimiento(baja.Movimiento, bajaId); err != nil {
+		return nil, err
+	} else {
+		movimiento = movimiento_
+	}
+
+	// Actualiza el documento soporte en la tabla soporte_movimiento
+	query := "query=MovimientoId__Id:" + strconv.Itoa(bajaId)
+	if soporte_, err := movimientosArkaHelper.GetAllSoporteMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		soporte = soporte_[0]
+		soporte.DocumentoId = baja.Soporte.DocumentoId
+	}
+
+	if _, err := movimientosArkaHelper.PutSoporteMovimiento(soporte, soporte.Id); err != nil {
+		return nil, err
+	}
+
+	return movimiento, nil
+}
+
 func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
