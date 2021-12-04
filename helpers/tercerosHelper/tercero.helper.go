@@ -202,3 +202,29 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 	}
 
 }
+
+func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{
+				"funcion": "GetTerceroById - Unhandled Error!",
+				"err":     err,
+				"status":  "500",
+			}
+			panic(outputError)
+		}
+	}()
+
+	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &tercero); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetTerceroById - request.GetJson(urlcrud, &tercero)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	return tercero, nil
+}

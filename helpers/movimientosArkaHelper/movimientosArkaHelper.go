@@ -2,7 +2,6 @@ package movimientosArkaHelper
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -43,7 +42,7 @@ func GetAllEstadoMovimiento(nombre string) (estado []*models.EstadoMovimiento, o
 	return resEstadoMovimiento, nil
 }
 
-func GetAllElementosMovimiento(query string) (estado []*models.ElementosMovimiento, outputError map[string]interface{}) {
+func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovimiento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -52,28 +51,39 @@ func GetAllElementosMovimiento(query string) (estado []*models.ElementosMovimien
 		}
 	}()
 
-	var (
-		resMovimiento []*models.ElementosMovimiento
-		urlcrud       string
-	)
-
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?" + query
-	fmt.Println(urlcrud)
-	if err := request.GetJson(urlcrud, &resMovimiento); err != nil || len(resMovimiento) == 0 {
-		status := "502"
-		if err == nil {
-			err = errors.New("len(resMovimiento) == 0")
-			status = "404"
-		}
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?" + query
+	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetAllElementosMovimiento - request.GetJson(urlcrud, &resMovimiento)",
+			"funcion": "GetAllElementosMovimiento - request.GetJson(urlcrud, &elementos)",
 			"err":     err,
-			"status":  status,
+			"status":  "502",
 		}
 		return nil, outputError
 	}
-	return resMovimiento, nil
+	return elementos, nil
+}
+
+func GetAllSoporteMovimiento(query string) (soportes []*models.SoporteMovimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetAllSoporteMovimiento", "err": err, "status": "502"}
+			panic(outputError)
+		}
+	}()
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento?" + query
+	if err := request.GetJson(urlcrud, &soportes); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllSoporteMovimiento - request.GetJson(urlcrud, &soportes)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	return soportes, nil
 }
 
 func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
@@ -128,6 +138,29 @@ func PostMovimiento(movimiento *models.Movimiento) (movimientoR *models.Movimien
 	return res, nil
 }
 
+func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (soporteR *models.SoporteMovimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/PostSoporteMovimiento", "err": err, "status": "500"}
+			panic(outputError)
+		}
+	}()
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento"
+	if err := request.SendJson(urlcrud, "POST", &soporteR, &soporte); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "PostSoporteMovimiento - request.SendJson(urlcrud, \"POST\", &soporteR, &soporte)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	return soporteR, nil
+}
+
 func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGeneral, outputError map[string]interface{}) {
 
 	defer func() {
@@ -173,5 +206,29 @@ func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (movimientoR
 	}
 
 	return movimientoRes, nil
+
+}
+
+func PutSoporteMovimiento(soporte *models.SoporteMovimiento, soporteId int) (soporteR *models.SoporteMovimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/PutSoporteMovimiento", "err": err, "status": "500"}
+			panic(outputError)
+		}
+	}()
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento/" + strconv.Itoa(soporteId)
+	if err := request.SendJson(urlcrud, "PUT", &soporteR, &soporte); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "PutSoporteMovimiento - request.SendJson(urlcrud, \"PUT\", &soporteR, &soporte)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	return soporteR, nil
 
 }

@@ -40,3 +40,34 @@ func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionari
 
 	return DetalleFuncionario, nil
 }
+
+// GetInfoTerceroById Consulta El nombre y  número de identificación de cualquier tercero
+func GetInfoTerceroById(id int) (InfoTercero *models.InfoTercero, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetInfoTerceroById", "err": err, "status": "500"}
+			panic(outputError)
+		}
+	}()
+
+	InfoTercero = new(models.InfoTercero)
+
+	// Consulta nombre
+	if tercero_, err := tercerosHelper.GetTerceroById(id); err != nil {
+		return nil, err
+	} else {
+		InfoTercero.Tercero = tercero_
+	}
+
+	// Consulta documento
+	if documento_, err := GetDocumentoTercero(id); err != nil {
+		return nil, err
+	} else {
+		if documento_ != nil && len(documento_) > 0 {
+			InfoTercero.Identificacion = documento_[0]
+		}
+	}
+
+	return InfoTercero, nil
+}
