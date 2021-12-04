@@ -46,7 +46,7 @@ func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovim
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetAllElementosMovimiento", "err": err, "status": "502"}
+			outputError = map[string]interface{}{"funcion": "/GetAllElementosMovimiento", "err": err, "status": "500"}
 			panic(outputError)
 		}
 	}()
@@ -68,7 +68,7 @@ func GetAllSoporteMovimiento(query string) (soportes []*models.SoporteMovimiento
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetAllSoporteMovimiento", "err": err, "status": "502"}
+			outputError = map[string]interface{}{"funcion": "/GetAllSoporteMovimiento", "err": err, "status": "500"}
 			panic(outputError)
 		}
 	}()
@@ -84,6 +84,28 @@ func GetAllSoporteMovimiento(query string) (soportes []*models.SoporteMovimiento
 		return nil, outputError
 	}
 	return soportes, nil
+}
+
+func GetAllMovimiento(query string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			outputError = map[string]interface{}{"funcion": "/GetAllMovimiento", "err": err, "status": "500"}
+			panic(outputError)
+		}
+	}()
+
+	urlcrud := "http://" + beego.AppConfig.String("GetAllMovimiento") + "movimiento?" + query
+	if err := request.GetJson(urlcrud, &movimientos); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetAllMovimiento - request.GetJson(urlcrud, &movimientos)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+	return movimientos, nil
 }
 
 func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {

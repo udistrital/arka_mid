@@ -228,10 +228,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 		}
 	}()
 
-	var Solicitudes []*models.Movimiento
-
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1&sortby=Id&order=desc" //movimiento?query=FormatotipoMovimientoId.CodigoAbreviacion__istartswith:BJ_,Activo:true&limit=-1"
-	urlcrud += "&query=Activo:true,EstadoMovimientoId__Nombre"
+	urlcrud := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
 
 	if revComite {
 		urlcrud += url.QueryEscape(":Baja En Comité")
@@ -241,7 +238,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 		urlcrud += "__startswith:Baja"
 	}
 
-	if _, err := request.GetJsonTest(urlcrud, &Solicitudes); err == nil {
+	if Solicitudes, err := movimientosArkaHelper.GetAllMovimiento(urlcrud); err == nil {
 
 		if len(Solicitudes) == 0 {
 			return nil, nil
@@ -406,7 +403,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetDetalleElemento", "err": err, "status": "502"}
+			outputError = map[string]interface{}{"funcion": "/GetDetalleElemento - Unhandled Error!", "err": err, "status": "500"}
 			panic(outputError)
 		}
 	}()

@@ -976,9 +976,8 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 	}()
 
 	var (
-		urlcrud   string
-		elementos []models.Elemento
-		auxE      *models.DetalleElemento
+		urlcrud string
+		auxE    *models.DetalleElemento
 	)
 
 	subgrupos := make(map[int]interface{})
@@ -988,15 +987,16 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
 
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?sortby=Id&order=desc&limit=-1&query=Activo:True,"
-
+		urlcrud = "sortby=Id&order=desc&limit=-1&query=Activo:True,"
 		if actaId > 0 {
 			urlcrud += "ActaRecibidoId__Id:" + strconv.Itoa(actaId)
 		} else {
 			urlcrud += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
 		}
 
-		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
+		if elementos, err := GetAllElemento(urlcrud); err != nil {
+			return nil, err
+		} else {
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
 				return nil, nil
@@ -1078,17 +1078,6 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 
 			logs.Info("consultasSubgrupos:", consultasSubgrupos, " - Evitadas: ", evSubgrupos)
 			return elementosActa, nil
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired State: %d", response.StatusCode)
-			}
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetElementos - request.GetJsonTest(urlcrud, &elementos)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
 		}
 	} else {
 		err := errors.New("ID must be greater than 0")
