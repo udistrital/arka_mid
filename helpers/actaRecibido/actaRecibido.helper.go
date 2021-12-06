@@ -962,7 +962,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 }
 
 // GetElementos ...
-func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputError map[string]interface{}) {
+func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElemento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -976,20 +976,27 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 	}()
 
 	var (
-		urlcrud   string
-		elementos []models.Elemento
-		auxE      models.DetalleElemento
+		urlcrud string
+		auxE    *models.DetalleElemento
 	)
 
 	subgrupos := make(map[int]interface{})
 	consultasSubgrupos := 0
 	evSubgrupos := 0
 
-	if actaId > 0 { // (1) error parametro
+	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
-		urlcrud += "&limit=-1"
-		if response, err := request.GetJsonTest(urlcrud, &elementos); err == nil && response.StatusCode == 200 {
+
+		urlcrud = "sortby=Id&order=desc&limit=-1&query=Activo:True,"
+		if actaId > 0 {
+			urlcrud += "ActaRecibidoId__Id:" + strconv.Itoa(actaId)
+		} else {
+			urlcrud += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+		}
+
+		if elementos, err := GetAllElemento(urlcrud); err != nil {
+			return nil, err
+		} else {
 
 			if len(elementos) == 0 || elementos[0].Id == 0 {
 				return nil, nil
@@ -1001,7 +1008,7 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 				subgrupoId = new(models.Subgrupo)
 				var tipoBienId *models.TipoBien
 				tipoBienId = new(models.TipoBien)
-
+				auxE = new(models.DetalleElemento)
 				subgrupo := *&models.DetalleSubgrupo{
 					SubgrupoId: subgrupoId,
 					TipoBienId: tipoBienId,
@@ -1071,17 +1078,6 @@ func GetElementos(actaId int) (elementosActa []models.DetalleElemento, outputErr
 
 			logs.Info("consultasSubgrupos:", consultasSubgrupos, " - Evitadas: ", evSubgrupos)
 			return elementosActa, nil
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired State: %d", response.StatusCode)
-			}
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetElementos - request.GetJsonTest(urlcrud, &elementos)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
 		}
 	} else {
 		err := errors.New("ID must be greater than 0")

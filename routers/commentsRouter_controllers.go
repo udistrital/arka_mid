@@ -54,7 +54,43 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
         beego.ControllerComments{
+            Method: "Post",
+            Router: "/",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
+        beego.ControllerComments{
+            Method: "Put",
+            Router: "/:id",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
+        beego.ControllerComments{
+            Method: "PutRevision",
+            Router: "/aprobar",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
+        beego.ControllerComments{
             Method: "GetElemento",
+            Router: "/elemento/:id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
+        beego.ControllerComments{
+            Method: "GetDetalleElemento",
             Router: "/elemento/:id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),

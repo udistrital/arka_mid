@@ -97,7 +97,7 @@ func TestGetAsignacionSedeDependencia(t *testing.T) {
 // TestGetElementos ...
 func TestGetElementos(t *testing.T) {
 	id := 14
-	valor, err := actaRecibido.GetElementos(id)
+	valor, err := actaRecibido.GetElementos(id, nil)
 	if err != nil {
 		t.Error("No se pudo consultar los elementos del acta de recibido", err)
 		t.Fail()

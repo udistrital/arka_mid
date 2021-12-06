@@ -59,6 +59,11 @@ type SoporteMovimiento struct {
 	MovimientoId      *Movimiento
 }
 
+type TrSoporteMovimiento struct {
+	Movimiento *Movimiento
+	Soporte    *SoporteMovimiento
+}
+
 type TrSalida struct {
 	Salida    *Movimiento
 	Elementos []*ElementosMovimiento
@@ -93,4 +98,54 @@ type TrTraslado struct {
 	FuncionarioOrigen  *DetalleFuncionario
 	FuncionarioDestino *DetalleFuncionario
 	Ubicacion          *DetalleSedeDependencia
+}
+
+type FormatoBaja struct {
+	Consecutivo    string
+	Elementos      []int
+	FechaRevisionA string
+	FechaRevisionC string
+	Funcionario    int
+	Revisor        int
+}
+
+type DetalleBaja struct {
+	Id                 int
+	Consecutivo        string
+	FechaCreacion      string
+	FechaRevisionA     string
+	FechaRevisionC     string
+	Funcionario        string
+	Revisor            string
+	TipoBaja           string
+	EstadoMovimientoId int
+}
+
+type TrBaja struct {
+	Id            int
+	Soporte       int
+	Funcionario   *InfoTercero
+	Revisor       *InfoTercero
+	TipoBaja      *FormatoTipoMovimiento
+	Elementos     []*DetalleElementoBaja
+	Observaciones string
+	Consecutivo   string
+}
+
+type DetalleElementoBaja struct {
+	Id                 int
+	Placa              string
+	Nombre             string
+	Marca              string
+	Serie              string
+	SubgrupoCatalogoId *DetalleSubgrupo
+	Salida             *Movimiento
+	Ubicacion          *DetalleSedeDependencia
+	Funcionario        *InfoTercero
+}
+
+type TrRevisionBaja struct {
+	Bajas         []int
+	Aprobacion    bool
+	Observaciones string
 }

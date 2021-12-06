@@ -1,0 +1,25 @@
+package catalogoElementosHelper
+
+import (
+	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/utils_oas/request"
+)
+
+// GetAllCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
+func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, outputError map[string]interface{}) {
+
+	funcion := "GetAllCuentasSubgrupo"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?" + query
+	if err := request.GetJson(urlcrud, &elementos); err != nil {
+		logs.Error(err)
+		eval := " - request.GetJson(urlcrud, &elementos)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return elementos, nil
+}

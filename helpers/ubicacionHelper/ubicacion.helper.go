@@ -76,7 +76,7 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 	}
 
 	resultado.Dependencia = ubicacion[0].DependenciaId
-	resultado.Ubicacion = ubicacionId
+	resultado.Ubicacion = ubicacion[0]
 
 	if espFisico, err := utilsHelper.ConvertirInterfaceMap(ubicacion[0].EspacioFisicoId); err != nil {
 		return nil, err

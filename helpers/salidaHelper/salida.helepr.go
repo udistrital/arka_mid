@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -589,25 +590,22 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 			panic(outputError)
 		}
 	}()
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?limit=-1"
-	urlcrud += "&query=Activo:true,EstadoMovimientoId__Nombre"
 
+	query := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
 	if tramiteOnly {
-		urlcrud += ":Salida%20En%20Trámite"
+		query += url.QueryEscape(":Salida En Trámite")
 	} else {
-		urlcrud += "__startswith:Salida"
+		query += url.QueryEscape("__startswith:Salida")
 	}
 
-	var salidas_ []map[string]interface{}
-	if resp, err := request.GetJsonTest(urlcrud, &salidas_); err == nil && resp.StatusCode == 200 {
-		logs.Info(fmt.Sprintf("#Salidas %d:  %v", len(salidas_), salidas_))
-
-		if len(salidas_) == 0 || len(salidas_[0]) == 0 {
+	if salidas_, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		if len(salidas_) == 0 {
 			return nil, nil
 		}
 
 		for _, salida := range salidas_ {
-			// fmt.Println("Salidas: ", salida)
 			if salida__, err := TraerDetalle(salida); err == nil {
 				Salidas = append(Salidas, salida__)
 			} else {
@@ -620,20 +618,8 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 				return nil, err
 			}
 		}
-		return Salidas, nil
-
-	} else {
-		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetSalidas - request.GetJsonTest(urlcrud, &salidas_)",
-			"err":     err,
-			"status":  "502", // (2) error servicio caido
-		}
-		return nil, outputError
 	}
+	return Salidas, nil
 }
 
 func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputError map[string]interface{}) {
