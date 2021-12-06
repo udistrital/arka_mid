@@ -39,46 +39,26 @@ func (c *BajaController) URLMapping() {
 // @router / [post]
 func (c *BajaController) Post() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
 
 	var v *models.TrSoporteMovimiento
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		panic(errorctrl.Error("Post", "json.Unmarshal(c.Ctx.Input.RequestBody, &v)", "400"))
+	} else {
 		if respuesta, err := bajasHelper.RegistrarBaja(v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
+			c.ServeJSON()
 		} else {
 			if err != nil {
 				panic(err)
 			}
 
-			panic(map[string]interface{}{
-				"funcion": "Post - bajasHelper.RegistrarBaja(v)",
-				"err":     errors.New("No se obtuvo respuesta al registrar la baja"),
-				"status":  "404",
-			})
+			panic(errorctrl.Error("Post", "No se obtuvo respuesta al registrar la baja", "404"))
 		}
-	} else {
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-			"err":     err,
-			"status":  "400",
-		})
+
 	}
 
-	c.ServeJSON()
 }
 
 // Put ...
@@ -91,61 +71,35 @@ func (c *BajaController) Post() {
 // @router /:id [put]
 func (c *BajaController) Put() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("Se debe especificar una baja válida")
 		}
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "Put - GetInt(\":id\")",
-			"err":     err,
-			"status":  "400",
-		})
+		panic(errorctrl.Error("Put", "c.GetInt(\":id\")", "400"))
 	} else {
 		id = v
 	}
 
 	var v *models.TrSoporteMovimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		panic(errorctrl.Error("Put", "json.Unmarshal(c.Ctx.Input.RequestBody, &v)", "400"))
+	} else {
 		if respuesta, err := bajasHelper.ActualizarBaja(v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
+			c.ServeJSON()
 		} else {
 			if err != nil {
 				panic(err)
 			}
 
-			panic(map[string]interface{}{
-				"funcion": "Put - bajasHelper.ActualizarBaja(v, id)",
-				"err":     errors.New("No se obtuvo respuesta al actualizar la baja"),
-				"status":  "404",
-			})
+			panic(errorctrl.Error("Put", "No se obtuvo respuesta al actualizar la baja", "404"))
 		}
-	} else {
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-			"err":     err,
-			"status":  "400",
-		})
 	}
 
-	c.ServeJSON()
 }
 
 // GetElemento ...
@@ -256,28 +210,18 @@ func (c *BajaController) GetAll() {
 		}
 	}()
 
-	revComite := false
-	revAlmacen := false
-	if v, err := c.GetBool("revComite"); err != nil {
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetAll - GetBool(\"revComite\")",
-			"err":     err,
-			"status":  "400",
-		})
-	} else if v == false {
-		if v, err := c.GetBool("revAlmacen"); err != nil {
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "GetAll - GetBool(\"revAlmacen\")",
-				"err":     err,
-				"status":  "400",
-			})
-		} else {
-			revAlmacen = v
-		}
+	var revComite bool
+	var revAlmacen bool
+	if v, err := c.GetBool("revComite", false); err != nil {
+		panic(errorctrl.Error("GetAll", "c.GetBool(\"revComite\", false)", "400"))
 	} else {
 		revComite = v
+	}
+
+	if v, err := c.GetBool("revAlmacen"); err != nil {
+		panic(errorctrl.Error("GetAll", "c.GetBool(\"revAlmacen\", false)", "400"))
+	} else {
+		revAlmacen = v
 	}
 
 	if v, err := bajasHelper.GetAllSolicitudes(revComite, revAlmacen); err == nil {

@@ -32,22 +32,15 @@ type InfoCuentasSubgrupos struct {
 // RegistrarBaja Crea registro de baja
 func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "RegistrarBaja - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "RegistrarBaja"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	var movimiento *models.Movimiento
 
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON); err != nil {
-		panic(err.Error())
+		funcion += " - json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON)"
+		return nil, errorctrl.Error(funcion, err, "500")
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
@@ -59,13 +52,8 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	if jsonData, err := json.Marshal(detalleJSON); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "RegistrarBaja - json.Marshal(detalleJSON)",
-			"err":     err,
-			"status":  "500",
-		}
-		return nil, outputError
+		funcion += " - json.Marshal(detalleJSON)"
+		return nil, errorctrl.Error(funcion, err, "500")
 	} else {
 		baja.Movimiento.Detalle = string(jsonData[:])
 	}
@@ -89,16 +77,8 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 // ActualizarBaja Actualiza información de baja
 func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "ActualizarBaja - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "ActualizarBaja"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	var (
 		movimiento *models.Movimiento
@@ -343,18 +323,11 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 	}
 }
 
+// GetAllSolicitudes Consulta información general de todas las bajas filtrando por las que están pendientes por revisar en almacén y en comité
 func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.DetalleBaja, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllSolicitudes - Uncaught Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetAllSolicitudes"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	urlcrud := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
 
@@ -381,13 +354,8 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 			var Revisor_ string
 
 			if err := json.Unmarshal([]byte(solicitud.Detalle), &detalle); err != nil {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetDetalleTraslado - json.Unmarshal([]byte(movimiento.Detalle), &detalle)",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
+				funcion += " - json.Unmarshal([]byte(solicitud.Detalle), &detalle)"
+				return nil, errorctrl.Error(funcion, err, "500")
 			}
 
 			requestTercero := func(id string) func() (interface{}, map[string]interface{}) {
@@ -447,18 +415,11 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 	}
 }
 
+// TraerDetalle Consulta el detalle de la baja, elementos, revisor, solicitante, soporte, tipo
 func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "/TraerDetalle",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "TraerDetalle"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	var (
 		movimiento *models.Movimiento
@@ -474,13 +435,8 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "TraerDetalle - json.Unmarshal([]byte(movimiento.Detalle), &detalle)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		funcion += " - request.SendJson(urlcrud, \"PUT\", &ids, &revision)"
+		return nil, errorctrl.Error(funcion, err, "500")
 	}
 
 	// Se consulta el detalle del funcionario solicitante
@@ -527,14 +483,11 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 }
 
+// GetDetalleElemento Consulta historial de un elemento dado el id del elemento en el api acta_recibido_crud
 func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetDetalleElemento - Unhandled Error!", "err": err, "status": "500"}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetDetalleElemento"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	var (
 		elemento           []*models.DetalleElemento
@@ -563,7 +516,8 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON); err != nil {
-		panic(err.Error())
+		funcion += " - json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON)"
+		return nil, errorctrl.Error(funcion, err, "500")
 	}
 
 	if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {
@@ -591,14 +545,11 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	return Elemento, nil
 }
 
+// GetDetalleElementos consulta el historial de una serie de elementos dados los ids en el api movimientos_arka_crud
 func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetDetalleElementos", "err": err, "status": "502"}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetDetalleElementos"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	var (
 		elementosActa       []*models.DetalleElemento
@@ -638,7 +589,8 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 
 			detalleJSON := map[string]interface{}{}
 			if err := json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON); err != nil {
-				panic(err.Error())
+				funcion += " - json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON)"
+				return nil, errorctrl.Error(funcion, err, "500")
 			}
 
 			if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {

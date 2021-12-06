@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -203,28 +204,16 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 
 }
 
+// GetTerceroById get controlador tercero/{id} del api terceros_crud
 func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetTerceroById - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetTerceroById"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &tercero); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetTerceroById - request.GetJson(urlcrud, &tercero)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		funcion += " - request.GetJson(urlcrud, &tercero)"
+		return nil, errorctrl.Error(funcion, err, "502")
 	}
 	return tercero, nil
 }

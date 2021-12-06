@@ -3,6 +3,7 @@ package tercerosMidHelper
 import (
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // GetDetalle Consulta El nombre, número de identificación, correo y cargo asociado a un funcionario
@@ -44,12 +45,8 @@ func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionari
 // GetInfoTerceroById Consulta El nombre y  número de identificación de cualquier tercero
 func GetInfoTerceroById(id int) (InfoTercero *models.InfoTercero, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetInfoTerceroById", "err": err, "status": "500"}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetInfoTerceroById"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
 
 	InfoTercero = new(models.InfoTercero)
 

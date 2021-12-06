@@ -618,8 +618,8 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 				return nil, err
 			}
 		}
-		return Salidas, nil
 	}
+	return Salidas, nil
 }
 
 func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputError map[string]interface{}) {

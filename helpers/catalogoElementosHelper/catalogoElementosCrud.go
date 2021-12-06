@@ -8,6 +8,7 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+// GetAllCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
 func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, outputError map[string]interface{}) {
 
 	funcion := "GetAllCuentasSubgrupo"
