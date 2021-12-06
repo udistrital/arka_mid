@@ -43,7 +43,7 @@ func (c *BajaController) Post() {
 
 	var v *models.TrSoporteMovimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
-		panic(errorctrl.Error("Post", "json.Unmarshal(c.Ctx.Input.RequestBody, &v)", "400"))
+		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if respuesta, err := bajasHelper.RegistrarBaja(v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
@@ -78,14 +78,14 @@ func (c *BajaController) Put() {
 		if err == nil {
 			err = errors.New("Se debe especificar una baja válida")
 		}
-		panic(errorctrl.Error("Put", "c.GetInt(\":id\")", "400"))
+		panic(errorctrl.Error("Put - c.GetInt(\":id\")", err, "400"))
 	} else {
 		id = v
 	}
 
 	var v *models.TrSoporteMovimiento
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		panic(errorctrl.Error("Put", "json.Unmarshal(c.Ctx.Input.RequestBody, &v)", "400"))
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		panic(errorctrl.Error("Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if respuesta, err := bajasHelper.ActualizarBaja(v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
@@ -213,13 +213,13 @@ func (c *BajaController) GetAll() {
 	var revComite bool
 	var revAlmacen bool
 	if v, err := c.GetBool("revComite", false); err != nil {
-		panic(errorctrl.Error("GetAll", "c.GetBool(\"revComite\", false)", "400"))
+		panic(errorctrl.Error("GetAll - c.GetBool(\"revComite\", false)", err, "400"))
 	} else {
 		revComite = v
 	}
 
 	if v, err := c.GetBool("revAlmacen"); err != nil {
-		panic(errorctrl.Error("GetAll", "c.GetBool(\"revAlmacen\", false)", "400"))
+		panic(errorctrl.Error("GetAll - c.GetBool(\"revAlmacen\", false)", err, "400"))
 	} else {
 		revAlmacen = v
 	}
@@ -296,11 +296,11 @@ func (c *BajaController) PutRevision() {
 
 	var trBaja *models.TrRevisionBaja
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja); err != nil {
-		panic(errorctrl.Error("PutRevision", "json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja)", "400"))
+		panic(errorctrl.Error("PutRevision - json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja)", err, "400"))
 	}
 
 	if v, err := bajasHelper.AprobarBajas(trBaja); err != nil {
-		panic(errorctrl.Error("PutRevision", "bajasHelper.AprobarBajas(trBaja)", "404"))
+		panic(errorctrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
 	} else {
 		c.Data["json"] = v
 	}

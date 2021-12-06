@@ -208,12 +208,12 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
 
 	funcion := "GetTerceroById"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &tercero); err != nil {
-		funcion += " - request.GetJson(urlcrud, &tercero)"
-		return nil, errorctrl.Error(funcion, err, "502")
+		eval := " - request.GetJson(urlcrud, &tercero)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 	return tercero, nil
 }

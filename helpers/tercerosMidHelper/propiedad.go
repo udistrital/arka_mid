@@ -38,13 +38,13 @@ func GetCargoFuncionario(id int) (cargo []*models.Parametro, outputError map[str
 func GetDocumentoTercero(id int) (documento []*models.DatosIdentificacion, outputError map[string]interface{}) {
 
 	funcion := "GetDocumentoTercero"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	// Consulta documento
 	urlcrud := "http://" + beego.AppConfig.String("tercerosMidService") + "propiedad/documento/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &documento); err != nil {
-		funcion += " - request.GetJson(urlcrud, &documento)"
-		return nil, errorctrl.Error(funcion, err, "502")
+		eval := " - request.GetJson(urlcrud, &documento)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 
 	return

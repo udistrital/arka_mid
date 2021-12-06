@@ -46,7 +46,7 @@ func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionari
 func GetInfoTerceroById(id int) (InfoTercero *models.InfoTercero, outputError map[string]interface{}) {
 
 	funcion := "GetInfoTerceroById"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	InfoTercero = new(models.InfoTercero)
 

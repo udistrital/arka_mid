@@ -13,12 +13,12 @@ import (
 func GetElementoById(id int) (elemento *models.Elemento, outputError map[string]interface{}) {
 
 	funcion := "GetElementoById"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &elemento); err != nil {
-		funcion += " - request.GetJson(urlcrud, &elemento)"
-		return nil, errorctrl.Error(funcion, err, "502")
+		eval := " - request.GetJson(urlcrud, &elemento)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 
 	return elemento, nil
@@ -28,12 +28,12 @@ func GetElementoById(id int) (elemento *models.Elemento, outputError map[string]
 func GetAllElemento(query string) (elementos []*models.Elemento, outputError map[string]interface{}) {
 
 	funcion := "GetAllElemento"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?" + query
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
-		funcion += " - request.GetJson(urlcrud, &elementos)"
-		return nil, errorctrl.Error(funcion, err, "502")
+		eval := " - request.GetJson(urlcrud, &elementos)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 
 	return elementos, nil

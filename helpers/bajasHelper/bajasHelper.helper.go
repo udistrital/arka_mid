@@ -33,14 +33,14 @@ type InfoCuentasSubgrupos struct {
 func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
 	funcion := "RegistrarBaja"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var movimiento *models.Movimiento
 
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON); err != nil {
-		funcion += " - json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON)"
-		return nil, errorctrl.Error(funcion, err, "500")
+		eval := " - json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
@@ -52,8 +52,8 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	if jsonData, err := json.Marshal(detalleJSON); err != nil {
-		funcion += " - json.Marshal(detalleJSON)"
-		return nil, errorctrl.Error(funcion, err, "500")
+		eval := " - json.Marshal(detalleJSON)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	} else {
 		baja.Movimiento.Detalle = string(jsonData[:])
 	}
@@ -78,7 +78,7 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
 	funcion := "ActualizarBaja"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		movimiento *models.Movimiento
@@ -112,7 +112,7 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[string]interface{}) {
 
 	funcion := "AprobarBajas"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		bajas           []*models.Movimiento
@@ -139,8 +139,8 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 
 		if err := json.Unmarshal([]byte(mov.Detalle), &detalle); err != nil {
 			logs.Error(err)
-			funcion += " - json.Unmarshal([]byte(mov.Detalle), &detalle)"
-			return nil, errorctrl.Error(funcion, err, "500")
+			eval := " - json.Unmarshal([]byte(mov.Detalle), &detalle)"
+			return nil, errorctrl.Error(funcion+eval, err, "500")
 		}
 
 		idsMov = append(idsMov, detalle.Elementos...)
@@ -193,8 +193,8 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			} else {
 				if err := formatdata.FillStruct(ctaCr_, &ctaCr); err != nil {
 					logs.Error(err)
-					funcion += " - formatdata.FillStruct(ctaCr_, &ctaCr)"
-					return nil, errorctrl.Error(funcion, err, "500")
+					eval := " - formatdata.FillStruct(ctaCr_, &ctaCr)"
+					return nil, errorctrl.Error(funcion+eval, err, "500")
 				}
 			}
 
@@ -203,8 +203,8 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			} else {
 				if err := formatdata.FillStruct(ctaDb_, &ctaDb); err != nil {
 					logs.Error(err)
-					funcion += " - formatdata.FillStruct(ctaDb_, &ctaDb)"
-					return nil, errorctrl.Error(funcion, err, "500")
+					eval := " - formatdata.FillStruct(ctaDb_, &ctaDb)"
+					return nil, errorctrl.Error(funcion+eval, err, "500")
 				}
 			}
 
@@ -327,7 +327,7 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.DetalleBaja, outputError map[string]interface{}) {
 
 	funcion := "GetAllSolicitudes"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
 
@@ -354,8 +354,8 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 			var Revisor_ string
 
 			if err := json.Unmarshal([]byte(solicitud.Detalle), &detalle); err != nil {
-				funcion += " - json.Unmarshal([]byte(solicitud.Detalle), &detalle)"
-				return nil, errorctrl.Error(funcion, err, "500")
+				eval := " - json.Unmarshal([]byte(solicitud.Detalle), &detalle)"
+				return nil, errorctrl.Error(funcion+eval, err, "500")
 			}
 
 			requestTercero := func(id string) func() (interface{}, map[string]interface{}) {
@@ -419,7 +419,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface{}) {
 
 	funcion := "TraerDetalle"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		movimiento *models.Movimiento
@@ -435,8 +435,8 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-		funcion += " - request.SendJson(urlcrud, \"PUT\", &ids, &revision)"
-		return nil, errorctrl.Error(funcion, err, "500")
+		eval := " - request.SendJson(urlcrud, \"PUT\", &ids, &revision)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
 	// Se consulta el detalle del funcionario solicitante
@@ -487,7 +487,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleElemento"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		elemento           []*models.DetalleElemento
@@ -516,8 +516,8 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 
 	detalleJSON := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON); err != nil {
-		funcion += " - json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON)"
-		return nil, errorctrl.Error(funcion, err, "500")
+		eval := " - json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
 	if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {
@@ -549,7 +549,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleElementos"
-	defer errorctrl.ErrorControlFunction(funcion, "500")
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		elementosActa       []*models.DetalleElemento
@@ -589,8 +589,8 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 
 			detalleJSON := map[string]interface{}{}
 			if err := json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON); err != nil {
-				funcion += " - json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON)"
-				return nil, errorctrl.Error(funcion, err, "500")
+				eval := " - json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON)"
+				return nil, errorctrl.Error(funcion+eval, err, "500")
 			}
 
 			if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {
