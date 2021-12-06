@@ -7,6 +7,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -95,7 +96,7 @@ func GetAllMovimiento(query string) (movimientos []*models.Movimiento, outputErr
 		}
 	}()
 
-	urlcrud := "http://" + beego.AppConfig.String("GetAllMovimiento") + "movimiento?" + query
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?" + query
 	if err := request.GetJson(urlcrud, &movimientos); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -228,6 +229,22 @@ func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (movimientoR
 	}
 
 	return movimientoRes, nil
+
+}
+
+func PutRevision(revision *models.TrRevisionBaja) (ids []int, outputError map[string]interface{}) {
+
+	funcion := "PutRevision"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "bajas/"
+	if err := request.SendJson(urlcrud, "PUT", &ids, &revision); err != nil {
+		logs.Error(err)
+		funcion += " - request.SendJson(urlcrud, \"PUT\", &ids, &revision)"
+		return nil, errorctrl.Error(funcion, err, "500")
+	}
+
+	return ids, nil
 
 }
 

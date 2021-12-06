@@ -158,6 +158,29 @@ paths:
           description: the request contains incorrect syntax
         "403":
           description: body is empty
+  /bajas_elementos/aprobar:
+    put:
+      tags:
+      - bajas_elementos
+      description: Realiza la transacciones contables y actualiza los movimientos
+      operationId: BajaController.Put
+      parameters:
+      - in: body
+        name: body
+        description: Informacion de la revision
+        required: true
+        schema:
+          $ref: '#/definitions/models.TrRevisionBaja'
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              format: int64
+              type: integer
+        "404":
+          description: not found resource
   /bajas_elementos/elemento/{id}:
     get:
       tags:
@@ -957,8 +980,7 @@ definitions:
       Revisor:
         type: string
       TipoBaja:
-        type: integer
-        format: int64
+        type: string
   models.DetalleElementoBaja:
     title: DetalleElementoBaja
     type: object
@@ -1728,6 +1750,19 @@ definitions:
         format: int64
       TipoBaja:
         $ref: '#/definitions/models.FormatoTipoMovimiento'
+  models.TrRevisionBaja:
+    title: TrRevisionBaja
+    type: object
+    properties:
+      Aprobacion:
+        type: boolean
+      Bajas:
+        type: array
+        items:
+          type: integer
+          format: int64
+      Observaciones:
+        type: string
   models.TrSalida:
     title: TrSalida
     type: object

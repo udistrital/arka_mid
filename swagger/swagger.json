@@ -203,6 +203,41 @@
                 }
             }
         },
+        "/bajas_elementos/aprobar": {
+            "put": {
+                "tags": [
+                    "bajas_elementos"
+                ],
+                "description": "Realiza la transacciones contables y actualiza los movimientos",
+                "operationId": "BajaController.Put",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Informacion de la revision",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TrRevisionBaja"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "format": "int64",
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/bajas_elementos/elemento/{id}": {
             "get": {
                 "tags": [
@@ -1405,8 +1440,7 @@
                     "type": "string"
                 },
                 "TipoBaja": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "string"
                 }
             }
         },
@@ -2510,6 +2544,25 @@
                 },
                 "TipoBaja": {
                     "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                }
+            }
+        },
+        "models.TrRevisionBaja": {
+            "title": "TrRevisionBaja",
+            "type": "object",
+            "properties": {
+                "Aprobacion": {
+                    "type": "boolean"
+                },
+                "Bajas": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "Observaciones": {
+                    "type": "string"
                 }
             }
         },

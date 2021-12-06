@@ -9,5 +9,5 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/tealeg/xlsx v1.0.5
 	github.com/udistrital/auditoria v0.0.0-20200115201815-9680ae9c2515
-	github.com/udistrital/utils_oas v0.0.0-20210421184521-1d702419e42a
+	github.com/udistrital/utils_oas v0.0.0-20211125230753-1091d2af48e2
 )

@@ -9,6 +9,9 @@ type CuentaContable struct {
 	Naturaleza         string
 	Descripcion        string
 	Codigo             string
+	Padre              string
+	Hijos              []string
+	RequiereTercero    bool
 	NivelClasificacion *NivelClasificacion
 }
 

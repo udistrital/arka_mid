@@ -11,6 +11,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/bajasHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	// "github.com/udistrital/arka_mid/models"
 )
 
@@ -24,6 +25,7 @@ func (c *BajaController) URLMapping() {
 	c.Mapping("Get", c.GetElemento)
 	c.Mapping("Post", c.Post)
 	c.Mapping("Put", c.Put)
+	c.Mapping("PutRevision", c.PutRevision)
 	c.Mapping("GetElemento", c.GetDetalleElemento)
 }
 
@@ -333,6 +335,30 @@ func (c *BajaController) GetDetalleElemento() {
 		panic(err)
 	} else {
 		c.Data["json"] = l
+	}
+	c.ServeJSON()
+}
+
+// Put ...
+// @Title Put
+// @Description Realiza la transacciones contables y actualiza los movimientos
+// @Param	body	body 	models.TrRevisionBaja	true	"Informacion de la revision"
+// @Success 200 {object} []int
+// @Failure 404 not found resource
+// @router /aprobar [put]
+func (c *BajaController) PutRevision() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
+
+	var trBaja *models.TrRevisionBaja
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja); err != nil {
+		panic(errorctrl.Error("PutRevision", "json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja)", "400"))
+	}
+
+	if v, err := bajasHelper.AprobarBajas(trBaja); err != nil {
+		panic(errorctrl.Error("PutRevision", "bajasHelper.AprobarBajas(trBaja)", "404"))
+	} else {
+		c.Data["json"] = v
 	}
 	c.ServeJSON()
 }

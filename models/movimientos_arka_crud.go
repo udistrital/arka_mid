@@ -117,7 +117,7 @@ type DetalleBaja struct {
 	FechaRevisionC     string
 	Funcionario        string
 	Revisor            string
-	TipoBaja           int
+	TipoBaja           string
 	EstadoMovimientoId int
 }
 
@@ -142,4 +142,10 @@ type DetalleElementoBaja struct {
 	Salida             *Movimiento
 	Ubicacion          *DetalleSedeDependencia
 	Funcionario        *InfoTercero
+}
+
+type TrRevisionBaja struct {
+	Bajas         []int
+	Aprobacion    bool
+	Observaciones string
 }

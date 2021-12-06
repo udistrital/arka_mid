@@ -9,8 +9,9 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
@@ -18,8 +19,15 @@ import (
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
+
+type InfoCuentasSubgrupos struct {
+	CuentaDebito  *models.CuentaContable
+	CuentaCredito *models.CuentaContable
+}
 
 // RegistrarBaja Crea registro de baja
 func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
@@ -118,6 +126,126 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 	}
 
 	return movimiento, nil
+}
+
+// AprobarBajas Aprobación masiva de bajas, transacción contable y actualización de movmientos
+func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[string]interface{}) {
+
+	funcion := "AprobarBajas"
+	defer errorctrl.ErrorControlFunction(funcion, "500")
+
+	var (
+		bajas           []*models.Movimiento
+		idsMov          []int
+		idsActa         []int
+		idsSubgrupos    []int
+		elementosMov    []*models.ElementosMovimiento
+		elementosActa   []*models.Elemento
+		cuentasSubgrupo []*models.CuentaSubgrupo
+	)
+
+	// Paso 1: Transacción contable
+	query := "fields=Detalle&limit=-1&query=Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(data.Bajas, "|"))
+	if bajas_, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		bajas = bajas_
+	}
+
+	for _, mov := range bajas {
+
+		var detalle *models.FormatoBaja
+
+		if err := json.Unmarshal([]byte(mov.Detalle), &detalle); err != nil {
+			logs.Error(err)
+			funcion += " - json.Unmarshal([]byte(mov.Detalle), &detalle)"
+			return nil, errorctrl.Error(funcion, err, "500")
+		}
+
+		idsMov = append(idsMov, detalle.Elementos...)
+	}
+
+	query = "fields=ElementoActaId&limit=-1&query=Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(idsMov, "|"))
+	if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		elementosMov = elementos_
+	}
+
+	for _, el := range elementosMov {
+		idsActa = append(idsActa, el.ElementoActaId)
+	}
+
+	query = "fields=SubgrupoCatalogoId&limit=-1&query=Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(idsActa, "|"))
+	if elementos_, err := actaRecibido.GetAllElemento(query); err != nil {
+		return nil, err
+	} else {
+		elementosActa = elementos_
+	}
+
+	for _, el := range elementosActa {
+		idsSubgrupos = append(idsSubgrupos, el.SubgrupoCatalogoId)
+	}
+
+	query = "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
+	query += "query=SubtipoMovimientoId:32,Activo:true,SubgrupoId__Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
+	if elementos_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+		return nil, err
+	} else {
+		cuentasSubgrupo = elementos_
+	}
+
+	infoCuentas := make(map[int]*InfoCuentasSubgrupos)
+	for _, idSubgrupo := range idsSubgrupos {
+
+		var (
+			ctaCr *models.CuentaContable
+			ctaDb *models.CuentaContable
+		)
+
+		if idx := FindInArray(cuentasSubgrupo, idSubgrupo); idx > -1 {
+			if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+				return nil, err
+			} else {
+				if err := formatdata.FillStruct(ctaCr_, &ctaCr); err != nil {
+					logs.Error(err)
+					funcion += " - formatdata.FillStruct(ctaCr_, &ctaCr)"
+					return nil, errorctrl.Error(funcion, err, "500")
+				}
+			}
+
+			if ctaDb_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+				return nil, err
+			} else {
+				if err := formatdata.FillStruct(ctaDb_, &ctaDb); err != nil {
+					logs.Error(err)
+					funcion += " - formatdata.FillStruct(ctaDb_, &ctaDb)"
+					return nil, errorctrl.Error(funcion, err, "500")
+				}
+			}
+
+			infoCuentas[idSubgrupo] = new(InfoCuentasSubgrupos)
+			infoCuentas[idSubgrupo].CuentaCredito = ctaCr
+			infoCuentas[idSubgrupo].CuentaDebito = ctaDb
+		} else {
+			// Se llega acá cuando la clase de algún elemento no tiene la cuenta contable registrada
+			// Queda pendiente qué se debe mostrar al usuario en ese caso
+		}
+
+	}
+
+	// Paso 2: Actualiza el estado de las bajas en api movimientos_arka_crud
+	if ids_, err := movimientosArkaHelper.PutRevision(data); err != nil {
+		return nil, err
+	} else {
+		ids = ids_
+	}
+
+	return ids, nil
 }
 
 func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError map[string]interface{}) {
@@ -301,7 +429,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 				FechaRevisionC:     detalle.FechaRevisionC,
 				Funcionario:        Tercero_,
 				Revisor:            Revisor_,
-				TipoBaja:           solicitud.FormatoTipoMovimientoId.Id,
+				TipoBaja:           solicitud.FormatoTipoMovimientoId.Nombre,
 				EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
 			}
 			listBajas = append(listBajas, &baja)
@@ -544,4 +672,14 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 
 func getTipoComprobanteBajas() string {
 	return "B"
+}
+
+// findIdInArray Retorna la posicion en que se encuentra el id específicado
+func FindInArray(cuentasSg []*models.CuentaSubgrupo, subgrupoId int) (i int) {
+	for i, cuentaSg := range cuentasSg {
+		if int(cuentaSg.SubgrupoId.Id) == subgrupoId {
+			return i
+		}
+	}
+	return -1
 }
