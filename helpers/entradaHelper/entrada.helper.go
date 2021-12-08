@@ -309,7 +309,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	fmt.Println("en este punto falla:")
 	fmt.Println("si en este punto falla:")
-	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Entrada de almacen"); res == nil || outputError != nil {
 		if outputError == nil {
 			outputError = map[string]interface{}{
 				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",

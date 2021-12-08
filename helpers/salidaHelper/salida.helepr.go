@@ -328,7 +328,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return nil, outputError
 	}
 
-	if err := json.Unmarshal([]byte(movArka[0].Detalle), &detalleMovimiento); err == nil {
+	if err := json.Unmarshal([]byte(movArka[0].MovimientoPadreId.Detalle), &detalleMovimiento); err == nil {
 		var resTrActa models.TransaccionActaRecibido
 
 		logs.Debug("********* 1 *********************", fmt.Sprint(detalleMovimiento["acta_recibido_id"]))
@@ -346,11 +346,11 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 
 	// Transaccion contable
 
-	logs.Debug("********* Llega *********************")
+	logs.Debug("********* Llega *********************", tipomvto)
 	var groups = make(map[int]float64)
 	i := 0
 	for _, elemento := range transaccionActaRecibido.Elementos {
-		fmt.Println("entra:")
+		fmt.Println("entra:", elemento)
 		x := float64(0)
 		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
 			x = val
@@ -358,11 +358,12 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		groups[elemento.SubgrupoCatalogoId] = groups[elemento.SubgrupoCatalogoId] + x + elemento.ValorFinal
 		i++
 	}
+	logs.Debug("los grupos", groups)
 	if i == 0 {
 		return resultado, nil
 	}
 
-	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "asiento contable"); res == nil || outputError != nil {
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen"); res == nil || outputError != nil {
 		if outputError == nil {
 			outputError = map[string]interface{}{
 				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
@@ -370,11 +371,12 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 				"status":  "502",
 			}
 		}
+		logs.Debug("Fue error")
 		return nil, outputError
 	} else {
+		logs.Debug("Fue exito")
 		resultado["transaccionContable"] = resA["resultadoTransaccion"]
 	}
-
 	return resultado, nil
 }
 
