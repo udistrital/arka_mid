@@ -281,6 +281,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 		for idx, salida := range m.Salidas {
 
+			salida.Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
 			detalle := map[string]interface{}{}
 			if err := json.Unmarshal([]byte(salida.Salida.Detalle), &detalle); err != nil {
 				logs.Error(err)
