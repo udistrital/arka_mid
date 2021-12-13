@@ -16,6 +16,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -365,10 +366,12 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}()
 
 	var (
-		urlcrud             string
-		res                 map[string]interface{}
-		resEstadoMovimiento []models.EstadoMovimiento
-		movArka             []models.Movimiento
+		urlcrud                 string
+		res                     map[string]interface{}
+		resEstadoMovimiento     []models.EstadoMovimiento
+		movArka                 []models.Movimiento
+		detalleMovimiento       map[string]interface{}
+		transaccionActaRecibido models.TransaccionActaRecibido
 	)
 	resultado := make(map[string]interface{})
 
@@ -404,18 +407,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return nil, outputError
 	}
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(salidaId))
 	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
-	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - request.SendJson(urlcrud, \"PUT\", &res, &movArka[0])",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
 	resultado["movimientoArka"] = movArka[0]
 
 	// Crea registro en movimientos_crud
@@ -436,6 +428,67 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 			"funcion": "AprobarSalida - reflect.TypeOf(res[\"Body\"]).Kind() != reflect.Slice",
 			"err":     err,
 			"status":  "404",
+		}
+		return nil, outputError
+	}
+
+	tipomvto := strconv.Itoa(int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64)))
+
+	if err := json.Unmarshal([]byte(movArka[0].MovimientoPadreId.Detalle), &detalleMovimiento); err == nil {
+		var resTrActa models.TransaccionActaRecibido
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
+			transaccionActaRecibido = resTrActa
+		} else {
+			transaccionActaRecibido = resTrActa
+		}
+	}
+
+	detalle := ""
+	for k, v := range detalleMovimiento {
+		if k != "consecutivo" {
+			detalle = detalle + k + ": " + fmt.Sprintf("%v", v) + " "
+		}
+	}
+
+	var groups = make(map[int]float64)
+	i := 0
+	for _, elemento := range transaccionActaRecibido.Elementos {
+		fmt.Println("entra:")
+		x := float64(0)
+		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
+			x = val + elemento.ValorFinal
+		} else {
+			x = elemento.ValorFinal
+		}
+		groups[elemento.SubgrupoCatalogoId] = x
+		i++
+	}
+
+	if i == 0 {
+		return resultado, nil
+	}
+
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, 1); res == nil || outputError != nil {
+		if outputError == nil {
+			outputError = map[string]interface{}{
+				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
+				"err":     res,
+				"status":  "502",
+			}
+		}
+		return nil, outputError
+	} else {
+		resultado["transaccionContable"] = resA["resultadoTransaccion"]
+	}
+
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(salidaId))
+	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarSalida - request.SendJson(urlcrud, \"PUT\", &res, &movArka[0])",
+			"err":     err,
+			"status":  "502",
 		}
 		return nil, outputError
 	}
@@ -462,8 +515,6 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	resultado["movimientoArka"] = movArka[0]
-
-	// Transaccion contable
 
 	return resultado, nil
 }
