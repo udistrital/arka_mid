@@ -46,10 +46,7 @@ func AsignarPlaca(m *models.Elemento) (resultado map[string]interface{}, outputE
 		}
 	}()
 
-	// fmt.Printf("entro a asignar")
-	// fmt.Printf("%+v\n", m)
 	year, month, day := time.Now().Date()
-	//	fecstring := fmt.Sprintf("%4d", year) + fmt.Sprintf("%02d", int(month)) + fmt.Sprintf("%02d", day)
 
 	consec := Consecutivo{0, 0, year, 0, "Placas", true}
 	var (
@@ -63,10 +60,7 @@ func AsignarPlaca(m *models.Elemento) (resultado map[string]interface{}, outputE
 	// AsignarPlaca Transacción para asignar las placas
 	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
 		resultado, _ := res["Data"].(map[string]interface{})
-		// fmt.Printf("%+v\n", &resultado)
-		// fmt.Printf("%05.0f\n", resultado["Consecutivo"])
 		fecstring := fmt.Sprintf("%4d", year) + fmt.Sprintf("%02d", int(month)) + fmt.Sprintf("%02d", day) + fmt.Sprintf("%05.0f", resultado["Consecutivo"])
-		// fmt.Println(fecstring)
 		m.Placa = fecstring
 		if err := request.SendJson(putElemento, "PUT", &resultado, &m); err == nil {
 			return resultado, nil
@@ -454,7 +448,6 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	var groups = make(map[int]float64)
 	i := 0
 	for _, elemento := range transaccionActaRecibido.Elementos {
-		fmt.Println("entra:")
 		x := float64(0)
 		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
 			x = val + elemento.ValorFinal
@@ -644,7 +637,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		}
 	}()
 
-	query := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
+	query := "limit=10&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
 	if tramiteOnly {
 		query += url.QueryEscape(":Salida En Trámite")
 	} else {
@@ -700,12 +693,10 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 
 		var data map[string]interface{}
 		if err := json.Unmarshal(jsonString, &data); err == nil {
-			// fmt.Println("Salida: ", data)
 			str := fmt.Sprintf("%v", data["Detalle"])
 
 			var data2 map[string]interface{}
 			if err := json.Unmarshal([]byte(str), &data2); err == nil {
-				// fmt.Println("Detalle Salida: ", data2)
 
 				urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia"
 				urlcrud3 += "?query=Id:" + fmt.Sprintf("%v", data2["ubicacion"])

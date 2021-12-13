@@ -306,7 +306,26 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	} else {
 		trContable = resA
-		logs.Debug("******* La tr contable: ", resA, trContable["transaccionContable"])
+		fmt.Println("************* el consecutivo", trContable["ConsecutivoId"])
+		//		logs.Debug("******* La tr contable: ", trContable["resultadoTransaccion"].(map[string]interface{})["ConsecutivoId"])
+		/*	fmt.Println("*********** la tr contable println", trContable["resultadoTransaccion"])
+			idContable := trContable["resultadoTransaccion"].(map[string]interface{})["Id"]
+			detalleMovimiento["ConsecutivoContableId"] = idContable
+			fmt.Println("*********** el consecutivo ", idContable)*/
+	}
+
+	t := trContable["resultadoTransaccion"]
+	detalleMovimiento["ConsecutivoContableId"] = t.(models.TransaccionMovimientos).ConsecutivoId
+	if jsonString, err := json.Marshal(detalleMovimiento); err == nil {
+		movArka[0].Detalle = string(jsonString[:])
+	} else {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
 	}
 
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(entradaId))

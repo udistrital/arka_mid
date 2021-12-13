@@ -30,7 +30,6 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]inter
 	}()
 
 	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentaContableId
-	// logs.Debug("urlcrud:", urlcrud)
 
 	var data models.RespuestaAPI2obj
 	if resp, err := request.GetJsonTest(urlcrud, &data); err == nil && resp.StatusCode == 200 && data.Code == 200 {
@@ -176,11 +175,9 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	tercerodebito := true
 	tercerocredito := true
 	for clave, _ := range totales {
-		logs.Debug("******** La clave ", clave)
 		urlcuentas := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo/?query=SubgrupoId.Id:" + strconv.Itoa(clave) + ",Activo:true,SubtipoMovimientoId:" + tipomvto
 		logs.Info(urlcuentas)
 		if respuesta, err := request.GetJsonTest(urlcuentas, &elemento); err == nil && respuesta.StatusCode == 200 {
-			logs.Debug("***** encontro la cuenta")
 			for _, element := range elemento {
 				if len(element) == 0 {
 					outputError = map[string]interface{}{"funcion": "asientoContable - if len(element) == 0 ", "status": "500", "err": err}
@@ -228,7 +225,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					if tercerodebito {
 						movimientoDebito.TerceroId = idTercero
 					} else {
-						movimientoDebito.TerceroId = 1
+						movimientoDebito.TerceroId = 0
 					}
 					movimientoDebito.CuentaId = element["CuentaDebitoId"].(string)
 					movimientoDebito.NombreCuenta = nombrecuentadebito
@@ -240,7 +237,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					if tercerocredito {
 						movimientoCredito.TerceroId = idTercero
 					} else {
-						movimientoCredito.TerceroId = 1
+						movimientoCredito.TerceroId = 0
 					}
 					movimientoCredito.CuentaId = element["CuentaCreditoId"].(string)
 					movimientoCredito.NombreCuenta = nombrecuentacredito
@@ -252,7 +249,6 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			}
 		} else {
 
-			logs.Debug("******* no encontro las cuentas")
 			if err == nil {
 				err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
 			}
