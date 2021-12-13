@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -172,10 +173,14 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	transaccion.Etiquetas = string(jsonString)
 	transaccion.FechaTransaccion = time_bogota.Tiempo_bogota()
 
+	tercerodebito := true
+	tercerocredito := true
 	for clave, _ := range totales {
+		logs.Debug("******** La clave ", clave)
 		urlcuentas := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo/?query=SubgrupoId.Id:" + strconv.Itoa(clave) + ",Activo:true,SubtipoMovimientoId:" + tipomvto
 		logs.Info(urlcuentas)
 		if respuesta, err := request.GetJsonTest(urlcuentas, &elemento); err == nil && respuesta.StatusCode == 200 {
+			logs.Debug("***** encontro la cuenta")
 			for _, element := range elemento {
 				if len(element) == 0 {
 					outputError = map[string]interface{}{"funcion": "asientoContable - if len(element) == 0 ", "status": "500", "err": err}
@@ -186,6 +191,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					urlcuenta := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaDebitoId"].(string)
 					if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
 						nombrecuentadebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
+						tercerodebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["RequiereTercero"].(bool)
 					} else {
 						if err == nil {
 							err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
@@ -202,6 +208,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaCreditoId"].(string)
 					if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
 						nombrecuentacredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
+						tercerocredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["RequiereTercero"].(bool)
 					} else {
 						if err == nil {
 							err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
@@ -218,7 +225,11 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					var movimientoDebito models.MovimientoTransaccion
 					var movimientoCredito models.MovimientoTransaccion
 
-					movimientoDebito.TerceroId = idTercero
+					if tercerodebito {
+						movimientoDebito.TerceroId = idTercero
+					} else {
+						movimientoDebito.TerceroId = 1
+					}
 					movimientoDebito.CuentaId = element["CuentaDebitoId"].(string)
 					movimientoDebito.NombreCuenta = nombrecuentadebito
 					movimientoDebito.TipoMovimientoId = parametroTipoDebito.Id
@@ -226,7 +237,11 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					movimientoDebito.Descripcion = descripcionAsiento
 					transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
 
-					movimientoCredito.TerceroId = idTercero
+					if tercerocredito {
+						movimientoCredito.TerceroId = idTercero
+					} else {
+						movimientoCredito.TerceroId = 1
+					}
 					movimientoCredito.CuentaId = element["CuentaCreditoId"].(string)
 					movimientoCredito.NombreCuenta = nombrecuentacredito
 					movimientoCredito.TipoMovimientoId = parametroTipoCredito.Id
@@ -235,24 +250,9 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 					transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 				}
 			}
-
-			apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
-			outputError = map[string]interface{}{"funcion": "asientoContable - en desarrollo", "status": "500", "err": err}
-
-			if err := request.SendJson(apiMvtoContables, "POST", &res, &transaccion); err != nil {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "AsientoContable -if err := request.SendJson(apiMvtoContables, \"POST\", &res, &transaccion);",
-					"err":     err,
-					"status":  "502",
-				}
-			} else {
-				logs.Info("Transaccion contable")
-				logs.Info("******** correcto *********")
-				res["resultadoTransaccion"] = transaccion
-				return res, nil
-			}
 		} else {
+
+			logs.Debug("******* no encontro las cuentas")
 			if err == nil {
 				err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
 			}
@@ -264,6 +264,28 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			}
 			return nil, outputError
 		}
+	}
+
+	apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
+	if err := request.SendJson(apiMvtoContables, "POST", &res, &transaccion); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AsientoContable -if err := request.SendJson(apiMvtoContables, \"POST\", &res, &transaccion);",
+			"err":     err,
+			"status":  "502",
+		}
+	} else {
+		logs.Info("Transaccion contable")
+		logs.Info("******** correcto *********")
+		res["resultadoTransaccion"] = transaccion
+
+		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err == nil {
+			res["tercero"] = tercero
+		} else {
+			return nil, err
+		}
+
+		return res, nil
 	}
 	return res, nil
 }

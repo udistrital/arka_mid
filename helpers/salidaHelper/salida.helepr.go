@@ -480,6 +480,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return nil, outputError
 	} else {
 		resultado["transaccionContable"] = resA["resultadoTransaccion"]
+		resultado["tercero"] = resA["tercero"]
 	}
 
 	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(salidaId))

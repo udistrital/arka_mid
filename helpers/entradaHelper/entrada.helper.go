@@ -262,8 +262,14 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
 			transaccionActaRecibido = resTrActa
 		} else {
-
-			transaccionActaRecibido = resTrActa
+			err = errors.New("no se encuentra el acta de recibido")
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AprobarEntrada - request.GetJson(urlcrud, &resTrActa); err == nil",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
 		}
 	}
 
@@ -277,7 +283,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	var groups = make(map[int]float64)
 	i := 0
 	for _, elemento := range transaccionActaRecibido.Elementos {
-		fmt.Println("entra:")
+		logs.Debug("entra:", elemento.SubgrupoCatalogoId)
 		x := float64(0)
 		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
 			x = val + elemento.ValorFinal
@@ -336,6 +342,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 	resultado["movimientoArka"] = movArka[0]
 	resultado["transaccionContable"] = trContable["resultadoTransaccion"]
+	resultado["tercero"] = trContable["tercero"]
 	return resultado, nil
 }
 
