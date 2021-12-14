@@ -15,6 +15,9 @@ import (
 	"github.com/udistrital/utils_oas/time_bogota"
 )
 
+const ID_SALIDA_PRUEBAS = "16"
+const ID_SALIDA_CONSUMO_PRUEBAS = "22"
+
 // GetCuentaContable ...
 func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]interface{}, outputError map[string]interface{}) {
 
@@ -77,6 +80,9 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		tipoComprobanteContable models.TipoComprobanteContable
 	)
 
+	if tipomvto == ID_SALIDA_CONSUMO_PRUEBAS {
+		tipomvto = ID_SALIDA_PRUEBAS
+	}
 	idconsecutivo := ""
 	if idconsecutivo1, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
 
@@ -176,76 +182,79 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	tercerocredito := true
 	for clave, _ := range totales {
 		urlcuentas := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo/?query=SubgrupoId.Id:" + strconv.Itoa(clave) + ",Activo:true,SubtipoMovimientoId:" + tipomvto
+		logs.Debug("******* La url de las cuentas", urlcuentas)
+
 		if respuesta, err := request.GetJsonTest(urlcuentas, &elemento); err == nil && respuesta.StatusCode == 200 {
-			for _, element := range elemento {
-				if len(element) == 0 {
-					outputError = map[string]interface{}{"funcion": "asientoContable - if len(element) == 0 ", "status": "500", "err": err}
-					return nil, outputError
+			//			for _, element := range elemento { //deberia existir un solo para de cuentas para cada tipo de movimiento, pero esto hay que discutirlo
+			element := elemento[0]
+			if len(element) == 0 {
+				outputError = map[string]interface{}{"funcion": "asientoContable - if len(element) == 0 ", "status": "500", "err": err}
+				return nil, outputError
+			} else {
+				nombrecuentadebito := ""
+				nombrecuentacredito := ""
+				urlcuenta := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaDebitoId"].(string)
+				if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
+					nombrecuentadebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
+					tercerodebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["RequiereTercero"].(bool)
 				} else {
-					nombrecuentadebito := ""
-					nombrecuentacredito := ""
-					urlcuenta := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaDebitoId"].(string)
-					if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
-						nombrecuentadebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
-						tercerodebito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["RequiereTercero"].(bool)
-					} else {
-						if err == nil {
-							err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
-						}
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "GetCuentaContable -  if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion);)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+					if err == nil {
+						err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
 					}
-
-					urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaCreditoId"].(string)
-					if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
-						nombrecuentacredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
-						tercerocredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["RequiereTercero"].(bool)
-					} else {
-						if err == nil {
-							err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
-						}
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "GetCuentaContable -  if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion);)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "GetCuentaContable -  if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion);)",
+						"err":     err,
+						"status":  "502",
 					}
-
-					var movimientoDebito models.MovimientoTransaccion
-					var movimientoCredito models.MovimientoTransaccion
-
-					if tercerodebito {
-						movimientoDebito.TerceroId = idTercero
-					} else {
-						movimientoDebito.TerceroId = 0
-					}
-					movimientoDebito.CuentaId = element["CuentaDebitoId"].(string)
-					movimientoDebito.NombreCuenta = nombrecuentadebito
-					movimientoDebito.TipoMovimientoId = parametroTipoDebito.Id
-					movimientoDebito.Valor = totales[clave]
-					movimientoDebito.Descripcion = descripcionAsiento
-					transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
-
-					if tercerocredito {
-						movimientoCredito.TerceroId = idTercero
-					} else {
-						movimientoCredito.TerceroId = 0
-					}
-					movimientoCredito.CuentaId = element["CuentaCreditoId"].(string)
-					movimientoCredito.NombreCuenta = nombrecuentacredito
-					movimientoCredito.TipoMovimientoId = parametroTipoCredito.Id
-					movimientoCredito.Valor = totales[clave]
-					movimientoCredito.Descripcion = descripcionAsiento
-					transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
+					return nil, outputError
 				}
+
+				urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + element["CuentaCreditoId"].(string)
+				if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion); err == nil && respuesta.StatusCode == 200 {
+					nombrecuentacredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["Nombre"].(string)
+					tercerocredito = respuesta_peticion["Body"].(interface{}).(map[string]interface{})["RequiereTercero"].(bool)
+				} else {
+					if err == nil {
+						err = fmt.Errorf("Undesired Status Code: %d", respuesta.StatusCode)
+					}
+					logs.Error(err)
+					outputError = map[string]interface{}{
+						"funcion": "GetCuentaContable -  if respuesta, err := request.GetJsonTest(urlcuenta, &respuesta_peticion);)",
+						"err":     err,
+						"status":  "502",
+					}
+					return nil, outputError
+				}
+
+				var movimientoDebito models.MovimientoTransaccion
+				var movimientoCredito models.MovimientoTransaccion
+
+				if tercerodebito {
+					movimientoDebito.TerceroId = idTercero
+				} else {
+					movimientoDebito.TerceroId = 0
+				}
+				movimientoDebito.CuentaId = element["CuentaDebitoId"].(string)
+				movimientoDebito.NombreCuenta = nombrecuentadebito
+				movimientoDebito.TipoMovimientoId = parametroTipoDebito.Id
+				movimientoDebito.Valor = totales[clave]
+				movimientoDebito.Descripcion = descripcionAsiento
+				transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
+
+				if tercerocredito {
+					movimientoCredito.TerceroId = idTercero
+				} else {
+					movimientoCredito.TerceroId = 0
+				}
+				movimientoCredito.CuentaId = element["CuentaCreditoId"].(string)
+				movimientoCredito.NombreCuenta = nombrecuentacredito
+				movimientoCredito.TipoMovimientoId = parametroTipoCredito.Id
+				movimientoCredito.Valor = totales[clave]
+				movimientoCredito.Descripcion = descripcionAsiento
+				transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 			}
+			//		}
 		} else {
 
 			if err == nil {
