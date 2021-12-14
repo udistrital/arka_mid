@@ -306,12 +306,6 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	} else {
 		trContable = resA
-		fmt.Println("************* el consecutivo", trContable["ConsecutivoId"])
-		//		logs.Debug("******* La tr contable: ", trContable["resultadoTransaccion"].(map[string]interface{})["ConsecutivoId"])
-		/*	fmt.Println("*********** la tr contable println", trContable["resultadoTransaccion"])
-			idContable := trContable["resultadoTransaccion"].(map[string]interface{})["Id"]
-			detalleMovimiento["ConsecutivoContableId"] = idContable
-			fmt.Println("*********** el consecutivo ", idContable)*/
 	}
 
 	t := trContable["resultadoTransaccion"]
@@ -461,9 +455,7 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 			return nil, outputError
 		}
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:" + id
-		// fmt.Println(urlelemento)
 		if resp, err := request.GetJsonTest(urlelemento, &detalle); err == nil && resp.StatusCode == 200 {
-			// logs.Info(detalle)
 			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
 			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
 				idtercero := fmt.Sprintf("%v", resultado["funcionario"])

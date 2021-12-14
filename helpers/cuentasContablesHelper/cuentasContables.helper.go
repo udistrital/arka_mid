@@ -176,7 +176,6 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	tercerocredito := true
 	for clave, _ := range totales {
 		urlcuentas := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo/?query=SubgrupoId.Id:" + strconv.Itoa(clave) + ",Activo:true,SubtipoMovimientoId:" + tipomvto
-		logs.Info(urlcuentas)
 		if respuesta, err := request.GetJsonTest(urlcuentas, &elemento); err == nil && respuesta.StatusCode == 200 {
 			for _, element := range elemento {
 				if len(element) == 0 {
@@ -271,10 +270,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			"status":  "502",
 		}
 	} else {
-		logs.Info("Transaccion contable")
-		logs.Info("******** correcto *********")
 		res["resultadoTransaccion"] = transaccion
-
 		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err == nil {
 			res["tercero"] = tercero
 		} else {
