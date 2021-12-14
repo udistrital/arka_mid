@@ -365,6 +365,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		resEstadoMovimiento     []models.EstadoMovimiento
 		movArka                 []models.Movimiento
 		detalleMovimiento       map[string]interface{}
+		detallePrincipal        map[string]interface{}
 		transaccionActaRecibido models.TransaccionActaRecibido
 	)
 	resultado := make(map[string]interface{})
@@ -434,13 +435,45 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
 			transaccionActaRecibido = resTrActa
 		} else {
-			transaccionActaRecibido = resTrActa
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AprobarSalida - if err := request.GetJson(urlcrud, &resTrActa); err == nil",
+				"err":     err,
+				"status":  "502",
+			}
+		}
+	}
+
+	if err := json.Unmarshal([]byte(movArka[0].Detalle), &detallePrincipal); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarSalida -json.Unmarshal([]byte(movArka[0].Detalle), &detallePrincipal);",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	funcionario := ""
+	for k, v := range detallePrincipal {
+		if k == "funcionario" {
+			funcionario = fmt.Sprintf("%v", v)
+		}
+	}
+
+	idfuncionario, err := strconv.Atoi(funcionario)
+	if err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarSalida -idfuncionario, err := strconv.Atoi(funcionario)",
+			"err":     err,
+			"status":  "502",
 		}
 	}
 
 	detalle := ""
 	for k, v := range detalleMovimiento {
-		if k != "consecutivo" {
+		if k == "consecutivo" {
 			detalle = detalle + k + ": " + fmt.Sprintf("%v", v) + " "
 		}
 	}
@@ -462,10 +495,10 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return resultado, nil
 	}
 
-	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, 1); res == nil || outputError != nil {
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario); res == nil || outputError != nil {
 		if outputError == nil {
 			outputError = map[string]interface{}{
-				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
+				"funcion": "AprobarSalida -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"Salida de almacen\");",
 				"err":     res,
 				"status":  "502",
 			}
