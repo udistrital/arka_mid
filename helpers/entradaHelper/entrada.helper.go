@@ -283,7 +283,6 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	var groups = make(map[int]float64)
 	i := 0
 	for _, elemento := range transaccionActaRecibido.Elementos {
-		logs.Debug("entra:", elemento.SubgrupoCatalogoId)
 		x := float64(0)
 		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
 			x = val + elemento.ValorFinal
