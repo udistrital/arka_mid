@@ -12,6 +12,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -171,8 +172,8 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		}
 		return nil, outputError
 	}
-
 	return resultado, nil
+
 }
 
 // AprobarEntrada Actualiza una entrada a estado aprobada y hace los respectivos registros en kronos y transacciones contables
@@ -190,10 +191,12 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}()
 
 	var (
-		urlcrud             string
-		res                 map[string]interface{}
-		movArka             []models.Movimiento
-		resEstadoMovimiento []models.EstadoMovimiento
+		urlcrud                 string
+		res                     map[string]interface{}
+		movArka                 []models.Movimiento
+		resEstadoMovimiento     []models.EstadoMovimiento
+		detalleMovimiento       map[string]interface{}
+		transaccionActaRecibido models.TransaccionActaRecibido
 	)
 	resultado := make(map[string]interface{})
 
@@ -229,19 +232,6 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	}
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(entradaId))
-	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
-	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	// Crea registro en movimientos_crud
 	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:" + movArka[0].FormatoTipoMovimientoId.Nombre
 	urlcrud = strings.ReplaceAll(urlcrud, " ", "%20")
 	if err := request.GetJson(urlcrud, &res); err != nil {
@@ -259,6 +249,85 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 			"funcion": "AprobarEntrada - reflect.TypeOf(res[\"Body\"]).Kind() != reflect.Slice",
 			"err":     err,
 			"status":  "404",
+		}
+		return nil, outputError
+	}
+	tipomvto := strconv.Itoa(int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64)))
+	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
+
+	if err := json.Unmarshal([]byte(movArka[0].Detalle), &detalleMovimiento); err == nil {
+		var resTrActa models.TransaccionActaRecibido
+
+		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
+			transaccionActaRecibido = resTrActa
+		} else {
+			err = errors.New("no se encuentra el acta de recibido")
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AprobarEntrada - request.GetJson(urlcrud, &resTrActa); err == nil",
+				"err":     err,
+				"status":  "404",
+			}
+			return nil, outputError
+		}
+	}
+
+	detalle := ""
+	for k, v := range detalleMovimiento {
+		if k != "consecutivo" {
+			detalle = detalle + k + ": " + fmt.Sprintf("%v", v) + " "
+		}
+	}
+
+	var groups = make(map[int]float64)
+	i := 0
+	for _, elemento := range transaccionActaRecibido.Elementos {
+		x := float64(0)
+		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
+			x = val + elemento.ValorFinal
+		} else {
+			x = elemento.ValorFinal
+		}
+		groups[elemento.SubgrupoCatalogoId] = x
+		i++
+	}
+
+	var trContable map[string]interface{}
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Entrada de almacen", detalle, transaccionActaRecibido.UltimoEstado.ProveedorId); res == nil || outputError != nil {
+		if outputError == nil {
+			outputError = map[string]interface{}{
+				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
+				"err":     res,
+				"status":  "502",
+			}
+		}
+		return nil, outputError
+	} else {
+		trContable = resA
+	}
+
+	t := trContable["resultadoTransaccion"]
+	detalleMovimiento["ConsecutivoContableId"] = t.(models.TransaccionMovimientos).ConsecutivoId
+	if jsonString, err := json.Marshal(detalleMovimiento); err == nil {
+		movArka[0].Detalle = string(jsonString[:])
+	} else {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
+			"err":     err,
+			"status":  "502",
+		}
+		return nil, outputError
+	}
+
+	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(entradaId))
+	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &movArka)",
+			"err":     err,
+			"status":  "502",
 		}
 		return nil, outputError
 	}
@@ -283,10 +352,9 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 		return nil, outputError
 	}
-
 	resultado["movimientoArka"] = movArka[0]
-	// Falta el paso de la transacción contable
-
+	resultado["transaccionContable"] = trContable["resultadoTransaccion"]
+	resultado["tercero"] = trContable["tercero"]
 	return resultado, nil
 }
 
@@ -386,9 +454,7 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 			return nil, outputError
 		}
 		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:" + id
-		// fmt.Println(urlelemento)
 		if resp, err := request.GetJsonTest(urlelemento, &detalle); err == nil && resp.StatusCode == 200 {
-			// logs.Info(detalle)
 			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
 			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
 				idtercero := fmt.Sprintf("%v", resultado["funcionario"])
