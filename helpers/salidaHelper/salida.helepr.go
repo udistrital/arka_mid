@@ -637,7 +637,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		}
 	}()
 
-	query := "limit=10&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
+	query := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
 	if tramiteOnly {
 		query += url.QueryEscape(":Salida En Trámite")
 	} else {
