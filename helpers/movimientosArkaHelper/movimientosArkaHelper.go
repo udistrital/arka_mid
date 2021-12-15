@@ -196,3 +196,17 @@ func PutSoporteMovimiento(soporte *models.SoporteMovimiento, soporteId int) (sop
 	return soporteR, nil
 
 }
+
+// GetElementosFuncionario query controlador elementos_movimiento/funcionario/{funcionarioId} del api movimientos_arka_crud
+func GetElementosFuncionario(funcionarioId int) (movimientos []int, outputError map[string]interface{}) {
+
+	funcion := "GetElementosFuncionario"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/funcionario/" + strconv.Itoa(funcionarioId)
+	if err := request.GetJson(urlcrud, &movimientos); err != nil {
+		eval := " - request.GetJson(urlcrud, &movimientos)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return movimientos, nil
+}

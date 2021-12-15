@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	trasladoshelper "github.com/udistrital/arka_mid/helpers/trasladosHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 type TrasladosController struct {
@@ -18,6 +19,7 @@ type TrasladosController struct {
 func (c *TrasladosController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Get", c.GetTraslado)
+	c.Mapping("GetElementosFuncionario", c.GetElementosFuncionario)
 }
 
 // Post ...
@@ -121,6 +123,39 @@ func (c *TrasladosController) GetTraslado() {
 			"err":     errors.New("No se obtuvo respuesta al consultar el traslado"),
 			"status":  "404",
 		})
+	}
+
+	c.ServeJSON()
+
+}
+
+// GetElementosFuncionario ...
+// @Title Get Elementos
+// @Description get Elementos by Tercero Origen
+// @Param	funcionarioId	path	int	true	"tercero_id del funcionario"
+// @Success 200 {object} models.DetalleElementoPlaca
+// @Failure 404 not found resource
+// @router /funcionario/:funcionarioId [get]
+func (c *TrasladosController) GetElementosFuncionario() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+	var id int
+	if v, err := c.GetInt(":funcionarioId"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un tercero válido")
+		}
+		panic(errorctrl.Error("GetElementosFuncionario", err, "400"))
+	} else {
+		id = v
+	}
+
+	if respuesta, err := trasladoshelper.GetElementosFuncionario(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosFuncionario(id)", err, "404"))
 	}
 
 	c.ServeJSON()

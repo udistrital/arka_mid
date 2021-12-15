@@ -1081,6 +1081,36 @@
                 }
             }
         },
+        "/traslados/funcionario/{funcionarioId}": {
+            "get": {
+                "tags": [
+                    "traslados"
+                ],
+                "description": "get Elementos by Tercero Origen",
+                "operationId": "TrasladosController.Get Elementos",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "funcionarioId",
+                        "description": "tercero_id del funcionario",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.DetalleElementoPlaca"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/traslados/{id}": {
             "get": {
                 "tags": [
@@ -1498,6 +1528,13 @@
                 },
                 "Placa": {
                     "type": "string"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "Valor": {
+                    "type": "number",
+                    "format": "double"
                 }
             }
         },

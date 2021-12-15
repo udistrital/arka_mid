@@ -89,6 +89,8 @@ type DetalleElementoPlaca struct {
 	Placa          string
 	Nombre         string
 	Marca          string
+	Serie          string
+	Valor          float64
 }
 
 type TrTraslado struct {
