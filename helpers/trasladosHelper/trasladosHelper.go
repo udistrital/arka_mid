@@ -10,6 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -226,6 +227,95 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	}
 
 	return Elementos, nil
+}
+
+// GetAllTraslados Consulta información general de todos los traslados filtrando por las que están pendientes por revisar
+func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista, outputError map[string]interface{}) {
+
+	funcion := "GetAllSolicitudes"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre"
+
+	if tramiteOnly {
+		urlcrud += url.QueryEscape(":Traslado En Trámite")
+	} else {
+		urlcrud += "__startswith:Traslado"
+	}
+
+	if Solicitudes, err := movimientosArkaHelper.GetAllMovimiento(urlcrud); err != nil {
+		return nil, err
+	} else {
+		if len(Solicitudes) == 0 {
+			return nil, nil
+		}
+
+		tercerosBuffer := make(map[int]interface{})
+
+		for _, solicitud := range Solicitudes {
+
+			var (
+				detalle    *models.FormatoTraslado
+				Tercero_   string
+				Revisor_   string
+				Ubicacion_ string
+			)
+
+			if err := json.Unmarshal([]byte(solicitud.Detalle), &detalle); err != nil {
+				eval := " - json.Unmarshal([]byte(solicitud.Detalle), &detalle)"
+				return nil, errorctrl.Error(funcion+eval, err, "500")
+			}
+
+			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
+				return func() (interface{}, map[string]interface{}) {
+					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+						return Tercero, nil
+					}
+					return nil, nil
+				}
+			}
+
+			requestUbicacion := func(id int) func() (interface{}, map[string]interface{}) {
+				return func() (interface{}, map[string]interface{}) {
+					if Ubicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(id); err == nil {
+						return Ubicacion, nil
+					}
+					return nil, nil
+				}
+			}
+
+			if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioDestino, tercerosBuffer, requestTercero(detalle.FuncionarioDestino), nil, nil); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					Tercero_ = v2.NombreCompleto
+				}
+			}
+
+			if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioOrigen, tercerosBuffer, requestTercero(detalle.FuncionarioOrigen), nil, nil); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					Revisor_ = v2.NombreCompleto
+				}
+			}
+
+			if v, err := utilsHelper.BufferGeneric(detalle.Ubicacion, tercerosBuffer, requestUbicacion(detalle.Ubicacion), nil, nil); err == nil {
+				if v2, ok := v.(*models.DetalleSedeDependencia); ok {
+					Ubicacion_ = v2.Ubicacion.EspacioFisicoId.Nombre
+				}
+			}
+
+			baja := models.DetalleTrasladoLista{
+				Id:                 solicitud.Id,
+				Consecutivo:        detalle.Consecutivo,
+				FechaCreacion:      solicitud.FechaCreacion.String(),
+				FuncionarioOrigen:  Tercero_,
+				FuncionarioDestino: Revisor_,
+				Ubicacion:          Ubicacion_,
+				EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
+			}
+			listBajas = append(listBajas, &baja)
+		}
+		return listBajas, nil
+
+	}
 }
 
 func getTipoComprobanteTraslados() string {

@@ -1051,6 +1051,35 @@
             }
         },
         "/traslados/": {
+            "get": {
+                "tags": [
+                    "traslados"
+                ],
+                "description": "Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados",
+                "operationId": "TrasladosController.Get All",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "tramiteOnly",
+                        "description": "Indica si se requieren los traslados en estado en tramite",
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DetalleTrasladoLista"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "traslados"
@@ -1622,6 +1651,35 @@
                 "TipoVinculacion": {
                     "type": "integer",
                     "format": "int64"
+                }
+            }
+        },
+        "models.DetalleTrasladoLista": {
+            "title": "DetalleTrasladoLista",
+            "type": "object",
+            "properties": {
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "EstadoMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string"
+                },
+                "FuncionarioDestino": {
+                    "type": "string"
+                },
+                "FuncionarioOrigen": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Ubicacion": {
+                    "type": "string"
                 }
             }
         },
