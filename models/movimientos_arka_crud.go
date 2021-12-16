@@ -72,6 +72,15 @@ type SalidaGeneral struct {
 	Salidas []*TrSalida
 }
 
+type FormatoTraslado struct {
+	Consecutivo        string
+	Ubicacion          int
+	FuncionarioOrigen  int
+	FuncionarioDestino int
+	Elementos          []int
+	RazonRechazo       string
+}
+
 type DetalleTraslado struct {
 	Id                 int
 	FuncionarioOrigen  int
@@ -83,12 +92,24 @@ type DetalleTraslado struct {
 	Consecutivo        string
 }
 
+type DetalleTrasladoLista struct {
+	Id                 int
+	Consecutivo        string
+	FuncionarioOrigen  string
+	FuncionarioDestino string
+	FechaCreacion      string
+	Ubicacion          string
+	EstadoMovimientoId int
+}
+
 type DetalleElementoPlaca struct {
 	Id             int
 	ElementoActaId int
 	Placa          string
 	Nombre         string
 	Marca          string
+	Serie          string
+	Valor          float64
 }
 
 type TrTraslado struct {

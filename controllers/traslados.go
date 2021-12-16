@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	trasladoshelper "github.com/udistrital/arka_mid/helpers/trasladosHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 type TrasladosController struct {
@@ -18,6 +19,7 @@ type TrasladosController struct {
 func (c *TrasladosController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Get", c.GetTraslado)
+	c.Mapping("GetElementosFuncionario", c.GetElementosFuncionario)
 }
 
 // Post ...
@@ -125,4 +127,67 @@ func (c *TrasladosController) GetTraslado() {
 
 	c.ServeJSON()
 
+}
+
+// GetElementosFuncionario ...
+// @Title Get Elementos
+// @Description get Elementos by Tercero Origen
+// @Param	funcionarioId	path	int	true	"tercero_id del funcionario"
+// @Success 200 {object} models.DetalleElementoPlaca
+// @Failure 404 not found resource
+// @router /funcionario/:funcionarioId [get]
+func (c *TrasladosController) GetElementosFuncionario() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController - Unhandled Error!")
+	var id int
+	if v, err := c.GetInt(":funcionarioId"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un tercero válido")
+		}
+		panic(errorctrl.Error("GetElementosFuncionario - c.GetInt(\":funcionarioId\")", err, "400"))
+	} else {
+		id = v
+	}
+
+	if respuesta, err := trasladoshelper.GetElementosFuncionario(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosFuncionario(id)", err, "404"))
+	}
+
+	c.ServeJSON()
+
+}
+
+// GetAll ...
+// @Title Get All
+// @Description Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
+// @Param	tramiteOnly	query 	bool	false	"Indica si se requieren los traslados en estado en tramite"
+// @Success 200 {object} []models.DetalleTrasladoLista
+// @Failure 404 not found resource
+// @router / [get]
+func (c *TrasladosController) GetAll() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+
+	var tramiteOnly bool
+	if v, err := c.GetBool("tramiteOnly", false); err != nil {
+		panic(errorctrl.Error("GetAll - c.GetBool(\"tramiteOnly\", false)", err, "400"))
+	} else {
+		tramiteOnly = v
+	}
+
+	if v, err := trasladoshelper.GetAllTraslados(tramiteOnly); err == nil {
+		if v != nil {
+			c.Data["json"] = v
+		} else {
+			c.Data["json"] = []interface{}{}
+		}
+	} else {
+		panic(err)
+	}
+	c.ServeJSON()
 }

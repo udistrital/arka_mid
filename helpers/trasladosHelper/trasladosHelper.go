@@ -10,22 +10,19 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // GetDetalle Consulta los funcionarios, ubicación y elementos asociados a un traslado
 func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetDetalleTraslado", "err": err, "status": "502"}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetDetalleTraslado"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		movimiento *models.Movimiento
@@ -42,12 +39,8 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetDetalleTraslado - json.Unmarshal([]byte(movimiento.Detalle), &detalle)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
 	// Se consulta el detalle del funcionario origen
@@ -86,28 +79,20 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetDetalleFuncionario", "err": err, "status": "502"}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetElementosTraslado"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		urlcrud   string
-		elementos []*models.DetalleElementoPlaca
+		query     string
+		elementos []*models.ElementosMovimiento
 	)
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
-	urlcrud += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, ";"))
-	if err := request.GetJson(urlcrud, &elementos); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetElementosTraslado - request.GetJson(urlcrud, &elementos)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	query = "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
+	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+	if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		elementos = elementos_
 	}
 
 	idsActa := []int{}
@@ -115,38 +100,35 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 		idsActa = append(idsActa, int(val.ElementoActaId))
 	}
 
-	if response, err := actaRecibido.GetElementosByIds(idsActa); err != nil {
+	query = "limit=-1&sortby=Id&order=desc&query=Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(idsActa, "|"))
+	if response, err := actaRecibido.GetAllElemento(query); err != nil {
 		return nil, err
 	} else {
-		for _, elemento := range elementos {
-			if i := utilsHelper.FindIdInArray(response, int(elemento.ElementoActaId)); i > -1 {
-				if len(response) > 1 {
-					response = append(response[:i], response[i+1:]...)
-				}
-				elemento.Placa = response[i].Placa
+		if len(response) == len(elementos) {
+			for i := 0; i < len(response); i++ {
+				elemento := new(models.DetalleElementoPlaca)
+
+				elemento.Id = elementos[i].Id
 				elemento.Nombre = response[i].Nombre
+				elemento.Placa = response[i].Placa
 				elemento.Marca = response[i].Marca
+				elemento.Serie = response[i].Serie
+				elemento.Valor = response[i].ValorTotal
+
+				Elementos = append(Elementos, elemento)
 			}
 		}
 	}
 
-	Elementos = elementos
-	return
+	return Elementos, nil
 }
 
 // RegistrarEntrada Crea registro de traslado en estado en trámite
 func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "RegistrarTraslado - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "RegistrarTraslado"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	result = new(models.Movimiento)
 
@@ -165,12 +147,8 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 
 	if jsonData, err := json.Marshal(detalleJSON); err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "RegistrarTraslado - json.Marshal(detalleJSON)",
-			"err":     err,
-			"status":  "500",
-		}
-		return nil, outputError
+		eval := " - json.Marshal(detalleJSON)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	} else {
 		data.Detalle = string(jsonData[:])
 	}
@@ -183,6 +161,175 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 }
 
+func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
+
+	funcion := "GetElementosFuncionario"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var (
+		elementosF    []int
+		elementosM    []*models.ElementosMovimiento
+		elementosActa []*models.Elemento
+	)
+
+	Elementos = make([]*models.DetalleElementoPlaca, 0)
+
+	// Consulta lista de elementos asignados al funcionario
+	if elemento_, err := movimientosArkaHelper.GetElementosFuncionario(id); err != nil {
+		return nil, err
+	} else {
+		elementosF = elemento_
+	}
+
+	// Consulta id del elemento en el api acta_recibido_crud
+	if len(elementosF) > 0 {
+		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
+		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
+		if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+			return nil, err
+		} else {
+			elementosM = elementoMovimiento_
+		}
+	} else {
+		return Elementos, nil
+	}
+
+	ids := []int{}
+	elementosM = removeDuplicateInt(elementosM)
+	for _, el := range elementosM {
+		ids = append(ids, el.ElementoActaId)
+	}
+
+	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud
+	query := "limit=-1&sortby=Id&order=desc&query=Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+	if elemento_, err := actaRecibido.GetAllElemento(query); err != nil {
+		return nil, err
+	} else {
+		elementosActa = elemento_
+	}
+
+	if len(elementosActa) == len(elementosM) {
+		for i := 0; i < len(elementosActa); i++ {
+			if elementosActa[i].Placa != "" {
+				elemento := new(models.DetalleElementoPlaca)
+
+				elemento.Id = elementosM[i].Id
+				elemento.Nombre = elementosActa[i].Nombre
+				elemento.Placa = elementosActa[i].Placa
+				elemento.Marca = elementosActa[i].Marca
+				elemento.Serie = elementosActa[i].Serie
+				elemento.Valor = elementosActa[i].ValorTotal
+
+				Elementos = append(Elementos, elemento)
+			}
+		}
+	}
+
+	return Elementos, nil
+}
+
+// GetAllTraslados Consulta información general de todos los traslados filtrando por las que están pendientes por revisar
+func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista, outputError map[string]interface{}) {
+
+	funcion := "GetAllSolicitudes"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre"
+
+	if tramiteOnly {
+		urlcrud += url.QueryEscape(":Traslado En Trámite")
+	} else {
+		urlcrud += "__startswith:Traslado"
+	}
+
+	if Solicitudes, err := movimientosArkaHelper.GetAllMovimiento(urlcrud); err != nil {
+		return nil, err
+	} else {
+		if len(Solicitudes) == 0 {
+			return nil, nil
+		}
+
+		tercerosBuffer := make(map[int]interface{})
+
+		for _, solicitud := range Solicitudes {
+
+			var (
+				detalle    *models.FormatoTraslado
+				Tercero_   string
+				Revisor_   string
+				Ubicacion_ string
+			)
+
+			if err := json.Unmarshal([]byte(solicitud.Detalle), &detalle); err != nil {
+				eval := " - json.Unmarshal([]byte(solicitud.Detalle), &detalle)"
+				return nil, errorctrl.Error(funcion+eval, err, "500")
+			}
+
+			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
+				return func() (interface{}, map[string]interface{}) {
+					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+						return Tercero, nil
+					}
+					return nil, nil
+				}
+			}
+
+			requestUbicacion := func(id int) func() (interface{}, map[string]interface{}) {
+				return func() (interface{}, map[string]interface{}) {
+					if Ubicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(id); err == nil {
+						return Ubicacion, nil
+					}
+					return nil, nil
+				}
+			}
+
+			if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioDestino, tercerosBuffer, requestTercero(detalle.FuncionarioDestino), nil, nil); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					Tercero_ = v2.NombreCompleto
+				}
+			}
+
+			if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioOrigen, tercerosBuffer, requestTercero(detalle.FuncionarioOrigen), nil, nil); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					Revisor_ = v2.NombreCompleto
+				}
+			}
+
+			if v, err := utilsHelper.BufferGeneric(detalle.Ubicacion, tercerosBuffer, requestUbicacion(detalle.Ubicacion), nil, nil); err == nil {
+				if v2, ok := v.(*models.DetalleSedeDependencia); ok {
+					Ubicacion_ = v2.Ubicacion.EspacioFisicoId.Nombre
+				}
+			}
+
+			baja := models.DetalleTrasladoLista{
+				Id:                 solicitud.Id,
+				Consecutivo:        detalle.Consecutivo,
+				FechaCreacion:      solicitud.FechaCreacion.String(),
+				FuncionarioOrigen:  Tercero_,
+				FuncionarioDestino: Revisor_,
+				Ubicacion:          Ubicacion_,
+				EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
+			}
+			listBajas = append(listBajas, &baja)
+		}
+		return listBajas, nil
+
+	}
+}
+
 func getTipoComprobanteTraslados() string {
 	return "T"
+}
+
+func removeDuplicateInt(intSlice []*models.ElementosMovimiento) []*models.ElementosMovimiento {
+	allKeys := make(map[int]bool)
+	list := make([]*models.ElementosMovimiento, 0)
+	for _, item := range intSlice {
+		if _, value := allKeys[item.ElementoActaId]; !value {
+			allKeys[item.ElementoActaId] = true
+			list = append(list, item)
+		}
+	}
+	return list
 }
