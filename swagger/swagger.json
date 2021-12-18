@@ -316,7 +316,7 @@
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "Id de la baja en el api movimientos_arka_Crud",
+                        "description": "Id de la baja en el api movimientos_arka_crud",
                         "required": true,
                         "type": "string"
                     }
@@ -1510,6 +1510,9 @@
                 "Funcionario": {
                     "$ref": "#/definitions/models.InfoTercero"
                 },
+                "Historial": {
+                    "$ref": "#/definitions/models.Historial"
+                },
                 "Id": {
                     "type": "integer",
                     "format": "int64"
@@ -1522,9 +1525,6 @@
                 },
                 "Placa": {
                     "type": "string"
-                },
-                "Salida": {
-                    "$ref": "#/definitions/models.Movimiento"
                 },
                 "Serie": {
                     "type": "string"
@@ -2033,6 +2033,27 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.Historial": {
+            "title": "Historial",
+            "type": "object",
+            "properties": {
+                "Baja": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Depreciacion": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Salida": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Traslados": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Movimiento"
+                    }
                 }
             }
         },

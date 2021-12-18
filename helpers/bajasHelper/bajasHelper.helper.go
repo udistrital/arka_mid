@@ -435,7 +435,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-		eval := " - request.SendJson(urlcrud, \"PUT\", &ids, &revision)"
+		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
@@ -492,8 +492,6 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	var (
 		elemento           []*models.DetalleElemento
 		elementoMovimiento *models.ElementosMovimiento
-		ubicacion          *models.DetalleSedeDependencia
-		funcionario        *models.InfoTercero
 	)
 	Elemento = new(models.DetalleElementoBaja)
 
@@ -514,22 +512,26 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 		return Elemento, nil
 	}
 
-	detalleJSON := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON); err != nil {
-		eval := " - json.Unmarshal([]byte(elementoMovimiento.MovimientoId.Detalle), &detalleJSON)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {
+	if historial_, err := movimientosArkaHelper.GetHistorialElemento(elementoMovimiento.Id, true); err != nil {
 		return nil, err
 	} else {
-		ubicacion = ubicacion_
+		Elemento.Historial = historial_
 	}
 
-	if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(int(detalleJSON["funcionario"].(float64))); err != nil {
+	if fc, ub, err := GetEncargado(Elemento.Historial); err != nil {
 		return nil, err
 	} else {
-		funcionario = funcionario_
+		if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(ub); err != nil {
+			return nil, err
+		} else {
+			Elemento.Ubicacion = ubicacion_
+		}
+
+		if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(fc); err != nil {
+			return nil, err
+		} else {
+			Elemento.Funcionario = funcionario_
+		}
 	}
 
 	Elemento.Id = elementoMovimiento.Id
@@ -538,9 +540,6 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	Elemento.Marca = elemento[0].Marca
 	Elemento.Serie = elemento[0].Serie
 	Elemento.SubgrupoCatalogoId = elemento[0].SubgrupoCatalogoId
-	Elemento.Salida = elementoMovimiento.MovimientoId
-	Elemento.Ubicacion = ubicacion
-	Elemento.Funcionario = funcionario
 
 	return Elemento, nil
 }
@@ -581,28 +580,29 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 	if len(elementosActa) == len(elementosMovimiento) {
 
 		for i := 0; i < len(elementosActa); i++ {
-			var (
-				ubicacion   *models.DetalleSedeDependencia
-				funcionario *models.InfoTercero
-			)
+
 			elemento := new(models.DetalleElementoBaja)
 
-			detalleJSON := map[string]interface{}{}
-			if err := json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON); err != nil {
-				eval := " - json.Unmarshal([]byte(elementosMovimiento[i].MovimientoId.Detalle), &detalleJSON)"
-				return nil, errorctrl.Error(funcion+eval, err, "500")
-			}
-
-			if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(int(detalleJSON["ubicacion"].(float64))); err != nil {
+			if historial_, err := movimientosArkaHelper.GetHistorialElemento(elementosMovimiento[i].Id, true); err != nil {
 				return nil, err
 			} else {
-				ubicacion = ubicacion_
+				elemento.Historial = historial_
 			}
 
-			if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(int(detalleJSON["funcionario"].(float64))); err != nil {
+			if fc, ub, err := GetEncargado(elemento.Historial); err != nil {
 				return nil, err
 			} else {
-				funcionario = funcionario_
+				if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(ub); err != nil {
+					return nil, err
+				} else {
+					elemento.Ubicacion = ubicacion_
+				}
+
+				if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(fc); err != nil {
+					return nil, err
+				} else {
+					elemento.Funcionario = funcionario_
+				}
 			}
 
 			elemento.Id = elementosMovimiento[i].Id
@@ -611,9 +611,6 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 			elemento.Marca = elementosActa[i].Marca
 			elemento.Serie = elementosActa[i].Serie
 			elemento.SubgrupoCatalogoId = elementosActa[i].SubgrupoCatalogoId
-			elemento.Salida = elementosMovimiento[i].MovimientoId
-			elemento.Ubicacion = ubicacion
-			elemento.Funcionario = funcionario
 
 			Elementos = append(Elementos, elemento)
 		}
@@ -634,4 +631,31 @@ func FindInArray(cuentasSg []*models.CuentaSubgrupo, subgrupoId int) (i int) {
 		}
 	}
 	return -1
+}
+
+// Retorna el actual encargado de un elemento de acuerdo a su historial
+func GetEncargado(historial *models.Historial) (funcionarioId int, ubicacionId int, outputError map[string]interface{}) {
+
+	funcion := "GetEncargado"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	if historial.Traslados != nil {
+		var detalleTr models.DetalleTraslado
+		if err := json.Unmarshal([]byte(historial.Traslados[0].Detalle), &detalleTr); err != nil {
+			eval := " - json.Unmarshal([]byte(historial.Traslados[0].Detalle), &detalleTr)"
+			return 0, 0, errorctrl.Error(funcion+eval, err, "500")
+		}
+		funcionarioId = detalleTr.FuncionarioDestino
+		ubicacionId = detalleTr.Ubicacion
+		return funcionarioId, ubicacionId, nil
+	} else {
+		detalleS := map[string]interface{}{}
+		if err := json.Unmarshal([]byte(historial.Salida.Detalle), &detalleS); err != nil {
+			eval := " - json.Unmarshal([]byte(historial.Salida.Detalle), &detalleS)"
+			return 0, 0, errorctrl.Error(funcion+eval, err, "500")
+		}
+		funcionarioId = int(detalleS["funcionario"].(float64))
+		ubicacionId = int(detalleS["ubicacion"].(float64))
+		return funcionarioId, ubicacionId, nil
+	}
 }

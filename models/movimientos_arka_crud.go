@@ -160,7 +160,7 @@ type DetalleElementoBaja struct {
 	Marca              string
 	Serie              string
 	SubgrupoCatalogoId *DetalleSubgrupo
-	Salida             *Movimiento
+	Historial          *Historial
 	Ubicacion          *DetalleSedeDependencia
 	Funcionario        *InfoTercero
 }
@@ -169,4 +169,11 @@ type TrRevisionBaja struct {
 	Bajas         []int
 	Aprobacion    bool
 	Observaciones string
+}
+
+type Historial struct {
+	Salida       *Movimiento
+	Traslados    []*Movimiento
+	Baja         *Movimiento
+	Depreciacion *Movimiento
 }
