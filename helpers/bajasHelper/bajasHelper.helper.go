@@ -478,6 +478,9 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	Baja.TipoBaja = movimiento.FormatoTipoMovimientoId
 	Baja.Consecutivo = detalle.Consecutivo
 	Baja.Observaciones = movimiento.Observacion
+	Baja.RazonRechazo = detalle.RazonRechazo
+	Baja.Resolucion = detalle.Resolucion
+	Baja.FechaRevisionC = detalle.FechaRevisionC
 
 	return Baja, nil
 

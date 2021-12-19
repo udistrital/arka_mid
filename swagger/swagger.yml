@@ -1815,12 +1815,18 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.DetalleElementoBaja'
+      FechaRevisionC:
+        type: string
       Funcionario:
         $ref: '#/definitions/models.InfoTercero'
       Id:
         type: integer
         format: int64
       Observaciones:
+        type: string
+      RazonRechazo:
+        type: string
+      Resolucion:
         type: string
       Revisor:
         $ref: '#/definitions/models.InfoTercero'
@@ -1840,7 +1846,11 @@ definitions:
         items:
           type: integer
           format: int64
-      Observaciones:
+      FechaRevisionC:
+        type: string
+      RazonRechazo:
+        type: string
+      Resolucion:
         type: string
   models.TrSalida:
     title: TrSalida
