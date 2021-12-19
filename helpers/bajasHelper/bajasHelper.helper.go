@@ -35,11 +35,13 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	funcion := "RegistrarBaja"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	var movimiento *models.Movimiento
+	var (
+		movimiento *models.Movimiento
+		detalle    *models.FormatoBaja
+	)
 
-	detalleJSON := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON); err != nil {
-		eval := " - json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalleJSON)"
+	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalle); err != nil {
+		eval := " - json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalle)"
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
@@ -48,11 +50,11 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 		return nil, err
 	} else {
 		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteBajas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		detalleJSON["consecutivo"] = consecutivo
+		detalle.Consecutivo = consecutivo
 	}
 
-	if jsonData, err := json.Marshal(detalleJSON); err != nil {
-		eval := " - json.Marshal(detalleJSON)"
+	if jsonData, err := json.Marshal(detalle); err != nil {
+		eval := " - json.Marshal(detalle)"
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	} else {
 		baja.Movimiento.Detalle = string(jsonData[:])
