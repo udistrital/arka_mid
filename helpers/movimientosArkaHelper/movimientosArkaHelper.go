@@ -210,3 +210,18 @@ func GetElementosFuncionario(funcionarioId int) (movimientos []int, outputError 
 	}
 	return movimientos, nil
 }
+
+// GetHistorialElemento query controlador elementos_movimiento/historial/{elementoId} del api movimientos_arka_crud
+func GetHistorialElemento(elementoId int, final bool) (historial *models.Historial, outputError map[string]interface{}) {
+
+	funcion := "GetHistorialElemento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/historial/" + strconv.Itoa(elementoId)
+	urlcrud += "?final=" + strconv.FormatBool(final)
+	if err := request.GetJson(urlcrud, &historial); err != nil {
+		eval := " - request.GetJson(urlcrud, &historial)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return historial, nil
+}

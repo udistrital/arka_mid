@@ -236,7 +236,7 @@ paths:
       parameters:
       - in: path
         name: id
-        description: Id de la baja en el api movimientos_arka_Crud
+        description: Id de la baja en el api movimientos_arka_crud
         required: true
         type: string
       responses:
@@ -1027,6 +1027,8 @@ definitions:
     properties:
       Funcionario:
         $ref: '#/definitions/models.InfoTercero'
+      Historial:
+        $ref: '#/definitions/models.Historial'
       Id:
         type: integer
         format: int64
@@ -1036,8 +1038,6 @@ definitions:
         type: string
       Placa:
         type: string
-      Salida:
-        $ref: '#/definitions/models.Movimiento'
       Serie:
         type: string
       SubgrupoCatalogoId:
@@ -1394,6 +1394,20 @@ definitions:
         format: int64
       Nombre:
         type: string
+  models.Historial:
+    title: Historial
+    type: object
+    properties:
+      Baja:
+        $ref: '#/definitions/models.Movimiento'
+      Depreciacion:
+        $ref: '#/definitions/models.Movimiento'
+      Salida:
+        $ref: '#/definitions/models.Movimiento'
+      Traslados:
+        type: array
+        items:
+          $ref: '#/definitions/models.Movimiento'
   models.InfoComplementaria:
     title: InfoComplementaria
     type: object
@@ -1801,12 +1815,18 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.DetalleElementoBaja'
+      FechaRevisionC:
+        type: string
       Funcionario:
         $ref: '#/definitions/models.InfoTercero'
       Id:
         type: integer
         format: int64
       Observaciones:
+        type: string
+      RazonRechazo:
+        type: string
+      Resolucion:
         type: string
       Revisor:
         $ref: '#/definitions/models.InfoTercero'
@@ -1826,7 +1846,11 @@ definitions:
         items:
           type: integer
           format: int64
-      Observaciones:
+      FechaRevisionC:
+        type: string
+      RazonRechazo:
+        type: string
+      Resolucion:
         type: string
   models.TrSalida:
     title: TrSalida

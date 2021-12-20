@@ -128,6 +128,8 @@ type FormatoBaja struct {
 	FechaRevisionC string
 	Funcionario    int
 	Revisor        int
+	RazonRechazo   string
+	Resolucion     string
 }
 
 type DetalleBaja struct {
@@ -143,14 +145,17 @@ type DetalleBaja struct {
 }
 
 type TrBaja struct {
-	Id            int
-	Soporte       int
-	Funcionario   *InfoTercero
-	Revisor       *InfoTercero
-	TipoBaja      *FormatoTipoMovimiento
-	Elementos     []*DetalleElementoBaja
-	Observaciones string
-	Consecutivo   string
+	Id             int
+	Soporte        int
+	Funcionario    *InfoTercero
+	Revisor        *InfoTercero
+	TipoBaja       *FormatoTipoMovimiento
+	Elementos      []*DetalleElementoBaja
+	Observaciones  string
+	Consecutivo    string
+	RazonRechazo   string
+	Resolucion     string
+	FechaRevisionC string
 }
 
 type DetalleElementoBaja struct {
@@ -160,13 +165,22 @@ type DetalleElementoBaja struct {
 	Marca              string
 	Serie              string
 	SubgrupoCatalogoId *DetalleSubgrupo
-	Salida             *Movimiento
+	Historial          *Historial
 	Ubicacion          *DetalleSedeDependencia
 	Funcionario        *InfoTercero
 }
 
 type TrRevisionBaja struct {
-	Bajas         []int
-	Aprobacion    bool
-	Observaciones string
+	Bajas          []int
+	Aprobacion     bool
+	RazonRechazo   string
+	FechaRevisionC string
+	Resolucion     string
+}
+
+type Historial struct {
+	Salida       *Movimiento
+	Traslados    []*Movimiento
+	Baja         *Movimiento
+	Depreciacion *Movimiento
 }
