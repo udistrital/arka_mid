@@ -477,7 +477,8 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 	}()
 
 	var Elementos___ []map[string]interface{}
-	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?query=MovimientoId.FormatoTipoMovimientoId.CodigoAbreviacion:AP_KDX,Activo:true&limit=-1&fields=ElementoCatalogoId"
+	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?"
+	url += "query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion__in:AP_KDX|SAL_KDX,Activo:true&limit=-1&fields=ElementoCatalogoId"
 	if res, err := request.GetJsonTest(url, &Elementos___); err == nil && res.StatusCode == 200 {
 		// fmt.Println("Elementos", Elementos___[0])
 
