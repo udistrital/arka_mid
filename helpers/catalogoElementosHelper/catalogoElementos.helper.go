@@ -289,7 +289,7 @@ func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, out
 
 		urlSubgrupo := "http://" + beego.AppConfig.String("catalogoElementosService") + "detalle_subgrupo?"
 		urlSubgrupo += "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-		urlSubgrupo += "&fields=SubgrupoId,TipoBienId"
+		urlSubgrupo += "&fields=SubgrupoId,TipoBienId&sortby=Id&order=desc"
 		if response, err := request.GetJsonTest(urlSubgrupo, &subgrupo); err == nil {
 			if response.StatusCode == 200 {
 				return subgrupo, nil
