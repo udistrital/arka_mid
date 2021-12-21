@@ -181,9 +181,8 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	tercerodebito := true
 	tercerocredito := true
 	for clave, _ := range totales {
-		urlcuentas := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo/?query=SubgrupoId.Id:" + strconv.Itoa(clave) + ",Activo:true,SubtipoMovimientoId:" + tipomvto
+		urlcuentas := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo/?sortby=Id&order=desc&query=SubgrupoId.Id:" + strconv.Itoa(clave) + ",Activo:true,SubtipoMovimientoId:" + tipomvto
 		logs.Debug("******* La url de las cuentas", urlcuentas)
-
 		if respuesta, err := request.GetJsonTest(urlcuentas, &elemento); err == nil && respuesta.StatusCode == 200 {
 			//			for _, element := range elemento { //deberia existir un solo para de cuentas para cada tipo de movimiento, pero esto hay que discutirlo
 			element := elemento[0]
@@ -280,12 +279,12 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		}
 	} else {
 		res["resultadoTransaccion"] = transaccion
-		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err == nil {
+		if tercero, err := tercerosHelper.GetTerceroById(idTercero); err == nil {
+			logs.Debug(tercero)
 			res["tercero"] = tercero
 		} else {
 			return nil, err
 		}
-
 		return res, nil
 	}
 	return res, nil
