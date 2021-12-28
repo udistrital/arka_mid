@@ -295,7 +295,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	var trContable map[string]interface{}
 	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Entrada de almacen", detalle, transaccionActaRecibido.UltimoEstado.ProveedorId); res == nil || outputError != nil {
-		if outputError == nil {
+		if outputError != nil {
 			outputError = map[string]interface{}{
 				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",
 				"err":     res,
@@ -305,6 +305,9 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, outputError
 	} else {
 		trContable = resA
+		if resA["errorTransaccion"].(string) != "" {
+			return resA, nil
+		}
 	}
 
 	t := trContable["resultadoTransaccion"]
@@ -355,6 +358,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	resultado["movimientoArka"] = movArka[0]
 	resultado["transaccionContable"] = trContable["resultadoTransaccion"]
 	resultado["tercero"] = trContable["tercero"]
+	resultado["errorTransaccion"] = ""
 	return resultado, nil
 }
 
