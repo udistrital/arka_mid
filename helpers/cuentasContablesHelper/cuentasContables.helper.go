@@ -153,16 +153,8 @@ func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, ou
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
 func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto string, descripcionAsiento string, idTercero int) (response map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "AsientoContable - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "AsientoContable"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		res    map[string]interface{}
@@ -183,9 +175,6 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	if tipomvto == ID_SALIDA_CONSUMO_PRUEBAS {
 		tipomvto = ID_SALIDA_PRUEBAS
 	}
-
-	funcion := "AsientoContable"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	idconsecutivo := ""
 	if idconsecutivo1, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
