@@ -377,49 +377,39 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 
 	ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
 	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
-		outputError = map[string]interface{}{
-			"funcion": "asignarPlacaActa - actaRecibido.GetElementos(actaRecibidoId)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return nil, err
 	} else {
 		for _, elemento := range detalleElementos {
-			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca == true {
-				if placa, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "asignarPlacaActa - utilsHelper.GetConsecutivo(\"%05.0f\", ctxPlaca, \"Registro Placa Arka\")",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+			placa := ""
+			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca {
+				if placa_, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+					return nil, err
 				} else {
 					year, month, day := time.Now().Date()
-					elemento.Placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa, "")
-					elemento_ := models.Elemento{
-						Id:                 elemento.Id,
-						Nombre:             elemento.Nombre,
-						Cantidad:           elemento.Cantidad,
-						Marca:              elemento.Marca,
-						Serie:              elemento.Serie,
-						UnidadMedida:       elemento.UnidadMedida,
-						ValorUnitario:      elemento.ValorUnitario,
-						Subtotal:           elemento.Subtotal,
-						Descuento:          elemento.Descuento,
-						ValorTotal:         elemento.ValorTotal,
-						PorcentajeIvaId:    elemento.PorcentajeIvaId,
-						ValorIva:           elemento.ValorIva,
-						ValorFinal:         elemento.ValorFinal,
-						Placa:              elemento.Placa,
-						SubgrupoCatalogoId: elemento.SubgrupoCatalogoId.SubgrupoId.Id,
-						EstadoElementoId:   &models.EstadoElemento{Id: elemento.EstadoElementoId.Id},
-						ActaRecibidoId:     &models.ActaRecibido{Id: elemento.ActaRecibidoId.Id},
-						Activo:             true,
-					}
-					elementos = append(elementos, &elemento_)
+					placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
 				}
 			}
+			elemento_ := models.Elemento{
+				Id:                 elemento.Id,
+				Nombre:             elemento.Nombre,
+				Cantidad:           elemento.Cantidad,
+				Marca:              elemento.Marca,
+				Serie:              elemento.Serie,
+				UnidadMedida:       elemento.UnidadMedida,
+				ValorUnitario:      elemento.ValorUnitario,
+				Subtotal:           elemento.Subtotal,
+				Descuento:          elemento.Descuento,
+				ValorTotal:         elemento.ValorTotal,
+				PorcentajeIvaId:    elemento.PorcentajeIvaId,
+				ValorIva:           elemento.ValorIva,
+				ValorFinal:         elemento.ValorFinal,
+				Placa:              placa,
+				SubgrupoCatalogoId: elemento.SubgrupoCatalogoId.SubgrupoId.Id,
+				EstadoElementoId:   &models.EstadoElemento{Id: elemento.EstadoElementoId.Id},
+				ActaRecibidoId:     &models.ActaRecibido{Id: elemento.ActaRecibidoId.Id},
+				Activo:             true,
+			}
+			elementos = append(elementos, &elemento_)
 		}
 		return elementos, nil
 	}
