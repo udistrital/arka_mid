@@ -23,6 +23,8 @@ type ElementosMovimiento struct {
 	ValorTotal        float64
 	SaldoCantidad     float64
 	SaldoValor        float64
+	VidaUtil          float64
+	ValorResidual     float64
 	Activo            bool
 	FechaCreacion     time.Time
 	FechaModificacion time.Time
@@ -57,6 +59,19 @@ type SoporteMovimiento struct {
 	FechaCreacion     time.Time
 	FechaModificacion time.Time
 	MovimientoId      *Movimiento
+}
+
+type NovedadElemento struct {
+	Id                   int
+	VidaUtil             float64
+	ValorLibros          float64
+	ValorResidual        float64
+	Metadata             string
+	MovimientoId         *Movimiento
+	ElementoMovimientoId *ElementosMovimiento
+	Activo               bool
+	FechaCreacion        time.Time
+	FechaModificacion    time.Time
 }
 
 type TrSoporteMovimiento struct {
@@ -183,4 +198,20 @@ type Historial struct {
 	Traslados    []*Movimiento
 	Baja         *Movimiento
 	Depreciacion *Movimiento
+}
+
+type FormatoDepreciacion struct {
+	TrContable int
+	FechaCorte string
+	Totales    map[int]float64
+}
+
+type DetalleCorteDepreciacion struct {
+	ValorPresente        float64
+	ElementoMovimientoId int
+	VidaUtil             float64
+	ElementoActaId       int
+	ValorResidual        float64
+	NovedadElementoId    int
+	FechaRef             time.Time
 }

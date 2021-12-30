@@ -214,12 +214,12 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		// Si no se generan nuevas salidas, simplemente se debe actualizar el funcionario y la ubicación del movimiento original
 
 		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
-		if salida_, err := movimientosArkaHelper.PutMovimiento(m.Salidas[0].Salida, salidaId); err != nil {
+		if trRes, err := movimientosArkaHelper.PutTrSalida(m); err != nil {
 			return nil, err
 		} else {
-			resultado["trSalida"] = salida_
+			resultado["trSalida"] = trRes
 		}
-		return resultado, nil
+
 	} else {
 
 		// Si se generaron salidas a partir de la original, se debe asignar un consecutivo a cada una y una de ellas debe tener el original
@@ -495,7 +495,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return resultado, nil
 	}
 
-	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario); res == nil || outputError != nil {
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario, true); res == nil || outputError != nil {
 		if outputError == nil {
 			outputError = map[string]interface{}{
 				"funcion": "AprobarSalida -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"Salida de almacen\");",
