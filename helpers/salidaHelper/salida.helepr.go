@@ -495,7 +495,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return resultado, nil
 	}
 
-	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario); res == nil || outputError != nil {
+	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario, true); res == nil || outputError != nil {
 		if outputError == nil {
 			outputError = map[string]interface{}{
 				"funcion": "AprobarSalida -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"Salida de almacen\");",

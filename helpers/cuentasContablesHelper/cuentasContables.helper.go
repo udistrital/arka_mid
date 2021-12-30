@@ -151,7 +151,7 @@ func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, ou
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
-func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto string, descripcionAsiento string, idTercero int) (response map[string]interface{}, outputError map[string]interface{}) {
+func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto string, descripcionAsiento string, idTercero int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "AsientoContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -332,24 +332,29 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		}
 	}
 
-	apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
-	if err := request.SendJson(apiMvtoContables, "POST", &res, &transaccion); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AsientoContable -if err := request.SendJson(apiMvtoContables, \"POST\", &res, &transaccion);",
-			"err":     err,
-			"status":  "502",
-		}
-	} else {
-		res["resultadoTransaccion"] = transaccion
-		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err == nil {
-			res["tercero"] = tercero
+	if submit {
+		apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
+		if err := request.SendJson(apiMvtoContables, "POST", &res, &transaccion); err != nil {
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "AsientoContable -if err := request.SendJson(apiMvtoContables, \"POST\", &res, &transaccion);",
+				"err":     err,
+				"status":  "502",
+			}
 		} else {
-			return nil, err
+			res["resultadoTransaccion"] = transaccion
+			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err == nil {
+				res["tercero"] = tercero
+			} else {
+				return nil, err
+			}
+			return res, nil
 		}
 		return res, nil
+	} else {
+		res["simulacro"] = transaccion
+		return res, nil
 	}
-	return res, nil
 }
 
 // findIdInArray Retorna la posicion en que se encuentra el id específicado

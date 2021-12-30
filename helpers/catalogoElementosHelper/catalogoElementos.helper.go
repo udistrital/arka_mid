@@ -142,8 +142,8 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []m
 	// logs.Debug("urlcrud:", urlcrud)
 
 	if response, err := request.GetJsonTest(urlcrud, &cuentasSubgrupo); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-		// fmt.Println(cuentasSubgrupo[0])
-		if cuentasSubgrupo[0].Id != 0 {
+		// fmt.Println(cuentasSubgrupo)
+		if len(cuentasSubgrupo) > 0 {
 			for _, cuenta := range cuentasSubgrupo {
 				// logs.Debug("CuentaCreditoId:", cuenta.CuentaCreditoId, " - CuentaDebitoId:", cuenta.CuentaDebitoId)
 				cuentaCredito, _ := cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
@@ -344,7 +344,7 @@ func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, out
 
 		urlSubgrupo := "http://" + beego.AppConfig.String("catalogoElementosService") + "detalle_subgrupo?"
 		urlSubgrupo += "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-		urlSubgrupo += "&fields=SubgrupoId,TipoBienId&sortby=Id&order=desc"
+		urlSubgrupo += "&fields=SubgrupoId,TipoBienId,Depreciacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
 		if response, err := request.GetJsonTest(urlSubgrupo, &subgrupo); err == nil {
 			if response.StatusCode == 200 {
 				return subgrupo, nil

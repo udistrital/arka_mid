@@ -987,9 +987,9 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
 
-		urlcrud = "sortby=Id&order=desc&limit=-1&query=Activo:True,"
+		urlcrud = "sortby=Id&order=desc&limit=-1&query="
 		if actaId > 0 {
-			urlcrud += "ActaRecibidoId__Id:" + strconv.Itoa(actaId)
+			urlcrud += "Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
 		} else {
 			urlcrud += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
 		}

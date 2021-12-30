@@ -19,13 +19,15 @@ type CuentasSubgrupo struct {
 }
 
 type DetalleSubgrupo struct {
-	Id           int
-	Depreciacion bool
-	Valorizacion bool
-	Deterioro    bool
-	Activo       bool
-	SubgrupoId   *Subgrupo
-	TipoBienId   *TipoBien
+	Id            int
+	Depreciacion  bool
+	Valorizacion  bool
+	Deterioro     bool
+	VidaUtil      float64
+	ValorResidual float64
+	Activo        bool
+	SubgrupoId    *Subgrupo
+	TipoBienId    *TipoBien
 }
 
 type ElementoCatalogo struct {
