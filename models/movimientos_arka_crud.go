@@ -23,6 +23,8 @@ type ElementosMovimiento struct {
 	ValorTotal        float64
 	SaldoCantidad     float64
 	SaldoValor        float64
+	VidaUtil          float64
+	ValorResidual     float64
 	Activo            bool
 	FechaCreacion     time.Time
 	FechaModificacion time.Time
