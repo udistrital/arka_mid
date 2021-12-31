@@ -40,6 +40,20 @@ func GetAllEstadoMovimiento(nombre string) (estado []*models.EstadoMovimiento, o
 	return resEstadoMovimiento, nil
 }
 
+// GetAllFormatoTipoMovimiento query controlador formato_tipo_movimiento del api movimientos_arka_crud
+func GetAllFormatoTipoMovimiento(query string) (formatos []*models.FormatoTipoMovimiento, outputError map[string]interface{}) {
+
+	funcion := "GetAllFormatoTipoMovimiento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "formato_tipo_movimiento?" + query
+	if err := request.GetJson(urlcrud, &formatos); err != nil {
+		eval := " - request.GetJson(urlcrud, &formatos)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return formatos, nil
+}
+
 // GetAllElementosMovimiento query controlador elementos_movimiento del api movimientos_arka_crud
 func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovimiento, outputError map[string]interface{}) {
 
@@ -224,4 +238,19 @@ func GetHistorialElemento(elementoId int, final bool) (historial *models.Histori
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 	return historial, nil
+}
+
+// GetCorteDepreciacion query controlador depreciacion/?fechaCorte={fechaCorte} del api movimientos_arka_crud
+func GetCorteDepreciacion(fechaCorte string) (corte []*models.DetalleCorteDepreciacion, outputError map[string]interface{}) {
+
+	funcion := "GetCorteDepreciacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
+	urlcrud += "?fechaCorte=" + fechaCorte
+	if err := request.GetJson(urlcrud, &corte); err != nil {
+		eval := " - request.GetJson(urlcrud, &corte)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return corte, nil
 }

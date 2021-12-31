@@ -215,3 +215,7 @@ type DetalleCorteDepreciacion struct {
 	NovedadElementoId    int
 	FechaRef             time.Time
 }
+type InfoDepreciacion struct {
+	FechaCorte  time.Time
+	Observacion string
+}

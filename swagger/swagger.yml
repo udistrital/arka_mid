@@ -379,6 +379,29 @@ paths:
           description: '{}'
         "404":
           description: not found resource
+  /depreciacion/:
+    post:
+      tags:
+      - depreciacion
+      description: Actualiza el estado de las solicitudes una vez se registra la revision
+        del comite de almacen
+      operationId: DepreciacionController.GetCorte
+      parameters:
+      - in: body
+        name: body
+        description: Informacion de la liquidacion de depreciacion
+        schema:
+          $ref: '#/definitions/models.InfoDepreciacion'
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              format: int64
+              type: integer
+        "404":
+          description: not found resource
   /elemento/:
     post:
       tags:
@@ -1108,8 +1131,14 @@ definitions:
         $ref: '#/definitions/models.Subgrupo'
       TipoBienId:
         $ref: '#/definitions/models.TipoBien'
+      ValorResidual:
+        type: number
+        format: double
       Valorizacion:
         type: boolean
+      VidaUtil:
+        type: number
+        format: double
   models.DetalleTercero:
     title: DetalleTercero
     type: object
@@ -1276,10 +1305,16 @@ definitions:
       Unidad:
         type: number
         format: double
+      ValorResidual:
+        type: number
+        format: double
       ValorTotal:
         type: number
         format: double
       ValorUnitario:
+        type: number
+        format: double
+      VidaUtil:
         type: number
         format: double
   models.Entrada:
@@ -1442,6 +1477,15 @@ definitions:
         $ref: '#/definitions/models.InfoComplementaria'
       TerceroId:
         $ref: '#/definitions/models.Tercero'
+  models.InfoDepreciacion:
+    title: InfoDepreciacion
+    type: object
+    properties:
+      FechaCorte:
+        type: string
+        format: datetime
+      Observacion:
+        type: string
   models.InfoTercero:
     title: InfoTercero
     type: object
@@ -1919,3 +1963,6 @@ tags:
 - name: bajas_elementos
   description: |
     BajaController
+- name: depreciacion
+  description: |
+    DepreciacionController operations for Depreciacion
