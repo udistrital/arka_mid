@@ -135,7 +135,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+		if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -290,7 +290,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 			if idx != index {
 
-				if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+				if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
 						"funcion": "PutTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
