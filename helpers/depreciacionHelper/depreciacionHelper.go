@@ -25,11 +25,9 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	)
 
 	detalleD = make(map[string]interface{})
-	info.FechaCorte = info.FechaCorte.AddDate(0, 0, 1)
-	stringFecha := info.FechaCorte.Format("2006-01-02")
 
 	// Consulta los valores para generar el corte de depreciación
-	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(stringFecha); err != nil {
+	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(info.FechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
 		return nil, err
 	} else if elementos == nil {
 		return detalleD, nil
@@ -108,7 +106,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 
 	detalle := models.FormatoDepreciacion{
 		TrContable:   0,
-		FechaCorte:   stringFecha,
+		FechaCorte:   info.FechaCorte.Format("2006-01-02"),
 		Totales:      totales,
 		RazonRechazo: info.RazonRechazo,
 	}
