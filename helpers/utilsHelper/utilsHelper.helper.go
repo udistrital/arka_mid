@@ -133,7 +133,7 @@ func KeysValuesMap(m map[interface{}]interface{}) (keys []interface{}, vals []in
 	return
 }
 
-func GetConsecutivo(format string, contextoId int, descripcion string) (consecutivo string, outputError map[string]interface{}) {
+func GetConsecutivo(format string, contextoId int, descripcion string) (consecutivo string, consecutivoId int, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -161,9 +161,10 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 
 	if err := request.SendJson(url, "POST", &res, &data); err == nil {
 		consecutivo = fmt.Sprintf(format, res["Data"].(map[string]interface{})["Consecutivo"])
+		consecutivoId = int(res["Data"].(map[string]interface{})["Id"].(float64))
 	} else if strings.Contains(err.Error(), "invalid character") {
 		logs.Error(err)
-		consecutivo, outputError = GetConsecutivo(format, contextoId, descripcion)
+		consecutivo, consecutivoId, outputError = GetConsecutivo(format, contextoId, descripcion)
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -172,7 +173,7 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 			"status":  "502",
 		}
 	}
-	return consecutivo, outputError
+	return consecutivo, consecutivoId, outputError
 }
 
 func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFormat string) {

@@ -567,6 +567,97 @@
                 }
             }
         },
+        "/depreciacion/": {
+            "post": {
+                "tags": [
+                    "depreciacion"
+                ],
+                "description": "Actualiza el estado de las solicitudes una vez se registra la revision del comite de almacen",
+                "operationId": "DepreciacionController.GetCorte",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Informacion de la liquidacion de depreciacion",
+                        "schema": {
+                            "$ref": "#/definitions/models.InfoDepreciacion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "format": "int64",
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/depreciacion/{id}": {
+            "get": {
+                "tags": [
+                    "depreciacion"
+                ],
+                "description": "get Depreciacion by id",
+                "operationId": "DepreciacionController.Get Info Depreciacion",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "movimientoId de la depreciacion en el api movimientos_arka_crud",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]interface{}"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "depreciacion"
+                ],
+                "description": "update the ElementosMovimiento",
+                "operationId": "DepreciacionController.Put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to update",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ElementosMovimiento"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    }
+                }
+            }
+        },
         "/elemento/": {
             "post": {
                 "tags": [
@@ -1629,8 +1720,16 @@
                 "TipoBienId": {
                     "$ref": "#/definitions/models.TipoBien"
                 },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
                 "Valorizacion": {
                     "type": "boolean"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
                 }
             }
         },
@@ -1866,11 +1965,19 @@
                     "type": "number",
                     "format": "double"
                 },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
                 "ValorTotal": {
                     "type": "number",
                     "format": "double"
                 },
                 "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
                     "type": "number",
                     "format": "double"
                 }
@@ -2104,6 +2211,26 @@
                 },
                 "TerceroId": {
                     "$ref": "#/definitions/models.Tercero"
+                }
+            }
+        },
+        "models.InfoDepreciacion": {
+            "title": "InfoDepreciacion",
+            "type": "object",
+            "properties": {
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observaciones": {
+                    "type": "string"
+                },
+                "RazonRechazo": {
+                    "type": "string"
                 }
             }
         },
@@ -2800,6 +2927,10 @@
         {
             "name": "bajas_elementos",
             "description": "BajaController\n"
+        },
+        {
+            "name": "depreciacion",
+            "description": "DepreciacionController operations for Depreciacion\n"
         }
     ]
 }

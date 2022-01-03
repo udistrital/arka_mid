@@ -50,7 +50,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
+	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(\"%05.0f\", ctxConsecutivo, \"Registro Entrada Arka\")",
@@ -382,7 +382,7 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 		for _, elemento := range detalleElementos {
 			placa := ""
 			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca {
-				if placa_, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+				if placa_, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
 					return nil, err
 				} else {
 					year, month, day := time.Now().Date()

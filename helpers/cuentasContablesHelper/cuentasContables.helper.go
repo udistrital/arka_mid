@@ -176,20 +176,14 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		tipomvto = ID_SALIDA_PRUEBAS
 	}
 
-	idconsecutivo := ""
-	if idconsecutivo1, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
-
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo()",
-			"err":     err,
-			"status":  "502",
+	consecutivoId := 0
+	if submit {
+		if _, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
+			return nil, outputError
+		} else {
+			consecutivoId = consecutivoId_
 		}
-		return nil, outputError
-	} else {
-		idconsecutivo = idconsecutivo1
 	}
-
 	var jsonString []byte
 	var err1 error
 
@@ -264,8 +258,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		return nil, outputError
 	}
 
-	intcons, _ := strconv.Atoi(idconsecutivo)
-	transaccion.ConsecutivoId = intcons
+	transaccion.ConsecutivoId = consecutivoId
 	transaccion.Activo = true
 	transaccion.Descripcion = descripcionMovto
 	transaccion.Etiquetas = string(jsonString)
