@@ -254,3 +254,18 @@ func GetCorteDepreciacion(fechaCorte string) (corte []*models.DetalleCorteDeprec
 	}
 	return corte, nil
 }
+
+// PostTrNovedadElemento post controlador depreciacion del api movimientos_arka_crud
+func PostTrNovedadElemento(novedad *models.NovedadElemento) (novedadR *models.NovedadElemento, outputError map[string]interface{}) {
+
+	funcion := "PostMovimiento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
+	if err := request.SendJson(urlcrud, "POST", &novedadR, &novedad); err != nil {
+		eval := ` - request.SendJson(urlcrud, "POST", &novedadR, &novedad)`
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return novedadR, nil
+}

@@ -77,10 +77,11 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		}
 	}
 
-	// Genera la transacción simulada de acuerdo a los valores obtenidos
 	if len(totales) == 0 {
 		return detalleD, nil
 	}
+
+	// Simula la transacción contable en caso de aprobarse
 	if trSimulada, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 9445, false); err != nil {
 		return nil, outputError
 	} else {
@@ -91,6 +92,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	movimiento = new(models.Movimiento)
+
 	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Depr Generada")); err != nil {
 		return nil, err
 	} else {
@@ -105,9 +107,10 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	detalle := models.FormatoDepreciacion{
-		TrContable: 0,
-		FechaCorte: stringFecha,
-		Totales:    totales,
+		TrContable:   0,
+		FechaCorte:   stringFecha,
+		Totales:      totales,
+		RazonRechazo: info.RazonRechazo,
 	}
 
 	if detalle_, err := json.Marshal(detalle); err != nil {
@@ -118,11 +121,199 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		movimiento.Detalle = string(detalle_[:])
 	}
 
-	movimiento.Observacion = info.Observacion
+	movimiento.Observacion = info.Observaciones
 	movimiento.Activo = true
 
-	// Crea el registro del movimiento correspondiente a la solicitud
-	if movimiento_, err := movimientosArkaHelper.PostMovimiento(movimiento); err != nil {
+	if info.Id > 0 {
+		// Actualiza el registro el registro del movimiento correspondiente a la solicitud
+		movimiento.Id = info.Id
+		if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, info.Id); err != nil {
+			return nil, err
+		} else {
+			detalleD["Movimiento"] = movimiento_
+		}
+	} else {
+		// Crea el registro del movimiento correspondiente a la solicitud
+		if movimiento_, err := movimientosArkaHelper.PostMovimiento(movimiento); err != nil {
+			return nil, err
+		} else {
+			detalleD["Movimiento"] = movimiento_
+		}
+	}
+
+	return detalleD, nil
+}
+
+func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[string]interface{}) {
+
+	funcion := "GetDepreciacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var (
+		detalle    *models.FormatoDepreciacion
+		movimiento *models.Movimiento
+		// query      string
+	)
+	detalleD = make(map[string]interface{})
+
+	if mov_, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+		return nil, err
+	} else {
+		movimiento = mov_
+	}
+
+	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	if trSimulada, err := cuentasContablesHelper.AsientoContable(detalle.Totales, "17", "Depreciación almacén", "", 9445, false); err != nil {
+		return nil, outputError
+	} else {
+		detalleD["TrContable"] = trSimulada
+		if trSimulada["errorTransaccion"].(string) != "" {
+			return detalleD, nil
+		}
+	}
+
+	detalleD["Movimiento"] = movimiento
+	return detalleD, nil
+}
+
+// AprobarDepreciacion Registra las novedades para los elementos depreciados y realiza la transaccion contable
+func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError map[string]interface{}) {
+
+	funcion := "AprobarDepreciacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var (
+		movimiento *models.Movimiento
+		detalle    *models.FormatoDepreciacion
+		infoCorte  []*models.DetalleCorteDepreciacion
+		fechaCorte time.Time
+	)
+
+	detalleD = make(map[string]interface{})
+	if mov, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+		return nil, err
+	} else {
+		movimiento = mov
+	}
+
+	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	// Consulta los valores para generar el corte de depreciación
+	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(detalle.FechaCorte); err != nil {
+		return nil, err
+	} else {
+		infoCorte = elementos
+	}
+
+	// Consulta los subgrupos de cada elemento o novedad
+	idsActa := []int{}
+	for _, val := range infoCorte {
+		idsActa = append(idsActa, int(val.ElementoActaId))
+	}
+
+	subgrupoBien := make(map[int]int)
+	if elemento_, err := actaRecibido.GetElementos(0, idsActa); err != nil {
+		return nil, err
+	} else {
+		for _, el := range elemento_ {
+			// Determina qué elementos se deben depreciar de acuerdo a la parametrización del tipo de bien
+			// Asociar subgrupo a los elementos que requieren depreciacion
+			if el.SubgrupoCatalogoId.Depreciacion {
+				subgrupoBien[el.Id] = el.SubgrupoCatalogoId.SubgrupoId.Id
+			}
+		}
+	}
+
+	if t, err := time.Parse("2006-01-02", detalle.FechaCorte); err != nil {
+		logs.Error(err)
+		eval := ` - time.Parse("2006-01-02", detalle.FechaCorte)`
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		fechaCorte = t
+	}
+
+	totales := make(map[int]float64)
+	novedades := []*models.NovedadElemento{}
+	for _, dt := range infoCorte {
+		// Determina si al elemento se le debe aplicar depreciación
+		if _, ok := subgrupoBien[dt.ElementoActaId]; ok {
+
+			// calcula el valor de la depreciación
+			deltaT := GetDeltaTiempo(dt.FechaRef, fechaCorte)
+			if deltaT > dt.VidaUtil {
+				deltaT = dt.VidaUtil
+			}
+			depreciacion := (dt.ValorPresente - dt.ValorResidual) * deltaT / dt.VidaUtil
+
+			nov := &models.NovedadElemento{
+				VidaUtil:             dt.VidaUtil - deltaT,
+				ValorLibros:          dt.ValorPresente - depreciacion,
+				ValorResidual:        dt.ValorResidual,
+				MovimientoId:         movimiento,
+				ElementoMovimientoId: &models.ElementosMovimiento{Id: dt.ElementoMovimientoId},
+				Activo:               true,
+			}
+
+			novedades = append(novedades, nov)
+
+			// Agrupa las cantidades por subgrupo
+			x := float64(0)
+			if val, ok := totales[subgrupoBien[dt.ElementoActaId]]; ok {
+				x = val + depreciacion
+			} else {
+				x = depreciacion
+			}
+			totales[subgrupoBien[dt.ElementoActaId]] = x
+		}
+	}
+
+	if len(totales) == 0 {
+		return detalleD, nil
+	}
+
+	// Registra la transacción contable
+	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 9445, true); err != nil {
+		return nil, outputError
+	} else {
+		detalleD["trContable"] = trContable
+		if trContable["errorTransaccion"].(string) != "" {
+			return detalleD, nil
+		}
+	}
+
+	for _, nov := range novedades {
+		if _, err := movimientosArkaHelper.PostTrNovedadElemento(nov); err != nil {
+			return nil, err
+		}
+	}
+
+	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Depr Aprobada")); err != nil {
+		return nil, err
+	} else {
+		movimiento.EstadoMovimientoId = sm[0]
+	}
+
+	detalle.RazonRechazo = ""
+	detalle.Totales = totales
+
+	if detalle_, err := json.Marshal(detalle); err != nil {
+		logs.Error(err)
+		eval := " - json.Marshal(detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		movimiento.Detalle = string(detalle_[:])
+	}
+
+	if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, movimiento.Id); err != nil {
 		return nil, err
 	} else {
 		detalleD["Movimiento"] = movimiento_

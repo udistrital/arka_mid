@@ -201,9 +201,10 @@ type Historial struct {
 }
 
 type FormatoDepreciacion struct {
-	TrContable int
-	FechaCorte string
-	Totales    map[int]float64
+	TrContable   int
+	FechaCorte   string
+	Totales      map[int]float64
+	RazonRechazo string
 }
 
 type DetalleCorteDepreciacion struct {
@@ -216,6 +217,8 @@ type DetalleCorteDepreciacion struct {
 	FechaRef             time.Time
 }
 type InfoDepreciacion struct {
-	FechaCorte  time.Time
-	Observacion string
+	Id            int
+	RazonRechazo  string
+	FechaCorte    time.Time
+	Observaciones string
 }

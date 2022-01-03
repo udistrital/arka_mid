@@ -402,6 +402,44 @@ paths:
               type: integer
         "404":
           description: not found resource
+  /depreciacion/{id}:
+    get:
+      tags:
+      - depreciacion
+      description: get Depreciacion by id
+      operationId: DepreciacionController.Get Info Depreciacion
+      parameters:
+      - in: path
+        name: id
+        description: movimientoId de la depreciacion en el api movimientos_arka_crud
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/map[string]interface{}'
+        "404":
+          description: not found resource
+    put:
+      tags:
+      - depreciacion
+      description: update the ElementosMovimiento
+      operationId: DepreciacionController.Put
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to update
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.ElementosMovimiento'
+        "400":
+          description: the request contains incorrect syntax
   /elemento/:
     post:
       tags:
@@ -1484,7 +1522,12 @@ definitions:
       FechaCorte:
         type: string
         format: datetime
-      Observacion:
+      Id:
+        type: integer
+        format: int64
+      Observaciones:
+        type: string
+      RazonRechazo:
         type: string
   models.InfoTercero:
     title: InfoTercero

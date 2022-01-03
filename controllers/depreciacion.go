@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -18,6 +19,8 @@ type DepreciacionController struct {
 // URLMapping ...
 func (c *DepreciacionController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("Put", c.Put)
+	c.Mapping("GetOne", c.GetOne)
 }
 
 // GetCorte ...
@@ -43,5 +46,91 @@ func (c *DepreciacionController) Post() {
 			c.Data["json"] = v
 		}
 	}
+	c.ServeJSON()
+}
+
+// GetOne ...
+// @Title Get Info Depreciacion
+// @Description get Depreciacion by id
+// @Param	id	path	int	true	"movimientoId de la depreciacion en el api movimientos_arka_crud"
+// @Success 200 {object} map[string]interface{}
+// @Failure 404 not found resource
+// @router /:id [get]
+func (c *DepreciacionController) GetOne() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "DepreciacionController - Unhandled Error!")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar una depreciación válida")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `GetOne - GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := depreciacionHelper.GetDepreciacion(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "GetOne - depreciacionHelper.GetDepreciacion(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar la depreciación"),
+			"status":  "404",
+		})
+	}
+
+	c.ServeJSON()
+
+}
+
+// Put ...
+// @Title Put
+// @Description update the ElementosMovimiento
+// @Param	id		path 	string	true		"The id you want to update"
+// @Success 200 {object} models.ElementosMovimiento
+// @Failure 400 the request contains incorrect syntax
+// @router /:id [put]
+func (c *DepreciacionController) Put() {
+	defer errorctrl.ErrorControlController(c.Controller, "DepreciacionController - Unhandled Error!")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar una depreciación válida")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `Put - GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := depreciacionHelper.AprobarDepreciacion(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "Put - depreciacionHelper.AprobarDepreciacion(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar la depreciación"),
+			"status":  "404",
+		})
+	}
+
 	c.ServeJSON()
 }
