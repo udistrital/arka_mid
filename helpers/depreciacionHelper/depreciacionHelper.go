@@ -279,7 +279,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	// Registra la transacción contable
-	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 9445, true); err != nil {
+	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 10000, true); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trContable
@@ -321,33 +321,46 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 }
 
 // GetDeltaTiempo retorna el tiempo en años entre dos fechas
-func GetDeltaTiempo(ref time.Time, fin time.Time) float64 {
+func GetDeltaTiempo(ref, fin time.Time) float64 {
 
-	prct := 0.0
 	y1, m1, d1 := fin.Date()
 	y0, m0, d0 := ref.Date()
-	year := int(y1 - y0)
-	month := int(m1 - m0)
-	day := int(d1 - d0)
-	prct += float64(year)
 
-	if day < 0 {
-		// days in month:
-		t := time.Date(y1, m1, 32, 0, 0, 0, 0, time.UTC)
-		day += 32 - t.Day()
-		month--
+	years := y1 - y0
+	months := int(m1 - m0)
+	days := d1 - d0
+
+	if days < 0 {
+		days += DaysIn(y1, m1-1)
+		months--
 	}
 
-	if month < 0 {
-		month += 12
-		year--
+	if days < 0 {
+		days += DaysIn(y1, m1)
+		months--
 	}
 
-	prct += float64(month) / 12
-	if day > 0 {
-		firstOfMonth := time.Date(fin.Year(), fin.Month(), 1, 0, 0, 0, 0, time.UTC)
+	if months < 0 {
+		months += 12
+		years--
+	}
+
+	prct := float64(years)
+	prct += float64(months) / 12
+	if days > 0 {
+		var firstOfMonth time.Time
+		if months > 0 {
+			firstOfMonth = time.Date(fin.Year(), fin.Month(), 1, 0, 0, 0, 0, time.UTC)
+		} else {
+			firstOfMonth = time.Date(ref.Year(), ref.Month(), 1, 0, 0, 0, 0, time.UTC)
+		}
 		lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
-		prct += (float64(day) / float64(lastOfMonth.Day())) / 12
+		prct += (float64(days) / float64(lastOfMonth.Day())) / 12
 	}
+
 	return prct
+}
+
+func DaysIn(year int, month time.Month) int {
+	return time.Date(year, month, 0, 0, 0, 0, 0, time.UTC).Day()
 }
