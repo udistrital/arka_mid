@@ -68,7 +68,7 @@ type TransaccionMovimientos struct {
 }
 
 type MovimientoTransaccion struct {
-	TerceroId        int
+	TerceroId        *int
 	CuentaId         string
 	NombreCuenta     string
 	TipoMovimientoId int

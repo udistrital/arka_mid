@@ -258,9 +258,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var acta map[string]interface{}
 			var estado map[string]interface{}
 			var ubicacionData map[string]interface{}
-			var editor map[string]interface{}
+			var editor *models.Tercero
 			var preUbicacion map[string]interface{}
-			var asignado map[string]interface{}
+			var asignado *models.Tercero
 
 			preUbicacion = nil
 
@@ -276,9 +276,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 
-			reqTercero := func(id string) func() (interface{}, map[string]interface{}) {
+			reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById(id); err == nil {
+					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					} else {
 						return nil, err
@@ -286,12 +286,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idRevStr := strconv.Itoa(int(historicos["RevisorId"].(float64)))
-			if idRev, err := strconv.Atoi(idRevStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRevStr), &consultasTerceros, &evTerceros); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						editor = v2
-					}
+			idRev := int(historicos["RevisorId"].(float64))
+			if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRev), &consultasTerceros, &evTerceros); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					editor = v2
 				}
 			}
 
@@ -316,12 +314,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idAsignadoStr := strconv.Itoa(int(historicos["PersonaAsignadaId"].(float64)))
-			if idAsignado, err := strconv.Atoi(idAsignadoStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignadoStr), &consultasTerceros, &evTerceros); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						asignado = v2
-					}
+			idAsignado := int(historicos["PersonaAsignadaId"].(float64))
+			if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignado), &consultasTerceros, &evTerceros); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					asignado = v2
 				}
 			}
 
@@ -343,20 +339,20 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			fVistoBueno := strings.Split(historicos["FechaVistoBueno"].(string), "T")[0]
-			if fVistoBueno == "0001-01-01" {
+			fVistoBueno := historicos["FechaVistoBueno"].(string)
+			if fVistoBueno == "0001-01-01T00:00:00Z" {
 				fVistoBueno = ""
 			}
 
 			Acta := map[string]interface{}{
 				"Id":                acta["Id"],
 				"UbicacionId":       ubicacionData["Nombre"],
-				"FechaCreacion":     strings.Split(acta["FechaCreacion"].(string), "T")[0],
+				"FechaCreacion":     acta["FechaCreacion"],
 				"FechaVistoBueno":   fVistoBueno,
-				"FechaModificacion": strings.Split(historicos["FechaModificacion"].(string), "T")[0],
+				"FechaModificacion": historicos["FechaModificacion"],
 				"Observaciones":     historicos["Observaciones"],
-				"RevisorId":         editor["NombreCompleto"],
-				"PersonaAsignada":   asignado["NombreCompleto"],
+				"RevisorId":         editor.NombreCompleto,
+				"PersonaAsignada":   asignado.NombreCompleto,
 				"Estado":            estado["Nombre"],
 				"EstadoActaId":      estado,
 			}

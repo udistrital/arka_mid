@@ -6,18 +6,15 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
 // GetCorreo Consulta el correo de un tercero
 func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetCorreo", "err": err, "status": "500"}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetCorreo"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		urlcrud string
@@ -29,6 +26,23 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 	urlcrud += "&query=Activo%3Atrue,InfoComplementariaId__Nombre__icontains%3Acorreo,TerceroId__Id%3A" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &correo); err != nil {
 		logs.Error(err)
+		eval := " - request.GetJson(urlcrud, &correo)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return correo, nil
+}
+
+// GetAllDatosIdentificacion get controlador datos_identificacion de api terceros_crud
+func GetAllDatosIdentificacion(query string) (datosId []*models.DatosIdentificacion, outputError map[string]interface{}) {
+
+	funcion := "GetAllDatosIdentificacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	// Consulta correo
+	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion?" + query
+	if err := request.GetJson(urlcrud, &datosId); err != nil {
+		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "GetCorreo - request.GetJson(urlcrud, &response2)",
 			"err":     err,
@@ -37,5 +51,19 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 		return nil, outputError
 	}
 
-	return correo, nil
+	return datosId, nil
+}
+
+// GetTerceroById get controlador tercero/{id} del api terceros_crud
+func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
+
+	funcion := "GetTerceroById"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &tercero); err != nil {
+		eval := " - request.GetJson(urlcrud, &tercero)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return tercero, nil
 }
