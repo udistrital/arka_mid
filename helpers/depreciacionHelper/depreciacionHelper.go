@@ -279,10 +279,11 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	// Registra la transacción contable
-	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 10000, true); err != nil {
-		return nil, outputError
+	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 9445, true); err != nil {
+		return nil, err
 	} else {
 		detalleD["trContable"] = trContable
+		detalle.TrContable = trContable["resultadoTransaccion"].(models.TransaccionMovimientos).ConsecutivoId
 		if trContable["errorTransaccion"].(string) != "" {
 			return detalleD, nil
 		}

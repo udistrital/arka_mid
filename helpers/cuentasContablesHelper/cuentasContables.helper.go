@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -83,9 +84,9 @@ func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 	var movimiento models.MovimientoTransaccion
 
 	if cuenta.RequiereTercero {
-		movimiento.TerceroId = idTercero
+		movimiento.TerceroId = &idTercero
 	} else {
-		movimiento.TerceroId = 0
+		movimiento.TerceroId = nil
 	}
 	movimiento.CuentaId = cuentaId
 	movimiento.NombreCuenta = cuenta.Nombre
@@ -124,8 +125,7 @@ func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, ou
 	if response, err := request.GetJsonTest(urlcrud, &detalles); err == nil && response.StatusCode == 200 { // (2) error servicio caido
 		// fmt.Println(cuentasSubgrupo[0])
 		if detalles[0]["Id"].(float64) != 0 {
-			fmt.Printf("el detalle", detalles[0])
-
+			fmt.Println("el detalle", detalles[0])
 			return detalles[0], nil
 		} else {
 			err = fmt.Errorf("Cuenta no existe")
@@ -326,24 +326,21 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	}
 
 	if submit {
-		apiMvtoContables := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
-		if err := request.SendJson(apiMvtoContables, "POST", &res, &transaccion); err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "AsientoContable -if err := request.SendJson(apiMvtoContables, \"POST\", &res, &transaccion);",
-				"err":     err,
-				"status":  "502",
+		if resp, err := PostTrContable(&transaccion); err != nil || !resp.Success {
+			if err == nil {
+				eval := " - PostTrContable(&transaccion)"
+				return nil, errorctrl.Error(funcion+eval, resp.Data, "502")
 			}
+			return nil, err
 		} else {
 			res["resultadoTransaccion"] = transaccion
-			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err == nil {
-				res["tercero"] = tercero
-			} else {
+			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 				return nil, err
+			} else {
+				res["tercero"] = tercero
 			}
 			return res, nil
 		}
-		return res, nil
 	} else {
 		res["simulacro"] = transaccion
 		return res, nil
@@ -358,4 +355,22 @@ func FindInArray(cuentasSg []*models.CuentaSubgrupo, subgrupoId int) (i int) {
 		}
 	}
 	return -1
+}
+
+// PostTrContable post controlador transaccion_movimientos/transaccion_movimientos/ del api movimientos_contables_mid
+func PostTrContable(tr *models.TransaccionMovimientos) (resp *models.RespuestaAPI1Str, outputError map[string]interface{}) {
+
+	funcion := "PostTrContable"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
+	if err := request.SendJson(urlcrud, "POST", &resp, &tr); err != nil {
+		eval := ` - request.SendJson(urlcrud, "POST", &novedadR, &novedad)`
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	} else if strings.Contains(resp.Data, "invalid character") {
+		logs.Error(resp.Data)
+		resp, outputError = PostTrContable(tr)
+	}
+
+	return resp, nil
 }

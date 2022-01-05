@@ -360,34 +360,26 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 				return nil, errorctrl.Error(funcion+eval, err, "500")
 			}
 
-			requestTercero := func(id string) func() (interface{}, map[string]interface{}) {
+			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById(id); err == nil {
+					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					}
 					return nil, nil
 				}
 			}
 
-			funcionarioIDstr := fmt.Sprintf("%v", detalle.Funcionario)
-			if funcionarioID, err := strconv.Atoi(funcionarioIDstr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(funcionarioID, tercerosBuffer, requestTercero(funcionarioIDstr), nil, nil); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						if v2["NombreCompleto"] != nil {
-							Tercero_ = v2["NombreCompleto"].(string)
-						}
-					}
+			funcionarioID := detalle.Funcionario
+			if v, err := utilsHelper.BufferGeneric(funcionarioID, tercerosBuffer, requestTercero(funcionarioID), nil, nil); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					Tercero_ = v2.NombreCompleto
 				}
 			}
 
-			revisorIDstr := fmt.Sprintf("%v", detalle.Revisor)
-			if revisorID, err := strconv.Atoi(revisorIDstr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(revisorID, tercerosBuffer, requestTercero(revisorIDstr), nil, nil); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						if v2["NombreCompleto"] != nil {
-							Revisor_ = v2["NombreCompleto"].(string)
-						}
-					}
+			revisorID := detalle.Revisor
+			if v, err := utilsHelper.BufferGeneric(revisorID, tercerosBuffer, requestTercero(revisorID), nil, nil); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					Revisor_ = v2.NombreCompleto
 				}
 			}
 

@@ -417,7 +417,7 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 }
 
 //GetEncargadoElemento busca al encargado de un elemento
-func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outputError map[string]interface{}) {
+func GetEncargadoElemento(placa string) (idElemento *models.Tercero, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -451,18 +451,9 @@ func GetEncargadoElemento(placa string) (idElemento map[string]interface{}, outp
 		if resp, err := request.GetJsonTest(urlelemento, &detalle); err == nil && resp.StatusCode == 200 {
 			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
 			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
-				idtercero := fmt.Sprintf("%v", resultado["funcionario"])
-				if response, err := tercerosHelper.GetNombreTerceroById(idtercero); err == nil {
-					if len(response) == 0 { // posible validación adicional:  || response["Id"].(string) == "0"
-						err := fmt.Errorf("Respuesta inesperada en la respuesta de la función GetNombreTerceroById")
-						logs.Error(err)
-						outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - len(response) == 0", "status": "404", "err": err}
-						return nil, outputError
-					}
-					var nombrecompleto = response["NombreCompleto"].(string)
-					var aux = make(map[string]interface{})
-					aux = map[string]interface{}{"Id": idtercero, "NombreCompleto": nombrecompleto}
-					return aux, nil
+				idtercero := int(resultado["funcionario"].(float64))
+				if tercero, err := tercerosHelper.GetTerceroById(idtercero); err == nil {
+					return tercero, nil
 				} else {
 					return nil, err
 				}
@@ -661,7 +652,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																																movimientoDebito.Valor = valor
 																																movimientoDebito.Descripcion = "Movimiento crédito registrado desde sistema arka"
 																																movimientoDebito.Activo = true
-																																movimientoDebito.TerceroId = 1 // Provisional
+																																movimientoDebito.TerceroId = nil // Provisional
 																																transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
 
 																																urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentasSubgrupo[0].CuentaCreditoId
@@ -675,7 +666,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																																			movimientoCredito.Valor = valor
 																																			movimientoCredito.Descripcion = "Movimiento débito registrado desde sistema arka"
 																																			movimientoCredito.Activo = true
-																																			movimientoCredito.TerceroId = 1 // Provisional
+																																			movimientoCredito.TerceroId = nil // Provisional
 																																			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 																																		} else {
 																																			logs.Error(err)

@@ -1,6 +1,7 @@
 package tercerosHelper
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -12,72 +13,49 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+type IdentificacionTercero struct {
+	Id             int
+	Numero         string
+	NombreCompleto string
+}
+
 //GetNombreTerceroById trae el nombre de un encargado por su id
-func GetNombreTerceroById(idTercero string) (tercero map[string]interface{}, outputError map[string]interface{}) {
+func GetNombreTerceroById(idTercero string) (tercero *IdentificacionTercero, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetNombreTerceroById - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetNombreTerceroById"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
+	var terceroId int
 	if v, err := strconv.Atoi(idTercero); err != nil || v <= 0 {
-		err := fmt.Errorf("ID MUST be an integer > 0 - Got:%s", idTercero)
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetNombreTerceroById - len(personas) != 1 || len(personas[0])",
-			"err":     err,
-			"status":  "400",
+		if err == nil {
+			err = errors.New("El idTercero debe ser mayor a 0")
 		}
-		return nil, outputError
+		logs.Error(err)
+		eval := " - strconv.Atoi(idTercero)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		terceroId = v
 	}
 
-	var personas []map[string]interface{}
-
-	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
-	urltercero += "?query=Activo:true,TerceroId__Id:" + idTercero
-	// logs.Debug("urltercero:", urltercero)
-	if resp, err := request.GetJsonTest(urltercero, &personas); err == nil && resp.StatusCode == 200 {
-
-		if len(personas) != 1 || len(personas[0]) == 0 {
-			var status string
-			if len(personas) > 1 {
-				err = fmt.Errorf("Hay más de un documento para Tercero.Id=%s", idTercero)
-				status = "409"
-			} else {
-				err = fmt.Errorf("No se encontró el Tercero.Id=%s y/o un documento asociado", idTercero)
-				status = "404"
-			}
-			logs.Warn(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetNombreTerceroById - len(personas) != 1 || len(personas[0])",
-				"err":     err,
-				"status":  status,
-			}
-			return nil, outputError
-		}
-
-		return map[string]interface{}{
-			"Id":             personas[0]["TerceroId"].(map[string]interface{})["Id"],
-			"Numero":         personas[0]["Numero"],
-			"NombreCompleto": personas[0]["TerceroId"].(map[string]interface{})["NombreCompleto"],
-		}, nil
+	urlcrud := "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + idTercero
+	if datosId, err := GetAllDatosIdentificacion(urlcrud); err != nil {
+		return nil, err
 	} else {
-		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+		tercero = new(IdentificacionTercero)
+		if len(datosId) == 0 || datosId[0].Id == 0 {
+			if tercero_, err := GetTerceroById(terceroId); err != nil {
+				return nil, err
+			} else {
+				tercero.Id = tercero_.Id
+				tercero.NombreCompleto = tercero_.NombreCompleto
+			}
+			return tercero, nil
 		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetNombreTerceroById - request.GetJsonTest(urltercero, &personas)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+
+		tercero.Id = datosId[0].TerceroId.Id
+		tercero.Numero = datosId[0].Numero
+		tercero.NombreCompleto = datosId[0].TerceroId.NombreCompleto
+		return tercero, nil
 	}
 }
 
@@ -202,18 +180,4 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 		return nil, outputError
 	}
 
-}
-
-// GetTerceroById get controlador tercero/{id} del api terceros_crud
-func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
-
-	funcion := "GetTerceroById"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &tercero); err != nil {
-		eval := " - request.GetJson(urlcrud, &tercero)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
-	}
-	return tercero, nil
 }
