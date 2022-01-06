@@ -523,11 +523,8 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		}
 	}()
 
-	var Unidades []Unidad
-	var SubgruposConsumo []map[string]interface{}
-	var SubgruposConsumoControlado []map[string]interface{}
-	var SubgruposDevolutivo []map[string]interface{}
 	var (
+		Unidades  []Unidad
 		ss        map[string]interface{}
 		Parametro []interface{}
 		Valor     []interface{}
@@ -590,39 +587,6 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		return nil, outputError
 	}
 
-	urlCatT1 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/1"
-	if _, err := request.GetJsonTest(urlCatT1, &SubgruposConsumo); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT1, &SubgruposConsumo)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	urlCatT2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/2"
-	if _, err := request.GetJsonTest(urlCatT2, &SubgruposConsumoControlado); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT2, &SubgruposConsumoControlado)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	urlCatT3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/3"
-	if _, err := request.GetJsonTest(urlCatT3, &SubgruposDevolutivo); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT3, &SubgruposDevolutivo)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
 	urlAdmistrativa := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
 	if _, err := request.GetJsonTest(urlAdmistrativa, &Unidades); err != nil {
 		logs.Error(err)
@@ -662,6 +626,12 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 	var hojas []string
 	var campos []string
 	var elementos [14]string
+	tipoBien := new(models.TipoBien)
+	subgrupoId := new(models.Subgrupo)
+	var subgrupo = map[string]interface{}{
+		"SubgrupoId": &subgrupoId,
+		"TipoBienId": &tipoBien,
+	}
 
 	validar_campos := []string{"Nivel Inventarios", "Tipo de Bien", "Subgrupo Catalogo", "Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Tipo IVA", "Valor IVA", "Valor Total"}
 
@@ -706,16 +676,16 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							vlrunitario = float64(0)
 						}
 
-						vlrsubtotal = float64(vlrunitario) * float64(vlrcantidad)
-
 						if vlrdcto, err = strconv.ParseFloat(elementos[10], 64); err != nil {
 							vlrdcto = float64(0)
 						}
 
+						vlrsubtotal = (vlrunitario * float64(vlrcantidad)) - vlrdcto
+
 						if tarifaIva, err = strconv.ParseFloat(strings.ReplaceAll(elementos[11], "%", ""), 64); err == nil {
 							for _, valor_iva := range IvaTest {
 								if tarifaIva == float64(valor_iva.Tarifa) {
-									vlrIva = (vlrsubtotal - vlrdcto) * float64(tarifaIva) / 100
+									vlrIva = (vlrsubtotal) * float64(tarifaIva) / 100
 								}
 							}
 							if vlrIva == -1 {
@@ -727,49 +697,13 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							vlrIva = 0
 						}
 
-						vlrtotal := (vlrsubtotal - vlrdcto) * (1 + float64(tarifaIva)/100)
+						vlrtotal := vlrsubtotal + vlrIva
 
 						convertir2 := strings.ToUpper(elementos[7])
 						if err == nil {
 							for _, unidad := range Unidades {
 								if convertir2 == unidad.Unidad {
 									elementos[7] = strconv.Itoa(unidad.Id)
-								}
-							}
-						} else {
-							logs.Warn(err)
-						}
-
-						convertir3 := elementos[2]
-
-						var subgrupoId *models.Subgrupo
-						var tipoBien *models.TipoBien
-						tipoBien = new(models.TipoBien)
-						subgrupoId = new(models.Subgrupo)
-						var subgrupo = map[string]interface{}{
-							"SubgrupoId": subgrupoId,
-							"TipoBienId": tipoBien,
-						}
-						if err == nil {
-							logs.Info(convertir3)
-							for _, consumo := range SubgruposConsumo {
-								if convertir3 == consumo["Nombre"] {
-									subgrupo = consumo
-									elementos[1] = strconv.Itoa(1)
-								}
-							}
-							for _, consumoC := range SubgruposConsumoControlado {
-								if convertir3 == consumoC["Nombre"] {
-									elementos[2] = fmt.Sprintf("%v", consumoC["Id"])
-									subgrupo = consumoC
-									elementos[1] = strconv.Itoa(2)
-								}
-							}
-							for _, devolutivo := range SubgruposDevolutivo {
-								if convertir3 == devolutivo["Nombre"] {
-									elementos[2] = fmt.Sprintf("%v", devolutivo["Id"])
-									subgrupo = devolutivo
-									elementos[1] = strconv.Itoa(3)
 								}
 							}
 						} else {
