@@ -637,8 +637,8 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 
 	for s, sheet := range xlFile.Sheets {
 
-		hojas = append(hojas, sheet.Name)
 		if s == 0 {
+			hojas = append(hojas, sheet.Name)
 			for r, row := range sheet.Rows {
 				if r == 0 {
 					for i, cell := range row.Cells {
