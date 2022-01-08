@@ -9,6 +9,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -18,9 +19,11 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 
 	funcion := "GenerarTrDepreciacion"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
 	var (
 		infoCorte  []*models.DetalleCorteDepreciacion
 		movimiento *models.Movimiento
+		terceroUD  int
 		query      string
 	)
 
@@ -53,16 +56,22 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 			}
 		}
 	}
+
 	totales := make(map[int]float64)
 	for _, dt := range infoCorte {
 		// Determina si al elemento se le debe aplicar depreciación
 		if _, ok := subgrupoBien[dt.ElementoActaId]; ok {
-			// calcula el valor de la depreciación
-			deltaT := GetDeltaTiempo(dt.FechaRef, info.FechaCorte)
+
+			// Calcula el valor de la depreciación
+			deltaT := GetDeltaTiempo(dt.FechaRef, info.FechaCorte.AddDate(0, 0, 1))
 			if deltaT > dt.VidaUtil {
 				deltaT = dt.VidaUtil
 			}
+
 			depreciacion := (dt.ValorPresente - dt.ValorResidual) * deltaT / dt.VidaUtil
+			if dt.ValorPresente-depreciacion < 0 {
+				depreciacion = dt.ValorPresente
+			}
 
 			// Agrupa las cantidades por subgrupo
 			x := float64(0)
@@ -79,8 +88,15 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		return detalleD, nil
 	}
 
+	query = "query=Numero:899999230,TipoDocumentoId__Nombre:NIT"
+	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+		return nil, err
+	} else {
+		terceroUD = terceroUD_[0].TerceroId.Id
+	}
+
 	// Simula la transacción contable en caso de aprobarse
-	if trSimulada, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 9445, false); err != nil {
+	if trSimulada, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trSimulada
@@ -190,9 +206,11 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		detalle    *models.FormatoDepreciacion
 		infoCorte  []*models.DetalleCorteDepreciacion
 		fechaCorte time.Time
+		terceroUD  int
 	)
 
 	detalleD = make(map[string]interface{})
+
 	if mov, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
 		return nil, err
 	} else {
@@ -206,7 +224,15 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	// Consulta los valores para generar el corte de depreciación
-	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(detalle.FechaCorte); err != nil {
+	if t, err := time.Parse("2006-01-02", detalle.FechaCorte); err != nil {
+		logs.Error(err)
+		eval := ` - time.Parse("2006-01-02", detalle.FechaCorte)`
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		fechaCorte = t
+	}
+
+	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(fechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
 		return nil, err
 	} else {
 		infoCorte = elementos
@@ -231,26 +257,22 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		}
 	}
 
-	if t, err := time.Parse("2006-01-02", detalle.FechaCorte); err != nil {
-		logs.Error(err)
-		eval := ` - time.Parse("2006-01-02", detalle.FechaCorte)`
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		fechaCorte = t
-	}
-
 	totales := make(map[int]float64)
 	novedades := []*models.NovedadElemento{}
 	for _, dt := range infoCorte {
 		// Determina si al elemento se le debe aplicar depreciación
 		if _, ok := subgrupoBien[dt.ElementoActaId]; ok {
 
-			// calcula el valor de la depreciación
-			deltaT := GetDeltaTiempo(dt.FechaRef, fechaCorte)
+			// Calcula el valor de la depreciación
+			deltaT := GetDeltaTiempo(dt.FechaRef, fechaCorte.AddDate(0, 0, 1))
 			if deltaT > dt.VidaUtil {
 				deltaT = dt.VidaUtil
 			}
+
 			depreciacion := (dt.ValorPresente - dt.ValorResidual) * deltaT / dt.VidaUtil
+			if dt.ValorPresente-depreciacion < 0 {
+				depreciacion = dt.ValorPresente
+			}
 
 			nov := &models.NovedadElemento{
 				VidaUtil:             dt.VidaUtil - deltaT,
@@ -278,8 +300,15 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		return detalleD, nil
 	}
 
+	query := "query=Numero:899999230,TipoDocumentoId__Nombre:NIT"
+	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+		return nil, err
+	} else {
+		terceroUD = terceroUD_[0].TerceroId.Id
+	}
+
 	// Registra la transacción contable
-	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", 9445, true); err != nil {
+	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", terceroUD, true); err != nil {
 		return nil, err
 	} else {
 		detalleD["trContable"] = trContable
@@ -322,46 +351,12 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 }
 
 // GetDeltaTiempo retorna el tiempo en años entre dos fechas
-func GetDeltaTiempo(ref, fin time.Time) float64 {
+func GetDeltaTiempo(ref, fin time.Time) (prct float64) {
 
-	y1, m1, d1 := fin.Date()
-	y0, m0, d0 := ref.Date()
+	ref = time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, time.UTC)
+	fin = time.Date(fin.Year(), fin.Month(), fin.Day(), 0, 0, 0, 0, time.UTC)
 
-	years := y1 - y0
-	months := int(m1 - m0)
-	days := d1 - d0
-
-	if days < 0 {
-		days += DaysIn(y1, m1-1)
-		months--
-	}
-
-	if days < 0 {
-		days += DaysIn(y1, m1)
-		months--
-	}
-
-	if months < 0 {
-		months += 12
-		years--
-	}
-
-	prct := float64(years)
-	prct += float64(months) / 12
-	if days > 0 {
-		var firstOfMonth time.Time
-		if months > 0 {
-			firstOfMonth = time.Date(fin.Year(), fin.Month(), 1, 0, 0, 0, 0, time.UTC)
-		} else {
-			firstOfMonth = time.Date(ref.Year(), ref.Month(), 1, 0, 0, 0, 0, time.UTC)
-		}
-		lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
-		prct += (float64(days) / float64(lastOfMonth.Day())) / 12
-	}
+	prct = fin.Sub(ref).Hours() / (24 * 365)
 
 	return prct
-}
-
-func DaysIn(year int, month time.Month) int {
-	return time.Date(year, month, 0, 0, 0, 0, 0, time.UTC).Day()
 }
