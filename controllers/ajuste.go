@@ -32,6 +32,21 @@ func (c *AjusteController) URLMapping() {
 // @router / [post]
 func (c *AjusteController) Post() {
 
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	var v *ajustesHelper.PreTrAjuste
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
+	} else {
+		if v, err := ajustesHelper.PostAjuste(v); err != nil {
+			logs.Error(err)
+			c.Data["system"] = err
+			c.Abort("404")
+		} else {
+			c.Data["json"] = v
+		}
+	}
+	c.ServeJSON()
 }
 
 // GetOne ...
