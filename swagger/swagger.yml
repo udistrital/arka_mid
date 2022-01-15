@@ -207,7 +207,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Ajuste'
+            $ref: '#/definitions/models.Movimiento'
         "403":
           description: :id is not int
   /bajas_elementos/:

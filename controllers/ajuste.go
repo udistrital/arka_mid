@@ -112,9 +112,41 @@ func (c *AjusteController) GetAll() {
 // @Title Put
 // @Description update the Ajuste
 // @Param	id		path 	string	true		"The id you want to update"
-// @Success 200 {object} models.Ajuste
+// @Success 200 {object} models.Movimiento
 // @Failure 403 :id is not int
 // @router /:id [put]
 func (c *AjusteController) Put() {
 
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController - Unhandled Error!")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un ajuste válido")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `Put - GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := ajustesHelper.AprobarAjuste(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "Put - ajustesHelper.AprobarAjuste(id)",
+			"err":     errors.New("No se obtuvo respuesta al aprobar el ajuste"),
+			"status":  "404",
+		})
+	}
+
+	c.ServeJSON()
 }

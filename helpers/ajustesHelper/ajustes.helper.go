@@ -207,6 +207,123 @@ func GetDetalleAjuste(id int) (Ajuste *DetalleAjuste, outputError map[string]int
 
 }
 
+// AprobarAjuste Realiza la transacción contable correspondiente
+func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
+
+	funcion := "AprobarAjuste"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var (
+		detalle            *FormatoAjuste
+		parametroCreditoId int
+		parametroDebitoId  int
+	)
+
+	if movimiento_, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+		return nil, err
+	} else {
+		movimiento = movimiento_
+	}
+
+	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	if par_, err := parametrosHelper.GetAllParametro("query=CodigoAbreviacion:MCD"); err != nil {
+		return nil, err
+	} else {
+		parametroDebitoId = par_[0].Id
+	}
+
+	if par_, err := parametrosHelper.GetAllParametro("query=CodigoAbreviacion:MCC"); err != nil {
+		return nil, err
+	} else {
+		parametroCreditoId = par_[0].Id
+	}
+
+	movs := make([]*models.MovimientoTransaccion, 0)
+	for _, mov := range detalle.PreTrAjuste.Movimientos {
+		mov_ := new(models.MovimientoTransaccion)
+		var cta *DetalleCuenta
+
+		if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(mov.Cuenta); err != nil {
+			return nil, err
+		} else {
+			if err := formatdata.FillStruct(ctaCr_, &cta); err != nil {
+				logs.Error(err)
+				eval := " - formatdata.FillStruct(ctaCr_, &ctaCr)"
+				return nil, errorctrl.Error(funcion+eval, err, "500")
+			}
+			mov_.CuentaId = cta.Codigo
+			mov_.NombreCuenta = cta.Nombre
+		}
+
+		if mov.TerceroId > 0 {
+			mov_.TerceroId = &mov.TerceroId
+		}
+
+		if mov.Credito > 0 {
+			mov_.TipoMovimientoId = parametroCreditoId
+			mov_.Valor = mov.Credito
+		} else if mov.Debito > 0 {
+			mov_.TipoMovimientoId = parametroDebitoId
+			mov_.Valor = mov.Debito
+		}
+
+		mov_.Activo = true
+		movs = append(movs, mov_)
+	}
+
+	transaccion := new(models.TransaccionMovimientos)
+
+	if _, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
+		return nil, outputError
+	} else {
+		transaccion.ConsecutivoId = consecutivoId_
+	}
+
+	transaccion.Movimientos = movs
+	transaccion.FechaTransaccion = time.Now()
+	transaccion.Activo = true
+	transaccion.Etiquetas = ""
+	transaccion.Descripcion = ""
+
+	if resp, err := cuentasContablesHelper.PostTrContable(transaccion); err != nil || !resp.Success {
+		if err == nil {
+			eval := " - cuentasContablesHelper.PostTrContable(transaccion)"
+			return nil, errorctrl.Error(funcion+eval, resp.Data, resp.Status)
+		}
+		return nil, err
+	} else {
+		detalle.TrContableId = transaccion.ConsecutivoId
+		detalle.PreTrAjuste = nil
+	}
+
+	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Ajuste Aprobado")); err != nil {
+		return nil, err
+	} else {
+		movimiento.EstadoMovimientoId = sm[0]
+	}
+
+	if jsonData, err := json.Marshal(detalle); err != nil {
+		logs.Error(err)
+		eval := " - jsonData, err := json.Marshal(detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		movimiento.Detalle = string(jsonData[:])
+	}
+
+	if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, movimiento.Id); err != nil {
+		return nil, err
+	} else {
+		movimiento = movimiento_
+	}
+
+	return movimiento, nil
+}
+
 func getTipoComprobanteAjustes() string {
 	return "N20"
 }
