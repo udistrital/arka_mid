@@ -299,6 +299,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	} else {
 		detalle.TrContableId = transaccion.ConsecutivoId
 		detalle.PreTrAjuste = nil
+		detalle.RazonRechazo = ""
 	}
 
 	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Ajuste Aprobado")); err != nil {
