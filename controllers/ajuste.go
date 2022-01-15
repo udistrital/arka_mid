@@ -53,11 +53,43 @@ func (c *AjusteController) Post() {
 // @Title GetOne
 // @Description get Ajuste by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Ajuste
+// @Success 200 {object} ajustesHelper.DetalleAjuste
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *AjusteController) GetOne() {
 
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un ajuste válido")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `GetOne - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := ajustesHelper.GetDetalleAjuste(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "GetOne - ajustesHelper.GetDetalleAjuste(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar el ajuste"),
+			"status":  "404",
+		})
+	}
+
+	c.ServeJSON()
 }
 
 // GetAll ...

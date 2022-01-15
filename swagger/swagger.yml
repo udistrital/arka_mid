@@ -189,7 +189,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Ajuste'
+            $ref: '#/definitions/ajustesHelper.DetalleAjuste'
         "403":
           description: :id is empty
     put:
@@ -944,6 +944,42 @@ definitions:
   '{}':
     title: '{}'
     type: object
+  ajustesHelper.DetalleAjuste:
+    title: DetalleAjuste
+    type: object
+    properties:
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
+      TrContable:
+        type: array
+        items:
+          $ref: '#/definitions/ajustesHelper.DetalleMovimientoContable'
+  ajustesHelper.DetalleCuenta:
+    title: DetalleCuenta
+    type: object
+    properties:
+      Codigo:
+        type: string
+      Nombre:
+        type: string
+      RequiereTercero:
+        type: boolean
+  ajustesHelper.DetalleMovimientoContable:
+    title: DetalleMovimientoContable
+    type: object
+    properties:
+      Credito:
+        type: number
+        format: double
+      Cuenta:
+        $ref: '#/definitions/ajustesHelper.DetalleCuenta'
+      Debito:
+        type: number
+        format: double
+      Descripcion:
+        type: string
+      TerceroId:
+        $ref: '#/definitions/models.Tercero'
   ajustesHelper.PreMovAjuste:
     title: PreMovAjuste
     type: object
