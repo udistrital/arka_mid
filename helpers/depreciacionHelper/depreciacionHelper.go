@@ -88,7 +88,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		return detalleD, nil
 	}
 
-	query = "query=Numero:899999230,TipoDocumentoId__Nombre:NIT"
+	query = "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
 	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
 		return nil, err
 	} else {
@@ -96,7 +96,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	// Simula la transacción contable en caso de aprobarse
-	if trSimulada, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", terceroUD, false); err != nil {
+	if trSimulada, err := cuentasContablesHelper.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trSimulada
@@ -182,7 +182,7 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if trSimulada, err := cuentasContablesHelper.AsientoContable(detalle.Totales, "17", "Depreciación almacén", "", 9445, false); err != nil {
+	if trSimulada, err := cuentasContablesHelper.AsientoContable(detalle.Totales, GetTipoMovimientoDep(), "Depreciación almacén", "", 9445, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["TrContable"] = trSimulada
@@ -300,7 +300,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		return detalleD, nil
 	}
 
-	query := "query=Numero:899999230,TipoDocumentoId__Nombre:NIT"
+	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
 	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
 		return nil, err
 	} else {
@@ -308,7 +308,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	// Registra la transacción contable
-	if trContable, err := cuentasContablesHelper.AsientoContable(totales, "17", "Depreciación almacén", "", terceroUD, true); err != nil {
+	if trContable, err := cuentasContablesHelper.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, true); err != nil {
 		return nil, err
 	} else {
 		detalleD["trContable"] = trContable
@@ -348,6 +348,10 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	return detalleD, nil
+}
+
+func GetTipoMovimientoDep() string {
+	return "17"
 }
 
 // GetDeltaTiempo retorna el tiempo en años entre dos fechas
