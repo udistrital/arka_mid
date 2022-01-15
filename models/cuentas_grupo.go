@@ -64,7 +64,7 @@ type TransaccionMovimientos struct {
 	Descripcion      string
 	FechaTransaccion time.Time
 	Activo           bool
-	Movimientos      []MovimientoTransaccion `json:"movimientos"`
+	Movimientos      []*MovimientoTransaccion
 }
 
 type MovimientoTransaccion struct {

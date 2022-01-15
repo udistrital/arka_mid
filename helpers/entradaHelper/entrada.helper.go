@@ -653,7 +653,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																																movimientoDebito.Descripcion = "Movimiento crédito registrado desde sistema arka"
 																																movimientoDebito.Activo = true
 																																movimientoDebito.TerceroId = nil // Provisional
-																																transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
+																																transaccion.Movimientos = append(transaccion.Movimientos, &movimientoDebito)
 
 																																urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentasSubgrupo[0].CuentaCreditoId
 																																if err = request.GetJson(urlcrud, &resMap); err == nil { // Se trae información de cuenta crédito de api cuentas_contables_crud
@@ -667,7 +667,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																																			movimientoCredito.Descripcion = "Movimiento débito registrado desde sistema arka"
 																																			movimientoCredito.Activo = true
 																																			movimientoCredito.TerceroId = nil // Provisional
-																																			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
+																																			transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
 																																		} else {
 																																			logs.Error(err)
 																																			outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}

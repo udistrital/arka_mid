@@ -311,8 +311,8 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			//		var movimientoCredito models.MovimientoTransaccion
 			movimientoCredito := creaMovimiento(totales[clave], descripcionAsiento, idTercero, cuentasSubgrupo[idx].CuentaCreditoId, ctaCr, parametroTipoCredito.Id)
 			movimientoDebito := creaMovimiento(totales[clave], descripcionAsiento, idTercero, cuentasSubgrupo[idx].CuentaDebitoId, ctaDb, parametroTipoDebito.Id)
-			transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
-			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
+			transaccion.Movimientos = append(transaccion.Movimientos, &movimientoDebito)
+			transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
 
 		} else {
 			subgrupo, error := GetInfoSubgrupo(clave)
@@ -342,6 +342,11 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			return res, nil
 		}
 	} else {
+		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+			return nil, err
+		} else {
+			res["tercero"] = tercero
+		}
 		res["simulacro"] = transaccion
 		return res, nil
 	}
@@ -363,9 +368,9 @@ func PostTrContable(tr *models.TransaccionMovimientos) (resp *models.RespuestaAP
 	funcion := "PostTrContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos/"
+	urlcrud := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos"
 	if err := request.SendJson(urlcrud, "POST", &resp, &tr); err != nil {
-		eval := ` - request.SendJson(urlcrud, "POST", &novedadR, &novedad)`
+		eval := ` - request.SendJson(urlcrud, "POST", &resp, &tr)`
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	} else if strings.Contains(resp.Data, "invalid character") {
 		logs.Error(resp.Data)
