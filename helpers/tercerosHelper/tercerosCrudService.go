@@ -67,3 +67,8 @@ func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]int
 	}
 	return tercero, nil
 }
+
+// GetDocUD Get documento de identificación UD
+func GetDocUD() string {
+	return "899999230"
+}

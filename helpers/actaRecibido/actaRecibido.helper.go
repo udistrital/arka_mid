@@ -680,7 +680,7 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							vlrdcto = float64(0)
 						}
 
-						vlrsubtotal = (vlrunitario * float64(vlrcantidad)) - vlrdcto
+						vlrsubtotal = float64(vlrcantidad) * (vlrunitario - vlrdcto)
 
 						if tarifaIva, err = strconv.ParseFloat(strings.ReplaceAll(elementos[11], "%", ""), 64); err == nil {
 							for _, valor_iva := range IvaTest {

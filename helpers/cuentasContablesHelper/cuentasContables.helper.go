@@ -342,6 +342,11 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			return res, nil
 		}
 	} else {
+		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+			return nil, err
+		} else {
+			res["tercero"] = tercero
+		}
 		res["simulacro"] = transaccion
 		return res, nil
 	}
