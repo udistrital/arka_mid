@@ -21,3 +21,17 @@ type TipoComprobanteContable struct {
 	Codigo        string
 	TipoDocumento string
 }
+
+type DetalleCuenta struct {
+	Codigo          string
+	Nombre          string
+	RequiereTercero bool
+}
+
+type DetalleMovimientoContable struct {
+	Cuenta      *DetalleCuenta
+	Debito      float64
+	Credito     float64
+	Descripcion string
+	TerceroId   *Tercero
+}

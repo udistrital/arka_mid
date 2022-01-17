@@ -115,6 +115,101 @@ paths:
           description: Internal Error
         "502":
           description: Error with external API
+  /ajustes/:
+    get:
+      tags:
+      - ajustes
+      description: get Ajuste
+      operationId: AjusteController.GetAll
+      parameters:
+      - in: query
+        name: query
+        description: Filter. e.g. col1:v1,col2:v2 ...
+        type: string
+      - in: query
+        name: fields
+        description: Fields returned. e.g. col1,col2 ...
+        type: string
+      - in: query
+        name: sortby
+        description: Sorted-by fields. e.g. col1,col2 ...
+        type: string
+      - in: query
+        name: order
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
+        type: string
+      - in: query
+        name: limit
+        description: Limit the size of result set. Must be an integer
+        type: string
+      - in: query
+        name: offset
+        description: Start position of result set. Must be an integer
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Ajuste'
+        "403":
+          description: ""
+    post:
+      tags:
+      - ajustes
+      description: create Ajuste
+      operationId: AjusteController.Create
+      parameters:
+      - in: body
+        name: body
+        description: body for Ajuste content
+        required: true
+        schema:
+          $ref: '#/definitions/ajustesHelper.PreTrAjuste'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Movimiento'
+        "403":
+          description: body is empty
+  /ajustes/{id}:
+    get:
+      tags:
+      - ajustes
+      description: get Ajuste by id
+      operationId: AjusteController.GetOne
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.DetalleAjuste'
+        "403":
+          description: :id is empty
+    put:
+      tags:
+      - ajustes
+      description: update the Ajuste
+      operationId: AjusteController.Put
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to update
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Movimiento'
+        "403":
+          description: :id is not int
   /bajas_elementos/:
     post:
       tags:
@@ -849,6 +944,9 @@ definitions:
   '{}':
     title: '{}'
     type: object
+  ajustesHelper.PreTrAjuste:
+    title: PreTrAjuste
+    type: object
   map[string]interface{}:
     title: map[string]interface{}
     type: object
@@ -872,6 +970,9 @@ definitions:
         format: int64
       TipoActaId:
         $ref: '#/definitions/models.TipoActa'
+  models.Ajuste:
+    title: Ajuste
+    type: object
   models.AreaTipo:
     title: AreaTipo
     type: object
@@ -1058,6 +1159,16 @@ definitions:
         type: string
       TelefonoDependencia:
         type: string
+  models.DetalleAjuste:
+    title: DetalleAjuste
+    type: object
+    properties:
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
+      TrContable:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleMovimientoContable'
   models.DetalleBaja:
     title: DetalleBaja
     type: object
@@ -1082,6 +1193,16 @@ definitions:
         type: string
       TipoBaja:
         type: string
+  models.DetalleCuenta:
+    title: DetalleCuenta
+    type: object
+    properties:
+      Codigo:
+        type: string
+      Nombre:
+        type: string
+      RequiereTercero:
+        type: boolean
   models.DetalleElementoBaja:
     title: DetalleElementoBaja
     type: object
@@ -1142,6 +1263,22 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.DetalleTercero'
+  models.DetalleMovimientoContable:
+    title: DetalleMovimientoContable
+    type: object
+    properties:
+      Credito:
+        type: number
+        format: double
+      Cuenta:
+        $ref: '#/definitions/models.DetalleCuenta'
+      Debito:
+        type: number
+        format: double
+      Descripcion:
+        type: string
+      TerceroId:
+        $ref: '#/definitions/models.Tercero'
   models.DetalleSedeDependencia:
     title: DetalleSedeDependencia
     type: object
@@ -2009,3 +2146,6 @@ tags:
 - name: depreciacion
   description: |
     DepreciacionController operations for Depreciacion
+- name: ajustes
+  description: |
+    AjusteController operations for Ajuste
