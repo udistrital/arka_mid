@@ -166,7 +166,7 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 	var (
 		detalle    *models.FormatoDepreciacion
 		movimiento *models.Movimiento
-		// query      string
+		terceroUD  int
 	)
 	detalleD = make(map[string]interface{})
 
@@ -182,7 +182,14 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if trSimulada, err := cuentasContablesHelper.AsientoContable(detalle.Totales, GetTipoMovimientoDep(), "Depreciación almacén", "", 9445, false); err != nil {
+	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
+	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+		return nil, err
+	} else {
+		terceroUD = terceroUD_[0].TerceroId.Id
+	}
+
+	if trSimulada, err := cuentasContablesHelper.AsientoContable(detalle.Totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["TrContable"] = trSimulada
