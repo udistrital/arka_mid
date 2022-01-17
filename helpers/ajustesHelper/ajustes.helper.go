@@ -135,16 +135,11 @@ func GetDetalleAjuste(id int) (Ajuste *DetalleAjuste, outputError map[string]int
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if par_, err := parametrosHelper.GetAllParametro("query=CodigoAbreviacion:MCD"); err != nil {
+	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
-		parametroDebitoId = par_[0].Id
-	}
-
-	if par_, err := parametrosHelper.GetAllParametro("query=CodigoAbreviacion:MCC"); err != nil {
-		return nil, err
-	} else {
-		parametroCreditoId = par_[0].Id
+		parametroDebitoId = db_
+		parametroCreditoId = cr_
 	}
 
 	if detalle.PreTrAjuste != nil && detalle.TrContableId == 0 {
@@ -197,6 +192,7 @@ func GetDetalleAjuste(id int) (Ajuste *DetalleAjuste, outputError map[string]int
 		}
 		mov_.Credito = mov.Credito
 		mov_.Debito = mov.Debito
+		mov_.Descripcion = mov.Descripcion
 		movs = append(movs, mov_)
 	}
 
@@ -231,16 +227,11 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if par_, err := parametrosHelper.GetAllParametro("query=CodigoAbreviacion:MCD"); err != nil {
+	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
-		parametroDebitoId = par_[0].Id
-	}
-
-	if par_, err := parametrosHelper.GetAllParametro("query=CodigoAbreviacion:MCC"); err != nil {
-		return nil, err
-	} else {
-		parametroCreditoId = par_[0].Id
+		parametroDebitoId = db_
+		parametroCreditoId = cr_
 	}
 
 	movs := make([]*models.MovimientoTransaccion, 0)

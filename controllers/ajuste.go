@@ -106,6 +106,13 @@ func (c *AjusteController) GetOne() {
 // @router / [get]
 func (c *AjusteController) GetAll() {
 
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	panic(map[string]interface{}{
+		"funcion": "All",
+		"err":     errors.New("No implementado"),
+		"status":  "501",
+	})
 }
 
 // Put ...
