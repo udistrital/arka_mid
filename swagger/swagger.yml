@@ -189,7 +189,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/ajustesHelper.DetalleAjuste'
+            $ref: '#/definitions/models.DetalleAjuste'
         "403":
           description: :id is empty
     put:
@@ -944,69 +944,9 @@ definitions:
   '{}':
     title: '{}'
     type: object
-  ajustesHelper.DetalleAjuste:
-    title: DetalleAjuste
-    type: object
-    properties:
-      Movimiento:
-        $ref: '#/definitions/models.Movimiento'
-      TrContable:
-        type: array
-        items:
-          $ref: '#/definitions/ajustesHelper.DetalleMovimientoContable'
-  ajustesHelper.DetalleCuenta:
-    title: DetalleCuenta
-    type: object
-    properties:
-      Codigo:
-        type: string
-      Nombre:
-        type: string
-      RequiereTercero:
-        type: boolean
-  ajustesHelper.DetalleMovimientoContable:
-    title: DetalleMovimientoContable
-    type: object
-    properties:
-      Credito:
-        type: number
-        format: double
-      Cuenta:
-        $ref: '#/definitions/ajustesHelper.DetalleCuenta'
-      Debito:
-        type: number
-        format: double
-      Descripcion:
-        type: string
-      TerceroId:
-        $ref: '#/definitions/models.Tercero'
-  ajustesHelper.PreMovAjuste:
-    title: PreMovAjuste
-    type: object
-    properties:
-      Credito:
-        type: number
-        format: double
-      Cuenta:
-        type: string
-      Debito:
-        type: number
-        format: double
-      Descripcion:
-        type: string
-      TerceroId:
-        type: integer
-        format: int64
   ajustesHelper.PreTrAjuste:
     title: PreTrAjuste
     type: object
-    properties:
-      Descripcion:
-        type: string
-      Movimientos:
-        type: array
-        items:
-          $ref: '#/definitions/ajustesHelper.PreMovAjuste'
   map[string]interface{}:
     title: map[string]interface{}
     type: object
@@ -1219,6 +1159,16 @@ definitions:
         type: string
       TelefonoDependencia:
         type: string
+  models.DetalleAjuste:
+    title: DetalleAjuste
+    type: object
+    properties:
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
+      TrContable:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleMovimientoContable'
   models.DetalleBaja:
     title: DetalleBaja
     type: object
@@ -1243,6 +1193,16 @@ definitions:
         type: string
       TipoBaja:
         type: string
+  models.DetalleCuenta:
+    title: DetalleCuenta
+    type: object
+    properties:
+      Codigo:
+        type: string
+      Nombre:
+        type: string
+      RequiereTercero:
+        type: boolean
   models.DetalleElementoBaja:
     title: DetalleElementoBaja
     type: object
@@ -1303,6 +1263,22 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.DetalleTercero'
+  models.DetalleMovimientoContable:
+    title: DetalleMovimientoContable
+    type: object
+    properties:
+      Credito:
+        type: number
+        format: double
+      Cuenta:
+        $ref: '#/definitions/models.DetalleCuenta'
+      Debito:
+        type: number
+        format: double
+      Descripcion:
+        type: string
+      TerceroId:
+        $ref: '#/definitions/models.Tercero'
   models.DetalleSedeDependencia:
     title: DetalleSedeDependencia
     type: object

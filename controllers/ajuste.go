@@ -7,6 +7,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/ajustesHelper"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
@@ -34,7 +35,7 @@ func (c *AjusteController) Post() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
 
-	var v *ajustesHelper.PreTrAjuste
+	var v *models.PreTrAjuste
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
@@ -53,7 +54,7 @@ func (c *AjusteController) Post() {
 // @Title GetOne
 // @Description get Ajuste by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} ajustesHelper.DetalleAjuste
+// @Success 200 {object} models.DetalleAjuste
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *AjusteController) GetOne() {

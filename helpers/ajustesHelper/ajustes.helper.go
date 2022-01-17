@@ -19,53 +19,14 @@ import (
 	"github.com/udistrital/utils_oas/formatdata"
 )
 
-type PreMovAjuste struct {
-	Cuenta      string
-	Debito      float64
-	Credito     float64
-	Descripcion string
-	TerceroId   int
-}
-
-type PreTrAjuste struct {
-	Descripcion string
-	Movimientos []*PreMovAjuste
-}
-
-type FormatoAjuste struct {
-	PreTrAjuste  *PreTrAjuste
-	Consecutivo  string
-	RazonRechazo string
-	TrContableId int
-}
-
-type DetalleCuenta struct {
-	Codigo          string
-	Nombre          string
-	RequiereTercero bool
-}
-
-type DetalleMovimientoContable struct {
-	Cuenta      *DetalleCuenta
-	Debito      float64
-	Credito     float64
-	Descripcion string
-	TerceroId   *models.Tercero
-}
-
-type DetalleAjuste struct {
-	Movimiento *models.Movimiento
-	TrContable []*DetalleMovimientoContable
-}
-
-func PostAjuste(trContable *PreTrAjuste) (movimiento *models.Movimiento, outputError map[string]interface{}) {
+func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
 	funcion := "PostAjuste"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var query string
 	movimiento = new(models.Movimiento)
-	detalle := new(FormatoAjuste)
+	detalle := new(models.FormatoAjuste)
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
 	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Ajuste Contable Arka"); err != nil {
@@ -108,20 +69,20 @@ func PostAjuste(trContable *PreTrAjuste) (movimiento *models.Movimiento, outputE
 }
 
 // GetDetalleAjuste Consulta los detalles de un ajuste contable
-func GetDetalleAjuste(id int) (Ajuste *DetalleAjuste, outputError map[string]interface{}) {
+func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleAjuste"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		movimiento         *models.Movimiento
-		detalle            *FormatoAjuste
-		movimientos        []*PreMovAjuste
+		detalle            *models.FormatoAjuste
+		movimientos        []*models.PreMovAjuste
 		parametroCreditoId int
 		parametroDebitoId  int
 	)
 
-	Ajuste = new(DetalleAjuste)
+	Ajuste = new(models.DetalleAjuste)
 
 	if movimiento_, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
 		return nil, err
@@ -149,7 +110,7 @@ func GetDetalleAjuste(id int) (Ajuste *DetalleAjuste, outputError map[string]int
 			return nil, err
 		} else {
 			for _, mov := range tr.Movimientos {
-				mov_ := new(PreMovAjuste)
+				mov_ := new(models.PreMovAjuste)
 				mov_.Cuenta = mov.CuentaId
 				mov_.TerceroId = *mov.TerceroId
 				mov_.Descripcion = mov.Descripcion
@@ -167,10 +128,10 @@ func GetDetalleAjuste(id int) (Ajuste *DetalleAjuste, outputError map[string]int
 		}
 	}
 
-	movs := make([]*DetalleMovimientoContable, 0)
+	movs := make([]*models.DetalleMovimientoContable, 0)
 	for _, mov := range movimientos {
-		mov_ := new(DetalleMovimientoContable)
-		var cta *DetalleCuenta
+		mov_ := new(models.DetalleMovimientoContable)
+		var cta *models.DetalleCuenta
 
 		if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(mov.Cuenta); err != nil {
 			return nil, err
@@ -210,7 +171,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		detalle            *FormatoAjuste
+		detalle            *models.FormatoAjuste
 		parametroCreditoId int
 		parametroDebitoId  int
 	)
@@ -237,7 +198,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	movs := make([]*models.MovimientoTransaccion, 0)
 	for _, mov := range detalle.PreTrAjuste.Movimientos {
 		mov_ := new(models.MovimientoTransaccion)
-		var cta *DetalleCuenta
+		var cta *models.DetalleCuenta
 
 		if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(mov.Cuenta); err != nil {
 			return nil, err
