@@ -1,11 +1,9 @@
 package catalogoElementosHelper
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -172,80 +170,6 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []m
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "GetCuentasContablesSubgrupo - request.GetJsonTest(urlcrud, &cuentasSubgrupo)",
-			"err":     err,
-			"status:": "502",
-		}
-		return nil, outputError
-	}
-}
-
-func GetMovimientosKronos() (Movimientos_Arka []map[string]interface{}, outputError map[string]interface{}) {
-
-	step := "0"
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetMovimientosKronos - Unhandled Error! - after step:" + step,
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	var movimientos map[string]interface{}
-
-	urlcrud := "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Activo:true&limit=-1"
-	// logs.Debug("urlcrud:", urlcrud)
-	if resp, err := request.GetJsonTest(urlcrud, &movimientos); err == nil && resp.StatusCode == 200 { // (2) error servicio caido
-		step = "1"
-		var data []map[string]interface{}
-		if jsonString, err := json.Marshal(movimientos["Body"]); err == nil {
-			step = "2"
-			if err2 := json.Unmarshal(jsonString, &data); err2 == nil {
-				step = "3"
-				for _, movimiento := range data {
-					if number := strings.Index(fmt.Sprintf("%v", movimiento["Acronimo"]), "arka"); number != -1 {
-						Movimientos_Arka = append(Movimientos_Arka, map[string]interface{}{
-							"Id":                movimiento["Id"],
-							"Nombre":            movimiento["Nombre"],
-							"Descripcion":       movimiento["Descripcion"],
-							"Acronimo":          movimiento["Acronimo"],
-							"Activo":            movimiento["Activo"],
-							"FechaCreacion":     movimiento["FechaCreacion"],
-							"FechaModificacion": movimiento["FechaModificacion"],
-							"Parametros":        movimiento["Parametros"],
-						})
-					}
-				}
-				step = "4"
-				return Movimientos_Arka, nil
-			} else {
-				logs.Error(err2)
-				outputError = map[string]interface{}{
-					"funcion": "GetMovimientosKronos - json.Unmarshal(jsonString, &data)",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
-			}
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetMovimientosKronos - json.Marshal(movimientos[\"Body\"])",
-				"err":     err,
-				"status":  "500",
-			}
-			return nil, outputError
-		}
-	} else {
-		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetMovimientosKronos - request.GetJsonTest(urlcrud, &movimientos)",
 			"err":     err,
 			"status:": "502",
 		}

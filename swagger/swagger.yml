@@ -463,17 +463,6 @@ paths:
             $ref: '#/definitions/models.Acta_recibido'
         "403":
           description: ""
-  /catalogo_elementos/movimientos_kronos/:
-    get:
-      tags:
-      - catalogo_elementos
-      description: get ActaRecibido
-      operationId: CatalogoElementosController.GetMovimientosKronos
-      responses:
-        "200":
-          description: '{}'
-        "404":
-          description: not found resource
   /depreciacion/:
     post:
       tags:

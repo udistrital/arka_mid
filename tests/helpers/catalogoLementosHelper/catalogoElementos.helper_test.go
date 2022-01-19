@@ -52,21 +52,6 @@ func TestGetCuentasContablesSubgrupo(t *testing.T) {
 	}
 }
 
-func TestGetMovimientosKronos(t *testing.T) {
-	valor, err := catalogoElementosHelper.GetMovimientosKronos()
-	if err != nil || valor == nil {
-		if err != nil {
-			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)
-		} else {
-			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)
-		}
-
-		t.Fail()
-	} else {
-		t.Log("TestGetMovimientosKronos Finalizado Correctamente (OK)")
-	}
-}
-
 // APARENTEMENTE NO SE USA EN EL CLIENTE
 
 // func TestGetTipoMovimiento(t *testing.T) {
