@@ -21,7 +21,6 @@ type CatalogoElementosController struct {
 func (c *CatalogoElementosController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Get", c.GetAll)
-	c.Mapping("Get", c.GetAll2)
 	c.Mapping("GetOne", c.GetOne)
 }
 
@@ -109,35 +108,6 @@ func (c *CatalogoElementosController) GetOne() {
 	}
 
 	if v, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = v
-	}
-	c.ServeJSON()
-}
-
-// GetAll2 ...
-// @Title GetMovimientosKronos
-// @Description get ActaRecibido
-// @Success 200 {}
-// @Failure 404 not found resource
-// @router /movimientos_kronos/
-func (c *CatalogoElementosController) GetAll2() {
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
-
-	if v, err := catalogoElementosHelper.GetMovimientosKronos(); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
