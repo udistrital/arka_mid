@@ -2,7 +2,7 @@ package models
 
 type CuentaContable struct {
 	Activo             bool
-	Id                 int
+	Id                 string
 	Ajustable          bool
 	Saldo              float64
 	Nombre             string
