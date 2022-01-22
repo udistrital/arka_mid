@@ -1,6 +1,8 @@
 package catalogoElementosHelper
 
 import (
+	"strconv"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/models"
@@ -22,4 +24,36 @@ func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, ou
 	}
 
 	return elementos, nil
+}
+
+// GetTrCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
+func GetTrCuentasSubgrupo(id int) (cuentas []*models.CuentasSubgrupo, outputError map[string]interface{}) {
+
+	funcion := "GetTrCuentasSubgrupo"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_cuentas_subgrupo/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &cuentas); err != nil {
+		logs.Error(err)
+		eval := " - request.GetJson(urlcrud, &cuentas)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return cuentas, nil
+}
+
+// GetAllDetalleSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
+func GetAllDetalleSubgrupo(query string) (detalle []*models.DetalleSubgrupo, outputError map[string]interface{}) {
+
+	funcion := "GetAllDetalleSubgrupo"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "detalle_subgrupo?" + query
+	if err := request.GetJson(urlcrud, &detalle); err != nil {
+		logs.Error(err)
+		eval := " - request.GetJson(urlcrud, &detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return detalle, nil
 }

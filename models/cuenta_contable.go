@@ -23,6 +23,7 @@ type TipoComprobanteContable struct {
 }
 
 type DetalleCuenta struct {
+	Id              string
 	Codigo          string
 	Nombre          string
 	RequiereTercero bool

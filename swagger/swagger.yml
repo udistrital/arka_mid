@@ -447,12 +447,13 @@ paths:
     get:
       tags:
       - catalogo_elementos
-      description: Devuelve las todas las actas de recibido
+      description: Devuelve el detalle de la última cuenta de cada movimiento requerido
+        y subgrupo determinado
       operationId: CatalogoElementosController.GetCuentasSubgrupoById
       parameters:
       - in: path
         name: id
-        description: subgroup id
+        description: subgroupoId
         required: true
         type: integer
         format: int64
@@ -460,7 +461,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Acta_recibido'
+            $ref: '#/definitions/models.DetalleCuentasSubgrupo'
         "403":
           description: ""
   /depreciacion/:
@@ -939,9 +940,6 @@ definitions:
   map[string]interface{}:
     title: map[string]interface{}
     type: object
-  models.Acta_recibido:
-    title: Acta_recibido
-    type: object
   models.ActaRecibido:
     title: ActaRecibido
     type: object
@@ -1188,10 +1186,28 @@ definitions:
     properties:
       Codigo:
         type: string
+      Id:
+        type: string
       Nombre:
         type: string
       RequiereTercero:
         type: boolean
+  models.DetalleCuentasSubgrupo:
+    title: DetalleCuentasSubgrupo
+    type: object
+    properties:
+      CuentaCreditoId:
+        $ref: '#/definitions/models.DetalleCuenta'
+      CuentaDebitoId:
+        $ref: '#/definitions/models.DetalleCuenta'
+      Id:
+        type: integer
+        format: int64
+      SubgrupoId:
+        type: integer
+        format: int64
+      SubtipoMovimientoId:
+        $ref: '#/definitions/models.FormatoTipoMovimiento'
   models.DetalleElementoBaja:
     title: DetalleElementoBaja
     type: object

@@ -89,3 +89,11 @@ type TipoNivel struct {
 	Orden             float64
 	Activo            bool
 }
+
+type DetalleCuentasSubgrupo struct {
+	Id                  int
+	CuentaCreditoId     *DetalleCuenta
+	CuentaDebitoId      *DetalleCuenta
+	SubtipoMovimientoId *FormatoTipoMovimiento
+	SubgrupoId          int
+}

@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	//"github.com/udistrital/acta_recibido_crud/models"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -10,6 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // CatalogoElementosController operations for Catalogo
@@ -70,46 +71,31 @@ func (c *CatalogoElementosController) GetAll() {
 
 // GetOne ...
 // @Title GetCuentasSubgrupoById
-// @Description Devuelve las todas las actas de recibido
-// @Param	id		path 	int	true		"subgroup id"
-// @Success 200 {object} models.Acta_recibido
+// @Description Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado
+// @Param	id		path 	int	true		"subgroupoId"
+// @Success 200 {object} models.DetalleCuentasSubgrupo
 // @Failure 403
 // @router /cuentas_contables/:id [get]
 func (c *CatalogoElementosController) GetOne() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "CatalogoElementosController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "CatalogoElementosController")
 
-	idStr := c.Ctx.Input.Param(":id")
 	var id int
-	if v, err := strconv.Atoi(idStr); err == nil && v > 0 {
-		id = v
-	} else {
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = fmt.Errorf("id MUST be > 0")
+			err = errors.New("Se debe especificar una subgrupo válido")
 		}
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetOne - strconv.Atoi(idStr)",
-			"err":     err,
-			"status":  "400",
-		})
+		panic(errorctrl.Error(`GetOne - c.GetInt(":id")`, err, "400"))
+	} else {
+		id = v
 	}
 
 	if v, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id); err != nil {
 		panic(err)
 	} else {
+		if v == nil {
+			v = []*models.DetalleCuentasSubgrupo{}
+		}
 		c.Data["json"] = v
 	}
 	c.ServeJSON()
