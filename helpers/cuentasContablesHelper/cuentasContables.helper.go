@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -16,7 +17,6 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
-	"github.com/udistrital/utils_oas/time_bogota"
 )
 
 const ID_SALIDA_PRUEBAS = "16"
@@ -61,52 +61,20 @@ func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 	return movimiento
 }
 
-func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, outputError map[string]interface{}) {
+// GetSubgrupoById Consulta controlador subgrupo/{id} del api catalogo_elementos_crud
+func GetSubgrupoById(id int) (subgrupo *models.Subgrupo, outputError map[string]interface{}) {
 
-	funcion := "GetInfoSubgrupo"
+	funcion := "GetSubgrupoById"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	if subgrupoId <= 0 {
-		err := fmt.Errorf("subgrupoId MUST be > 0 - Got: %d", subgrupoId)
+	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &subgrupo); err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetInfoSubgrupo - subgrupoId <= 0",
-			"err":     err,
-			"status":  "400",
-		}
-		panic(outputError)
+		eval := " - request.GetJson(urlcrud, &subgrupo)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	var detalles []map[string]interface{}
-
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo?limit=-1"
-	urlcrud += "&query=Activo:True,Id:" + strconv.Itoa(int(subgrupoId))
-	if response, err := request.GetJsonTest(urlcrud, &detalles); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-		// fmt.Println(cuentasSubgrupo[0])
-		if detalles[0]["Id"].(float64) != 0 {
-			fmt.Println("el detalle", detalles[0])
-			return detalles[0], nil
-		} else {
-			err = fmt.Errorf("Cuenta no existe")
-			outputError = map[string]interface{}{
-				"funcion": "GetInfoSubgrupo - request.GetJsonTest(urlcrud, &cuentasSubgrupo)",
-				"err":     err,
-				"status:": "502",
-			}
-			return nil, outputError
-		}
-	} else {
-		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetInfoSubgrupo - request.GetJsonTest(urlcrud, &cuentasSubgrupo)",
-			"err":     err,
-			"status:": "502",
-		}
-		return nil, outputError
-	}
+	return subgrupo, nil
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
@@ -116,15 +84,13 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		res    map[string]interface{}
-		resMap map[string]interface{}
+		res map[string]interface{}
 		//	elemento                []map[string]interface{}
 		transaccion models.TransaccionMovimientos
 		//	respuesta_peticion      map[string]interface{}
-		parametroTipoDebito     int
-		parametroTipoCredito    int
-		tipoComprobanteContable models.TipoComprobanteContable
-		cuentasSubgrupo         []*models.CuentaSubgrupo
+		parametroTipoDebito  int
+		parametroTipoCredito int
+		cuentasSubgrupo      []*models.CuentaSubgrupo
 	)
 
 	res = make(map[string]interface{})
@@ -141,8 +107,6 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			consecutivoId = consecutivoId_
 		}
 	}
-	var jsonString []byte
-	var err1 error
 
 	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
@@ -151,45 +115,27 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		parametroTipoCredito = cr_
 	}
 
-	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "tipo_comprobante"
-	if err := request.GetJson(urlcrud, &resMap); err == nil { // Para obtener código del tipo de comprobante
-		for _, sliceTipoComprobante := range resMap["Body"].([]interface{}) {
+	etiquetas := make(map[string]interface{})
 
-			if valor, ok := sliceTipoComprobante.(map[string]interface{})["TipoDocumento"]; ok && valor == "E" {
-				if jsonString, err = json.Marshal(sliceTipoComprobante); err == nil {
-					if err = json.Unmarshal(jsonString, &tipoComprobanteContable); err == nil {
-						resMap = make(map[string]interface{})
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{"funcion": "asientoContable -json.Unmarshal(jsonString, &tipoComprobanteContable)", "status": "500", "err": err}
-						return nil, outputError
-					}
-				} else {
-					logs.Error(err)
-					outputError = map[string]interface{}{"funcion": "asientoContable - if jsonString, err = json.Marshal(sliceTipoComprobante);", "status": "500", "err": err}
-					return nil, outputError
-				}
-			}
+	if tipoComprobante_, err := GetTipoComprobante("E"); err != nil {
+		return nil, err
+	} else if tipoComprobante_ != nil {
+		etiquetas["TipoComprobanteId"] = tipoComprobante_.Codigo
+		if jsonData, err := json.Marshal(etiquetas); err != nil {
+			logs.Error(err)
+			eval := " - json.Marshal(etiquetas)"
+			return nil, errorctrl.Error(funcion+eval, err, "500")
+		} else {
+			transaccion.Etiquetas = string(jsonData[:])
 		}
 	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{"funcion": "asientoContable - if err := request.GetJson(urlcrud, &resMap);", "status": "502", "err": err}
-		return nil, outputError
-	}
-
-	etiquetas := make(map[string]interface{})
-	etiquetas["TipoComprobanteId"] = tipoComprobanteContable.Codigo
-
-	if jsonString, err1 = json.Marshal(etiquetas); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - if jsonString, err1 = json.Marshal(etiquetas);", "status": "500", "err": err1}
-		return nil, outputError
+		transaccion.Etiquetas = ""
 	}
 
 	transaccion.ConsecutivoId = consecutivoId
 	transaccion.Activo = true
 	transaccion.Descripcion = descripcionMovto
-	transaccion.Etiquetas = string(jsonString)
-	transaccion.FechaTransaccion = time_bogota.Tiempo_bogota()
+	transaccion.FechaTransaccion = time.Now()
 
 	idsSubgrupos := make([]int, len(totales))
 
@@ -231,11 +177,11 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, err := GetInfoSubgrupo(id)
+			subgrupo, err := GetSubgrupoById(id)
 			if err != nil {
 				return nil, err
 			} else {
-				res["errorTransaccion"] = fmt.Sprintf("Debe parametrizar las cuentas del subgrupo %v", subgrupo["Nombre"].(string))
+				res["errorTransaccion"] = fmt.Sprintf("Debe parametrizar las cuentas del subgrupo ") + subgrupo.Nombre
 				return res, nil
 			}
 		}

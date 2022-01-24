@@ -8,9 +8,11 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -111,12 +113,52 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	}
 
 	if len(ctas) > 0 {
+		detalleCtas := make(map[string]*models.DetalleCuenta)
 		for _, fm := range movs {
 			dCta := new(models.DetalleCuentasSubgrupo)
 			dCta.SubtipoMovimientoId = fm
 			dCta.SubgrupoId = subgrupoId
-				cuentas = append(cuentas, dCta)
+			if idx := FindInArray(ctas, fm.Id); idx > -1 {
+				dCta.Id = ctas[idx].Id
+				if val, ok := detalleCtas[ctas[idx].CuentaCreditoId]; ok {
+					dCta.CuentaCreditoId = val
+				} else {
+					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
+						return nil, err
+					} else if cta != nil {
+						var cdt *models.DetalleCuenta
+						if err := formatdata.FillStruct(cta, &cdt); err != nil {
+							logs.Error(err)
+							eval := " - formatdata.FillStruct(cta, &cdt)"
+							return nil, errorctrl.Error(funcion+eval, err, "500")
+						} else {
+							dCta.CuentaCreditoId = cdt
+							detalleCtas[ctas[idx].CuentaCreditoId] = cdt
+						}
+					}
+				}
+
+				if val, ok := detalleCtas[ctas[idx].CuentaDebitoId]; ok {
+					dCta.CuentaDebitoId = val
+				} else {
+					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
+						return nil, err
+					} else if cta != nil {
+						var dbt *models.DetalleCuenta
+						if err := formatdata.FillStruct(cta, &dbt); err != nil {
+							logs.Error(err)
+							eval := " - formatdata.FillStruct(cta, &dbt)"
+							return nil, errorctrl.Error(funcion+eval, err, "500")
+						} else {
+							dCta.CuentaDebitoId = dbt
+							detalleCtas[ctas[idx].CuentaDebitoId] = dbt
+						}
+					}
+				}
+			}
+			cuentas = append(cuentas, dCta)
 		}
+		return cuentas, nil
 	} else {
 		for _, fm := range movs {
 			dCta := new(models.DetalleCuentasSubgrupo)
@@ -178,4 +220,14 @@ func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, out
 		}
 		return nil, outputError
 	}
+}
+
+// findIdInArray Retorna la posicion en que se encuentra el id específicado
+func FindInArray(cuentasSg []*models.CuentasSubgrupo, movimientoId int) (i int) {
+	for i, cuentaSg := range cuentasSg {
+		if int(cuentaSg.SubtipoMovimientoId) == movimientoId {
+			return i
+		}
+	}
+	return -1
 }
