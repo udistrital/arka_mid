@@ -1,7 +1,6 @@
 package catalogoElementosHelper
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -14,47 +13,6 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
-
-// GetCatalogoById ...
-func GetCatalogoById(catalogoId int) (catalogo *[]map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetCatalogoById - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	if catalogoId <= 0 {
-		err := errors.New("catalogoId MUST be > 0")
-		logs.Error(err)
-		return nil, map[string]interface{}{
-			"funcion": "GetCatalogoById - catalogoId <= 0",
-			"err":     err,
-			"status":  "400",
-		}
-	}
-
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/" + strconv.Itoa(catalogoId)
-	if response, err := request.GetJsonTest(urlcrud, &catalogo); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-		return catalogo, nil
-	} else {
-		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetCatalogoById - request.GetJsonTest(urlcrud, &catalogo)",
-			"err":     err,
-			"status:": "502",
-		}
-		return nil, outputError
-	}
-}
 
 func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
@@ -169,81 +127,6 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	}
 
 	return cuentas, nil
-}
-
-//GetTipoMovimiento funcion para traer cuenta asociadas a subgrupos por lo tanto crea sus propias estructuras como subgrupoCuentasModelo
-func GetTipoMovimiento(arreglosubgrupos []models.SubgrupoCuentasModelo) (subgrupos []models.SubgrupoCuentasMovimiento, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetTipoMovimiento - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	var urlcatalogo, urlcuenta string
-	var arreglocuentas []models.CuentasGrupoMovimiento
-	var subgrupocatalogo models.SubgrupoCuentasModelo
-	var cuentareal map[string]interface{}
-	for _, subgrupocuentas := range arreglosubgrupos {
-		urlcatalogo = "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_cuentas_subgrupo/" + strconv.Itoa(subgrupocuentas.Id)
-		if response, err := request.GetJsonTest(urlcatalogo, &subgrupocatalogo); err == nil && response.StatusCode == 200 {
-
-			for _, cuenta := range subgrupocatalogo.CuentasAsociadas {
-
-				cuentaaso := models.CuentasGrupoMovimiento{
-					Id:                  cuenta.Id,
-					FechaCreacion:       cuenta.FechaCreacion,
-					FechaModificacion:   cuenta.FechaModificacion,
-					Activo:              cuenta.Activo,
-					SubgrupoId:          cuenta.SubgrupoId,
-					SubtipoMovimientoId: cuenta.SubtipoMovimientoId,
-				}
-
-				urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
-				if response, err := request.GetJsonTest(urlcuenta, &cuentareal); err == nil && response.StatusCode == 200 {
-					cuentaaso.CuentaCreditoId = cuentareal["Codigo"].(string)
-				} else if err != nil {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "GetTipoMovimiento - request.GetJsonTest(urlcatalogo, &subgrupocatalogo)",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
-				}
-				arreglocuentas = append(arreglocuentas, cuentaaso)
-
-			}
-
-		} else if err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetTipoMovimiento - request.GetJsonTest(urlcatalogo, &subgrupocatalogo)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-
-		subgrupos = append(subgrupos, models.SubgrupoCuentasMovimiento{
-			Id:                subgrupocuentas.Id,
-			Nombre:            subgrupocuentas.Nombre,
-			Descripcion:       subgrupocuentas.Descripcion,
-			FechaCreacion:     subgrupocuentas.FechaCreacion,
-			FechaModificacion: subgrupocuentas.FechaModificacion,
-			Activo:            subgrupocuentas.Activo,
-			Codigo:            subgrupocuentas.Codigo,
-			CuentasAsociadas:  arreglocuentas,
-		})
-
-	} //hasta aca va forr
-
-	return subgrupos, nil
 }
 
 func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, outputError map[string]interface{}) {

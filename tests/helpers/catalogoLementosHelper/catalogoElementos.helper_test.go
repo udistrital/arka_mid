@@ -20,22 +20,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// GetCatalogoById ...
-func TestGetCatalogoById(t *testing.T) {
-	valor, err := catalogoElementosHelper.GetCatalogoById(4)
-	if err != nil || valor == nil {
-		if err != nil {
-			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)
-		} else {
-			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)
-		}
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetCatalogoById Finalizado Correctamente (OK)")
-	}
-}
-
 // GetCuentasContablesGrupo ...
 func TestGetCuentasContablesSubgrupo(t *testing.T) {
 	valor, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(1)
@@ -51,23 +35,6 @@ func TestGetCuentasContablesSubgrupo(t *testing.T) {
 		t.Log("TestGetCuentasContablesGrupo Finalizado Correctamente (OK)")
 	}
 }
-
-// APARENTEMENTE NO SE USA EN EL CLIENTE
-
-// func TestGetTipoMovimiento(t *testing.T) {
-// 	valor, err := catalogoElementosHelper.GetTipoMovimiento(arreglos)
-// 	if err != nil || valor == nil {
-// 		if err != nil {
-// 			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)
-// 		} else {
-// 			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)
-// 		}
-
-// 		t.Fail()
-// 	} else {
-// 		t.Log("TestGetMovimientosKronos Finalizado Correctamente (OK)")
-// 	}
-// }
 
 func TestEndPointGetCatalogoElementosCrud(t *testing.T) {
 	t.Log("Testing EndPoint CATALOGO_ELEMENTOS_SERVICE")
