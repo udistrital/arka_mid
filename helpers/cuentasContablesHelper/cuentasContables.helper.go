@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
+	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/time_bogota"
 )
@@ -43,70 +43,29 @@ func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, ou
 	return elementos, nil
 }
 
-// GetCuentaContable ...
-func GetCuentaContable(cuentaContableId string) (cuentaContable map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetCuentaContable - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentaContableId
-
-	var data models.RespuestaAPI2obj
-	if resp, err := request.GetJsonTest(urlcrud, &data); err == nil && resp.StatusCode == 200 && data.Code == 200 {
-		return data.Body, nil
-	} else {
-		if err == nil {
-			if resp.StatusCode != 200 {
-				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
-			} else {
-				err = fmt.Errorf("Undesired Status Code: %d - in Body: %d", resp.StatusCode, data.Code)
-			}
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetCuentaContable - request.GetJsonTest(urlcrud, &cuentaContable)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-}
-
-func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuentaId string, cuenta *models.CuentaContable, tipo int) (movimientoDebito models.MovimientoTransaccion) {
-	var movimiento models.MovimientoTransaccion
+func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
+	movimiento = new(models.MovimientoTransaccion)
 
 	if cuenta.RequiereTercero {
 		movimiento.TerceroId = &idTercero
 	} else {
 		movimiento.TerceroId = nil
 	}
-	movimiento.CuentaId = cuentaId
+
+	movimiento.CuentaId = cuenta.Codigo
 	movimiento.NombreCuenta = cuenta.Nombre
 	movimiento.TipoMovimientoId = tipo
 	movimiento.Valor = valor
 	movimiento.Descripcion = descripcionMovto
+
 	return movimiento
 }
 
 func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, outputError map[string]interface{}) {
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetInfoSubgrupo - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+
+	funcion := "GetInfoSubgrupo"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
 	if subgrupoId <= 0 {
 		err := fmt.Errorf("subgrupoId MUST be > 0 - Got: %d", subgrupoId)
 		logs.Error(err)
@@ -162,14 +121,12 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		//	elemento                []map[string]interface{}
 		transaccion models.TransaccionMovimientos
 		//	respuesta_peticion      map[string]interface{}
-		parametroTipoDebito     models.Parametro
-		parametroTipoCredito    models.Parametro
+		parametroTipoDebito     int
+		parametroTipoCredito    int
 		tipoComprobanteContable models.TipoComprobanteContable
 		cuentasSubgrupo         []*models.CuentaSubgrupo
-
-		ctaCr *models.CuentaContable
-		ctaDb *models.CuentaContable
 	)
+
 	res = make(map[string]interface{})
 	res["errorTransaccion"] = ""
 	if tipomvto == ID_SALIDA_CONSUMO_PRUEBAS {
@@ -187,44 +144,14 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	var jsonString []byte
 	var err1 error
 
-	//captura el id del movimiento credito
-	urlcrud := "http://" + beego.AppConfig.String("parametrosService") + "parametro?query=CodigoAbreviacion:MCD"
-	if err := request.GetJson(urlcrud, &resMap); err != nil { // Get parámetro tipo movimiento contable débito
-		outputError = map[string]interface{}{"funcion": "asientoContable - request.GetJson(urlcrud, &resMap)", "status": "502", "err": err}
-		return nil, outputError
+	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+		return nil, err
+	} else {
+		parametroTipoDebito = db_
+		parametroTipoCredito = cr_
 	}
 
-	if jsonString, err1 = json.Marshal(resMap["Data"]); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - json.Marshal(resMap[\"Data\"])", "status": "500", "err": err1}
-		return nil, outputError
-	}
-	var parametro []models.Parametro
-	if err1 = json.Unmarshal(jsonString, &parametro); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - json.Unmarshal(jsonString, &parametro)", "status": "500", "err": err1}
-		return nil, outputError
-	}
-	parametroTipoDebito = parametro[0]
-
-	//captura el id del movimiento debito
-	urlcrud = "http://" + beego.AppConfig.String("parametrosService") + "parametro?query=CodigoAbreviacion:MCC"
-	if err1 = request.GetJson(urlcrud, &resMap); err1 != nil { // Get parámetro tipo movimiento contable débito
-		outputError = map[string]interface{}{"funcion": "asientoContable - request.GetJson(urlcrud, &resMap)", "status": "502", "err": err1}
-		return nil, outputError
-	}
-
-	if jsonString, err1 = json.Marshal(resMap["Data"]); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - json.Marshal(resMap[\"Data\"])", "status": "500", "err": err1}
-		return nil, outputError
-	}
-	if err1 = json.Unmarshal(jsonString, &parametro); err1 != nil {
-		outputError = map[string]interface{}{"funcion": "asientoContable - json.Unmarshal(jsonString, &parametro)", "status": "500", "err": err1}
-		return nil, outputError
-	}
-
-	//	resMap = make(map[string]interface{})
-	parametroTipoCredito = parametro[0]
-
-	urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "tipo_comprobante"
+	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "tipo_comprobante"
 	if err := request.GetJson(urlcrud, &resMap); err == nil { // Para obtener código del tipo de comprobante
 		for _, sliceTipoComprobante := range resMap["Body"].([]interface{}) {
 
@@ -282,51 +209,40 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	}
 
 	infoCuentas := make(map[int]*InfoCuentasSubgrupos)
-	for clave, _ := range totales {
-		if idx := FindInArray(cuentasSubgrupo, clave); idx > -1 {
+	for id := range totales {
+		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
+
+			infoCuentas[id] = new(InfoCuentasSubgrupos)
 			if ctaCr_, err := GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else {
-				if err := formatdata.FillStruct(ctaCr_, &ctaCr); err != nil {
-					logs.Error(err)
-					eval := " - formatdata.FillStruct(ctaCr_, &ctaCr)"
-					return nil, errorctrl.Error(funcion+eval, err, "500")
-				}
+				infoCuentas[id].CuentaCredito = ctaCr_
 			}
 
 			if ctaDb_, err := GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else {
-				if err := formatdata.FillStruct(ctaDb_, &ctaDb); err != nil {
-					logs.Error(err)
-					eval := " - formatdata.FillStruct(ctaDb_, &ctaDb)"
-					return nil, errorctrl.Error(funcion+eval, err, "500")
-				}
+				infoCuentas[id].CuentaDebito = ctaDb_
 			}
 
-			infoCuentas[clave] = new(InfoCuentasSubgrupos)
-			infoCuentas[clave].CuentaCredito = ctaCr
-			infoCuentas[clave].CuentaDebito = ctaDb
-			//			var movimientoDebito models.MovimientoTransaccion
-			//		var movimientoCredito models.MovimientoTransaccion
-			movimientoCredito := creaMovimiento(totales[clave], descripcionAsiento, idTercero, cuentasSubgrupo[idx].CuentaCreditoId, ctaCr, parametroTipoCredito.Id)
-			movimientoDebito := creaMovimiento(totales[clave], descripcionAsiento, idTercero, cuentasSubgrupo[idx].CuentaDebitoId, ctaDb, parametroTipoDebito.Id)
-			transaccion.Movimientos = append(transaccion.Movimientos, &movimientoDebito)
-			transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
+			movimientoCredito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[id].CuentaCredito, parametroTipoCredito)
+			movimientoDebito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[id].CuentaDebito, parametroTipoDebito)
+			transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
+			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, error := GetInfoSubgrupo(clave)
-			if error == nil {
+			subgrupo, err := GetInfoSubgrupo(id)
+			if err != nil {
+				return nil, err
+			} else {
 				res["errorTransaccion"] = fmt.Sprintf("Debe parametrizar las cuentas del subgrupo %v", subgrupo["Nombre"].(string))
 				return res, nil
-			} else {
-				return nil, error
 			}
 		}
 	}
 
 	if submit {
-		if resp, err := PostTrContable(&transaccion); err != nil || !resp.Success {
+		if resp, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil || !resp.Success {
 			if err == nil {
 				eval := " - PostTrContable(&transaccion)"
 				return nil, errorctrl.Error(funcion+eval, resp.Data, "502")
@@ -360,22 +276,4 @@ func FindInArray(cuentasSg []*models.CuentaSubgrupo, subgrupoId int) (i int) {
 		}
 	}
 	return -1
-}
-
-// PostTrContable post controlador transaccion_movimientos/transaccion_movimientos/ del api movimientos_contables_mid
-func PostTrContable(tr *models.TransaccionMovimientos) (resp *models.RespuestaAPI1Str, outputError map[string]interface{}) {
-
-	funcion := "PostTrContable"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
-
-	urlcrud := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos"
-	if err := request.SendJson(urlcrud, "POST", &resp, &tr); err != nil {
-		eval := ` - request.SendJson(urlcrud, "POST", &resp, &tr)`
-		return nil, errorctrl.Error(funcion+eval, err, "502")
-	} else if strings.Contains(resp.Data, "invalid character") {
-		logs.Error(resp.Data)
-		resp, outputError = PostTrContable(tr)
-	}
-
-	return resp, nil
 }
