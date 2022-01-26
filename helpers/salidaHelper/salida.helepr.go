@@ -16,7 +16,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -495,7 +495,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return resultado, nil
 	}
 
-	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario, true); res == nil || outputError != nil {
+	if resA, outputError := asientoContable.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario, true); res == nil || outputError != nil {
 		if outputError == nil {
 			outputError = map[string]interface{}{
 				"funcion": "AprobarSalida -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"Salida de almacen\");",

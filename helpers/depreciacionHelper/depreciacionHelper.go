@@ -7,7 +7,7 @@ import (
 
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -96,7 +96,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	// Simula la transacción contable en caso de aprobarse
-	if trSimulada, err := cuentasContablesHelper.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trSimulada
@@ -189,7 +189,7 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 		terceroUD = terceroUD_[0].TerceroId.Id
 	}
 
-	if trSimulada, err := cuentasContablesHelper.AsientoContable(detalle.Totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(detalle.Totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["TrContable"] = trSimulada
@@ -315,7 +315,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	// Registra la transacción contable
-	if trContable, err := cuentasContablesHelper.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, true); err != nil {
+	if trContable, err := asientoContable.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, true); err != nil {
 		return nil, err
 	} else {
 		detalleD["trContable"] = trContable

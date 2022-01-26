@@ -242,14 +242,10 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	transaccion.Etiquetas = ""
 	transaccion.Descripcion = ""
 
-	if resp, err := cuentasContablesHelper.PostTrContable(transaccion); err != nil || !resp.Success {
-		if err == nil {
-			eval := " - cuentasContablesHelper.PostTrContable(transaccion)"
-			return nil, errorctrl.Error(funcion+eval, resp.Data, resp.Status)
-		}
+	if tr, err := movimientosContablesMidHelper.PostTrContable(transaccion); err != nil {
 		return nil, err
 	} else {
-		detalle.TrContableId = transaccion.ConsecutivoId
+		detalle.TrContableId = tr.ConsecutivoId
 		detalle.PreTrAjuste = nil
 		detalle.RazonRechazo = ""
 	}

@@ -615,49 +615,18 @@
                 }
             }
         },
-        "/catalogo_elementos/": {
-            "post": {
-                "tags": [
-                    "catalogo_elementos"
-                ],
-                "description": "Tr_cuentas_subgrupo su función es permitir una consulta de n cuentas asociadas a subgrupos",
-                "operationId": "CatalogoElementosController.Create",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for Tr_cuentas_subgrupo content (Recibe un arreglo de subgrupos, cada subgrupo debe llevar un Id definido)",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Tr_cuentas_subgrupo"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.Tr_cuentas_subgrupo"
-                        }
-                    },
-                    "403": {
-                        "description": "body is empty"
-                    }
-                }
-            }
-        },
         "/catalogo_elementos/cuentas_contables/{id}": {
             "get": {
                 "tags": [
                     "catalogo_elementos"
                 ],
-                "description": "Devuelve las todas las actas de recibido",
+                "description": "Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado",
                 "operationId": "CatalogoElementosController.GetCuentasSubgrupoById",
                 "parameters": [
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "subgroup id",
+                        "description": "subgroupoId",
                         "required": true,
                         "type": "integer",
                         "format": "int64"
@@ -667,28 +636,11 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Acta_recibido"
+                            "$ref": "#/definitions/models.DetalleCuentasSubgrupo"
                         }
                     },
                     "403": {
                         "description": ""
-                    }
-                }
-            }
-        },
-        "/catalogo_elementos/{id}": {
-            "get": {
-                "tags": [
-                    "catalogo_elementos"
-                ],
-                "description": "get ActaRecibido",
-                "operationId": "CatalogoElementosController.GetCatalogoById",
-                "responses": {
-                    "200": {
-                        "description": "{}"
-                    },
-                    "404": {
-                        "description": "not found resource"
                     }
                 }
             }
@@ -1421,10 +1373,6 @@
                 }
             }
         },
-        "models.Acta_recibido": {
-            "title": "Acta_recibido",
-            "type": "object"
-        },
         "models.Ajuste": {
             "title": "Ajuste",
             "type": "object"
@@ -1750,11 +1698,37 @@
                 "Codigo": {
                     "type": "string"
                 },
+                "Id": {
+                    "type": "string"
+                },
                 "Nombre": {
                     "type": "string"
                 },
                 "RequiereTercero": {
                     "type": "boolean"
+                }
+            }
+        },
+        "models.DetalleCuentasSubgrupo": {
+            "title": "DetalleCuentasSubgrupo",
+            "type": "object",
+            "properties": {
+                "CuentaCreditoId": {
+                    "$ref": "#/definitions/models.DetalleCuenta"
+                },
+                "CuentaDebitoId": {
+                    "$ref": "#/definitions/models.DetalleCuenta"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "SubgrupoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "SubtipoMovimientoId": {
+                    "$ref": "#/definitions/models.FormatoTipoMovimiento"
                 }
             }
         },
@@ -3068,10 +3042,6 @@
                     "$ref": "#/definitions/models.DetalleSedeDependencia"
                 }
             }
-        },
-        "models.Tr_cuentas_subgrupo": {
-            "title": "Tr_cuentas_subgrupo",
-            "type": "object"
         },
         "{}": {
             "title": "{}",

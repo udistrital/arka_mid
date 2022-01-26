@@ -12,7 +12,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -294,7 +294,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	var trContable map[string]interface{}
-	if resA, outputError := cuentasContablesHelper.AsientoContable(groups, tipomvto, "Entrada de almacen", detalle, transaccionActaRecibido.UltimoEstado.ProveedorId, true); res == nil || outputError != nil {
+	if resA, outputError := asientoContable.AsientoContable(groups, tipomvto, "Entrada de almacen", detalle, transaccionActaRecibido.UltimoEstado.ProveedorId, true); res == nil || outputError != nil {
 		if outputError != nil {
 			outputError = map[string]interface{}{
 				"funcion": "AddEntrada -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"asiento contable\");",

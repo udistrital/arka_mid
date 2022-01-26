@@ -1,58 +1,20 @@
 package catalogoElementosHelper
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
-
-// GetCatalogoById ...
-func GetCatalogoById(catalogoId int) (catalogo *[]map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetCatalogoById - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	if catalogoId <= 0 {
-		err := errors.New("catalogoId MUST be > 0")
-		logs.Error(err)
-		return nil, map[string]interface{}{
-			"funcion": "GetCatalogoById - catalogoId <= 0",
-			"err":     err,
-			"status":  "400",
-		}
-	}
-
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/" + strconv.Itoa(catalogoId)
-	if response, err := request.GetJsonTest(urlcrud, &catalogo); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-		return catalogo, nil
-	} else {
-		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetCatalogoById - request.GetJsonTest(urlcrud, &catalogo)",
-			"err":     err,
-			"status:": "502",
-		}
-		return nil, outputError
-	}
-}
 
 func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
@@ -109,147 +71,104 @@ func GetInfoSubgrupo(subgrupoId int) (detalleSubgrupo map[string]interface{}, ou
 	}
 }
 
-// GetCuentasContablesGrupo ...
-func GetCuentasContablesSubgrupo(subgrupoId int) (cuentasSubgrupoTransaccion []map[string]interface{}, outputError map[string]interface{}) {
+// GetCuentasContablesSubgrupo ...
+func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuentasSubgrupo, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetCuentasContablesSubgrupo - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetCuentasContablesSubgrupo"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	if subgrupoId <= 0 {
-		err := fmt.Errorf("subgrupoId MUST be > 0 - Got: %d", subgrupoId)
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetCuentasContablesSubgrupo - subgrupoId <= 0",
-			"err":     err,
-			"status":  "400",
-		}
-	}
+	var (
+		query   string
+		ctas    []*models.CuentasSubgrupo
+		movs    []*models.FormatoTipoMovimiento
+		detalle *models.DetalleSubgrupo
+	)
 
-	var cuentasSubgrupo []*models.CuentaSubgrupo
-
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?limit=-1"
-	urlcrud += "&query=Activo:True,SubgrupoId.Id:" + strconv.Itoa(int(subgrupoId))
-	// logs.Debug("urlcrud:", urlcrud)
-
-	if response, err := request.GetJsonTest(urlcrud, &cuentasSubgrupo); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-		// fmt.Println(cuentasSubgrupo)
-		if len(cuentasSubgrupo) > 0 {
-			for _, cuenta := range cuentasSubgrupo {
-				// logs.Debug("CuentaCreditoId:", cuenta.CuentaCreditoId, " - CuentaDebitoId:", cuenta.CuentaDebitoId)
-				cuentaCredito, _ := cuentasContablesHelper.GetCuentaContable(cuenta.CuentaCreditoId)
-				cuentaDebito, _ := cuentasContablesHelper.GetCuentaContable(cuenta.CuentaDebitoId)
-
-				cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{
-					"Id":                  cuenta.Id,
-					"CuentaCreditoId":     cuentaCredito,
-					"CuentaDebitoId":      cuentaDebito,
-					"SubtipoMovimientoId": cuenta.SubtipoMovimientoId,
-					"FechaCreacion":       cuenta.FechaCreacion,
-					"FechaModificacion":   cuenta.FechaModificacion,
-					"Activo":              cuenta.Activo,
-					"SubgrupoId":          cuenta.SubgrupoId,
-				})
-			}
-			return cuentasSubgrupoTransaccion, nil
-		} else {
-			cuentasSubgrupoTransaccion = append(cuentasSubgrupoTransaccion, map[string]interface{}{})
-			return cuentasSubgrupoTransaccion, nil
-		}
+	query = "limit=1&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
+	if detalle_, err := GetAllDetalleSubgrupo(query); err != nil {
+		return nil, err
+	} else if len(detalle_) == 0 {
+		return nil, nil
 	} else {
-		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetCuentasContablesSubgrupo - request.GetJsonTest(urlcrud, &cuentasSubgrupo)",
-			"err":     err,
-			"status:": "502",
-		}
-		return nil, outputError
+		detalle = detalle_[0]
 	}
-}
 
-//GetTipoMovimiento funcion para traer cuenta asociadas a subgrupos por lo tanto crea sus propias estructuras como subgrupoCuentasModelo
-func GetTipoMovimiento(arreglosubgrupos []models.SubgrupoCuentasModelo) (subgrupos []models.SubgrupoCuentasMovimiento, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetTipoMovimiento - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
+	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&query=Activo:true"
+	if movs_, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		for _, fm := range movs_ {
+			if strings.Contains(fm.CodigoAbreviacion, "ENT_") || fm.CodigoAbreviacion == "SAL" || fm.CodigoAbreviacion == "BJ_HT" {
+				movs = append(movs, fm)
+			} else if detalle.Depreciacion && fm.CodigoAbreviacion == "DEP" {
+				movs = append(movs, fm)
 			}
-			panic(outputError)
 		}
-	}()
+	}
 
-	var urlcatalogo, urlcuenta string
-	var arreglocuentas []models.CuentasGrupoMovimiento
-	var subgrupocatalogo models.SubgrupoCuentasModelo
-	var cuentareal map[string]interface{}
-	for _, subgrupocuentas := range arreglosubgrupos {
-		urlcatalogo = "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_cuentas_subgrupo/" + strconv.Itoa(subgrupocuentas.Id)
-		if response, err := request.GetJsonTest(urlcatalogo, &subgrupocatalogo); err == nil && response.StatusCode == 200 {
+	if cuentas_, err := GetTrCuentasSubgrupo(subgrupoId); err != nil {
+		return nil, err
+	} else {
+		ctas = cuentas_
+	}
 
-			for _, cuenta := range subgrupocatalogo.CuentasAsociadas {
-
-				cuentaaso := models.CuentasGrupoMovimiento{
-					Id:                  cuenta.Id,
-					FechaCreacion:       cuenta.FechaCreacion,
-					FechaModificacion:   cuenta.FechaModificacion,
-					Activo:              cuenta.Activo,
-					SubgrupoId:          cuenta.SubgrupoId,
-					SubtipoMovimientoId: cuenta.SubtipoMovimientoId,
-				}
-
-				urlcuenta = "http://" + beego.AppConfig.String("cuentasContablesService") + "cuenta_contable/" + strconv.Itoa(cuenta.CuentaCreditoId)
-				if response, err := request.GetJsonTest(urlcuenta, &cuentareal); err == nil && response.StatusCode == 200 {
-					cuentaaso.CuentaCreditoId = cuentareal["Codigo"].(string)
-				} else if err != nil {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "GetTipoMovimiento - request.GetJsonTest(urlcatalogo, &subgrupocatalogo)",
-						"err":     err,
-						"status":  "502",
+	if len(ctas) > 0 {
+		detalleCtas := make(map[string]*models.DetalleCuenta)
+		for _, fm := range movs {
+			dCta := new(models.DetalleCuentasSubgrupo)
+			dCta.SubtipoMovimientoId = fm
+			dCta.SubgrupoId = subgrupoId
+			if idx := FindInArray(ctas, fm.Id); idx > -1 {
+				dCta.Id = ctas[idx].Id
+				if val, ok := detalleCtas[ctas[idx].CuentaCreditoId]; ok {
+					dCta.CuentaCreditoId = val
+				} else {
+					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
+						return nil, err
+					} else if cta != nil {
+						var cdt *models.DetalleCuenta
+						if err := formatdata.FillStruct(cta, &cdt); err != nil {
+							logs.Error(err)
+							eval := " - formatdata.FillStruct(cta, &cdt)"
+							return nil, errorctrl.Error(funcion+eval, err, "500")
+						} else {
+							dCta.CuentaCreditoId = cdt
+							detalleCtas[ctas[idx].CuentaCreditoId] = cdt
+						}
 					}
-					return nil, outputError
 				}
-				arreglocuentas = append(arreglocuentas, cuentaaso)
 
+				if val, ok := detalleCtas[ctas[idx].CuentaDebitoId]; ok {
+					dCta.CuentaDebitoId = val
+				} else {
+					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
+						return nil, err
+					} else if cta != nil {
+						var dbt *models.DetalleCuenta
+						if err := formatdata.FillStruct(cta, &dbt); err != nil {
+							logs.Error(err)
+							eval := " - formatdata.FillStruct(cta, &dbt)"
+							return nil, errorctrl.Error(funcion+eval, err, "500")
+						} else {
+							dCta.CuentaDebitoId = dbt
+							detalleCtas[ctas[idx].CuentaDebitoId] = dbt
+						}
+					}
+				}
 			}
-
-		} else if err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetTipoMovimiento - request.GetJsonTest(urlcatalogo, &subgrupocatalogo)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
+			cuentas = append(cuentas, dCta)
 		}
+		return cuentas, nil
+	} else {
+		for _, fm := range movs {
+			dCta := new(models.DetalleCuentasSubgrupo)
+			dCta.SubtipoMovimientoId = fm
+			dCta.SubgrupoId = subgrupoId
+			cuentas = append(cuentas, dCta)
+		}
+	}
 
-		subgrupos = append(subgrupos, models.SubgrupoCuentasMovimiento{
-			Id:                subgrupocuentas.Id,
-			Nombre:            subgrupocuentas.Nombre,
-			Descripcion:       subgrupocuentas.Descripcion,
-			FechaCreacion:     subgrupocuentas.FechaCreacion,
-			FechaModificacion: subgrupocuentas.FechaModificacion,
-			Activo:            subgrupocuentas.Activo,
-			Codigo:            subgrupocuentas.Codigo,
-			CuentasAsociadas:  arreglocuentas,
-		})
-
-	} //hasta aca va forr
-
-	return subgrupos, nil
+	return cuentas, nil
 }
 
 func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, outputError map[string]interface{}) {
@@ -301,4 +220,14 @@ func GetDetalleSubgrupo(subgrupoId int) (subgrupo []*models.DetalleSubgrupo, out
 		}
 		return nil, outputError
 	}
+}
+
+// findIdInArray Retorna la posicion en que se encuentra el id específicado
+func FindInArray(cuentasSg []*models.CuentasSubgrupo, movimientoId int) (i int) {
+	for i, cuentaSg := range cuentasSg {
+		if int(cuentaSg.SubtipoMovimientoId) == movimientoId {
+			return i
+		}
+	}
+	return -1
 }
