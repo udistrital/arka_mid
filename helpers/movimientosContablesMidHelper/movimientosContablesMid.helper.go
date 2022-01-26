@@ -30,19 +30,23 @@ func GetTransaccion(id int, criteria string, detail bool) (transaccion *models.T
 }
 
 // PostTrContable post controlador transaccion_movimientos/transaccion_movimientos/ del api movimientos_contables_mid
-func PostTrContable(tr *models.TransaccionMovimientos) (resp *models.RespuestaAPI1Str, outputError map[string]interface{}) {
+func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionMovimientos, outputError map[string]interface{}) {
 
 	funcion := "PostTrContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
+	var resp *models.RespuestaAPI1Str
 	urlcrud := "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos"
 	if err := request.SendJson(urlcrud, "POST", &resp, &tr); err != nil {
 		eval := ` - request.SendJson(urlcrud, "POST", &resp, &tr)`
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	} else if strings.Contains(resp.Data, "invalid character") {
 		logs.Error(resp.Data)
-		resp, outputError = PostTrContable(tr)
+		tr_, outputError = PostTrContable(tr)
+	} else if !resp.Success {
+		eval := ` - request.SendJson(urlcrud, "POST", &resp, &tr)`
+		return nil, errorctrl.Error(funcion+eval, resp.Data, "502")
 	}
 
-	return resp, nil
+	return tr, nil
 }

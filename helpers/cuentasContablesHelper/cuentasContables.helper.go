@@ -43,6 +43,22 @@ func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, ou
 	return elementos, nil
 }
 
+// GetSubgrupoById Consulta controlador subgrupo/{id} del api catalogo_elementos_crud
+func GetSubgrupoById(id int) (subgrupo *models.Subgrupo, outputError map[string]interface{}) {
+
+	funcion := "GetSubgrupoById"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &subgrupo); err != nil {
+		logs.Error(err)
+		eval := " - request.GetJson(urlcrud, &subgrupo)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return subgrupo, nil
+}
+
 func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
 	movimiento = new(models.MovimientoTransaccion)
 
@@ -59,22 +75,6 @@ func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 	movimiento.Descripcion = descripcionMovto
 
 	return movimiento
-}
-
-// GetSubgrupoById Consulta controlador subgrupo/{id} del api catalogo_elementos_crud
-func GetSubgrupoById(id int) (subgrupo *models.Subgrupo, outputError map[string]interface{}) {
-
-	funcion := "GetSubgrupoById"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &subgrupo); err != nil {
-		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &subgrupo)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	return subgrupo, nil
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
@@ -188,14 +188,10 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	}
 
 	if submit {
-		if resp, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil || !resp.Success {
-			if err == nil {
-				eval := " - PostTrContable(&transaccion)"
-				return nil, errorctrl.Error(funcion+eval, resp.Data, "502")
-			}
+		if tr, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
-			res["resultadoTransaccion"] = transaccion
+			res["resultadoTransaccion"] = tr
 			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 				return nil, err
 			} else {
