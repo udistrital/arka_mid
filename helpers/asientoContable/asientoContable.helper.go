@@ -1,4 +1,4 @@
-package cuentasContablesHelper
+package asientoContable
 
 import (
 	"encoding/json"
@@ -7,16 +7,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-
+	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
 )
 
 const ID_SALIDA_PRUEBAS = "16"
@@ -25,38 +24,6 @@ const ID_SALIDA_CONSUMO_PRUEBAS = "22"
 type InfoCuentasSubgrupos struct {
 	CuentaDebito  *models.CuentaContable
 	CuentaCredito *models.CuentaContable
-}
-
-// GetAllCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
-func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, outputError map[string]interface{}) {
-
-	funcion := "GetAllCuentasSubgrupo"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?" + query
-	if err := request.GetJson(urlcrud, &elementos); err != nil {
-		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &elementos)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	return elementos, nil
-}
-
-// GetSubgrupoById Consulta controlador subgrupo/{id} del api catalogo_elementos_crud
-func GetSubgrupoById(id int) (subgrupo *models.Subgrupo, outputError map[string]interface{}) {
-
-	funcion := "GetSubgrupoById"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &subgrupo); err != nil {
-		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &subgrupo)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	return subgrupo, nil
 }
 
 func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
@@ -117,7 +84,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 
 	etiquetas := make(map[string]interface{})
 
-	if tipoComprobante_, err := GetTipoComprobante("E"); err != nil {
+	if tipoComprobante_, err := cuentasContablesHelper.GetTipoComprobante("E"); err != nil {
 		return nil, err
 	} else if tipoComprobante_ != nil {
 		etiquetas["TipoComprobanteId"] = tipoComprobante_.Codigo
@@ -148,7 +115,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + tipomvto + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
-	if elementos_, err := GetAllCuentasSubgrupo(query); err != nil {
+	if elementos_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = elementos_
@@ -159,13 +126,13 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
 
 			infoCuentas[id] = new(InfoCuentasSubgrupos)
-			if ctaCr_, err := GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+			if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[id].CuentaCredito = ctaCr_
 			}
 
-			if ctaDb_, err := GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+			if ctaDb_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[id].CuentaDebito = ctaDb_
@@ -177,7 +144,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, err := GetSubgrupoById(id)
+			subgrupo, err := catalogoElementosHelper.GetSubgrupoById(id)
 			if err != nil {
 				return nil, err
 			} else {
