@@ -211,14 +211,14 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		movimiento.EstadoMovimientoId = sm[0]
 	}
 
-	query := "limit=-1&sortby=FechaCreacion&order=desc&query=Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-	if ha, err := actaRecibido.GetAllHistoricoActa(url.QueryEscape(query)); err != nil {
+	query := "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+	if ha, err := actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		historico = ha[0]
 	}
 
-	if el_, err := actaRecibido.GetAllElemento(query); err != nil {
+	if el_, err := actaRecibido.GetAllElemento(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementos = el_

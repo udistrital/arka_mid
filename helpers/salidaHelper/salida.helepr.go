@@ -355,6 +355,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		trSalida          *models.TrSalida
 		elementosActa     []*models.Elemento
 		funcionarioId     int
+		tipoMovimiento    int
 	)
 
 	resultado := make(map[string]interface{})
@@ -370,9 +371,9 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		idsElementos = append(idsElementos, el.ElementoActaId)
 	}
 
-	query := "fields=SubgrupoCatalogoId,ValorTotal&limit=-1&query=Id__in:"
-	query += url.QueryEscape(utilsHelper.ArrayToString(idsElementos, "|"))
-	if elementos_, err := actaRecibido.GetAllElemento(query); err != nil {
+	fields := "SubgrupoCatalogoId,ValorTotal"
+	query := "Id__in:" + (utilsHelper.ArrayToString(idsElementos, "|"))
+	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		if len(elementos_) == 0 {
@@ -426,8 +427,15 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		groups[elemento.SubgrupoCatalogoId] = x
 	}
 
+	query = "query=CodigoAbreviacion:SAL"
+	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		tipoMovimiento = fm[0].Id
+	}
+
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(trSalida.Salida.FormatoTipoMovimientoId.Id), "Salida de almacen", detalle, funcionarioId, true); err != nil {
+	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(tipoMovimiento), "Salida de almacen", detalle, funcionarioId, true); err != nil {
 		return nil, err
 	} else {
 		trContable = tr_

@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/astaxie/beego"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
@@ -25,12 +26,12 @@ func GetElementoById(id int) (elemento *models.Elemento, outputError map[string]
 }
 
 // GetAllElemento query controlador elemento del api acta_recibido_crud
-func GetAllElemento(query string) (elementos []*models.Elemento, outputError map[string]interface{}) {
+func GetAllElemento(query string, fields string, sortby string, order string, offset string, limit string) (elementos []*models.Elemento, outputError map[string]interface{}) {
 
 	funcion := "GetAllElemento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?" + query
+	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		eval := " - request.GetJson(urlcrud, &elementos)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
@@ -40,12 +41,12 @@ func GetAllElemento(query string) (elementos []*models.Elemento, outputError map
 }
 
 // GetAllHistoricoActa query controlador historico_acta del api acta_recibido_crud
-func GetAllHistoricoActa(query string) (historicos []*models.HistoricoActa, outputError map[string]interface{}) {
+func GetAllHistoricoActa(query string, fields string, sortby string, order string, offset string, limit string) (historicos []*models.HistoricoActa, outputError map[string]interface{}) {
 
 	funcion := "GetAllHistoricoActa"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?" + query
+	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
 	if err := request.GetJson(urlcrud, &historicos); err != nil {
 		eval := " - request.GetJson(urlcrud, &historicos)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")

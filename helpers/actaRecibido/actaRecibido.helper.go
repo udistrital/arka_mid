@@ -917,14 +917,14 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
 
-		urlcrud = "sortby=Id&order=desc&limit=-1&query="
+		var query string
 		if actaId > 0 {
-			urlcrud += "Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
+			query += "Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
 		} else {
-			urlcrud += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+			query += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
 		}
 
-		if elementos, err := GetAllElemento(urlcrud); err != nil {
+		if elementos, err := GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 			return nil, err
 		} else {
 

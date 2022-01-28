@@ -18,14 +18,6 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-const ID_SALIDA_PRUEBAS = "7"
-const ID_SALIDA_CONSUMO_PRUEBAS = "9"
-
-type InfoCuentasSubgrupos struct {
-	CuentaDebito  *models.CuentaContable
-	CuentaCredito *models.CuentaContable
-}
-
 func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
 	movimiento = new(models.MovimientoTransaccion)
 
@@ -63,9 +55,6 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 
 	res = make(map[string]interface{})
 	res["errorTransaccion"] = ""
-	if tipomvto == ID_SALIDA_CONSUMO_PRUEBAS {
-		tipomvto = ID_SALIDA_PRUEBAS
-	}
 
 	consecutivoId := 0
 	if submit {
