@@ -39,7 +39,7 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
 		logs.Error(err)
-		eval := " - jsonData, err := json.Marshal(detalle)"
+		eval := " - json.Marshal(detalle)"
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	} else {
 		movimiento.Detalle = string(jsonData[:])
@@ -208,7 +208,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 				eval := " - formatdata.FillStruct(ctaCr_, &ctaCr)"
 				return nil, errorctrl.Error(funcion+eval, err, "500")
 			}
-			mov_.CuentaId = cta.Codigo
+			mov_.CuentaId = cta.Id
 			mov_.NombreCuenta = cta.Nombre
 		}
 
@@ -258,7 +258,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
 		logs.Error(err)
-		eval := " - jsonData, err := json.Marshal(detalle)"
+		eval := " - json.Marshal(detalle)"
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	} else {
 		movimiento.Detalle = string(jsonData[:])
