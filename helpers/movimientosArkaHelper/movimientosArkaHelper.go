@@ -112,6 +112,22 @@ func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[s
 	return movimiento, nil
 }
 
+// GetTrSalida consulta controlador tr_salida/{id} del api movimientos_arka_crud
+func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]interface{}) {
+
+	funcion := "GetTrSalida"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
+
+	// Se consulta el movimiento
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &trSalida); err != nil {
+		eval := " - request.GetJson(urlcrud, &trSalida)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return trSalida, nil
+}
+
 // PostMovimiento post controlador movimiento del api movimientos_arka_crud
 func PostMovimiento(movimiento *models.Movimiento) (movimientoR *models.Movimiento, outputError map[string]interface{}) {
 

@@ -18,8 +18,8 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-const ID_SALIDA_PRUEBAS = "16"
-const ID_SALIDA_CONSUMO_PRUEBAS = "22"
+const ID_SALIDA_PRUEBAS = "7"
+const ID_SALIDA_CONSUMO_PRUEBAS = "9"
 
 type InfoCuentasSubgrupos struct {
 	CuentaDebito  *models.CuentaContable
@@ -40,6 +40,7 @@ func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 	movimiento.TipoMovimientoId = tipo
 	movimiento.Valor = valor
 	movimiento.Descripcion = descripcionMovto
+	movimiento.Activo = true
 
 	return movimiento
 }

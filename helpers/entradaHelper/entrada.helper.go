@@ -267,6 +267,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	} else {
 		movimiento = movimiento_
 	}
+
 	resultado["movimientoArka"] = movimiento
 	resultado["transaccionContable"] = trContable["resultadoTransaccion"]
 	resultado["tercero"] = trContable["tercero"]
