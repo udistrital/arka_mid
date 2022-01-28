@@ -38,3 +38,18 @@ func GetAllElemento(query string) (elementos []*models.Elemento, outputError map
 
 	return elementos, nil
 }
+
+// GetAllHistoricoActa query controlador historico_acta del api acta_recibido_crud
+func GetAllHistoricoActa(query string) (historicos []*models.HistoricoActa, outputError map[string]interface{}) {
+
+	funcion := "GetAllHistoricoActa"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?" + query
+	if err := request.GetJson(urlcrud, &historicos); err != nil {
+		eval := " - request.GetJson(urlcrud, &historicos)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return historicos, nil
+}

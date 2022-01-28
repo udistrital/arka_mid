@@ -35,7 +35,7 @@ func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 		movimiento.TerceroId = nil
 	}
 
-	movimiento.CuentaId = cuenta.Codigo
+	movimiento.CuentaId = cuenta.Id
 	movimiento.NombreCuenta = cuenta.Nombre
 	movimiento.TipoMovimientoId = tipo
 	movimiento.Valor = valor
@@ -121,25 +121,24 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		cuentasSubgrupo = elementos_
 	}
 
-	infoCuentas := make(map[int]*InfoCuentasSubgrupos)
+	infoCuentas := make(map[string]*models.CuentaContable)
 	for id := range totales {
 		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
 
-			infoCuentas[id] = new(InfoCuentasSubgrupos)
 			if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else {
-				infoCuentas[id].CuentaCredito = ctaCr_
+				infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId] = ctaCr_
 			}
 
 			if ctaDb_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else {
-				infoCuentas[id].CuentaDebito = ctaDb_
+				infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId] = ctaDb_
 			}
 
-			movimientoCredito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[id].CuentaCredito, parametroTipoCredito)
-			movimientoDebito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[id].CuentaDebito, parametroTipoDebito)
+			movimientoCredito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId], parametroTipoCredito)
+			movimientoDebito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId], parametroTipoDebito)
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
@@ -158,6 +157,10 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		if tr, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
+			for _, mov := range tr.Movimientos {
+				mov.CuentaId = infoCuentas[mov.CuentaId].Codigo
+			}
+
 			res["resultadoTransaccion"] = tr
 			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 				return nil, err
@@ -167,6 +170,10 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			return res, nil
 		}
 	} else {
+		for _, mov := range transaccion.Movimientos {
+			mov.CuentaId = infoCuentas[mov.CuentaId].Codigo
+		}
+
 		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 			return nil, err
 		} else {
