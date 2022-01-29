@@ -160,9 +160,8 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		idsActa = append(idsActa, el.ElementoActaId)
 	}
 
-	query = "fields=SubgrupoCatalogoId&limit=-1&query=Id__in:"
-	query += url.QueryEscape(utilsHelper.ArrayToString(idsActa, "|"))
-	if elementos_, err := actaRecibido.GetAllElemento(query); err != nil {
+	query = "Id__in:" + (utilsHelper.ArrayToString(idsActa, "|"))
+	if elementos_, err := actaRecibido.GetAllElemento(query, "SubgrupoCatalogoId", "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementosActa = elementos_

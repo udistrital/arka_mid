@@ -3,6 +3,7 @@ package depreciacionHelper
 import (
 	"encoding/json"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/astaxie/beego/logs"
@@ -63,6 +64,9 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		if _, ok := subgrupoBien[dt.ElementoActaId]; ok {
 
 			// Calcula el valor de la depreciación
+			if dt.NovedadElementoId > 0 {
+				dt.FechaRef = dt.FechaRef.AddDate(0, 0, 1)
+			}
 			deltaT := GetDeltaTiempo(dt.FechaRef, info.FechaCorte.AddDate(0, 0, 1))
 			if deltaT > dt.VidaUtil {
 				deltaT = dt.VidaUtil
@@ -95,8 +99,17 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		terceroUD = terceroUD_[0].TerceroId.Id
 	}
 
+	movimiento = new(models.Movimiento)
+
+	query = "query=Nombre:Depreciación"
+	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		movimiento.FormatoTipoMovimientoId = fm[0]
+	}
+
 	// Simula la transacción contable en caso de aprobarse
-	if trSimulada, err := asientoContable.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(totales, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "Depreciación almacén", "", terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trSimulada
@@ -105,19 +118,10 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		}
 	}
 
-	movimiento = new(models.Movimiento)
-
 	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Depr Generada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
-	}
-
-	query = "query=Nombre:Depreciación"
-	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
-		return nil, err
-	} else {
-		movimiento.FormatoTipoMovimientoId = fm[0]
 	}
 
 	detalle := models.FormatoDepreciacion{
@@ -189,7 +193,7 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 		terceroUD = terceroUD_[0].TerceroId.Id
 	}
 
-	if trSimulada, err := asientoContable.AsientoContable(detalle.Totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(detalle.Totales, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "Depreciación almacén", "", terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["TrContable"] = trSimulada
@@ -271,6 +275,9 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		if _, ok := subgrupoBien[dt.ElementoActaId]; ok {
 
 			// Calcula el valor de la depreciación
+			if dt.NovedadElementoId > 0 {
+				dt.FechaRef = dt.FechaRef.AddDate(0, 0, 1)
+			}
 			deltaT := GetDeltaTiempo(dt.FechaRef, fechaCorte.AddDate(0, 0, 1))
 			if deltaT > dt.VidaUtil {
 				deltaT = dt.VidaUtil
@@ -315,11 +322,11 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	// Registra la transacción contable
-	if trContable, err := asientoContable.AsientoContable(totales, GetTipoMovimientoDep(), "Depreciación almacén", "", terceroUD, true); err != nil {
+	if trContable, err := asientoContable.AsientoContable(totales, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "Depreciación almacén", "", terceroUD, true); err != nil {
 		return nil, err
 	} else {
 		detalleD["trContable"] = trContable
-		detalle.TrContable = trContable["resultadoTransaccion"].(models.TransaccionMovimientos).ConsecutivoId
+		detalle.TrContable = trContable["resultadoTransaccion"].(*models.TransaccionMovimientos).ConsecutivoId
 		if trContable["errorTransaccion"].(string) != "" {
 			return detalleD, nil
 		}
@@ -355,10 +362,6 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	return detalleD, nil
-}
-
-func GetTipoMovimientoDep() string {
-	return "17"
 }
 
 // GetDeltaTiempo retorna el tiempo en años entre dos fechas

@@ -5,21 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"reflect"
 	"regexp"
 	"strconv"
 	"time"
 
-	// "reflect"
-	"strings"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -348,110 +346,52 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 // AprobarSalida Aprobacion de una salida
 func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "AprobarSalida - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "AprobarSalida"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		urlcrud                 string
-		res                     map[string]interface{}
-		resEstadoMovimiento     []models.EstadoMovimiento
-		movArka                 []models.Movimiento
-		detalleMovimiento       map[string]interface{}
-		detallePrincipal        map[string]interface{}
-		transaccionActaRecibido models.TransaccionActaRecibido
+		detalleMovimiento map[string]interface{}
+		detallePrincipal  map[string]interface{}
+		trSalida          *models.TrSalida
+		elementosActa     []*models.Elemento
+		funcionarioId     int
+		tipoMovimiento    int
 	)
+
 	resultado := make(map[string]interface{})
 
-	// Se cambia el estado del movimiento en movimientos_arka_crud
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + strconv.Itoa(int(salidaId))
-	if err := request.GetJson(urlcrud, &movArka); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - request.GetJson(urlcrud, &movArka)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if tr_, err := movimientosArkaHelper.GetTrSalida(salidaId); err != nil {
+		return nil, err
+	} else {
+		trSalida = tr_
 	}
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Salida%20Aprobada"
-	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - request.GetJson(urlcrud, &resEstadoMovimiento)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	} else if len(resEstadoMovimiento) == 0 {
-		err = errors.New("len(resEstadoMovimiento) == 0")
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - request.GetJson(urlcrud, &resEstadoMovimiento)",
-			"err":     err,
-			"status":  "404",
-		}
-		return nil, outputError
+	var idsElementos []int
+	for _, el := range trSalida.Elementos {
+		idsElementos = append(idsElementos, el.ElementoActaId)
 	}
 
-	movArka[0].EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
-	resultado["movimientoArka"] = movArka[0]
-
-	// Crea registro en movimientos_crud
-	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:" + movArka[0].FormatoTipoMovimientoId.Nombre
-	urlcrud = strings.ReplaceAll(urlcrud, " ", "%20")
-	if err := request.GetJson(urlcrud, &res); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - request.GetJson(urlcrud, &res)",
-			"err":     err,
-			"status":  "502",
+	fields := "SubgrupoCatalogoId,ValorTotal"
+	query := "Id__in:" + (utilsHelper.ArrayToString(idsElementos, "|"))
+	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
+		return nil, err
+	} else {
+		if len(elementos_) == 0 {
+			return resultado, nil
 		}
-		return nil, outputError
-	} else if reflect.TypeOf(res["Body"]).Kind() != reflect.Slice {
-		err = errors.New("no se encuentra tipo_movimiento en api movimientos_crud")
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - reflect.TypeOf(res[\"Body\"]).Kind() != reflect.Slice",
-			"err":     err,
-			"status":  "404",
-		}
-		return nil, outputError
+		elementosActa = elementos_
 	}
 
-	tipomvto := strconv.Itoa(int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64)))
-
-	if err := json.Unmarshal([]byte(movArka[0].MovimientoPadreId.Detalle), &detalleMovimiento); err == nil {
-		var resTrActa models.TransaccionActaRecibido
-		urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-		if err := request.GetJson(urlcrud, &resTrActa); err == nil { // Get informacion acta de api acta_recibido_crud
-			transaccionActaRecibido = resTrActa
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "AprobarSalida - if err := request.GetJson(urlcrud, &resTrActa); err == nil",
-				"err":     err,
-				"status":  "502",
-			}
-		}
+	if err := json.Unmarshal([]byte(trSalida.Salida.MovimientoPadreId.Detalle), &detalleMovimiento); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(trSalida.Salida.MovimientoPadreId.Detalle), &detalleMovimiento)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if err := json.Unmarshal([]byte(movArka[0].Detalle), &detallePrincipal); err != nil {
+	if err := json.Unmarshal([]byte(trSalida.Salida.Detalle), &detallePrincipal); err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida -json.Unmarshal([]byte(movArka[0].Detalle), &detallePrincipal);",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		eval := " - json.Unmarshal([]byte(trSalida.Salida.Detalle), &detallePrincipal)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
 	funcionario := ""
@@ -461,14 +401,12 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		}
 	}
 
-	idfuncionario, err := strconv.Atoi(funcionario)
-	if err != nil {
+	if func_, err := strconv.Atoi(funcionario); err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida -idfuncionario, err := strconv.Atoi(funcionario)",
-			"err":     err,
-			"status":  "502",
-		}
+		eval := " - strconv.Atoi(funcionario)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		funcionarioId = func_
 	}
 
 	detalle := ""
@@ -479,73 +417,60 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	var groups = make(map[int]float64)
-	i := 0
-	for _, elemento := range transaccionActaRecibido.Elementos {
+	for _, elemento := range elementosActa {
 		x := float64(0)
 		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
-			x = val + elemento.ValorFinal
+			x = val + elemento.ValorTotal
 		} else {
-			x = elemento.ValorFinal
+			x = elemento.ValorTotal
 		}
 		groups[elemento.SubgrupoCatalogoId] = x
-		i++
 	}
 
-	if i == 0 {
-		return resultado, nil
-	}
-
-	if resA, outputError := asientoContable.AsientoContable(groups, tipomvto, "Salida de almacen", detalle, idfuncionario, true); res == nil || outputError != nil {
-		if outputError == nil {
-			outputError = map[string]interface{}{
-				"funcion": "AprobarSalida -cuentasContablesHelper.AsientoContable(groups, tipomvto, \"Salida de almacen\");",
-				"err":     res,
-				"status":  "502",
-			}
-		}
-		return nil, outputError
+	query = "query=CodigoAbreviacion:SAL"
+	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+		return nil, err
 	} else {
-		if resA["errorTransaccion"].(string) != "" {
-			return resA, nil
-		}
-		resultado["transaccionContable"] = resA["resultadoTransaccion"]
-		resultado["tercero"] = resA["tercero"]
-		resultado["errorTransaccion"] = ""
+		tipoMovimiento = fm[0].Id
 	}
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(salidaId))
-	if err := request.SendJson(urlcrud, "PUT", &res, &movArka[0]); err != nil {
+	var trContable map[string]interface{}
+	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(tipoMovimiento), "Salida de almacen", detalle, funcionarioId, true); err != nil {
+		return nil, err
+	} else {
+		trContable = tr_
+		if tr_["errorTransaccion"].(string) != "" {
+			return tr_, nil
+		}
+	}
+
+	t := trContable["resultadoTransaccion"]
+	detallePrincipal["ConsecutivoContableId"] = t.(*models.TransaccionMovimientos).ConsecutivoId
+
+	if jsonString, err := json.Marshal(detallePrincipal); err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - request.SendJson(urlcrud, \"PUT\", &res, &movArka[0])",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		eval := " - json.Marshal(detallePrincipal)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		trSalida.Salida.Detalle = string(jsonString[:])
 	}
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo"
-	procesoExterno := int64(salidaId)
-	idMovArka := int(movArka[0].FormatoTipoMovimientoId.Id)
-	tipoMovimientoId := models.TipoMovimiento{Id: int(res["Body"].([]interface{})[0].(map[string]interface{})["Id"].(float64))}
-	movimientosKronos := models.MovimientoProcesoExterno{
-		TipoMovimientoId:         &tipoMovimientoId,
-		ProcesoExterno:           procesoExterno,
-		Activo:                   true,
-		MovimientoProcesoExterno: idMovArka,
+	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
+		return nil, err
+	} else {
+		trSalida.Salida.EstadoMovimientoId = sm[0]
 	}
 
-	if err := request.SendJson(urlcrud, "POST", &res, &movimientosKronos); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AprobarSalida - request.SendJson(urlcrud, \"POST\", &resM, &movimientosKronos)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if movimiento_, err := movimientosArkaHelper.PutMovimiento(trSalida.Salida, trSalida.Salida.Id); err != nil {
+		return nil, err
+	} else {
+		trSalida.Salida = movimiento_
 	}
 
-	resultado["movimientoArka"] = movArka[0]
+	resultado["movimientoArka"] = trSalida.Salida
+	resultado["transaccionContable"] = trContable["resultadoTransaccion"]
+	resultado["tercero"] = trContable["tercero"]
+	resultado["errorTransaccion"] = ""
 
 	return resultado, nil
 }
