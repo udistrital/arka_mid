@@ -91,7 +91,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 
 	transaccion.ConsecutivoId = consecutivoId
 	transaccion.Activo = true
-	transaccion.Descripcion = descripcionMovto
+	transaccion.Descripcion = descripcionAsiento
 	transaccion.FechaTransaccion = time.Now()
 
 	idsSubgrupos := make([]int, len(totales))
@@ -127,8 +127,8 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 				infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId] = ctaDb_
 			}
 
-			movimientoCredito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId], parametroTipoCredito)
-			movimientoDebito := creaMovimiento(totales[id], descripcionAsiento, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId], parametroTipoDebito)
+			movimientoCredito := creaMovimiento(totales[id], descripcionMovto, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId], parametroTipoCredito)
+			movimientoDebito := creaMovimiento(totales[id], descripcionMovto, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId], parametroTipoDebito)
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
@@ -147,31 +147,48 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		if tr, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
-			for _, mov := range tr.Movimientos {
-				mov.CuentaId = infoCuentas[mov.CuentaId].Codigo
-			}
-
-			res["resultadoTransaccion"] = tr
 			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 				return nil, err
 			} else {
-				res["tercero"] = tercero
+				res["resultadoTransaccion"] = fillDetalle(infoCuentas, tr, tercero.Numero)
 			}
-			return res, nil
 		}
 	} else {
-		for _, mov := range transaccion.Movimientos {
-			mov.CuentaId = infoCuentas[mov.CuentaId].Codigo
-		}
-
 		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 			return nil, err
 		} else {
-			res["tercero"] = tercero
+			res["simulacro"] = fillDetalle(infoCuentas, &transaccion, tercero.Numero)
 		}
-		res["simulacro"] = transaccion
-		return res, nil
 	}
+
+	return res, nil
+}
+
+func fillDetalle(cuentas map[string]*models.CuentaContable, transaccion *models.TransaccionMovimientos, tercero string) (detalle *models.DetalleTrContable) {
+
+	detalle = new(models.DetalleTrContable)
+	movimientos := make([]*models.DetalleMovimientoTransaccion, 0)
+	for _, mov := range transaccion.Movimientos {
+		movimiento_ := new(models.DetalleMovimientoTransaccion)
+		movimiento_.CuentaId = cuentas[mov.CuentaId]
+		movimiento_.TipoMovimientoId = mov.TipoMovimientoId
+		movimiento_.Valor = mov.Valor
+		movimiento_.Descripcion = mov.Descripcion
+
+		if movimiento_.CuentaId.RequiereTercero {
+			movimiento_.TerceroId = tercero
+		}
+
+		movimientos = append(movimientos, movimiento_)
+	}
+
+	detalle.ConsecutivoId = transaccion.ConsecutivoId
+	detalle.Descripcion = transaccion.Descripcion
+	detalle.Etiquetas = transaccion.Etiquetas
+	detalle.FechaTransaccion = transaccion.FechaTransaccion
+	detalle.Movimientos = movimientos
+
+	return detalle
 }
 
 // findIdInArray Retorna la posicion en que se encuentra el id específicado

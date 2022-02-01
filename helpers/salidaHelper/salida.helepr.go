@@ -372,7 +372,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	fields := "SubgrupoCatalogoId,ValorTotal"
-	query := "Id__in:" + (utilsHelper.ArrayToString(idsElementos, "|"))
+	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
 	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
@@ -445,7 +445,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	t := trContable["resultadoTransaccion"]
-	detallePrincipal["ConsecutivoContableId"] = t.(*models.TransaccionMovimientos).ConsecutivoId
+	detallePrincipal["ConsecutivoContableId"] = t.(*models.DetalleTrContable).ConsecutivoId
 
 	if jsonString, err := json.Marshal(detallePrincipal); err != nil {
 		logs.Error(err)
