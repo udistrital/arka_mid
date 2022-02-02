@@ -100,7 +100,7 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 		idsActa = append(idsActa, int(val.ElementoActaId))
 	}
 
-	query = "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(idsActa, "|"))
+	query = "Id__in:" + utilsHelper.ArrayToString(idsActa, "|")
 	if response, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
@@ -200,7 +200,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	}
 
 	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud
-	query := "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+	query := "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 	if elemento_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {

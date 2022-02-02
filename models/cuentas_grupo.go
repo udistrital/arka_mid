@@ -76,3 +76,19 @@ type MovimientoTransaccion struct {
 	Descripcion      string
 	Activo           bool
 }
+
+type DetalleMovimientoTransaccion struct {
+	TerceroId        string
+	CuentaId         *CuentaContable
+	TipoMovimientoId int
+	Valor            float64
+	Descripcion      string
+}
+
+type DetalleTrContable struct {
+	Movimientos      []*DetalleMovimientoTransaccion
+	ConsecutivoId    int
+	Etiquetas        string
+	Descripcion      string
+	FechaTransaccion time.Time
+}

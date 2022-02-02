@@ -921,7 +921,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 		if actaId > 0 {
 			query += "Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
 		} else {
-			query += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+			query += "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 		}
 
 		if elementos, err := GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {

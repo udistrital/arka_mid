@@ -253,7 +253,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	t := trContable["resultadoTransaccion"]
-	detalleMovimiento["ConsecutivoContableId"] = t.(*models.TransaccionMovimientos).ConsecutivoId
+	detalleMovimiento["ConsecutivoContableId"] = t.(*models.DetalleTrContable).ConsecutivoId
 	if jsonString, err := json.Marshal(detalleMovimiento); err != nil {
 		logs.Error(err)
 		eval := " - json.Marshal(detalleMovimiento)"
