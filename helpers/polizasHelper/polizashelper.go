@@ -258,12 +258,3 @@ func removeDuplicateIds(addrs []int) []int {
 	}
 	return result
 }
-
-func existeEnArreglo(arreglo []int, busqueda int) bool {
-	for _, numero := range arreglo {
-		if numero == busqueda {
-			return true
-		}
-	}
-	return false
-}
