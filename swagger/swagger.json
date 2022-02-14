@@ -778,7 +778,7 @@
                 }
             }
         },
-        "/polizas/ActasPoliza": {
+        "/polizas/AllElementosPoliza": {
             "get": {
                 "tags": [
                     "polizas"
@@ -796,6 +796,12 @@
                         "in": "query",
                         "name": "fields",
                         "description": "Fields returned. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Sorted-by fields. e.g. col1,col2 ...",
                         "type": "string"
                     },
                     {

@@ -516,7 +516,7 @@ paths:
           description: the request contains incorrect syntax
         "404":
           description: not found resource
-  /polizas/ActasPoliza:
+  /polizas/AllElementosPoliza:
     get:
       tags:
       - polizas
@@ -530,6 +530,10 @@ paths:
       - in: query
         name: fields
         description: Fields returned. e.g. col1,col2 ...
+        type: string
+      - in: query
+        name: sortby
+        description: Sorted-by fields. e.g. col1,col2 ...
         type: string
       - in: query
         name: order
