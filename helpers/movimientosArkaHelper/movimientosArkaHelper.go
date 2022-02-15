@@ -40,6 +40,20 @@ func GetAllEstadoMovimiento(nombre string) (estado []*models.EstadoMovimiento, o
 	return resEstadoMovimiento, nil
 }
 
+// GetAllFormatoTipoMovimiento query controlador formato_tipo_movimiento del api movimientos_arka_crud
+func GetAllFormatoTipoMovimiento(query string) (formatos []*models.FormatoTipoMovimiento, outputError map[string]interface{}) {
+
+	funcion := "GetAllFormatoTipoMovimiento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "formato_tipo_movimiento?" + query
+	if err := request.GetJson(urlcrud, &formatos); err != nil {
+		eval := " - request.GetJson(urlcrud, &formatos)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return formatos, nil
+}
+
 // GetAllElementosMovimiento query controlador elementos_movimiento del api movimientos_arka_crud
 func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovimiento, outputError map[string]interface{}) {
 
@@ -96,6 +110,22 @@ func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[s
 	}
 
 	return movimiento, nil
+}
+
+// GetTrSalida consulta controlador tr_salida/{id} del api movimientos_arka_crud
+func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]interface{}) {
+
+	funcion := "GetTrSalida"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
+
+	// Se consulta el movimiento
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &trSalida); err != nil {
+		eval := " - request.GetJson(urlcrud, &trSalida)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return trSalida, nil
 }
 
 // PostMovimiento post controlador movimiento del api movimientos_arka_crud
@@ -224,4 +254,34 @@ func GetHistorialElemento(elementoId int, final bool) (historial *models.Histori
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 	return historial, nil
+}
+
+// GetCorteDepreciacion query controlador depreciacion/?fechaCorte={fechaCorte} del api movimientos_arka_crud
+func GetCorteDepreciacion(fechaCorte string) (corte []*models.DetalleCorteDepreciacion, outputError map[string]interface{}) {
+
+	funcion := "GetCorteDepreciacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
+	urlcrud += "?fechaCorte=" + fechaCorte
+	if err := request.GetJson(urlcrud, &corte); err != nil {
+		eval := " - request.GetJson(urlcrud, &corte)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return corte, nil
+}
+
+// PostTrNovedadElemento post controlador depreciacion del api movimientos_arka_crud
+func PostTrNovedadElemento(novedad *models.NovedadElemento) (novedadR *models.NovedadElemento, outputError map[string]interface{}) {
+
+	funcion := "PostMovimiento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
+	if err := request.SendJson(urlcrud, "POST", &novedadR, &novedad); err != nil {
+		eval := ` - request.SendJson(urlcrud, "POST", &novedadR, &novedad)`
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return novedadR, nil
 }

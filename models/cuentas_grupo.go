@@ -64,15 +64,31 @@ type TransaccionMovimientos struct {
 	Descripcion      string
 	FechaTransaccion time.Time
 	Activo           bool
-	Movimientos      []MovimientoTransaccion `json:"movimientos"`
+	Movimientos      []*MovimientoTransaccion
 }
 
 type MovimientoTransaccion struct {
-	TerceroId        int
+	TerceroId        *int
 	CuentaId         string
 	NombreCuenta     string
 	TipoMovimientoId int
 	Valor            float64
 	Descripcion      string
 	Activo           bool
+}
+
+type DetalleMovimientoTransaccion struct {
+	TerceroId        string
+	CuentaId         *CuentaContable
+	TipoMovimientoId int
+	Valor            float64
+	Descripcion      string
+}
+
+type DetalleTrContable struct {
+	Movimientos      []*DetalleMovimientoTransaccion
+	ConsecutivoId    int
+	Etiquetas        string
+	Descripcion      string
+	FechaTransaccion time.Time
 }

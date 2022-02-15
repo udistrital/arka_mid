@@ -2,7 +2,7 @@ package models
 
 type CuentaContable struct {
 	Activo             bool
-	Id                 int
+	Id                 string
 	Ajustable          bool
 	Saldo              float64
 	Nombre             string
@@ -20,4 +20,19 @@ type TipoComprobanteContable struct {
 	Activo        bool
 	Codigo        string
 	TipoDocumento string
+}
+
+type DetalleCuenta struct {
+	Id              string
+	Codigo          string
+	Nombre          string
+	RequiereTercero bool
+}
+
+type DetalleMovimientoContable struct {
+	Cuenta      *DetalleCuenta
+	Debito      float64
+	Credito     float64
+	Descripcion string
+	TerceroId   *Tercero
 }
