@@ -65,10 +65,24 @@ func (c *PolizasController) GetAllElementosPoliza() {
 	// limit: 10 (default is 10)
 	if v, err := c.GetInt("limit"); err == nil {
 		limit = v
+	} else {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "GetAllElementosPoliza - c.GetInt(\"limit\")",
+			"err":     err,
+			"status":  "400",
+		})
 	}
 	// offset: 0 (default is 0)
 	if v, err := c.GetInt("offset"); err == nil {
 		offset = v
+	} else {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "GetAllElementosPoliza - c.GetInt(\"limit\")",
+			"err":     err,
+			"status":  "400",
+		})
 	}
 	// order: desc,asc
 	if v := c.GetString("order"); v != "" {

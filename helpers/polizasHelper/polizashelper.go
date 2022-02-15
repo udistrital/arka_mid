@@ -9,7 +9,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	utilsHelper "github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
@@ -89,7 +89,7 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 	if _, err := request.GetJsonTest(urlRespuestaAPI, &RespuestaAPI); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetIdsActasEntradas - request.GetJsonTest(urlRespuestaAPI, &RespuestaAPI)",
+			"funcion": "GetIdsActasEntrada - request.GetJsonTest(urlRespuestaAPI, &RespuestaAPI)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -105,13 +105,13 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 	for _, movimiento := range Movimientos {
 		var detalle map[string]interface{}
 		if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-			logs.Error(err)
+			logs.Warn(err)
 		}
 		ActasIdsEntradas = append(ActasIdsEntradas, int(detalle["acta_recibido_id"].(float64)))
 	}
 
 	//Remueve los Ids replicados
-	IdsActasEntradas = removeDuplicateIds(ActasIdsEntradas)
+	IdsActasEntradas = utilsHelper.RemoveDuplicateIds(ActasIdsEntradas)
 
 	return
 }
@@ -123,7 +123,7 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "SubgruposPoliza - Unhandled Error!",
+				"funcion": "GetSubgruposPoliza - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -154,7 +154,7 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 
 	// Asignar a DetalleSubgrupo RespuestaAPI
 	if err := formatdata.FillStruct(&Respuesta, &DetalleSubgrupo); err != nil {
-		logs.Error(err)
+		logs.Warn(err)
 	}
 
 	// Itera los DetalleSubgrupo para guardar solo los SubgrupoId
@@ -163,7 +163,7 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 	}
 
 	// Remueve los subgrupos replicados
-	IdSubgruposPoliza = removeDuplicateIds(IdDetalleSubgrupo)
+	IdSubgruposPoliza = utilsHelper.RemoveDuplicateIds(IdDetalleSubgrupo)
 
 	return
 }
@@ -175,7 +175,7 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 	defer func() {
 		if err := recover(); err != nil {
 			outputError = map[string]interface{}{
-				"funcion": "GetElementosPorActaIds - Unhandled Error!",
+				"funcion": "GetElementosPolizas - Unhandled Error!",
 				"err":     err,
 				"status":  "500",
 			}
@@ -227,7 +227,7 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 	}
 
 	urlElementosSubgrupos := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?" + params.Encode()
-	logs.Debug(urlElementosSubgrupos)
+	//logs.Debug(urlElementosSubgrupos)
 	if _, err := request.GetJsonTest(urlElementosSubgrupos, &Respuest); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -243,18 +243,4 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 	}
 
 	return
-}
-
-// Compara los ids de las actas y remueve las actas duplicadas
-//
-func removeDuplicateIds(addrs []int) []int {
-	result := make([]int, 0, len(addrs))
-	temp := map[int]struct{}{}
-	for _, item := range addrs {
-		if _, ok := temp[item]; !ok {
-			temp[item] = struct{}{}
-			result = append(result, item)
-		}
-	}
-	return result
 }
