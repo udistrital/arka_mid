@@ -964,7 +964,7 @@
                     {
                         "in": "query",
                         "name": "fields",
-                        "description": "Fields returned. e.g. col1,col2 ...",
+                        "description": "Fields returned. e.g. col1,col2 ... POR IMPLEMENTAR",
                         "type": "string"
                     },
                     {

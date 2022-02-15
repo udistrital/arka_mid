@@ -170,7 +170,8 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 
 // Consulta los elementos por ActaId y retorna algunos parametros
 //
-func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int, offset int, fields []string, order []string, query map[string]string, sortby []string) (ElementosEntradas *[]models.Elemento, outputError map[string]interface{}) {
+func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int, offset int, fields []string, order []string,
+	query map[string]string, sortby []string) (ElementosEntradas *[]models.Elemento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -192,7 +193,7 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 	// Se convierten los filtros en terminos de string para poder hacer la consulta por url
 	lim := strconv.Itoa(limit)
 	off := strconv.Itoa(offset)
-	field := strings.Join(fields, ",")
+	//field := strings.Join(fields, ",")
 	sort := strings.Join(sortby, ",")
 	orde := strings.Join(order, ",")
 
@@ -205,20 +206,21 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 	}
 
 	if QUERY != "" {
-		params.Add("query", "Activo:True,"+QUERY+",ActaRecibidoId__Id__in:"+utilsHelper.ArrayToString(ActasIdsEntradas, "|")+",SubgrupoCatalogoId__in:"+utilsHelper.ArrayToString(SubgrupoPoliza, "|"))
+		params.Add("query", "Activo:True,"+QUERY+",ActaRecibidoId__Id__in:"+utilsHelper.ArrayToString(ActasIdsEntradas, "|")+
+			",SubgrupoCatalogoId__in:"+utilsHelper.ArrayToString(SubgrupoPoliza, "|"))
 	} else {
-		params.Add("query", "Activo:True,ActaRecibidoId__Id__in:"+utilsHelper.ArrayToString(ActasIdsEntradas, "|")+",SubgrupoCatalogoId__in:"+utilsHelper.ArrayToString(SubgrupoPoliza, "|"))
+		params.Add("query", "Activo:True,ActaRecibidoId__Id__in:"+utilsHelper.ArrayToString(ActasIdsEntradas, "|")+
+			",SubgrupoCatalogoId__in:"+utilsHelper.ArrayToString(SubgrupoPoliza, "|"))
 	}
-
 	if lim != "10" {
 		params.Add("limit", lim)
 	}
 	if off != "0" {
 		params.Add("offset", off)
 	}
-	if field != "" {
-		params.Add("fields", field)
-	}
+	// if field != "" {
+	// 	params.Add("fields", field)
+	// }
 	if sort != "" {
 		params.Add("sortby", sort)
 	}

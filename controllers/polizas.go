@@ -23,7 +23,7 @@ func (c *PolizasController) URLMapping() {
 // @Title GetAll
 // @Description get AllElementosParaPoliza
 // @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
-// @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
+// @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ... POR IMPLEMENTAR"
 // @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
 // @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
 // @Param	limit	query	int		false	"Limit the size of result set. Must be an integer"
@@ -63,7 +63,7 @@ func (c *PolizasController) GetAllElementosPoliza() {
 		sortby = strings.Split(v, ",")
 	}
 	// limit: 10 (default is 10)
-	if v, err := c.GetInt("limit"); err == nil {
+	if v, err := c.GetInt("limit", limit); err == nil {
 		limit = v
 	} else {
 		logs.Error(err)
@@ -74,12 +74,12 @@ func (c *PolizasController) GetAllElementosPoliza() {
 		})
 	}
 	// offset: 0 (default is 0)
-	if v, err := c.GetInt("offset"); err == nil {
+	if v, err := c.GetInt("offset", offset); err == nil {
 		offset = v
 	} else {
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": "GetAllElementosPoliza - c.GetInt(\"limit\")",
+			"funcion": "GetAllElementosPoliza - c.GetInt(\"offset\")",
 			"err":     err,
 			"status":  "400",
 		})
