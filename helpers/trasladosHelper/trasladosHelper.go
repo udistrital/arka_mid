@@ -100,9 +100,8 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 		idsActa = append(idsActa, int(val.ElementoActaId))
 	}
 
-	query = "limit=-1&sortby=Id&order=desc&query=Id__in:"
-	query += url.QueryEscape(utilsHelper.ArrayToString(idsActa, "|"))
-	if response, err := actaRecibido.GetAllElemento(query); err != nil {
+	query = "Id__in:" + utilsHelper.ArrayToString(idsActa, "|")
+	if response, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		if len(response) == len(elementos) {
@@ -138,7 +137,7 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
-	if consecutivo, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
+	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
 		return nil, err
 	} else {
 		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
@@ -201,9 +200,8 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	}
 
 	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud
-	query := "limit=-1&sortby=Id&order=desc&query=Id__in:"
-	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elemento_, err := actaRecibido.GetAllElemento(query); err != nil {
+	query := "Id__in:" + utilsHelper.ArrayToString(ids, "|")
+	if elemento_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementosActa = elemento_

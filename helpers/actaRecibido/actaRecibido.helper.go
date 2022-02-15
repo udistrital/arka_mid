@@ -258,9 +258,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			var acta map[string]interface{}
 			var estado map[string]interface{}
 			var ubicacionData map[string]interface{}
-			var editor map[string]interface{}
+			var editor *models.Tercero
 			var preUbicacion map[string]interface{}
-			var asignado map[string]interface{}
+			var asignado *models.Tercero
 
 			preUbicacion = nil
 
@@ -276,9 +276,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				return nil, err
 			}
 
-			reqTercero := func(id string) func() (interface{}, map[string]interface{}) {
+			reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetNombreTerceroById(id); err == nil {
+					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					} else {
 						return nil, err
@@ -286,12 +286,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idRevStr := strconv.Itoa(int(historicos["RevisorId"].(float64)))
-			if idRev, err := strconv.Atoi(idRevStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRevStr), &consultasTerceros, &evTerceros); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						editor = v2
-					}
+			idRev := int(historicos["RevisorId"].(float64))
+			if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRev), &consultasTerceros, &evTerceros); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					editor = v2
 				}
 			}
 
@@ -316,12 +314,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idAsignadoStr := strconv.Itoa(int(historicos["PersonaAsignadaId"].(float64)))
-			if idAsignado, err := strconv.Atoi(idAsignadoStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignadoStr), &consultasTerceros, &evTerceros); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						asignado = v2
-					}
+			idAsignado := int(historicos["PersonaAsignadaId"].(float64))
+			if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignado), &consultasTerceros, &evTerceros); err == nil {
+				if v2, ok := v.(*models.Tercero); ok {
+					asignado = v2
 				}
 			}
 
@@ -343,20 +339,20 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			fVistoBueno := strings.Split(historicos["FechaVistoBueno"].(string), "T")[0]
-			if fVistoBueno == "0001-01-01" {
+			fVistoBueno := historicos["FechaVistoBueno"].(string)
+			if fVistoBueno == "0001-01-01T00:00:00Z" {
 				fVistoBueno = ""
 			}
 
 			Acta := map[string]interface{}{
 				"Id":                acta["Id"],
 				"UbicacionId":       ubicacionData["Nombre"],
-				"FechaCreacion":     strings.Split(acta["FechaCreacion"].(string), "T")[0],
+				"FechaCreacion":     acta["FechaCreacion"],
 				"FechaVistoBueno":   fVistoBueno,
-				"FechaModificacion": strings.Split(historicos["FechaModificacion"].(string), "T")[0],
+				"FechaModificacion": historicos["FechaModificacion"],
 				"Observaciones":     historicos["Observaciones"],
-				"RevisorId":         editor["NombreCompleto"],
-				"PersonaAsignada":   asignado["NombreCompleto"],
+				"RevisorId":         editor.NombreCompleto,
+				"PersonaAsignada":   asignado.NombreCompleto,
 				"Estado":            estado["Nombre"],
 				"EstadoActaId":      estado,
 			}
@@ -527,11 +523,8 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		}
 	}()
 
-	var Unidades []Unidad
-	var SubgruposConsumo []map[string]interface{}
-	var SubgruposConsumoControlado []map[string]interface{}
-	var SubgruposDevolutivo []map[string]interface{}
 	var (
+		Unidades  []Unidad
 		ss        map[string]interface{}
 		Parametro []interface{}
 		Valor     []interface{}
@@ -594,39 +587,6 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		return nil, outputError
 	}
 
-	urlCatT1 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/1"
-	if _, err := request.GetJsonTest(urlCatT1, &SubgruposConsumo); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT1, &SubgruposConsumo)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	urlCatT2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/2"
-	if _, err := request.GetJsonTest(urlCatT2, &SubgruposConsumoControlado); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT2, &SubgruposConsumoControlado)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	urlCatT3 := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_catalogo/tipo_de_bien/3"
-	if _, err := request.GetJsonTest(urlCatT3, &SubgruposDevolutivo); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlCatT3, &SubgruposDevolutivo)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
 	urlAdmistrativa := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
 	if _, err := request.GetJsonTest(urlAdmistrativa, &Unidades); err != nil {
 		logs.Error(err)
@@ -666,6 +626,12 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 	var hojas []string
 	var campos []string
 	var elementos [14]string
+	tipoBien := new(models.TipoBien)
+	subgrupoId := new(models.Subgrupo)
+	var subgrupo = map[string]interface{}{
+		"SubgrupoId": &subgrupoId,
+		"TipoBienId": &tipoBien,
+	}
 
 	validar_campos := []string{"Nivel Inventarios", "Tipo de Bien", "Subgrupo Catalogo", "Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Tipo IVA", "Valor IVA", "Valor Total"}
 
@@ -710,16 +676,16 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							vlrunitario = float64(0)
 						}
 
-						vlrsubtotal = float64(vlrunitario) * float64(vlrcantidad)
-
 						if vlrdcto, err = strconv.ParseFloat(elementos[10], 64); err != nil {
 							vlrdcto = float64(0)
 						}
 
+						vlrsubtotal = float64(vlrcantidad) * (vlrunitario - vlrdcto)
+
 						if tarifaIva, err = strconv.ParseFloat(strings.ReplaceAll(elementos[11], "%", ""), 64); err == nil {
 							for _, valor_iva := range IvaTest {
 								if tarifaIva == float64(valor_iva.Tarifa) {
-									vlrIva = (vlrsubtotal - vlrdcto) * float64(tarifaIva) / 100
+									vlrIva = (vlrsubtotal) * float64(tarifaIva) / 100
 								}
 							}
 							if vlrIva == -1 {
@@ -731,49 +697,13 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 							vlrIva = 0
 						}
 
-						vlrtotal := (vlrsubtotal - vlrdcto) * (1 + float64(tarifaIva)/100)
+						vlrtotal := vlrsubtotal + vlrIva
 
 						convertir2 := strings.ToUpper(elementos[7])
 						if err == nil {
 							for _, unidad := range Unidades {
 								if convertir2 == unidad.Unidad {
 									elementos[7] = strconv.Itoa(unidad.Id)
-								}
-							}
-						} else {
-							logs.Warn(err)
-						}
-
-						convertir3 := elementos[2]
-
-						var subgrupoId *models.Subgrupo
-						var tipoBien *models.TipoBien
-						tipoBien = new(models.TipoBien)
-						subgrupoId = new(models.Subgrupo)
-						var subgrupo = map[string]interface{}{
-							"SubgrupoId": subgrupoId,
-							"TipoBienId": tipoBien,
-						}
-						if err == nil {
-							logs.Info(convertir3)
-							for _, consumo := range SubgruposConsumo {
-								if convertir3 == consumo["Nombre"] {
-									subgrupo = consumo
-									elementos[1] = strconv.Itoa(1)
-								}
-							}
-							for _, consumoC := range SubgruposConsumoControlado {
-								if convertir3 == consumoC["Nombre"] {
-									elementos[2] = fmt.Sprintf("%v", consumoC["Id"])
-									subgrupo = consumoC
-									elementos[1] = strconv.Itoa(2)
-								}
-							}
-							for _, devolutivo := range SubgruposDevolutivo {
-								if convertir3 == devolutivo["Nombre"] {
-									elementos[2] = fmt.Sprintf("%v", devolutivo["Id"])
-									subgrupo = devolutivo
-									elementos[1] = strconv.Itoa(3)
 								}
 							}
 						} else {
@@ -987,14 +917,14 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
 
-		urlcrud = "sortby=Id&order=desc&limit=-1&query=Activo:True,"
+		var query string
 		if actaId > 0 {
-			urlcrud += "ActaRecibidoId__Id:" + strconv.Itoa(actaId)
+			query += "Activo:True,ActaRecibidoId__Id:" + strconv.Itoa(actaId)
 		} else {
-			urlcrud += "Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+			query += "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 		}
 
-		if elementos, err := GetAllElemento(urlcrud); err != nil {
+		if elementos, err := GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 			return nil, err
 		} else {
 
@@ -1019,7 +949,9 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 
 				idSubgrupo := elemento.SubgrupoCatalogoId
 				reqSubgrupo := func() (interface{}, map[string]interface{}) {
-					if detalleSubgrupo_, err := catalogoElementosHelper.GetDetalleSubgrupo(idSubgrupo); err == nil && len(detalleSubgrupo_) > 0 {
+					urlcrud = "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(idSubgrupo)
+					urlcrud += "&fields=SubgrupoId,TipoBienId,Depreciacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
+					if detalleSubgrupo_, err := catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud); err == nil && len(detalleSubgrupo_) > 0 {
 						return detalleSubgrupo_[0], nil
 					} else if err != nil {
 						return nil, err

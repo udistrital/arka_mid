@@ -3,6 +3,7 @@ package utilsHelper
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -133,7 +134,7 @@ func KeysValuesMap(m map[interface{}]interface{}) (keys []interface{}, vals []in
 	return
 }
 
-func GetConsecutivo(format string, contextoId int, descripcion string) (consecutivo string, outputError map[string]interface{}) {
+func GetConsecutivo(format string, contextoId int, descripcion string) (consecutivo string, consecutivoId int, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -161,9 +162,10 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 
 	if err := request.SendJson(url, "POST", &res, &data); err == nil {
 		consecutivo = fmt.Sprintf(format, res["Data"].(map[string]interface{})["Consecutivo"])
+		consecutivoId = int(res["Data"].(map[string]interface{})["Id"].(float64))
 	} else if strings.Contains(err.Error(), "invalid character") {
 		logs.Error(err)
-		consecutivo, outputError = GetConsecutivo(format, contextoId, descripcion)
+		consecutivo, consecutivoId, outputError = GetConsecutivo(format, contextoId, descripcion)
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -172,7 +174,7 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 			"status":  "502",
 		}
 	}
-	return consecutivo, outputError
+	return consecutivo, consecutivoId, outputError
 }
 
 func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFormat string) {
@@ -204,4 +206,38 @@ func RemoveDuplicateIds(addrs []int) []int {
 		}
 	}
 	return result
+}
+
+func EncodeUrl(query string, fields string, sortby string, order string, offset string, limit string) string {
+	params := url.Values{}
+
+	if len(query) > 0 {
+		params.Add("query", query)
+	}
+
+	if len(fields) > 0 {
+		params.Add("fields", fields)
+	}
+
+	if len(sortby) > 0 {
+		params.Add("sortby", sortby)
+
+	}
+
+	if len(order) > 0 {
+		params.Add("order", order)
+
+	}
+
+	if len(offset) > 0 {
+		params.Add("offset", offset)
+
+	}
+
+	if len(limit) > 0 {
+		params.Add("limit", limit)
+
+	}
+
+	return params.Encode()
 }

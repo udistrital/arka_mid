@@ -1,12 +1,3 @@
-workspace:
-  base: /go
-  path: src/github.com/udistrital/${DRONE_REPO##udistrital/}
-  when:
-      branch:
-      - develop
-      - release/*
-      - master
-
 kind: pipeline
 name: oas_api_ci
 
@@ -53,23 +44,6 @@ steps:
     event:
     - push
 
-- name: go_build
-  image: golang:1.14
-  commands:
-  - go get -t
-  - GOOS=linux GOARCH=amd64 go build -v -o main
-  - sha256sum main # suma de verificacion
-  - ls -l main # peso en bytes y fecha de modificacion
-  when:
-    branch:
-    - develop
-    - hotfix/*
-    - feature/*
-    - master
-    - release/*
-    event:
-    - push
-
 - name: go_run_test
   failure: ignore
   image: golang:1.14
@@ -105,6 +79,24 @@ steps:
     - feature/*
     - hotfix/*
     - release/*
+
+- name: go_build
+  image: golang:1.14
+  commands:
+  - go get
+  - GOOS=linux GOARCH=amd64 go build -v -o main
+  - sha256sum main # suma de verificacion
+  - ls -l main # peso en bytes y fecha de modificacion
+  when:
+    branch:
+    - dependabot/**
+    - develop
+    - hotfix/*
+    - feature/*
+    - master
+    - release/*
+    event:
+    - push
 
 - name: publish_to_ecr_release
   image: plugins/ecr

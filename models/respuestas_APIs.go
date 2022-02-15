@@ -24,6 +24,13 @@ type RespuestaAPI1Arr struct {
 	Data []map[string]interface{}
 }
 
+// RespuestaAPI1Arr es un RespuestaAPI1 donde
+// los datos es un string
+type RespuestaAPI1Str struct {
+	RespuestaAPI1
+	Data string
+}
+
 // RespuestaAPI2 es similar a RespuestaAPI1
 // Agrupa las estructuras comunes y por lo mismo
 // NO se debe usar directamente
