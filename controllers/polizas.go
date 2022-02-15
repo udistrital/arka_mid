@@ -105,7 +105,11 @@ func (c *PolizasController) GetAllElementosPoliza() {
 	if l, err := polizasHelper.GetElementosPoliza(offset, limit, fields, order, query, sortby); err != nil {
 		panic(err)
 	} else {
-		c.Data["json"] = l
+		if l == nil {
+			c.Data["json"] = []interface{}{}
+		} else {
+			c.Data["json"] = l
+		}
 	}
 	c.ServeJSON()
 }
