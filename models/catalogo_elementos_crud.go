@@ -76,6 +76,7 @@ type TipoBien struct {
 	CodigoAbreviacion string
 	Orden             float64
 	NecesitaPlaca     bool
+	NecesitaPoliza    bool
 	Reglas            string
 	Activo            bool
 	Tipo_bien_padre   *TipoBien

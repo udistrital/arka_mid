@@ -195,6 +195,19 @@ func FindIdInArray(idsList []*models.Elemento, id int) (i int) {
 	return -1
 }
 
+// removeDuplicateIds Remueve de un vector los enteros duplicados
+func RemoveDuplicateIds(addrs []int) []int {
+	result := make([]int, 0, len(addrs))
+	temp := map[int]struct{}{}
+	for _, item := range addrs {
+		if _, ok := temp[item]; !ok {
+			temp[item] = struct{}{}
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
 func EncodeUrl(query string, fields string, sortby string, order string, offset string, limit string) string {
 	params := url.Values{}
 
