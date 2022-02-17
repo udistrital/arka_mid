@@ -998,7 +998,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Elemento"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Elemento"
+                            }
                         }
                     },
                     "404": {

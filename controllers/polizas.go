@@ -28,7 +28,7 @@ func (c *PolizasController) URLMapping() {
 // @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
 // @Param	limit	query	int		false	"Limit the size of result set. Must be an integer"
 // @Param	offset	query	int		false	"Start position of result set. Must be an integer"
-// @Success 200 {object} models.Elemento
+// @Success 200 {object} []models.Elemento
 // @Failure 404 not found resource
 // @router /AllElementosPoliza [get]
 func (c *PolizasController) GetAllElementosPoliza() {

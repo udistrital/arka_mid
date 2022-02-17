@@ -106,8 +106,9 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 		var detalle map[string]interface{}
 		if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
 			logs.Warn(err)
+		} else {
+			ActasIdsEntradas = append(ActasIdsEntradas, int(detalle["acta_recibido_id"].(float64)))
 		}
-		ActasIdsEntradas = append(ActasIdsEntradas, int(detalle["acta_recibido_id"].(float64)))
 	}
 
 	//Remueve los Ids replicados
