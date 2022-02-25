@@ -22,7 +22,7 @@ type DetalleSubgrupo struct {
 	Id            int
 	Depreciacion  bool
 	Valorizacion  bool
-	Deterioro     bool
+	Amortizacion  bool
 	VidaUtil      float64
 	ValorResidual float64
 	Activo        bool

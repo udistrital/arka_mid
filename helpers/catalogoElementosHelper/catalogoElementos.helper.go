@@ -42,7 +42,9 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 		for _, fm := range movs_ {
 			if (strings.Contains(fm.CodigoAbreviacion, "ENT_") || fm.CodigoAbreviacion == "SAL" || fm.CodigoAbreviacion == "BJ_HT") && !strings.Contains(fm.CodigoAbreviacion, "KDX") {
 				movs = append(movs, fm)
-			} else if detalle.Depreciacion && fm.CodigoAbreviacion == "DEP" {
+			} else if fm.CodigoAbreviacion == "DEP" && detalle.Depreciacion {
+				movs = append(movs, fm)
+			} else if fm.CodigoAbreviacion == "AMT" && detalle.Amortizacion {
 				movs = append(movs, fm)
 			}
 		}

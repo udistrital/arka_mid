@@ -950,7 +950,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 				idSubgrupo := elemento.SubgrupoCatalogoId
 				reqSubgrupo := func() (interface{}, map[string]interface{}) {
 					urlcrud = "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(idSubgrupo)
-					urlcrud += "&fields=SubgrupoId,TipoBienId,Depreciacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
+					urlcrud += "&fields=SubgrupoId,TipoBienId,Depreciacion,Amortizacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
 					if detalleSubgrupo_, err := catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud); err == nil && len(detalleSubgrupo_) > 0 {
 						return detalleSubgrupo_[0], nil
 					} else if err != nil {
