@@ -1928,10 +1928,10 @@
                 "Activo": {
                     "type": "boolean"
                 },
-                "Depreciacion": {
+                "Amortizacion": {
                     "type": "boolean"
                 },
-                "Deterioro": {
+                "Depreciacion": {
                     "type": "boolean"
                 },
                 "Id": {
@@ -2454,6 +2454,9 @@
                     "type": "string"
                 },
                 "RazonRechazo": {
+                    "type": "string"
+                },
+                "Tipo": {
                     "type": "string"
                 }
             }

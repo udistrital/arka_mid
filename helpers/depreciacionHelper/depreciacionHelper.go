@@ -52,7 +52,9 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		for _, el := range elemento_ {
 			// Determina qué elementos se deben depreciar de acuerdo a la parametrización del tipo de bien
 			// Asociar subgrupo a los elementos que requieren depreciacion
-			if el.SubgrupoCatalogoId.Depreciacion {
+			if info.Tipo == "Depreciación" && el.SubgrupoCatalogoId.Depreciacion {
+				subgrupoBien[el.Id] = el.SubgrupoCatalogoId.SubgrupoId.Id
+			} else if info.Tipo == "Amortizacion" && el.SubgrupoCatalogoId.Amortizacion {
 				subgrupoBien[el.Id] = el.SubgrupoCatalogoId.SubgrupoId.Id
 			}
 		}
@@ -101,7 +103,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 
 	movimiento = new(models.Movimiento)
 
-	query = "query=Nombre:Depreciación"
+	query = "query=Nombre:" + info.Tipo
 	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
@@ -222,10 +224,10 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 
 	detalleD = make(map[string]interface{})
 
-	if mov, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	if mov, err := movimientosArkaHelper.GetAllMovimiento("query=Id:" + strconv.Itoa(id)); err != nil {
 		return nil, err
 	} else {
-		movimiento = mov
+		movimiento = mov[0]
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
@@ -262,7 +264,9 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		for _, el := range elemento_ {
 			// Determina qué elementos se deben depreciar de acuerdo a la parametrización del tipo de bien
 			// Asociar subgrupo a los elementos que requieren depreciacion
-			if el.SubgrupoCatalogoId.Depreciacion {
+			if movimiento.FormatoTipoMovimientoId.Nombre == "Depreciación" && el.SubgrupoCatalogoId.Depreciacion {
+				subgrupoBien[el.Id] = el.SubgrupoCatalogoId.SubgrupoId.Id
+			} else if movimiento.FormatoTipoMovimientoId.Nombre == "Amortizacion" && el.SubgrupoCatalogoId.Amortizacion {
 				subgrupoBien[el.Id] = el.SubgrupoCatalogoId.SubgrupoId.Id
 			}
 		}

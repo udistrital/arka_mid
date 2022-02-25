@@ -1310,9 +1310,9 @@ definitions:
     properties:
       Activo:
         type: boolean
-      Depreciacion:
+      Amortizacion:
         type: boolean
-      Deterioro:
+      Depreciacion:
         type: boolean
       Id:
         type: integer
@@ -1680,6 +1680,8 @@ definitions:
       Observaciones:
         type: string
       RazonRechazo:
+        type: string
+      Tipo:
         type: string
   models.InfoTercero:
     title: InfoTercero

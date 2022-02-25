@@ -221,4 +221,5 @@ type InfoDepreciacion struct {
 	RazonRechazo  string
 	FechaCorte    time.Time
 	Observaciones string
+	Tipo          string
 }
