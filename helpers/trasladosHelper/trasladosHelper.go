@@ -8,7 +8,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"

@@ -13,6 +13,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
+	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
@@ -212,13 +213,13 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	query := "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-	if ha, err := actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
+	if ha, err := crud_actas.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		historico = ha[0]
 	}
 
-	if el_, err := actaRecibido.GetAllElemento(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
+	if el_, err := crud_actas.GetAllElemento(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementos = el_

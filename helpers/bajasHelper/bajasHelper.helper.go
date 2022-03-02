@@ -11,6 +11,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
@@ -161,7 +162,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	}
 
 	query = "Id__in:" + utilsHelper.ArrayToString(idsActa, "|")
-	if elementos_, err := actaRecibido.GetAllElemento(query, "SubgrupoCatalogoId", "", "", "", "-1"); err != nil {
+	if elementos_, err := crud_actas.GetAllElemento(query, "SubgrupoCatalogoId", "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementosActa = elementos_

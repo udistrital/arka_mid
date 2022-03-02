@@ -15,6 +15,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -924,7 +925,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 			query += "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 		}
 
-		if elementos, err := GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
+		if elementos, err := crud_actas.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 			return nil, err
 		} else {
 
