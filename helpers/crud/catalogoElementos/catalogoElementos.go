@@ -1,4 +1,4 @@
-package catalogoElementosHelper
+package catalogoElementos
 
 import (
 	"strconv"

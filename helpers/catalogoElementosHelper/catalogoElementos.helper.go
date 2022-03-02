@@ -6,6 +6,7 @@ import (
 
 	"github.com/astaxie/beego/logs"
 
+	crudCatalogo "github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -27,7 +28,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	)
 
 	query = "limit=1&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-	if detalle_, err := GetAllDetalleSubgrupo(query); err != nil {
+	if detalle_, err := crudCatalogo.GetAllDetalleSubgrupo(query); err != nil {
 		return nil, err
 	} else if len(detalle_) == 0 {
 		return nil, nil
@@ -50,7 +51,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 		}
 	}
 
-	if cuentas_, err := GetTrCuentasSubgrupo(subgrupoId); err != nil {
+	if cuentas_, err := crudCatalogo.GetTrCuentasSubgrupo(subgrupoId); err != nil {
 		return nil, err
 	} else {
 		ctas = cuentas_

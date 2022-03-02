@@ -14,8 +14,8 @@ import (
 	"github.com/tealeg/xlsx"
 
 	"github.com/udistrital/arka_mid/helpers/autenticacion"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -952,7 +952,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 				reqSubgrupo := func() (interface{}, map[string]interface{}) {
 					urlcrud = "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(idSubgrupo)
 					urlcrud += "&fields=SubgrupoId,TipoBienId,Depreciacion,Amortizacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
-					if detalleSubgrupo_, err := catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud); err == nil && len(detalleSubgrupo_) > 0 {
+					if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(urlcrud); err == nil && len(detalleSubgrupo_) > 0 {
 						return detalleSubgrupo_[0], nil
 					} else if err != nil {
 						return nil, err

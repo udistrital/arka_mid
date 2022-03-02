@@ -10,8 +10,8 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
@@ -175,7 +175,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	query = "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:32,Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
-	if elementos_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = elementos_

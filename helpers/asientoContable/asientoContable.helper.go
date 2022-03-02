@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
@@ -105,7 +105,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + tipomvto + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
-	if elementos_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = elementos_
@@ -133,7 +133,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, err := catalogoElementosHelper.GetSubgrupoById(id)
+			subgrupo, err := catalogoElementos.GetSubgrupoById(id)
 			if err != nil {
 				return nil, err
 			} else {
