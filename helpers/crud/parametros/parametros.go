@@ -1,4 +1,4 @@
-package parametrosHelper
+package parametros
 
 import (
 	"github.com/astaxie/beego"
