@@ -13,9 +13,9 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 
-	"github.com/udistrital/arka_mid/helpers/autenticacion"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
