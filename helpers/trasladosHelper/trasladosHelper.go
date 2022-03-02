@@ -9,7 +9,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
@@ -31,7 +31,7 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	if movimientoA, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	if movimientoA, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimientoA
@@ -89,7 +89,7 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 
 	query = "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementos_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementos = elementos_
@@ -153,7 +153,7 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if res, err := movimientosArkaHelper.PostMovimiento(data); err != nil {
+	if res, err := crudMovimientosArka.PostMovimiento(data); err != nil {
 		return nil, err
 	} else {
 		return res, nil
@@ -174,7 +174,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	Elementos = make([]*models.DetalleElementoPlaca, 0)
 
 	// Consulta lista de elementos asignados al funcionario
-	if elemento_, err := movimientosArkaHelper.GetElementosFuncionario(id); err != nil {
+	if elemento_, err := crudMovimientosArka.GetElementosFuncionario(id); err != nil {
 		return nil, err
 	} else {
 		elementosF = elemento_
@@ -184,7 +184,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	if len(elementosF) > 0 {
 		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
 		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
-		if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+		if elementoMovimiento_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 			return nil, err
 		} else {
 			elementosM = elementoMovimiento_
@@ -241,7 +241,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 		urlcrud += "__startswith:Traslado"
 	}
 
-	if Solicitudes, err := movimientosArkaHelper.GetAllMovimiento(urlcrud); err != nil {
+	if Solicitudes, err := crudMovimientosArka.GetAllMovimiento(urlcrud); err != nil {
 		return nil, err
 	} else {
 		if len(Solicitudes) == 0 {

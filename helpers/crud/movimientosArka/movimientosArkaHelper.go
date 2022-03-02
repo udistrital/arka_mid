@@ -1,4 +1,4 @@
-package movimientosArkaHelper
+package movimientosArka
 
 import (
 	"errors"

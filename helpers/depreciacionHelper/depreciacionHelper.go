@@ -9,7 +9,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -31,7 +31,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	detalleD = make(map[string]interface{})
 
 	// Consulta los valores para generar el corte de depreciación
-	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(info.FechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
+	if elementos, err := crudMovimientosArka.GetCorteDepreciacion(info.FechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
 		return nil, err
 	} else if elementos == nil {
 		return detalleD, nil
@@ -104,7 +104,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	movimiento = new(models.Movimiento)
 
 	query = "query=Nombre:" + info.Tipo
-	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		movimiento.FormatoTipoMovimientoId = fm[0]
@@ -120,7 +120,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		}
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Depr Generada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Depr Generada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -147,14 +147,14 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	if info.Id > 0 {
 		// Actualiza el registro el registro del movimiento correspondiente a la solicitud
 		movimiento.Id = info.Id
-		if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, info.Id); err != nil {
+		if movimiento_, err := crudMovimientosArka.PutMovimiento(movimiento, info.Id); err != nil {
 			return nil, err
 		} else {
 			detalleD["Movimiento"] = movimiento_
 		}
 	} else {
 		// Crea el registro del movimiento correspondiente a la solicitud
-		if movimiento_, err := movimientosArkaHelper.PostMovimiento(movimiento); err != nil {
+		if movimiento_, err := crudMovimientosArka.PostMovimiento(movimiento); err != nil {
 			return nil, err
 		} else {
 			detalleD["Movimiento"] = movimiento_
@@ -176,7 +176,7 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 	)
 	detalleD = make(map[string]interface{})
 
-	if mov_, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	if mov_, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
 		return nil, err
 	} else {
 		movimiento = mov_
@@ -224,7 +224,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 
 	detalleD = make(map[string]interface{})
 
-	if mov, err := movimientosArkaHelper.GetAllMovimiento("query=Id:" + strconv.Itoa(id)); err != nil {
+	if mov, err := crudMovimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(id)); err != nil {
 		return nil, err
 	} else {
 		movimiento = mov[0]
@@ -245,7 +245,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		fechaCorte = t
 	}
 
-	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(fechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
+	if elementos, err := crudMovimientosArka.GetCorteDepreciacion(fechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
 		return nil, err
 	} else {
 		infoCorte = elementos
@@ -337,12 +337,12 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	for _, nov := range novedades {
-		if _, err := movimientosArkaHelper.PostTrNovedadElemento(nov); err != nil {
+		if _, err := crudMovimientosArka.PostTrNovedadElemento(nov); err != nil {
 			return nil, err
 		}
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Depr Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Depr Aprobada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -359,7 +359,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		movimiento.Detalle = string(detalle_[:])
 	}
 
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, movimiento.Id); err != nil {
+	if movimiento_, err := crudMovimientosArka.PutMovimiento(movimiento, movimiento.Id); err != nil {
 		return nil, err
 	} else {
 		detalleD["Movimiento"] = movimiento_

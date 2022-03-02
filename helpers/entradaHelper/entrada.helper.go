@@ -14,7 +14,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -194,7 +194,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	resultado := make(map[string]interface{})
 
-	if mov, err := movimientosArkaHelper.GetMovimientoById(entradaId); err != nil {
+	if mov, err := crudMovimientosArka.GetMovimientoById(entradaId); err != nil {
 		return nil, err
 	} else {
 		movimiento = mov
@@ -206,7 +206,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Entrada Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Entrada Aprobada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -263,7 +263,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		movimiento.Detalle = string(jsonString[:])
 	}
 
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, movimiento.Id); err != nil {
+	if movimiento_, err := crudMovimientosArka.PutMovimiento(movimiento, movimiento.Id); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_

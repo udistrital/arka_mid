@@ -12,8 +12,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
@@ -62,7 +62,7 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if movimiento_, err := movimientosArkaHelper.PostMovimiento(baja.Movimiento); err != nil {
+	if movimiento_, err := crudMovimientosArka.PostMovimiento(baja.Movimiento); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_
@@ -70,7 +70,7 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 
 	// Crea registro en table soporte_movimiento si es necesario
 	baja.Soporte.MovimientoId = movimiento
-	if _, err := movimientosArkaHelper.PostSoporteMovimiento(baja.Soporte); err != nil {
+	if _, err := crudMovimientosArka.PostSoporteMovimiento(baja.Soporte); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +89,7 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 	)
 
 	// Actualiza registro en api movimientos_arka_crud
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(baja.Movimiento, bajaId); err != nil {
+	if movimiento_, err := crudMovimientosArka.PutMovimiento(baja.Movimiento, bajaId); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_
@@ -97,14 +97,14 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 
 	// Actualiza el documento soporte en la tabla soporte_movimiento
 	query := "query=MovimientoId__Id:" + strconv.Itoa(bajaId)
-	if soporte_, err := movimientosArkaHelper.GetAllSoporteMovimiento(query); err != nil {
+	if soporte_, err := crudMovimientosArka.GetAllSoporteMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		soporte = soporte_[0]
 		soporte.DocumentoId = baja.Soporte.DocumentoId
 	}
 
-	if _, err := movimientosArkaHelper.PutSoporteMovimiento(soporte, soporte.Id); err != nil {
+	if _, err := crudMovimientosArka.PutSoporteMovimiento(soporte, soporte.Id); err != nil {
 		return nil, err
 	}
 
@@ -130,7 +130,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	// Paso 1: Transacción contable
 	query := "fields=Detalle&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(data.Bajas, "|"))
-	if bajas_, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+	if bajas_, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		bajas = bajas_
@@ -151,7 +151,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 
 	query = "fields=ElementoActaId&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsMov, "|"))
-	if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementos_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementosMov = elementos_
@@ -221,7 +221,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	}
 
 	// Paso 2: Actualiza el estado de las bajas en api movimientos_arka_crud
-	if ids_, err := movimientosArkaHelper.PutRevision(data); err != nil {
+	if ids_, err := crudMovimientosArka.PutRevision(data); err != nil {
 		return nil, err
 	} else {
 		ids = ids_
@@ -341,7 +341,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 		urlcrud += "__startswith:Baja"
 	}
 
-	if Solicitudes, err := movimientosArkaHelper.GetAllMovimiento(urlcrud); err == nil {
+	if Solicitudes, err := crudMovimientosArka.GetAllMovimiento(urlcrud); err == nil {
 
 		if len(Solicitudes) == 0 {
 			return nil, nil
@@ -422,7 +422,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	Baja = new(models.TrBaja)
 
 	// Se consulta el movimiento
-	if movimientoA, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	if movimientoA, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimientoA
@@ -462,7 +462,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	query := "query=MovimientoId__Id:" + strconv.Itoa(id)
-	if soportes, err := movimientosArkaHelper.GetAllSoporteMovimiento(query); err != nil {
+	if soportes, err := crudMovimientosArka.GetAllSoporteMovimiento(query); err != nil {
 		return nil, err
 	} else if len(soportes) > 0 {
 		Baja.Soporte = soportes[0].DocumentoId
@@ -501,7 +501,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	}
 
 	query := "sortby=Id&order=desc&query=ElementoActaId:" + strconv.Itoa(id)
-	if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementoMovimiento_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else if len(elementoMovimiento_) > 0 {
 		elementoMovimiento = elementoMovimiento_[0]
@@ -509,7 +509,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 		return Elemento, nil
 	}
 
-	if historial_, err := movimientosArkaHelper.GetHistorialElemento(elementoMovimiento.Id, true); err != nil {
+	if historial_, err := crudMovimientosArka.GetHistorialElemento(elementoMovimiento.Id, true); err != nil {
 		return nil, err
 	} else {
 		Elemento.Historial = historial_
@@ -556,7 +556,7 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 	// Consulta asignación de los elementos
 	query := "sortby=ElementoActaId&order=desc&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementoMovimiento_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementosMovimiento = elementoMovimiento_
@@ -580,7 +580,7 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 
 			elemento := new(models.DetalleElementoBaja)
 
-			if historial_, err := movimientosArkaHelper.GetHistorialElemento(elementosMovimiento[i].Id, true); err != nil {
+			if historial_, err := crudMovimientosArka.GetHistorialElemento(elementosMovimiento[i].Id, true); err != nil {
 				return nil, err
 			} else {
 				elemento.Historial = historial_

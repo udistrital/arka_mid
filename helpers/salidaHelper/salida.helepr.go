@@ -14,7 +14,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -200,7 +200,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
 
-	if estadosMovimiento, err := movimientosArkaHelper.GetAllEstadoMovimiento("Salida%20En%20Trámite"); err != nil {
+	if estadosMovimiento, err := crudMovimientosArka.GetAllEstadoMovimiento("Salida%20En%20Trámite"); err != nil {
 		return nil, err
 	} else {
 		estadoMovimiento = estadosMovimiento[0]
@@ -212,7 +212,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		// Si no se generan nuevas salidas, simplemente se debe actualizar el funcionario y la ubicación del movimiento original
 
 		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
-		if trRes, err := movimientosArkaHelper.PutTrSalida(m); err != nil {
+		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
 			return nil, err
 		} else {
 			resultado["trSalida"] = trRes
@@ -226,7 +226,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
 
 		// Se consulta el movimiento
-		if movimientoA, err := movimientosArkaHelper.GetMovimientoById(salidaId); err != nil {
+		if movimientoA, err := crudMovimientosArka.GetMovimientoById(salidaId); err != nil {
 			return nil, err
 		} else {
 			salidaOriginal = movimientoA
@@ -333,7 +333,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		}
 
 		// Hace el put api movimientos_arka_crud
-		if trRes, err := movimientosArkaHelper.PutTrSalida(m); err != nil {
+		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
 			return nil, err
 		} else {
 			resultado["trSalida"] = trRes
@@ -360,7 +360,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 
 	resultado := make(map[string]interface{})
 
-	if tr_, err := movimientosArkaHelper.GetTrSalida(salidaId); err != nil {
+	if tr_, err := crudMovimientosArka.GetTrSalida(salidaId); err != nil {
 		return nil, err
 	} else {
 		trSalida = tr_
@@ -428,7 +428,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	query = "query=CodigoAbreviacion:SAL"
-	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		tipoMovimiento = fm[0].Id
@@ -455,13 +455,13 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		trSalida.Salida.Detalle = string(jsonString[:])
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
 		return nil, err
 	} else {
 		trSalida.Salida.EstadoMovimientoId = sm[0]
 	}
 
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(trSalida.Salida, trSalida.Salida.Id); err != nil {
+	if movimiento_, err := crudMovimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id); err != nil {
 		return nil, err
 	} else {
 		trSalida.Salida = movimiento_
@@ -606,7 +606,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		query += url.QueryEscape("__startswith:Salida")
 	}
 
-	if salidas_, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+	if salidas_, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		if len(salidas_) == 0 {

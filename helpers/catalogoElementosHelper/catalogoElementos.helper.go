@@ -7,8 +7,8 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	crudCatalogo "github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
@@ -37,7 +37,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	}
 
 	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&query=Activo:true"
-	if movs_, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if movs_, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		for _, fm := range movs_ {
