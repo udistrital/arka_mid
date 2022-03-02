@@ -1,4 +1,4 @@
-package movimientosContablesMidHelper
+package movimientosContables
 
 import (
 	"strconv"

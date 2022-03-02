@@ -10,7 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -106,7 +106,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 	if detalle.PreTrAjuste != nil && detalle.TrContableId == 0 {
 		movimientos = detalle.PreTrAjuste.Movimientos
 	} else if detalle.PreTrAjuste == nil && detalle.TrContableId > 0 {
-		if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.TrContableId, "consecutivo", true); err != nil {
+		if tr, err := movimientosContables.GetTransaccion(detalle.TrContableId, "consecutivo", true); err != nil {
 			return nil, err
 		} else {
 			for _, mov := range tr.Movimientos {
@@ -242,7 +242,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	transaccion.Etiquetas = ""
 	transaccion.Descripcion = ""
 
-	if tr, err := movimientosContablesMidHelper.PostTrContable(transaccion); err != nil {
+	if tr, err := movimientosContables.PostTrContable(transaccion); err != nil {
 		return nil, err
 	} else {
 		detalle.TrContableId = tr.ConsecutivoId

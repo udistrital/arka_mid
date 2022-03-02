@@ -10,7 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -144,7 +144,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	}
 
 	if submit {
-		if tr, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
+		if tr, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
 			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
