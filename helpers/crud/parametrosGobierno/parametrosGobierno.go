@@ -1,4 +1,4 @@
-package parametrosGobiernoHelper
+package parametrosGobierno
 
 import (
 	"fmt"
@@ -11,6 +11,8 @@ import (
 )
 
 // GetIva ...
+//
+// Deprecated: Deberán usarse helpers/peticiones de parametros_crud
 func GetIva(ivaId int) (iva []*models.ParametrosGobierno, outputError map[string]interface{}) {
 
 	defer func() {
