@@ -285,3 +285,17 @@ func PostTrNovedadElemento(novedad *models.NovedadElemento) (novedadR *models.No
 
 	return novedadR, nil
 }
+
+// GetEntradaByActa consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
+func GetEntradaByActa(acta_recibido_id int) (entrada []*models.Movimiento, outputError map[string]interface{}) {
+
+	funcion := "GetEntradaByActa"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/entrada/" + strconv.Itoa(acta_recibido_id)
+	if err := request.GetJson(urlcrud, &entrada); err != nil {
+		eval := " - request.GetJson(urlcrud, &entrada)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return entrada, nil
+}

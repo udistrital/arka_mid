@@ -1859,6 +1859,93 @@
                 }
             }
         },
+        "models.DetalleElemento_": {
+            "title": "DetalleElemento_",
+            "type": "object",
+            "properties": {
+                "ActaRecibidoId": {
+                    "$ref": "#/definitions/models.ActaRecibido"
+                },
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Descuento": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "EstadoElementoId": {
+                    "$ref": "#/definitions/models.EstadoElemento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Placa": {
+                    "type": "string"
+                },
+                "PorcentajeIvaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SubgrupoCatalogoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Subtotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "UnidadMedida": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorFinal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorIva": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.DetalleFuncionario": {
             "title": "DetalleFuncionario",
             "type": "object",
