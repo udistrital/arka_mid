@@ -438,10 +438,6 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 	elementosSalidas = make(map[int]*models.ElementosPorActualizarSalida)
 	for _, el := range elementos {
 
-		if el.MovimientoId.EstadoMovimientoId.Nombre != "Salida Aprobada" {
-			continue
-		}
-
 		if len(updateMp) > 0 {
 			if idx := findElementoInArrayD(updateMp, el.ElementoActaId); idx > -1 {
 				if updateMp[idx].ValorResidual == el.ValorResidual && updateMp[idx].VidaUtil == el.VidaUtil {
@@ -449,6 +445,8 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 				}
 				continue
 			}
+		} else if el.MovimientoId.EstadoMovimientoId.Nombre != "Salida Aprobada" {
+			continue
 		}
 
 		if len(updateSg) > 0 {
