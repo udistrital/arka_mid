@@ -18,6 +18,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
+	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -289,11 +290,13 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 		idsEl                []int
 		entrada              *models.Movimiento
 		orgActa              []*models.Elemento
+		elementosSalida      map[int]*models.ElementosPorActualizarSalida
 		updateMsc            []*models.DetalleElemento_
 		updateVls            []*models.DetalleElemento_
 		updateSg             []*models.DetalleElemento_
 		updateMp             []*models.DetalleElemento_
 		movimientos          []*models.MovimientoTransaccion
+		tipoMovimientoSalida int
 	)
 
 	for _, el := range elementos {
@@ -347,6 +350,51 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 			movimientos = append(movimientos, movsEntrada...)
 		}
 	}
+
+	if entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
+
+		query = "limit=-1&sortby=MovimientoId,ElementoActaId&order=desc,desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(idsEl, "|")
+		if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+			return nil, err
+		} else {
+			if elementosSalida_, updateMp_, err := separarElementosPorSalida(elementos_, updateVls, updateSg, updateMp); err != nil {
+				return nil, err
+			} else {
+				elementosSalida = elementosSalida_
+				updateMp = updateMp_
+			}
+
+			if len(elementosSalida) > 0 {
+				query = "query=CodigoAbreviacion:SAL"
+				if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+					return nil, err
+				} else {
+					tipoMovimientoSalida = fm[0].Id
+				}
+			}
+		}
+	}
+
+	for _, elms := range elementosSalida {
+
+		var funcionario int
+		var consecutivo string
+
+		if func_, cons_, err := salidaHelper.GetInfoSalida(elms.Salida.Detalle); err != nil {
+			return nil, err
+		} else {
+			funcionario = func_
+			consecutivo = cons_
+		}
+
+		if movsSalida, err := calcularAjusteMovimiento(orgActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, consecutivo, funcionario, "Salida"); err != nil {
+			return nil, err
+		} else {
+			movimientos = append(movimientos, movsSalida...)
+		}
+
+	}
+
 	return movimientos, nil
 }
 
@@ -380,6 +428,56 @@ func separarElementosPorModificacion(originales []*models.Elemento, actualizados
 	return msc, vls, sg, mp, nil
 
 }
+
+// separarElementosPorSalida Separa los elementos según el tipo de ajuste de cada uno y los agrupa según la salida
+func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVls, updateSg, updateMp []*models.DetalleElemento_) (elementosSalidas map[int]*models.ElementosPorActualizarSalida, pendientes_ []*models.DetalleElemento_, outputError map[string]interface{}) {
+
+	funcion := "separarElementosPorModificacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	elementosSalidas = make(map[int]*models.ElementosPorActualizarSalida)
+	for _, el := range elementos {
+
+		if el.MovimientoId.EstadoMovimientoId.Nombre != "Salida Aprobada" {
+			continue
+		}
+
+		if len(updateMp) > 0 {
+			if idx := findElementoInArrayD(updateMp, el.ElementoActaId); idx > -1 {
+				if updateMp[idx].ValorResidual == el.ValorResidual && updateMp[idx].VidaUtil == el.VidaUtil {
+					updateMp = append(updateMp[:idx], updateMp[idx+1:]...)
+				}
+				continue
+			}
+		}
+
+		if len(updateSg) > 0 {
+			if idx := findElementoInArrayD(updateSg, el.ElementoActaId); idx > -1 {
+				if elementosSalidas[el.MovimientoId.Id] == nil {
+					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
+					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId
+				}
+
+				elementosSalidas[el.MovimientoId.Id].UpdateSg = append(elementosSalidas[el.MovimientoId.Id].UpdateSg, updateSg[idx])
+				updateSg = append(updateSg[:idx], updateSg[idx+1:]...)
+			}
+		} else if len(updateVls) > 0 {
+			if idx := findElementoInArrayD(updateVls, el.ElementoActaId); idx > -1 {
+				if elementosSalidas[el.MovimientoId.Id] == nil {
+					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
+					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId
+				}
+
+				elementosSalidas[el.MovimientoId.Id].UpdateVls = append(elementosSalidas[el.MovimientoId.Id].UpdateVls, updateVls[idx])
+				updateVls = append(updateVls[:idx], updateVls[idx+1:]...)
+			}
+		}
+
+	}
+	return elementosSalidas, updateMp, nil
+
+}
+
 // determinarDeltaActa Separa elementos según el ajuste
 func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg *models.DetalleElemento_, outputError map[string]interface{}) {
 

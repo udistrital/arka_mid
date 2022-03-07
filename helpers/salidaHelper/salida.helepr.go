@@ -784,6 +784,24 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 	}
 }
 
+// GetInfoSalida Consulta el funcionario y el consecutivo de una salida
+func GetInfoSalida(detalle string) (funcionarioId int, consecutivo string, outputError map[string]interface{}) {
+
+	funcion := "GetInfoSalida"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var detalle_ map[string]interface{}
+
+	if err := json.Unmarshal([]byte(detalle), &detalle_); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(detalle), &detalle_)"
+		return 0, "", errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return int(detalle_["funcionario"].(float64)), detalle_["consecutivo"].(string), nil
+
+}
+
 func getTipoComprobanteSalidas() string {
 	return "H21"
 }
