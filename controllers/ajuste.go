@@ -19,6 +19,7 @@ type AjusteController struct {
 // URLMapping ...
 func (c *AjusteController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("Post", c.PostAjuste)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
@@ -40,6 +41,32 @@ func (c *AjusteController) Post() {
 		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if v, err := ajustesHelper.PostAjuste(v); err != nil {
+			logs.Error(err)
+			c.Data["system"] = err
+			c.Abort("404")
+		} else {
+			c.Data["json"] = v
+		}
+	}
+	c.ServeJSON()
+}
+
+// Post ...
+// @Title Create
+// @Description create Ajuste
+// @Param	body		body 	[]models.DetalleElemento_	true		"body for Ajuste content"
+// @Success 201 {object} models.Movimiento
+// @Failure 403 body is empty
+// @router /elemento [post]
+func (c *AjusteController) PostAjuste() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	var v []*models.DetalleElemento_
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
+	} else {
+		if v, err := ajustesHelper.GenerarAjuste(v); err != nil {
 			logs.Error(err)
 			c.Data["system"] = err
 			c.Abort("404")

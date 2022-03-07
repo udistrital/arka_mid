@@ -223,3 +223,9 @@ type InfoDepreciacion struct {
 	Observaciones string
 	Tipo          string
 }
+
+type ElementosPorActualizarSalida struct {
+	Salida    *Movimiento
+	UpdateSg  []*DetalleElemento_
+	UpdateVls []*DetalleElemento_
+}

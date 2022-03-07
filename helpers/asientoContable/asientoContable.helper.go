@@ -18,7 +18,7 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func creaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
+func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
 	movimiento = new(models.MovimientoTransaccion)
 
 	if cuenta.RequiereTercero {
@@ -127,8 +127,8 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 				infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId] = ctaDb_
 			}
 
-			movimientoCredito := creaMovimiento(totales[id], descripcionMovto, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId], parametroTipoCredito)
-			movimientoDebito := creaMovimiento(totales[id], descripcionMovto, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId], parametroTipoDebito)
+			movimientoCredito := CreaMovimiento(totales[id], descripcionMovto, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId], parametroTipoCredito)
+			movimientoDebito := CreaMovimiento(totales[id], descripcionMovto, idTercero, infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId], parametroTipoDebito)
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoDebito)
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 

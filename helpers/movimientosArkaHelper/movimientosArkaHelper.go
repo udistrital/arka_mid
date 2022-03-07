@@ -287,7 +287,7 @@ func PostTrNovedadElemento(novedad *models.NovedadElemento) (novedadR *models.No
 }
 
 // GetEntradaByActa consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
-func GetEntradaByActa(acta_recibido_id int) (entrada []*models.Movimiento, outputError map[string]interface{}) {
+func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputError map[string]interface{}) {
 
 	funcion := "GetEntradaByActa"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")

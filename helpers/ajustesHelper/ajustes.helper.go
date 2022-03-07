@@ -273,6 +273,13 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	return movimiento, nil
 }
 
+func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.MovimientoTransaccion, outputError map[string]interface{}) {
+
+	funcion := "GenerarAjuste"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	return movimientos, nil
+}
 func getTipoComprobanteAjustes() string {
 	return "N20"
 }

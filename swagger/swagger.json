@@ -257,6 +257,40 @@
                 }
             }
         },
+        "/ajustes/elemento": {
+            "post": {
+                "tags": [
+                    "ajustes"
+                ],
+                "description": "create Ajuste",
+                "operationId": "AjusteController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Ajuste content",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DetalleElemento_"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Movimiento"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
         "/ajustes/{id}": {
             "get": {
                 "tags": [
