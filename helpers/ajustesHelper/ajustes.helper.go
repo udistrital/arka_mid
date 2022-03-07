@@ -291,7 +291,7 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 		entrada              *models.Movimiento
 		orgActa              []*models.Elemento
 		elementosSalida      map[int]*models.ElementosPorActualizarSalida
-		updateMsc            []*models.DetalleElemento_
+		// updateMsc            []*models.DetalleElemento_
 		updateVls            []*models.DetalleElemento_
 		updateSg             []*models.DetalleElemento_
 		updateMp             []*models.DetalleElemento_
@@ -318,10 +318,10 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 		entrada = entrada_
 	}
 
-	if msc, vls, sg, mp, err := separarElementosPorModificacion(orgActa, elementos, entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida"); err != nil {
+	if _, vls, sg, mp, err := separarElementosPorModificacion(orgActa, elementos, entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida"); err != nil {
 		return nil, err
 	} else {
-		updateMsc = msc
+		// updateMsc = msc
 		updateVls = vls
 		updateSg = sg
 		updateMp = mp
