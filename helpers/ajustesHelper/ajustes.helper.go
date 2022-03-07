@@ -3,12 +3,18 @@ package ajustesHelper
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
+	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
@@ -278,8 +284,323 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 	funcion := "GenerarAjuste"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
+	var (
+		query                string
+		idsEl                []int
+		entrada              *models.Movimiento
+		orgActa              []*models.Elemento
+		updateMsc            []*models.DetalleElemento_
+		updateVls            []*models.DetalleElemento_
+		updateSg             []*models.DetalleElemento_
+		updateMp             []*models.DetalleElemento_
+		movimientos          []*models.MovimientoTransaccion
+	)
+
+	for _, el := range elementos {
+		idsEl = append(idsEl, el.Id)
+	}
+
+	query = "Id__in:" + utilsHelper.ArrayToString(idsEl, "|")
+	if elementos_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "0", "-1"); err != nil {
+		return nil, err
+	} else {
+		orgActa = elementos_
+	}
+
+	if entrada_, err := movimientosArkaHelper.GetEntradaByActa(orgActa[0].ActaRecibidoId.Id); err != nil {
+		return nil, err
+	} else if entrada_ == nil {
+		return nil, nil
+	} else {
+		entrada = entrada_
+	}
+
+	if msc, vls, sg, mp, err := separarElementosPorModificacion(orgActa, elementos, entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida"); err != nil {
+		return nil, err
+	} else {
+		updateMsc = msc
+		updateVls = vls
+		updateSg = sg
+		updateMp = mp
+	}
+
+	if (len(updateVls)+len(updateSg) > 0) && (entrada.EstadoMovimientoId.Nombre == "Entrada Aprobada" || entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida") {
+		var proveedorId int
+		var consecutivo string
+
+		query = "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(orgActa[0].ActaRecibidoId.Id)
+		if ha, err := actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
+			return nil, err
+		} else {
+			proveedorId = ha[0].ProveedorId
+		}
+
+		if cs, err := entradaHelper.GetConsecutivoEntrada(entrada.Detalle); err != nil {
+			return nil, err
+		} else {
+			consecutivo = cs
+		}
+
+		if movsEntrada, err := calcularAjusteMovimiento(orgActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, consecutivo, proveedorId, "Entrada"); err != nil {
+			return nil, err
+		} else {
+			movimientos = append(movimientos, movsEntrada...)
+		}
+	}
 	return movimientos, nil
 }
+
+// separarElementosPorModificacion Separa los elementos según se deba modificar Subgrupo, Valores, Misceláneos o Mediciones posteriores
+func separarElementosPorModificacion(originales []*models.Elemento, actualizados []*models.DetalleElemento_, mediciones bool) (msc, vls, sg, mp []*models.DetalleElemento_, outputError map[string]interface{}) {
+
+	funcion := "separarElementosPorModificacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	msc = make([]*models.DetalleElemento_, 0)
+	vls = make([]*models.DetalleElemento_, 0)
+	sg = make([]*models.DetalleElemento_, 0)
+	mp = make([]*models.DetalleElemento_, 0)
+
+	for _, el_ := range originales {
+		if idx := findElementoInArrayD(actualizados, el_.Id); idx > -1 {
+			if msc_, vls_, sg_, err := determinarDeltaActa(el_, actualizados[idx]); err != nil {
+				return nil, nil, nil, nil, err
+			} else if msc_ != nil {
+				msc = append(msc, msc_)
+			} else if vls_ != nil {
+				vls = append(vls, vls_)
+			} else if sg_ != nil {
+				sg = append(sg, sg_)
+			} else if mediciones {
+				mp = append(mp, actualizados[idx])
+			}
+		}
+	}
+
+	return msc, vls, sg, mp, nil
+
+}
+// determinarDeltaActa Separa elementos según el ajuste
+func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg *models.DetalleElemento_, outputError map[string]interface{}) {
+
+	funcion := "determinarDeltaActa"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	if org.SubgrupoCatalogoId != nvo.SubgrupoCatalogoId {
+
+		urlcrud := "fields=TipoBienId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(nvo.SubgrupoCatalogoId)
+		if detalleSubgrupo_, err := catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud); err != nil {
+			return nil, nil, nil, err
+		} else if len(detalleSubgrupo_) == 0 {
+			err := "len(detalleSubgrupo_) = 0"
+			eval := " - catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud)"
+			return nil, nil, nil, errorctrl.Error(funcion+eval, err, "500")
+		} else {
+			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa != "" {
+				ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
+				if placa_, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+					return nil, nil, nil, err
+				} else {
+					year, month, day := time.Now().Date()
+					nvo.Placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
+				}
+			} else if !detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa != "" {
+				nvo.Placa = ""
+			}
+
+		}
+
+		nvo.Activo = true
+		sg = nvo
+
+	} else if org.ValorTotal != nvo.ValorTotal {
+		nvo.Activo = true
+		vls = nvo
+
+	} else if org.Nombre != nvo.Nombre || org.Marca != nvo.Marca ||
+		org.Serie != nvo.Serie || org.UnidadMedida != nvo.UnidadMedida ||
+		org.Cantidad != nvo.Cantidad || org.ValorUnitario != nvo.ValorUnitario ||
+		org.Subtotal != nvo.Subtotal || org.Descuento != nvo.Descuento ||
+		org.PorcentajeIvaId != nvo.PorcentajeIvaId ||
+		org.ValorIva != nvo.ValorIva || org.ValorFinal != nvo.ValorFinal {
+
+		nvo.Activo = true
+		msc = nvo
+
+	}
+
+	return msc, vls, sg, nil
+
+}
+
+// calcularAjusteMovimiento Calcula la transacción contable generada a partir de los elementos y el cambio de cada uno
+func calcularAjusteMovimiento(originales []*models.Elemento, actualizarVl, actualizarSg []*models.DetalleElemento_, movimientoId int, consecutivo string, proveedorId int, tipoMovimiento string) (movimientos []*models.MovimientoTransaccion, outputError map[string]interface{}) {
+
+	funcion := "calcularAjusteMovimiento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var (
+		ids             []int
+		movDebito       int
+		movCredito      int
+		cuentasSubgrupo map[int]*models.CuentaSubgrupo
+		detalleCuenta   map[string]*models.CuentaContable
+	)
+
+	cuentasSubgrupo = make(map[int]*models.CuentaSubgrupo)
+	detalleCuenta = make(map[string]*models.CuentaContable)
+	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+		return nil, err
+	} else {
+		movDebito = db_
+		movCredito = cr_
+	}
+
+	for _, el := range originales {
+		ids = append(ids, el.SubgrupoCatalogoId)
+	}
+
+	for _, el := range actualizarSg {
+		ids = append(ids, el.SubgrupoCatalogoId)
+	}
+
+	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
+	query += "query=SubtipoMovimientoId:" + strconv.Itoa(movimientoId) + ",Activo:true,SubgrupoId__Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+	if cuentas_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+		return nil, err
+	} else {
+		for _, cuenta := range cuentas_ {
+			cuentasSubgrupo[cuenta.SubgrupoId.Id] = cuenta
+		}
+	}
+
+	dsc := getDescripcionMovContable(tipoMovimiento, consecutivo)
+	for _, el := range actualizarSg {
+		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
+
+			if detalleCuenta_, err := fillCuentas(detalleCuenta, []string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
+				cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId, cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId, cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId}); err != nil {
+				return nil, err
+			} else {
+				detalleCuenta = detalleCuenta_
+			}
+
+			if cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId != cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId {
+
+				movimientoR := asientoContable.CreaMovimiento(originales[idx].ValorTotal, dsc, proveedorId, detalleCuenta[cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId], movDebito)
+				movimiento := asientoContable.CreaMovimiento(el.ValorTotal, dsc, proveedorId, detalleCuenta[cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId], movCredito)
+				movimientos = append(movimientos, movimientoR, movimiento)
+
+			} else if el.ValorTotal != originales[idx].ValorTotal {
+
+				tipoMovimiento := movCredito
+				if el.ValorTotal < originales[idx].ValorTotal {
+					tipoMovimiento = movDebito
+				}
+
+				movimiento := asientoContable.CreaMovimiento(math.Abs(el.ValorTotal-originales[idx].ValorTotal), dsc, proveedorId, detalleCuenta[cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId], tipoMovimiento)
+				movimientos = append(movimientos, movimiento)
+
+			}
+
+			if cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId != cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId {
+
+				movimientoR := asientoContable.CreaMovimiento(originales[idx].ValorTotal, dsc, proveedorId, detalleCuenta[cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId], movCredito)
+				movimiento := asientoContable.CreaMovimiento(el.ValorTotal, dsc, proveedorId, detalleCuenta[cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId], movDebito)
+				movimientos = append(movimientos, movimientoR, movimiento)
+
+			} else if el.ValorTotal != originales[idx].ValorTotal {
+
+				tipoMovimiento := movDebito
+				if el.ValorTotal < originales[idx].ValorTotal {
+					tipoMovimiento = movCredito
+				}
+
+				movimiento := asientoContable.CreaMovimiento(math.Abs(el.ValorTotal-originales[idx].ValorTotal), dsc, proveedorId, detalleCuenta[cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId], tipoMovimiento)
+				movimientos = append(movimientos, movimiento)
+
+			}
+		}
+
+	}
+
+	for _, el := range actualizarVl {
+		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
+
+			if detalleCuenta_, err := fillCuentas(detalleCuenta, []string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
+				cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId, cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId, cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId}); err != nil {
+			} else {
+				detalleCuenta = detalleCuenta_
+			}
+
+			if el.ValorTotal != originales[idx].ValorTotal {
+
+				tipoMovimientoC := movCredito
+				tipoMovimientoD := movDebito
+
+				if el.ValorTotal < originales[idx].ValorTotal {
+					tipoMovimientoC = movDebito
+					tipoMovimientoD = movCredito
+				}
+
+				movimientoC := asientoContable.CreaMovimiento(math.Abs(el.ValorTotal-originales[idx].ValorTotal), dsc, proveedorId, detalleCuenta[cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId], tipoMovimientoC)
+				movimientoD := asientoContable.CreaMovimiento(math.Abs(el.ValorTotal-originales[idx].ValorTotal), dsc, proveedorId, detalleCuenta[cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId], tipoMovimientoD)
+				movimientos = append(movimientos, movimientoC, movimientoD)
+			}
+
+		}
+
+	}
+
+	return movimientos, nil
+
+}
+
+// fillCuentas Consulta el detalle de una serie de cuentas
+func fillCuentas(cuentas map[string]*models.CuentaContable, cuentas_ []string) (cuentasCompletas map[string]*models.CuentaContable, outputError map[string]interface{}) {
+
+	funcion := "fillCuentas"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	for _, id := range cuentas_ {
+		if _, ok := cuentas[id]; !ok {
+			if cta_, err := cuentasContablesHelper.GetCuentaContable(id); err != nil {
+				return nil, err
+			} else {
+				cuentas[id] = cta_
+			}
+		}
+	}
+
+	return cuentas, nil
+
+}
+
+// findElementoInArray Retorna la posicion en que se encuentra el id específicado
+func findElementoInArrayD(elementos []*models.DetalleElemento_, id int) (i int) {
+	for i, el_ := range elementos {
+		if int(el_.Id) == id {
+			return i
+		}
+	}
+	return -1
+}
+
+// findElementoInArray Retorna la posicion en que se encuentra el id específicado
+func findElementoInArrayE(elementos []*models.Elemento, id int) (i int) {
+	for i, el_ := range elementos {
+		if int(el_.Id) == id {
+			return i
+		}
+	}
+	return -1
+}
+
 func getTipoComprobanteAjustes() string {
 	return "N20"
+}
+
+func getDescripcionMovContable(tipoMovimiento, consecutivo string) string {
+	return "Ajuste contable " + tipoMovimiento + " " + consecutivo
 }

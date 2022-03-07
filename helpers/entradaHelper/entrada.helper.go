@@ -887,6 +887,24 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 	return res, nil
 }
 
+// GetConsecutivoEntrada Consulta el consecutivo de una entrada
+func GetConsecutivoEntrada(detalle string) (consecutivo string, outputError map[string]interface{}) {
+
+	funcion := "GetConsecutivoEntrada"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	var (
+		detalle_ map[string]interface{}
+	)
+
+	if err := json.Unmarshal([]byte(detalle), &detalle_); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(detalle), &detalle_)"
+		return "", errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return detalle_["consecutivo"].(string), nil
+}
+
 func getTipoComprobanteEntradas() string {
 	return "P8"
 }
