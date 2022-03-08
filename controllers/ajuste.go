@@ -66,7 +66,7 @@ func (c *AjusteController) PostAjuste() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
-		if v, err := ajustesHelper.GenerarAjuste(v); err != nil {
+		if v, err := ajustesHelper.GenerarAjusteAutomatico(v); err != nil {
 			logs.Error(err)
 			c.Data["system"] = err
 			c.Abort("404")
