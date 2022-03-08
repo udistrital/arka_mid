@@ -14,6 +14,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/depreciacionHelper"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
@@ -25,6 +26,8 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
 )
+
+const queryUD string = "query=TipoDocumentoId__Nombre:NIT,Numero:"
 
 func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
@@ -297,6 +300,7 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 		updateMp             []*models.DetalleElemento_
 		movimientos          []*models.MovimientoTransaccion
 		tipoMovimientoSalida int
+		novedadesMedicion    map[int][]*models.NovedadElemento
 	)
 
 	for _, el := range elementos {
@@ -372,6 +376,7 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 					tipoMovimientoSalida = fm[0].Id
 				}
 			}
+			idsEl = []int{}
 		}
 	}
 
@@ -387,12 +392,35 @@ func GenerarAjuste(elementos []*models.DetalleElemento_) (resultado []*models.Mo
 			consecutivo = cons_
 		}
 
+		for _, el := range elms.UpdateSg {
+			idsEl = append(idsEl, el.Id)
+		}
+
+		for _, el := range elms.UpdateVls {
+			idsEl = append(idsEl, el.Id)
+		}
+
 		if movsSalida, err := calcularAjusteMovimiento(orgActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, consecutivo, funcionario, "Salida"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsSalida...)
 		}
 
+	}
+
+	if len(idsEl) > 0 {
+		query = "limit=-1&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=ElementoMovimientoId__ElementoActaId__in:" + utilsHelper.ArrayToString(idsEl, "|")
+		if novedades_, err := movimientosArkaHelper.GetAllNovedadElemento(query); err != nil {
+			return nil, err
+		} else {
+			novedadesMedicion = separarNovedadesPorElemento(novedades_)
+
+			if movimientos_, _, err := calcularAjusteMediciones(novedadesMedicion, updateSg, updateVls, updateMp, orgActa); err != nil {
+				return nil, err
+			} else {
+				movimientos = append(movimientos, movimientos_...)
+			}
+		}
 	}
 
 	return movimientos, nil
@@ -473,6 +501,18 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 
 	}
 	return elementosSalidas, updateMp, nil
+
+}
+
+// separarNovedadesPorElemento Separa las novedades por elementos
+func separarNovedadesPorElemento(novedades []*models.NovedadElemento) (novedades_ map[int][]*models.NovedadElemento) {
+
+	novedades_ = make(map[int][]*models.NovedadElemento, 0)
+	for _, nv := range novedades {
+		novedades_[nv.ElementoMovimientoId.Id] = append(novedades_[nv.ElementoMovimientoId.Id], nv)
+	}
+
+	return novedades_
 
 }
 
@@ -650,6 +690,278 @@ func calcularAjusteMovimiento(originales []*models.Elemento, actualizarVl, actua
 	}
 
 	return movimientos, nil
+
+}
+
+// calcularAjusteMediciones Vuelve a generar las novedades y calcula las transacciones contables según las modificaciones que hayan afectado mediciones posteriores aprobadas
+func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento, sg, vls, mp []*models.DetalleElemento_, org []*models.Elemento) (movimientos []*models.MovimientoTransaccion, novedades_ []*models.NovedadElemento, outputError map[string]interface{}) {
+
+	var (
+		cuentasSubgrupo map[int]*models.CuentaSubgrupo
+		bufferCtas      map[string]*models.CuentaContable
+		movDebito       int
+		movCredito      int
+		terceroUD       int
+	)
+
+	detalleMd := make(map[int]*models.FormatoDepreciacion)
+	novedadesNuevas := make(map[int][]*models.NovedadElemento)
+
+	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+		return nil, nil, err
+	} else {
+		movDebito = db_
+		movCredito = cr_
+	}
+
+	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(queryUD + tercerosHelper.GetDocUD()); err != nil {
+		return nil, nil, err
+	} else {
+		terceroUD = terceroUD_[0].TerceroId.Id
+	}
+
+	if cuentasSg, cuentas, err := consultaCuentasMp(novedades, sg, vls, mp, org); err != nil {
+		return nil, nil, err
+	} else {
+		cuentasSubgrupo = cuentasSg
+		bufferCtas = cuentas
+	}
+
+	for key, nv := range novedades {
+
+		var nuevo *models.DetalleElemento_
+		var sgOrg int
+		if idx := findElementoInArrayD(sg, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+			nuevo = sg[idx]
+			if idx := findElementoInArrayE(org, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+				sgOrg = org[idx].SubgrupoCatalogoId
+				org = append(org[:idx], org[idx+1:]...)
+			}
+			sg = append(sg[:idx], sg[idx+1:]...)
+		}
+
+		if idx := findElementoInArrayD(vls, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+			nuevo = vls[idx]
+			vls = append(vls[:idx], vls[idx+1:]...)
+		}
+
+		if idx := findElementoInArrayD(mp, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+			nuevo = mp[idx]
+			mp = append(mp[:idx], mp[idx+1:]...)
+		}
+
+		for idx, nv_ := range nv {
+
+			if detalleMd[nv_.MovimientoId.Id] == nil {
+				if dt, err := depreciacionHelper.GetDetalleDepreciacion(nv_.MovimientoId.Detalle); err != nil {
+					return nil, nil, err
+				} else {
+					detalleMd[nv_.MovimientoId.Id] = dt
+				}
+			}
+
+			var fCorte time.Time
+			var dpOrg, dpNvo, deltaT float64
+			var novedadNueva *models.NovedadElemento
+			fCorte, _ = time.Parse("2006-01-02", detalleMd[nv_.MovimientoId.Id].FechaCorte)
+			if idx == 0 {
+				dpOrg, _ = depreciacionHelper.CalculaDp(nv_.ElementoMovimientoId.ValorTotal, nv_.ElementoMovimientoId.ValorResidual, nv_.ElementoMovimientoId.VidaUtil, nv_.ElementoMovimientoId.MovimientoId.FechaModificacion, fCorte)
+				dpNvo, deltaT = depreciacionHelper.CalculaDp(nuevo.ValorTotal, nuevo.ValorResidual, nuevo.VidaUtil, nv_.ElementoMovimientoId.MovimientoId.FechaModificacion, fCorte)
+				novedadNueva = generarNovedad(nuevo.ValorTotal-dpNvo, nuevo.ValorResidual, nuevo.VidaUtil-deltaT, nv_)
+			} else {
+				ref, _ := time.Parse("2006-01-02", detalleMd[novedadesNuevas[key][idx-1].MovimientoId.Id].FechaCorte)
+				dpOrg, _ = depreciacionHelper.CalculaDp(nv_.ValorLibros, nv_.ValorResidual, nv_.VidaUtil, ref.AddDate(0, 0, 1), fCorte)
+				dpNvo, deltaT = depreciacionHelper.CalculaDp(novedadesNuevas[key][idx-1].ValorLibros, nuevo.ValorResidual, novedadesNuevas[key][idx-1].VidaUtil, ref.AddDate(0, 0, 1), fCorte)
+				novedadNueva = generarNovedad(novedadesNuevas[key][idx-1].ValorLibros-dpNvo, nuevo.ValorResidual, novedadesNuevas[key][idx-1].VidaUtil-deltaT, nv_)
+			}
+
+			novedadesNuevas[key] = append(novedadesNuevas[key], novedadNueva)
+
+			movimientos = append(movimientos, generaTrContable(dpNvo-dpOrg, detalleMd[nv_.MovimientoId.Id].FechaCorte,
+				nv_.MovimientoId.FormatoTipoMovimientoId.Nombre, movDebito, movCredito, sgOrg, nuevo.SubgrupoCatalogoId, terceroUD, cuentasSubgrupo, bufferCtas)...)
+		}
+	}
+
+	return movimientos, nil, nil
+
+}
+
+// generaTrContable Dado un valor, subgrupo nuevo y original genera la transacción contable.
+func generaTrContable(delta float64, consecutivo, tipoMedicion string, db, cr, sgOriginal, sgNuevo, tercero int, ctasSg map[int]*models.CuentaSubgrupo, ctas map[string]*models.CuentaContable) (movimientos []*models.MovimientoTransaccion) {
+
+	dsc := getDescripcionMovContable(tipoMedicion, consecutivo)
+	if sgOriginal > 0 {
+		if ctasSg[sgOriginal].CuentaCreditoId != ctasSg[sgNuevo].CuentaCreditoId {
+			movimientoR := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgOriginal].CuentaDebitoId], cr)
+			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], db)
+			movimientos = append(movimientos, movimientoR, movimiento)
+		} else if delta != 0 {
+			tipoMovimiento := cr
+			if delta < 0 {
+				tipoMovimiento = db
+			}
+
+			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimiento)
+			movimientos = append(movimientos, movimiento)
+		}
+
+		if ctasSg[sgOriginal].CuentaDebitoId != ctasSg[sgNuevo].CuentaDebitoId {
+			movimientoR := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgOriginal].CuentaCreditoId], db)
+			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], cr)
+			movimientos = append(movimientos, movimientoR, movimiento)
+		} else if delta != 0 {
+			tipoMovimiento := db
+			if delta < 0 {
+				tipoMovimiento = cr
+			}
+
+			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimiento)
+			movimientos = append(movimientos, movimiento)
+		}
+
+	} else {
+
+		tipoMovimientoC := cr
+		tipoMovimientoD := db
+
+		if delta < 0 {
+			tipoMovimientoC = db
+			tipoMovimientoD = cr
+		}
+
+		movimientoC := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimientoC)
+		movimientoD := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimientoD)
+		movimientos = append(movimientos, movimientoC, movimientoD)
+
+	}
+
+	return movimientos
+}
+
+// generarNovedad Actualiza los valores afectados de una novedad al hacer un ajuste a un elemento
+func generarNovedad(libros, residual, util float64, novedad *models.NovedadElemento) *models.NovedadElemento {
+
+	novedad.ValorLibros = libros
+	novedad.VidaUtil = util
+	novedad.ValorResidual = residual
+
+	return novedad
+
+}
+
+// consultaCuentasMp Consulta las cuentas asignadas a cada subgrupo y su detalle según el tipo de novedad
+func consultaCuentasMp(novedades map[int][]*models.NovedadElemento, sg, vls, mp []*models.DetalleElemento_, org []*models.Elemento) (ctasSg map[int]*models.CuentaSubgrupo, ctas map[string]*models.CuentaContable, outputError map[string]interface{}) {
+
+	var idsD, idsA []int
+	var idD, idA int
+	var ctasD, ctasA map[int]*models.CuentaSubgrupo
+
+	for _, nv := range novedades {
+		var ids []int
+		if len(sg) > 0 {
+			if idx := findElementoInArrayD(sg, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+				ids = append(ids, sg[idx].SubgrupoCatalogoId)
+				if idx := findElementoInArrayE(org, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+					ids = append(ids, org[idx].SubgrupoCatalogoId)
+					org = append(org[:idx], org[idx+1:]...)
+				}
+				sg = append(sg[:idx], sg[idx+1:]...)
+			}
+		} else if len(vls) > 0 {
+			if idx := findElementoInArrayD(vls, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+				ids = append(ids, vls[idx].SubgrupoCatalogoId)
+				vls = append(vls[:idx], vls[idx+1:]...)
+			}
+		} else if len(mp) > 0 {
+			if idx := findElementoInArrayD(mp, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+				ids = append(ids, mp[idx].SubgrupoCatalogoId)
+				mp = append(mp[:idx], mp[idx+1:]...)
+			}
+		}
+
+		if nv[0].MovimientoId.FormatoTipoMovimientoId.Nombre == "Depreciación" {
+			if idD == 0 {
+				idD = nv[0].MovimientoId.FormatoTipoMovimientoId.Id
+			}
+			idsD = append(idsD, ids...)
+		} else if nv[0].MovimientoId.FormatoTipoMovimientoId.Nombre == "Amortizacion" {
+			if idA == 0 {
+				idA = nv[0].MovimientoId.FormatoTipoMovimientoId.Id
+			}
+			idsA = append(idsA, ids...)
+		}
+
+	}
+
+	if idD > 0 {
+		if ctas, err := getCuentasByMovimientoSubgrupos(idD, idsD); err != nil {
+			return nil, nil, err
+		} else {
+			ctasD = ctas
+		}
+	}
+
+	if idA > 0 {
+		if ctas, err := getCuentasByMovimientoSubgrupos(idA, idsA); err != nil {
+			return nil, nil, err
+		} else {
+			ctasA = ctas
+		}
+	}
+
+	ctasSg = joinMaps(ctasD, ctasA)
+
+	idsCtas := make([]string, 0)
+	for _, ctas := range ctasSg {
+		idsCtas = append(idsCtas, ctas.CuentaDebitoId, ctas.CuentaCreditoId)
+	}
+
+	ctas = make(map[string]*models.CuentaContable)
+	if detalleCuenta_, err := fillCuentas(ctas, idsCtas); err != nil {
+		return nil, nil, err
+	} else {
+		ctas = detalleCuenta_
+	}
+
+	return ctasSg, ctas, nil
+
+}
+
+// getCuentasByMovimientoSubgrupos Retorna las cuentas de cada subgrupo en una estructura para fácil acceso
+func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (cuentasSubgrupo map[int]*models.CuentaSubgrupo, outputError map[string]interface{}) {
+
+	cuentasSubgrupo = make(map[int]*models.CuentaSubgrupo)
+
+	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
+	query += "query=SubtipoMovimientoId:" + strconv.Itoa(movimientoId) + ",Activo:true,SubgrupoId__Id__in:"
+	query += url.QueryEscape(utilsHelper.ArrayToString(subgrupos, "|"))
+	if cuentas_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+		return nil, err
+	} else {
+		for _, cuenta := range cuentas_ {
+			cuentasSubgrupo[cuenta.SubgrupoId.Id] = cuenta
+		}
+	}
+
+	return cuentasSubgrupo, nil
+
+}
+
+func joinMaps(map1, map2 map[int]*models.CuentaSubgrupo) map[int]*models.CuentaSubgrupo {
+
+	if len(map1) > 0 {
+		for sg, ctas := range map2 {
+			map1[sg] = ctas
+		}
+		return map1
+	} else if len(map2) > 0 {
+		for sg, ctas := range map1 {
+			map2[sg] = ctas
+		}
+		return map2
+	}
+
+	return nil
 
 }
 

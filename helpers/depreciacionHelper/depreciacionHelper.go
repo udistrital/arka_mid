@@ -379,6 +379,42 @@ func GetDeltaTiempo(ref, fin time.Time) (prct float64) {
 	return prct
 }
 
+// CalculaDp Genera el valor y el tiempo en años a depreciar
+func CalculaDp(presente, residual, vUtil float64, ref, fCorte time.Time) (dp, deltaT float64) {
+
+	if vUtil == 0 {
+		return 0, 0
+	}
+
+	deltaT = GetDeltaTiempo(ref, fCorte.AddDate(0, 0, 1))
+	if deltaT > vUtil {
+		deltaT = vUtil
+	}
+
+	if residual > presente {
+		presente = residual
+	}
+
+	dp = (presente - residual) * deltaT / vUtil
+	return dp, deltaT
+
+}
+
+// GetDetalleDepreciacion Consulta el detalle de una medición determinada
+func GetDetalleDepreciacion(detalle string) (detalle_ *models.FormatoDepreciacion, outputError map[string]interface{}) {
+
+	funcion := "GetDetalleDepreciacion"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	if err := json.Unmarshal([]byte(detalle), &detalle_); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(detalle), &detalle_)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return detalle_, nil
+}
+
 func descAsiento() string {
 	return "Depreciación almacén"
 }

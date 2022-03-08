@@ -96,6 +96,20 @@ func GetAllMovimiento(query string) (movimientos []*models.Movimiento, outputErr
 	return movimientos, nil
 }
 
+// GetAllNovedadElemento query controlador novedad_elemento del api movimientos_arka_crud
+func GetAllNovedadElemento(query string) (novedades []*models.NovedadElemento, outputError map[string]interface{}) {
+
+	funcion := "GetAllNovedadElemento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "novedad_elemento?" + query
+	if err := request.GetJson(urlcrud, &novedades); err != nil {
+		eval := " - request.GetJson(urlcrud, &novedades)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return novedades, nil
+}
+
 // GetMovimientoById consulta controlador movimiento/{id} del api movimientos_arka_crud
 func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
