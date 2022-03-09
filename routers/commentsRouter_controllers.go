@@ -91,7 +91,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"],
         beego.ControllerComments{
             Method: "PostAjuste",
-            Router: "/elemento",
+            Router: "/automatico",
             AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,

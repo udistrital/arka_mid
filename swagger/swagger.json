@@ -257,7 +257,7 @@
                 }
             }
         },
-        "/ajustes/elemento": {
+        "/ajustes/automatico": {
             "post": {
                 "tags": [
                     "ajustes"
@@ -282,7 +282,7 @@
                     "201": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Movimiento"
+                            "$ref": "#/definitions/models.DetalleAjusteAutomatico"
                         }
                     },
                     "403": {
@@ -1753,6 +1753,24 @@
                 }
             }
         },
+        "models.DetalleAjusteAutomatico": {
+            "title": "DetalleAjusteAutomatico",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DetalleElemento_"
+                    }
+                },
+                "Movimiento": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "TrContable": {
+                    "$ref": "#/definitions/models.TransaccionMovimientos"
+                }
+            }
+        },
         "models.DetalleBaja": {
             "title": "DetalleBaja",
             "type": "object",
@@ -2634,6 +2652,36 @@
                 }
             }
         },
+        "models.MovimientoTransaccion": {
+            "title": "MovimientoTransaccion",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CuentaId": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "NombreCuenta": {
+                    "type": "string"
+                },
+                "TerceroId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Valor": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.OrdenadorGasto": {
             "title": "OrdenadorGasto",
             "type": "object",
@@ -3230,6 +3278,35 @@
                 },
                 "Ubicacion": {
                     "$ref": "#/definitions/models.DetalleSedeDependencia"
+                }
+            }
+        },
+        "models.TransaccionMovimientos": {
+            "title": "TransaccionMovimientos",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Etiquetas": {
+                    "type": "string"
+                },
+                "FechaTransaccion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Movimientos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MovimientoTransaccion"
+                    }
                 }
             }
         },

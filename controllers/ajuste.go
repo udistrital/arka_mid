@@ -55,9 +55,9 @@ func (c *AjusteController) Post() {
 // @Title Create
 // @Description create Ajuste
 // @Param	body		body 	[]models.DetalleElemento_	true		"body for Ajuste content"
-// @Success 201 {object} models.Movimiento
+// @Success 201 {object} models.DetalleAjusteAutomatico
 // @Failure 403 body is empty
-// @router /elemento [post]
+// @router /automatico [post]
 func (c *AjusteController) PostAjuste() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")

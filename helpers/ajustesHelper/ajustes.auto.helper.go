@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
@@ -15,41 +16,46 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/utils_oas/formatdata"
 )
 
 // GenerarAjusteAutomatico Genera transacción contable, actualiza elementos y novedades como consecuencia de actualizar una serie de elementos de un acta
-func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []*models.MovimientoTransaccion, outputError map[string]interface{}) {
+func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
 
 	funcion := "GenerarAjusteAutomatico"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
+		ids                  []int
 		query                string
-		idsEl                []int
-		entrada              *models.Movimiento
-		orgActa              []*models.Elemento
-		elementosSalida      map[int]*models.ElementosPorActualizarSalida
-		updateVls            []*models.DetalleElemento_
-		updateSg             []*models.DetalleElemento_
-		updateMp             []*models.DetalleElemento_
-		movimientos          []*models.MovimientoTransaccion
 		tipoMovimientoSalida int
-		novedades            []*models.NovedadElemento
-		actualizados         []*models.ElementosMovimiento
+		entrada              *models.Movimiento
+		orgiginalesActa      []*models.Elemento
+		updateSg             []*models.DetalleElemento_
+		updateVls            []*models.DetalleElemento_
+		updateMp             []*models.DetalleElemento_
+		updateMsc            []*models.DetalleElemento_
+		elementosSalida      map[int]*models.ElementosPorActualizarSalida
+		movimientos          []*models.MovimientoTransaccion
+		nuevosNovedades      []*models.NovedadElemento
+		nuevosMovArka        []*models.ElementosMovimiento
+		nuevosActa           []*models.Elemento
 	)
 
+	resultado = new(models.DetalleAjusteAutomatico)
+
 	for _, el := range elementos {
-		idsEl = append(idsEl, el.Id)
+		ids = append(ids, el.Id)
 	}
 
-	query = "Id__in:" + utilsHelper.ArrayToString(idsEl, "|")
+	query = "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 	if elementos_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "0", "-1"); err != nil {
 		return nil, err
 	} else {
-		orgActa = elementos_
+		orgiginalesActa = elementos_
 	}
 
-	if entrada_, err := movimientosArkaHelper.GetEntradaByActa(orgActa[0].ActaRecibidoId.Id); err != nil {
+	if entrada_, err := movimientosArkaHelper.GetEntradaByActa(orgiginalesActa[0].ActaRecibidoId.Id); err != nil {
 		return nil, err
 	} else if entrada_ == nil {
 		return nil, nil
@@ -57,9 +63,10 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 		entrada = entrada_
 	}
 
-	if _, vls, sg, mp, err := separarElementosPorModificacion(orgActa, elementos, entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida"); err != nil {
+	if msc, vls, sg, mp, err := separarElementosPorModificacion(orgiginalesActa, elementos, entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida"); err != nil {
 		return nil, err
 	} else {
+		updateMsc = msc
 		updateVls = vls
 		updateSg = sg
 		updateMp = mp
@@ -69,7 +76,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 		var proveedorId int
 		var consecutivo string
 
-		query = "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(orgActa[0].ActaRecibidoId.Id)
+		query = "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(orgiginalesActa[0].ActaRecibidoId.Id)
 		if ha, err := actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 			return nil, err
 		} else {
@@ -82,7 +89,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 			consecutivo = cs
 		}
 
-		if movsEntrada, err := calcularAjusteMovimiento(orgActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, consecutivo, proveedorId, "Entrada"); err != nil {
+		if movsEntrada, err := calcularAjusteMovimiento(orgiginalesActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, consecutivo, proveedorId, "Entrada"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsEntrada...)
@@ -91,14 +98,14 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 
 	if entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
 
-		query = "limit=-1&sortby=MovimientoId,ElementoActaId&order=desc,desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(idsEl, "|")
+		query = "limit=-1&sortby=MovimientoId,ElementoActaId&order=desc,desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
 		if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
 			return nil, err
 		} else {
 			if elementosSalida_, updateMp_, actualizados_, err := separarElementosPorSalida(elementos_, updateVls, updateSg, updateMp); err != nil {
 				return nil, err
 			} else {
-				actualizados = actualizados_
+				nuevosMovArka = actualizados_
 				elementosSalida = elementosSalida_
 				updateMp = updateMp_
 			}
@@ -111,7 +118,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 					tipoMovimientoSalida = fm[0].Id
 				}
 			}
-			idsEl = []int{}
+			ids = []int{}
 		}
 	}
 
@@ -128,14 +135,14 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 		}
 
 		for _, el := range elms.UpdateSg {
-			idsEl = append(idsEl, el.Id)
+			ids = append(ids, el.Id)
 		}
 
 		for _, el := range elms.UpdateVls {
-			idsEl = append(idsEl, el.Id)
+			ids = append(ids, el.Id)
 		}
 
-		if movsSalida, err := calcularAjusteMovimiento(orgActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, consecutivo, funcionario, "Salida"); err != nil {
+		if movsSalida, err := calcularAjusteMovimiento(orgiginalesActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, consecutivo, funcionario, "Salida"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsSalida...)
@@ -143,23 +150,38 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 
 	}
 
-	if len(idsEl) > 0 {
-		query = "limit=-1&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=ElementoMovimientoId__ElementoActaId__in:" + utilsHelper.ArrayToString(idsEl, "|")
+	for _, el := range updateMp {
+		ids = append(ids, el.Id)
+	}
+
+	if len(ids) > 0 {
+		query = "limit=-1&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=ElementoMovimientoId__ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
 		if novedades_, err := movimientosArkaHelper.GetAllNovedadElemento(query); err != nil {
 			return nil, err
 		} else {
 			novedadesMedicion := separarNovedadesPorElemento(novedades_)
 
-			if movimientos_, novedades_, err := calcularAjusteMediciones(novedadesMedicion, updateSg, updateVls, updateMp, orgActa); err != nil {
+			if movimientos_, novedades_, err := calcularAjusteMediciones(novedadesMedicion, updateSg, updateVls, updateMp, orgiginalesActa); err != nil {
 				return nil, err
 			} else {
-				novedades = novedades_
+				nuevosNovedades = novedades_
 				movimientos = append(movimientos, movimientos_...)
 			}
 		}
 	}
 
-	return movimientos, nil
+	if len(updateSg)+len(updateVls)+len(updateMsc) > 0 {
+		if nuevos, err := generarNuevosActa(append(updateSg, (append(updateVls, updateMsc...))...)); err != nil {
+			return nil, err
+		} else {
+			nuevosActa = nuevos
+		}
+	} else if len(updateMp) == 0 {
+		return resultado, nil
+	}
+
+	return resultado, nil
+
 }
 
 // separarElementosPorModificacion Separa los elementos según se deba modificar Subgrupo, Valores, Misceláneos o Mediciones posteriores
@@ -295,10 +317,9 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 				if elementosSalidas[el.MovimientoId.Id] == nil {
 					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
 					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId
-				} else {
-					elemento_ := creaNuevoElementoMovimiento(updateSg[idx], el)
-					actualizados = append(actualizados, elemento_)
 				}
+				elemento_ := creaNuevoElementoMovimiento(updateSg[idx], el)
+				actualizados = append(actualizados, elemento_)
 
 				elementosSalidas[el.MovimientoId.Id].UpdateSg = append(elementosSalidas[el.MovimientoId.Id].UpdateSg, updateSg[idx])
 			}
@@ -307,10 +328,9 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 				if elementosSalidas[el.MovimientoId.Id] == nil {
 					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
 					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId
-				} else {
-					elemento_ := creaNuevoElementoMovimiento(updateVls[idx], el)
-					actualizados = append(actualizados, elemento_)
 				}
+				elemento_ := creaNuevoElementoMovimiento(updateVls[idx], el)
+				actualizados = append(actualizados, elemento_)
 
 				elementosSalidas[el.MovimientoId.Id].UpdateVls = append(elementosSalidas[el.MovimientoId.Id].UpdateVls, updateVls[idx])
 			}
@@ -385,5 +405,20 @@ func creaNuevoElementoMovimiento(nuevo *models.DetalleElemento_, org *models.Ele
 	org.ValorResidual = nuevo.ValorResidual
 
 	return org
+
+}
+
+func generarNuevosActa(nuevos []*models.DetalleElemento_) (actualizados []*models.Elemento, outputError map[string]interface{}) {
+
+	funcion := "generarNuevosActa"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	if err := formatdata.FillStruct(nuevos, &actualizados); err != nil {
+		logs.Error(err)
+		eval := " - formatdata.FillStruct(nuevos, &actualizados)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return actualizados, nil
 
 }
