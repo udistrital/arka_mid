@@ -57,19 +57,15 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento, sg, v
 			nuevo = sg[idx]
 			if idx := findElementoInArrayE(org, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 				sgOrg = org[idx].SubgrupoCatalogoId
-				org = append(org[:idx], org[idx+1:]...)
 			}
-			sg = append(sg[:idx], sg[idx+1:]...)
 		}
 
 		if idx := findElementoInArrayD(vls, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 			nuevo = vls[idx]
-			vls = append(vls[:idx], vls[idx+1:]...)
 		}
 
 		if idx := findElementoInArrayD(mp, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 			nuevo = mp[idx]
-			mp = append(mp[:idx], mp[idx+1:]...)
 		}
 
 		for idx, nv_ := range nv {
@@ -125,19 +121,15 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento, sg, vls, mp 
 				ids = append(ids, sg[idx].SubgrupoCatalogoId)
 				if idx := findElementoInArrayE(org, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 					ids = append(ids, org[idx].SubgrupoCatalogoId)
-					org = append(org[:idx], org[idx+1:]...)
 				}
-				sg = append(sg[:idx], sg[idx+1:]...)
 			}
 		} else if len(vls) > 0 {
 			if idx := findElementoInArrayD(vls, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 				ids = append(ids, vls[idx].SubgrupoCatalogoId)
-				vls = append(vls[:idx], vls[idx+1:]...)
 			}
 		} else if len(mp) > 0 {
 			if idx := findElementoInArrayD(mp, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 				ids = append(ids, mp[idx].SubgrupoCatalogoId)
-				mp = append(mp[:idx], mp[idx+1:]...)
 			}
 		}
 

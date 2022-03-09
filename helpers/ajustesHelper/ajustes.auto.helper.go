@@ -174,12 +174,12 @@ func separarElementosPorModificacion(originales []*models.Elemento, actualizados
 		if idx := findElementoInArrayD(actualizados, el_.Id); idx > -1 {
 			if msc_, vls_, sg_, err := determinarDeltaActa(el_, actualizados[idx]); err != nil {
 				return nil, nil, nil, nil, err
-			} else if msc_ != nil {
-				msc = append(msc, msc_)
-			} else if vls_ != nil {
-				vls = append(vls, vls_)
-			} else if sg_ != nil {
-				sg = append(sg, sg_)
+			} else if msc_ {
+				msc = append(msc, actualizados[idx])
+			} else if vls_ {
+				vls = append(vls, actualizados[idx])
+			} else if sg_ {
+				sg = append(sg, actualizados[idx])
 			} else if mediciones {
 				mp = append(mp, actualizados[idx])
 			}
@@ -253,7 +253,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento, actualizarVl, actua
 				detalleCuenta = detalleCuenta_
 			}
 
-			movimientos = append(movimientos, generaTrContable(el.ValorTotal-originales[idx].ValorTotal, consecutivo, tipoMovimiento+"nu",
+			movimientos = append(movimientos, generaTrContable(el.ValorTotal-originales[idx].ValorTotal, consecutivo, tipoMovimiento,
 				movDebito, movCredito, 0, el.SubgrupoCatalogoId, proveedorId, cuentasSubgrupo, detalleCuenta)...)
 
 		}
@@ -292,7 +292,6 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 				}
 
 				elementosSalidas[el.MovimientoId.Id].UpdateSg = append(elementosSalidas[el.MovimientoId.Id].UpdateSg, updateSg[idx])
-				updateSg = append(updateSg[:idx], updateSg[idx+1:]...)
 			}
 		} else if len(updateVls) > 0 {
 			if idx := findElementoInArrayD(updateVls, el.ElementoActaId); idx > -1 {
@@ -302,7 +301,6 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 				}
 
 				elementosSalidas[el.MovimientoId.Id].UpdateVls = append(elementosSalidas[el.MovimientoId.Id].UpdateVls, updateVls[idx])
-				updateVls = append(updateVls[:idx], updateVls[idx+1:]...)
 			}
 		}
 
@@ -312,7 +310,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 }
 
 // determinarDeltaActa Separa elementos según el ajuste
-func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg *models.DetalleElemento_, outputError map[string]interface{}) {
+func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg bool, outputError map[string]interface{}) {
 
 	funcion := "determinarDeltaActa"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -321,16 +319,16 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 
 		urlcrud := "fields=TipoBienId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(nvo.SubgrupoCatalogoId)
 		if detalleSubgrupo_, err := catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud); err != nil {
-			return nil, nil, nil, err
+			return false, false, false, err
 		} else if len(detalleSubgrupo_) == 0 {
 			err := "len(detalleSubgrupo_) = 0"
 			eval := " - catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud)"
-			return nil, nil, nil, errorctrl.Error(funcion+eval, err, "500")
+			return false, false, false, errorctrl.Error(funcion+eval, err, "500")
 		} else {
 			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa != "" {
 				ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
 				if placa_, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
-					return nil, nil, nil, err
+					return false, false, false, err
 				} else {
 					year, month, day := time.Now().Date()
 					nvo.Placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
@@ -342,11 +340,11 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 		}
 
 		nvo.Activo = true
-		sg = nvo
+		sg = true
 
 	} else if org.ValorTotal != nvo.ValorTotal {
 		nvo.Activo = true
-		vls = nvo
+		vls = true
 
 	} else if org.Nombre != nvo.Nombre || org.Marca != nvo.Marca ||
 		org.Serie != nvo.Serie || org.UnidadMedida != nvo.UnidadMedida ||
@@ -356,7 +354,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 		org.ValorIva != nvo.ValorIva || org.ValorFinal != nvo.ValorFinal {
 
 		nvo.Activo = true
-		msc = nvo
+		msc = true
 
 	}
 
