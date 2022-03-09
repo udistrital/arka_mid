@@ -34,7 +34,8 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 		updateMp             []*models.DetalleElemento_
 		movimientos          []*models.MovimientoTransaccion
 		tipoMovimientoSalida int
-		novedadesMedicion    map[int][]*models.NovedadElemento
+		novedades            []*models.NovedadElemento
+		actualizados         []*models.ElementosMovimiento
 	)
 
 	for _, el := range elementos {
@@ -94,9 +95,10 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 		if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
 			return nil, err
 		} else {
-			if elementosSalida_, updateMp_, err := separarElementosPorSalida(elementos_, updateVls, updateSg, updateMp); err != nil {
+			if elementosSalida_, updateMp_, actualizados_, err := separarElementosPorSalida(elementos_, updateVls, updateSg, updateMp); err != nil {
 				return nil, err
 			} else {
+				actualizados = actualizados_
 				elementosSalida = elementosSalida_
 				updateMp = updateMp_
 			}
@@ -146,11 +148,12 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado []
 		if novedades_, err := movimientosArkaHelper.GetAllNovedadElemento(query); err != nil {
 			return nil, err
 		} else {
-			novedadesMedicion = separarNovedadesPorElemento(novedades_)
+			novedadesMedicion := separarNovedadesPorElemento(novedades_)
 
-			if movimientos_, _, err := calcularAjusteMediciones(novedadesMedicion, updateSg, updateVls, updateMp, orgActa); err != nil {
+			if movimientos_, novedades_, err := calcularAjusteMediciones(novedadesMedicion, updateSg, updateVls, updateMp, orgActa); err != nil {
 				return nil, err
 			} else {
+				novedades = novedades_
 				movimientos = append(movimientos, movimientos_...)
 			}
 		}
@@ -264,8 +267,8 @@ func calcularAjusteMovimiento(originales []*models.Elemento, actualizarVl, actua
 
 }
 
-// separarElementosPorSalida Separa los elementos según el tipo de ajuste de cada uno y los agrupa según la salida
-func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVls, updateSg, updateMp []*models.DetalleElemento_) (elementosSalidas map[int]*models.ElementosPorActualizarSalida, pendientes_ []*models.DetalleElemento_, outputError map[string]interface{}) {
+// separarElementosPorSalida Separa los elementos según el tipo de ajuste de cada uno y los agrupa según la salida. Además retorna los elementos actualizados
+func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVls, updateSg, updateMp []*models.DetalleElemento_) (elementosSalidas map[int]*models.ElementosPorActualizarSalida, pendientes_ []*models.DetalleElemento_, actualizados []*models.ElementosMovimiento, outputError map[string]interface{}) {
 
 	funcion := "separarElementosPorSalida"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -277,6 +280,9 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 			if idx := findElementoInArrayD(updateMp, el.ElementoActaId); idx > -1 {
 				if updateMp[idx].ValorResidual == el.ValorResidual && updateMp[idx].VidaUtil == el.VidaUtil {
 					updateMp = append(updateMp[:idx], updateMp[idx+1:]...)
+				} else {
+					elemento_ := creaNuevoElementoMovimiento(updateMp[idx], el)
+					actualizados = append(actualizados, elemento_)
 				}
 				continue
 			}
@@ -289,6 +295,9 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 				if elementosSalidas[el.MovimientoId.Id] == nil {
 					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
 					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId
+				} else {
+					elemento_ := creaNuevoElementoMovimiento(updateSg[idx], el)
+					actualizados = append(actualizados, elemento_)
 				}
 
 				elementosSalidas[el.MovimientoId.Id].UpdateSg = append(elementosSalidas[el.MovimientoId.Id].UpdateSg, updateSg[idx])
@@ -298,6 +307,9 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 				if elementosSalidas[el.MovimientoId.Id] == nil {
 					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
 					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId
+				} else {
+					elemento_ := creaNuevoElementoMovimiento(updateVls[idx], el)
+					actualizados = append(actualizados, elemento_)
 				}
 
 				elementosSalidas[el.MovimientoId.Id].UpdateVls = append(elementosSalidas[el.MovimientoId.Id].UpdateVls, updateVls[idx])
@@ -305,7 +317,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 		}
 
 	}
-	return elementosSalidas, updateMp, nil
+	return elementosSalidas, updateMp, actualizados, nil
 
 }
 
@@ -359,5 +371,19 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 	}
 
 	return msc, vls, sg, nil
+
+}
+
+func creaNuevoElementoMovimiento(nuevo *models.DetalleElemento_, org *models.ElementosMovimiento) *models.ElementosMovimiento {
+
+	org.SaldoCantidad = float64(nuevo.Cantidad)
+	org.SaldoValor = nuevo.ValorTotal
+	org.Unidad = float64(nuevo.Cantidad)
+	org.ValorUnitario = nuevo.ValorTotal / float64(nuevo.Cantidad)
+	org.ValorTotal = nuevo.ValorTotal
+	org.VidaUtil = nuevo.VidaUtil
+	org.ValorResidual = nuevo.ValorResidual
+
+	return org
 
 }
