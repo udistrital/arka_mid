@@ -224,8 +224,20 @@ type InfoDepreciacion struct {
 	Tipo          string
 }
 
+type DetalleAjusteAutomatico struct {
+	Movimiento *Movimiento
+	TrContable *TransaccionMovimientos
+	Elementos  []*DetalleElemento_
+}
+
 type ElementosPorActualizarSalida struct {
 	Salida    *Movimiento
 	UpdateSg  []*DetalleElemento_
 	UpdateVls []*DetalleElemento_
+}
+
+type FormatoAjusteAutomatico struct {
+	Consecutivo string
+	Elementos   []int
+	TrContable  int
 }

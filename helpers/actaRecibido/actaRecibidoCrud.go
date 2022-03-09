@@ -54,3 +54,19 @@ func GetAllHistoricoActa(query string, fields string, sortby string, order strin
 
 	return historicos, nil
 }
+
+// PutElemento put controlador elemento del api acta_recibido_crud
+func PutElemento(elemento *models.Elemento, elementoId int) (elemento_ *models.Elemento, outputError map[string]interface{}) {
+
+	funcion := "PutElemento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/" + strconv.Itoa(elementoId)
+	if err := request.SendJson(urlcrud, "PUT", &elemento_, &elemento); err != nil {
+		eval := ` - request.SendJson(urlcrud, "PUT", &elemento_, &elemento)`
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return elemento_, nil
+
+}

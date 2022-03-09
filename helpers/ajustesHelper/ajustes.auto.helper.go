@@ -1,7 +1,9 @@
 package ajustesHelper
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -178,6 +181,18 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		}
 	} else if len(updateMp) == 0 {
 		return resultado, nil
+	}
+
+	if err := submitUpdates(nuevosActa, nuevosMovArka, nuevosNovedades); err != nil {
+		return nil, err
+	}
+
+	if rs, tr, err := generarMovimientoAjuste(updateSg, updateVls, updateMsc, updateMp, movimientos); err != nil {
+		return nil, err
+	} else {
+		resultado.Movimiento = rs
+		resultado.TrContable = tr
+		resultado.Elementos = append(updateSg, (append(updateVls, append(updateMsc, updateMp...)...))...)
 	}
 
 	return resultado, nil
@@ -420,5 +435,101 @@ func generarNuevosActa(nuevos []*models.DetalleElemento_) (actualizados []*model
 	}
 
 	return actualizados, nil
+
+}
+
+func submitUpdates(elementosActa []*models.Elemento, elementosMovimiento []*models.ElementosMovimiento, novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
+
+	for _, el := range elementosActa {
+		if _, err := actaRecibido.PutElemento(el, el.Id); err != nil {
+			return err
+		}
+	}
+
+	for _, el := range elementosMovimiento {
+		if _, err := movimientosArkaHelper.PutElementosMovimiento(el, el.Id); err != nil {
+			return err
+		}
+	}
+
+	for _, nv := range novedades {
+		if _, err := movimientosArkaHelper.PutNovedadElemento(nv, nv.Id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (movimiento *models.Movimiento, trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
+
+	funcion := "generarMovimientoAjuste"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var consecutivoId int
+	movimiento = new(models.Movimiento)
+	detalle := new(models.FormatoAjusteAutomatico)
+	query := "query=Nombre:" + url.QueryEscape("Ajuste Automático")
+	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+		return nil, nil, err
+	} else {
+		movimiento.FormatoTipoMovimientoId = fm[0]
+	}
+
+	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Ajuste Aprobado")); err != nil {
+		return nil, nil, err
+	} else {
+		movimiento.EstadoMovimientoId = sm[0]
+	}
+
+	var ids []int
+	for _, el := range append(sg, append(vls, append(msc, mp...)...)...) {
+		ids = append(ids, el.Id)
+	}
+
+	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
+	transaccion := new(models.TransaccionMovimientos)
+	if consecutivo, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Ajuste automático Arka"); err != nil {
+		return nil, nil, err
+	} else {
+		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteAjustes()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivoId = consecutivoId_
+		detalle.Consecutivo = consecutivo
+		detalle.Elementos = ids
+	}
+
+	if len(movContables) > 0 {
+		trContable = new(models.TransaccionMovimientos)
+		trContable.Movimientos = movContables
+		trContable.ConsecutivoId = consecutivoId
+		trContable.FechaTransaccion = time.Now()
+		trContable.Activo = true
+		trContable.Etiquetas = ""
+		trContable.Descripcion = "Ajuste contable almacén"
+
+		if tr, err := movimientosContablesMidHelper.PostTrContable(trContable); err != nil {
+			return nil, nil, err
+		} else {
+			detalle.TrContable = tr.ConsecutivoId
+		}
+	} else {
+		detalle.TrContable = 0
+	}
+
+	if jsonData, err := json.Marshal(detalle); err != nil {
+		logs.Error(err)
+		eval := " - json.Marshal(detalle)"
+		return nil, nil, errorctrl.Error(funcion+eval, err, "500")
+	} else {
+		movimiento.Detalle = string(jsonData[:])
+	}
+
+	movimiento.Activo = true
+
+	if res, err := movimientosArkaHelper.PostMovimiento(movimiento); err != nil {
+		return nil, nil, err
+	} else {
+		return res, trContable, nil
+	}
 
 }
