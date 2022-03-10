@@ -147,6 +147,16 @@ func findElementoInArrayE(elementos []*models.Elemento, id int) (i int) {
 	return -1
 }
 
+// findElementoInArray Retorna la posicion en que se encuentra el id específicado
+func findElementoInArrayEM(elementos []*models.DetalleElemento, id int) (i int) {
+	for i, el_ := range elementos {
+		if int(el_.Id) == id {
+			return i
+		}
+	}
+	return -1
+}
+
 func getTipoComprobanteAjustes() string {
 	return "N20"
 }

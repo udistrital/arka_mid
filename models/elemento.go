@@ -53,3 +53,9 @@ type DetalleElemento_ struct {
 	VidaUtil      float64
 	ValorResidual float64
 }
+
+type DetalleElemento__ struct {
+	DetalleElemento
+	VidaUtil      float64
+	ValorResidual float64
+}
