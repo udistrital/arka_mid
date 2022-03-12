@@ -182,7 +182,13 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		return nil, err
 	} else {
 		resultado.Movimiento = rs
-		resultado.TrContable = tr
+		if tr != nil && tr.Movimientos != nil && len(tr.Movimientos) > 0 {
+			if tr_, err := getDetalleContable(tr.Movimientos); err != nil {
+				return nil, err
+			} else {
+				resultado.TrContable = tr_
+			}
+		}
 	}
 
 	if elementos_, err := fillElementos(append(updateSg, (append(updateVls, append(updateMsc, updateMp...)...))...)); err != nil {

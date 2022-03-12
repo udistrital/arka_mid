@@ -226,7 +226,7 @@ type InfoDepreciacion struct {
 
 type DetalleAjusteAutomatico struct {
 	Movimiento *Movimiento
-	TrContable *TransaccionMovimientos
+	TrContable []*DetalleMovimientoContable
 	Elementos  []*DetalleElemento__
 }
 
