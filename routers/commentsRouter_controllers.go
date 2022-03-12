@@ -100,6 +100,15 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"],
         beego.ControllerComments{
             Method: "GetOneAuto",
+            Router: "/automatico/:id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"],
+        beego.ControllerComments{
+            Method: "GetElementos",
             Router: "/automatico/elementos/:id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),

@@ -21,6 +21,8 @@ func (c *AjusteController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Post", c.PostAjuste)
 	c.Mapping("GetOne", c.GetOne)
+	c.Mapping("GetOne", c.GetElementos)
+	c.Mapping("GetOne", c.GetOneAuto)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 }
@@ -186,14 +188,14 @@ func (c *AjusteController) Put() {
 	c.ServeJSON()
 }
 
-// GetOne ...
-// @Title GetOneAuto
+// GetElementos ...
+// @Title GetElementos
 // @Description Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200 {object} []models.DetalleElemento__
 // @Failure 403 :id is empty
 // @router /automatico/elementos/:id [get]
-func (c *AjusteController) GetOneAuto() {
+func (c *AjusteController) GetElementos() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
 
@@ -204,7 +206,7 @@ func (c *AjusteController) GetOneAuto() {
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": `GetOneAuto - c.GetInt(":id")`,
+			"funcion": `GetElementos - c.GetInt(":id")`,
 			"err":     err,
 			"status":  "400",
 		})
@@ -220,8 +222,51 @@ func (c *AjusteController) GetOneAuto() {
 		}
 
 		panic(map[string]interface{}{
-			"funcion": "GetOneAuto - ajustesHelper.GetDetalleElementosActa(id)",
+			"funcion": "GetElementos - ajustesHelper.GetDetalleElementosActa(id)",
 			"err":     errors.New("No se obtuvo respuesta al consultar los elementos"),
+			"status":  "404",
+		})
+	}
+
+	c.ServeJSON()
+}
+
+// GetOneAuto ...
+// @Title GetOneAuto
+// @Description Retorna la lista de elementos asociados a un ajuste y su transaccion contable
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.DetalleAjusteAutomatico
+// @Failure 403 :id is empty
+// @router /automatico/:id [get]
+func (c *AjusteController) GetOneAuto() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un ajuste válido")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `GetOneAuto - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := ajustesHelper.GetAjusteAutomatico(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "GetOneAuto - ajustesHelper.GetAjusteAutomatico(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar el ajuste"),
 			"status":  "404",
 		})
 	}

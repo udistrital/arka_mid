@@ -1,12 +1,14 @@
 package ajustesHelper
 
 import (
-	"fmt"
+	"encoding/json"
 	"strconv"
 
+	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -201,6 +203,77 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 
 }
 
+// GetAjusteAutomatico Consulta el detalle de los elementos y la transacción contable asociada a un ajuste.
+func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
+
+	funcion := "GetAjusteAutomatico"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var (
+		ids           []int
+		query         string
+		movimiento    *models.Movimiento
+		detalle       *models.FormatoAjusteAutomatico
+		elementosActa []*models.DetalleElemento
+		elementosMov  []*models.ElementosMovimiento
+		elementos     []*models.DetalleElemento__
+	)
+
+	ajuste = new(models.DetalleAjusteAutomatico)
+
+	if movimiento, outputError = movimientosArkaHelper.GetMovimientoById(movimientoId); outputError != nil {
+		return nil, outputError
+	}
+
+	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
+		logs.Error(err)
+		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	if elementosActa, outputError = actaRecibido.GetElementos(0, detalle.Elementos); outputError != nil {
+		return nil, outputError
+	}
+
+	for _, e := range elementosActa {
+		ids = append(ids, e.Id)
+	}
+
+	query = "limit=-1&sortby=Id&order=desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
+	if elementosMov, outputError = movimientosArkaHelper.GetAllElementosMovimiento(query); outputError != nil {
+		return nil, outputError
+	}
+
+	for _, el := range elementosMov {
+		if idx := findElementoInArrayEM(elementosActa, el.ElementoActaId); idx > -1 {
+			var elemento_ *models.DetalleElemento__
+			if elemento_, outputError = fillElemento(elementosActa[idx], el); outputError != nil {
+				return nil, outputError
+			}
+
+			elementos = append(elementos, elemento_)
+		}
+	}
+
+	if detalle.TrContable > 0 {
+		if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.TrContable, "consecutivo", true); err != nil {
+			return nil, err
+		} else {
+			if detalleContable, err := getDetalleContable(tr.Movimientos); err != nil {
+				return nil, err
+			} else {
+				ajuste.TrContable = detalleContable
+			}
+		}
+	}
+
+	ajuste.Movimiento = movimiento
+	ajuste.Elementos = elementos
+
+	return ajuste, nil
+
+}
+
 // GetDetalleElementosActa Genera transacción contable, actualiza elementos y novedades como consecuencia de actualizar una serie de elementos de un acta
 func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleElemento__, outputError map[string]interface{}) {
 
@@ -229,14 +302,20 @@ func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleEle
 		return nil, outputError
 	}
 
-	for _, el := range elsMov {
-		if idx := findElementoInArrayEM(elsActa, el.ElementoActaId); idx > -1 {
-			var elemento_ *models.DetalleElemento__
-			if elemento_, outputError = fillElemento(elsActa[idx], el); outputError != nil {
-				return nil, outputError
-			}
+	if len(elsMov) > 0 {
+		for _, el := range elsMov {
+			if idx := findElementoInArrayEM(elsActa, el.ElementoActaId); idx > -1 {
+				var elemento_ *models.DetalleElemento__
+				if elemento_, outputError = fillElemento(elsActa[idx], el); outputError != nil {
+					return nil, outputError
+				}
 
-			elementos = append(elementos, elemento_)
+				elementos = append(elementos, elemento_)
+			}
+		}
+	} else {
+		if elementos, outputError = generarNuevos(elsActa); outputError != nil {
+			return nil, outputError
 		}
 	}
 

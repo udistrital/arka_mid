@@ -297,7 +297,7 @@
                     "ajustes"
                 ],
                 "description": "Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales",
-                "operationId": "AjusteController.GetOneAuto",
+                "operationId": "AjusteController.GetElementos",
                 "parameters": [
                     {
                         "in": "path",
@@ -315,6 +315,35 @@
                             "items": {
                                 "$ref": "#/definitions/models.DetalleElemento__"
                             }
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/ajustes/automatico/{id}": {
+            "get": {
+                "tags": [
+                    "ajustes"
+                ],
+                "description": "Retorna la lista de elementos asociados a un ajuste y su transaccion contable",
+                "operationId": "AjusteController.GetOneAuto",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.DetalleAjusteAutomatico"
                         }
                     },
                     "403": {

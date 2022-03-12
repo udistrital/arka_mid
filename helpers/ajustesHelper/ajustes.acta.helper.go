@@ -158,3 +158,18 @@ func generarNuevosActa(nuevos []*models.DetalleElemento_) (actualizados []*model
 	return actualizados, nil
 
 }
+
+func generarNuevos(nuevos []*models.DetalleElemento) (actualizados []*models.DetalleElemento__, outputError map[string]interface{}) {
+
+	funcion := "generarNuevosActa"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	if err := formatdata.FillStruct(nuevos, &actualizados); err != nil {
+		logs.Error(err)
+		eval := " - formatdata.FillStruct(nuevos, &actualizados)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return actualizados, nil
+
+}
