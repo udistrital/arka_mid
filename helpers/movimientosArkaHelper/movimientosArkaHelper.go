@@ -107,7 +107,7 @@ func GetAllNovedadElemento(query string) (novedades []*models.NovedadElemento, o
 		eval := " - request.GetJson(urlcrud, &novedades)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
-	return novedades, nil
+	return
 }
 
 // GetMovimientoById consulta controlador movimiento/{id} del api movimientos_arka_crud

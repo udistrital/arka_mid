@@ -67,6 +67,6 @@ func PutElemento(elemento *models.Elemento, elementoId int) (elemento_ *models.E
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return elemento_, nil
+	return
 
 }

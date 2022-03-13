@@ -380,6 +380,8 @@ func GetDeltaTiempo(ref, fin time.Time) (prct float64) {
 }
 
 // CalculaDp Genera el valor y el tiempo en años a depreciar
+// ref: Fecha de referencia para determinar el tiempo por el cual se correra la depreciacion.
+// dp: Valor calculado correspondiente a la depreciacion.
 func CalculaDp(presente, residual, vUtil float64, ref, fCorte time.Time) (dp, deltaT float64) {
 
 	if vUtil == 0 {

@@ -784,7 +784,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 	}
 }
 
-// GetInfoSalida Consulta el funcionario y el consecutivo de una salida
+// GetInfoSalida Retorna el funcionario y el consecutivo de una salida a partir del detalle del movimiento
 func GetInfoSalida(detalle string) (funcionarioId int, consecutivo string, outputError map[string]interface{}) {
 
 	funcion := "GetInfoSalida"

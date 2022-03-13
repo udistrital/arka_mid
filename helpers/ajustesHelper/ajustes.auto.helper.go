@@ -85,7 +85,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 			consecutivo = cs
 		}
 
-		if movsEntrada, err := calcularAjusteMovimiento(orgiginalesActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, consecutivo, proveedorId, "Entrada"); err != nil {
+		if movsEntrada, err := calcularAjusteMovimiento(orgiginalesActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, proveedorId, consecutivo, "Entrada"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsEntrada...)
@@ -138,7 +138,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 			ids = append(ids, el.Id)
 		}
 
-		if movsSalida, err := calcularAjusteMovimiento(orgiginalesActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, consecutivo, funcionario, "Salida"); err != nil {
+		if movsSalida, err := calcularAjusteMovimiento(orgiginalesActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, funcionario, consecutivo, "Salida"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsSalida...)

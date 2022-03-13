@@ -191,7 +191,7 @@ func (c *AjusteController) Put() {
 // GetElementos ...
 // @Title GetElementos
 // @Description Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
-// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	id		path 	int	true		"The key for staticblock"
 // @Success 200 {object} []models.DetalleElemento__
 // @Failure 403 :id is empty
 // @router /automatico/elementos/:id [get]

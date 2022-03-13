@@ -887,7 +887,7 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 	return res, nil
 }
 
-// GetConsecutivoEntrada Consulta el consecutivo de una entrada
+// GetConsecutivoEntrada Retorna el consecutivo de una entrada a partir del detalle del movimiento.
 func GetConsecutivoEntrada(detalle string) (consecutivo string, outputError map[string]interface{}) {
 
 	funcion := "GetConsecutivoEntrada"

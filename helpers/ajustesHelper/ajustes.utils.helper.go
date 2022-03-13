@@ -14,7 +14,11 @@ import (
 )
 
 // generaTrContable Dado un valor, subgrupo nuevo y original genera la transacción contable.
-func generaTrContable(delta float64, consecutivo, tipoMedicion string, db, cr, sgOriginal, sgNuevo, tercero int, ctasSg map[int]*models.CuentaSubgrupo, ctas map[string]*models.CuentaContable) (movimientos []*models.MovimientoTransaccion) {
+func generaTrContable(delta float64,
+	consecutivo, tipoMedicion string,
+	db, cr, sgOriginal, sgNuevo, tercero int,
+	ctasSg map[int]*models.CuentaSubgrupo,
+	ctas map[string]*models.CuentaContable) (movimientos []*models.MovimientoTransaccion) {
 
 	dsc := getDescripcionMovContable(tipoMedicion, consecutivo)
 	if sgOriginal > 0 {
@@ -67,7 +71,8 @@ func generaTrContable(delta float64, consecutivo, tipoMedicion string, db, cr, s
 }
 
 // getCuentasByMovimientoSubgrupos Retorna las cuentas de cada subgrupo en una estructura para fácil acceso
-func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (cuentasSubgrupo map[int]*models.CuentaSubgrupo, outputError map[string]interface{}) {
+func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
+	cuentasSubgrupo map[int]*models.CuentaSubgrupo, outputError map[string]interface{}) {
 
 	funcion := "getCuentasByMovimientoSubgrupos"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")

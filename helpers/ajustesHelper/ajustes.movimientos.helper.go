@@ -21,7 +21,15 @@ import (
 )
 
 // separarElementosPorModificacion Separa los elementos según se deba modificar Subgrupo, Valores, Misceláneos o Mediciones posteriores
-func separarElementosPorModificacion(originales []*models.Elemento, actualizados []*models.DetalleElemento_, mediciones bool) (msc, vls, sg, mp []*models.DetalleElemento_, outputError map[string]interface{}) {
+// msc: Cambios miscelaneos, elementos a los que unicamente se les debe ajustar nombre, marca, serie, unidad.
+// vls: Cambios a valores, elementos a los que se les debe cambiar el valor total.
+// sg: Cambia el subgrupo del elemento. Se ajusta la placa de acuerdo al nuevo subgrupo.
+// mp: Cambian los parametros de las mediciones posteriores. vida util o valor residual.
+func separarElementosPorModificacion(originales []*models.Elemento,
+	actualizados []*models.DetalleElemento_,
+	mediciones bool) (
+	msc, vls, sg, mp []*models.DetalleElemento_,
+	outputError map[string]interface{}) {
 
 	funcion := "separarElementosPorModificacion"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -51,8 +59,14 @@ func separarElementosPorModificacion(originales []*models.Elemento, actualizados
 
 }
 
-// calcularAjusteMovimiento Calcula la transacción contable generada a partir de los elementos y el cambio de cada uno
-func calcularAjusteMovimiento(originales []*models.Elemento, actualizarVl, actualizarSg []*models.DetalleElemento_, movimientoId int, consecutivo string, proveedorId int, tipoMovimiento string) (movimientos []*models.MovimientoTransaccion, outputError map[string]interface{}) {
+// calcularAjusteMovimiento Calcula la transacción contable generada a partir de los elementos y el cambio de cada uno.
+// actualizarVl: Elementos para actualizar los montos de las transacciones contables.
+// actualizarSg: Elementos para actualizar el subgrupo y por tanto, pueden cambiar las cuentas.
+func calcularAjusteMovimiento(originales []*models.Elemento,
+	actualizarVl, actualizarSg []*models.DetalleElemento_,
+	movimientoId, proveedorId int,
+	consecutivo, tipoMovimiento string) (movimientos []*models.MovimientoTransaccion,
+	outputError map[string]interface{}) {
 
 	funcion := "calcularAjusteMovimiento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -91,16 +105,27 @@ func calcularAjusteMovimiento(originales []*models.Elemento, actualizarVl, actua
 	for _, el := range actualizarSg {
 		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
 
-			if detalleCuenta_, err := fillCuentas(detalleCuenta, []string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
-				cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId, cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId, cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId}); err != nil {
+			if detalleCuenta_, err := fillCuentas(detalleCuenta,
+				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
+					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId,
+					cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId,
+					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId}); err != nil {
 				return nil, err
 			} else {
 				detalleCuenta = detalleCuenta_
 			}
 
-			movimientos = append(movimientos, generaTrContable(el.ValorTotal-originales[idx].ValorTotal, consecutivo, tipoMovimiento,
-				movDebito, movCredito, originales[idx].SubgrupoCatalogoId, el.SubgrupoCatalogoId, proveedorId, cuentasSubgrupo, detalleCuenta)...)
-
+			movimientos = append(movimientos,
+				generaTrContable(el.ValorTotal-originales[idx].ValorTotal,
+					consecutivo,
+					tipoMovimiento,
+					movDebito,
+					movCredito,
+					originales[idx].SubgrupoCatalogoId,
+					el.SubgrupoCatalogoId,
+					proveedorId,
+					cuentasSubgrupo,
+					detalleCuenta)...)
 		}
 
 	}
@@ -108,25 +133,39 @@ func calcularAjusteMovimiento(originales []*models.Elemento, actualizarVl, actua
 	for _, el := range actualizarVl {
 		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
 
-			if detalleCuenta_, err := fillCuentas(detalleCuenta, []string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
-				cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId, cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId, cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId}); err != nil {
+			if detalleCuenta_, err := fillCuentas(detalleCuenta,
+				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
+					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId,
+					cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId,
+					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaDebitoId}); err != nil {
 			} else {
 				detalleCuenta = detalleCuenta_
 			}
 
-			movimientos = append(movimientos, generaTrContable(el.ValorTotal-originales[idx].ValorTotal, consecutivo, tipoMovimiento,
-				movDebito, movCredito, 0, el.SubgrupoCatalogoId, proveedorId, cuentasSubgrupo, detalleCuenta)...)
+			movimientos = append(movimientos,
+				generaTrContable(el.ValorTotal-originales[idx].ValorTotal,
+					consecutivo,
+					tipoMovimiento,
+					movDebito,
+					movCredito,
+					0,
+					el.SubgrupoCatalogoId,
+					proveedorId,
+					cuentasSubgrupo,
+					detalleCuenta)...)
 
 		}
 
 	}
 
-	return movimientos, nil
+	return
 
 }
 
 // submitUpdates Actualiza los registros relacionados a las novedades y elementos
-func submitUpdates(elementosActa []*models.Elemento, elementosMovimiento []*models.ElementosMovimiento, novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
+func submitUpdates(elementosActa []*models.Elemento,
+	elementosMovimiento []*models.ElementosMovimiento,
+	novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
 
 	for _, el := range elementosActa {
 		if _, err := actaRecibido.PutElemento(el, el.Id); err != nil {
@@ -151,7 +190,15 @@ func submitUpdates(elementosActa []*models.Elemento, elementosMovimiento []*mode
 }
 
 // separarElementosPorSalida Separa los elementos según el tipo de ajuste de cada uno y los agrupa según la salida. Además retorna los elementos actualizados
-func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVls, updateSg, updateMp []*models.DetalleElemento_) (elementosSalidas map[int]*models.ElementosPorActualizarSalida, pendientes_ []*models.DetalleElemento_, actualizados []*models.ElementosMovimiento, outputError map[string]interface{}) {
+// updateVl: Elementos para actualizar los montos de las transacciones contables.
+// updateMp: Elementos para actualizar los parametros iniciales de las mediciones posteriores.
+// updateSg: Elementos para actualizar el subgrupo y por tanto, pueden cambiar las cuentas.
+func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
+	updateVls, updateSg, updateMp []*models.DetalleElemento_) (
+	elementosSalidas map[int]*models.ElementosPorActualizarSalida,
+	pendientes_ []*models.DetalleElemento_,
+	actualizados []*models.ElementosMovimiento,
+	outputError map[string]interface{}) {
 
 	funcion := "separarElementosPorSalida"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -203,7 +250,9 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento, updateVl
 }
 
 // generarMovimientoAjuste Crea el registro del movimiento de inventario y contable resultantes del ajuste
-func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (movimiento *models.Movimiento, trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
+func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
+	movContables []*models.MovimientoTransaccion) (movimiento *models.Movimiento,
+	trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
 
 	funcion := "generarMovimientoAjuste"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")

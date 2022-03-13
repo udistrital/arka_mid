@@ -264,7 +264,8 @@ paths:
         name: id
         description: The key for staticblock
         required: true
-        type: string
+        type: integer
+        format: int64
       responses:
         "200":
           description: ""

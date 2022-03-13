@@ -14,7 +14,12 @@ import (
 	"github.com/udistrital/utils_oas/formatdata"
 )
 
-// determinarDeltaActa Separa elementos según el ajuste
+// determinarDeltaActa Determina el tipo de ajuste del elemento.
+// org: Elementos antes del ajuste.
+// nvo: Elementos editados.
+// msc: Cambios miscelaneos, elementos a los que unicamente se les debe ajustar nombre, marca, serie, unidad.
+// vls: Cambios a valores, elementos a los que se les debe cambiar el valor total.
+// sg: Cambia el subgrupo del elemento. Se ajusta la placa de acuerdo al nuevo subgrupo.
 func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg bool, outputError map[string]interface{}) {
 
 	funcion := "determinarDeltaActa"
@@ -30,7 +35,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 			eval := " - catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud)"
 			return false, false, false, errorctrl.Error(funcion+eval, err, "500")
 		} else {
-			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa != "" {
+			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa == "" {
 				ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
 				if placa_, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
 					return false, false, false, err
