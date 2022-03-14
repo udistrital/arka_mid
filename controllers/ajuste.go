@@ -19,7 +19,10 @@ type AjusteController struct {
 // URLMapping ...
 func (c *AjusteController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("Post", c.PostAjuste)
 	c.Mapping("GetOne", c.GetOne)
+	c.Mapping("GetOne", c.GetElementos)
+	c.Mapping("GetOne", c.GetOneAuto)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 }
@@ -40,6 +43,32 @@ func (c *AjusteController) Post() {
 		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if v, err := ajustesHelper.PostAjuste(v); err != nil {
+			logs.Error(err)
+			c.Data["system"] = err
+			c.Abort("404")
+		} else {
+			c.Data["json"] = v
+		}
+	}
+	c.ServeJSON()
+}
+
+// Post ...
+// @Title Create
+// @Description create Ajuste
+// @Param	body		body 	[]models.DetalleElemento_	true		"body for Ajuste content"
+// @Success 201 {object} models.DetalleAjusteAutomatico
+// @Failure 403 body is empty
+// @router /automatico [post]
+func (c *AjusteController) PostAjuste() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	var v []*models.DetalleElemento_
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
+	} else {
+		if v, err := ajustesHelper.GenerarAjusteAutomatico(v); err != nil {
 			logs.Error(err)
 			c.Data["system"] = err
 			c.Abort("404")
@@ -152,6 +181,92 @@ func (c *AjusteController) Put() {
 		panic(map[string]interface{}{
 			"funcion": "Put - ajustesHelper.AprobarAjuste(id)",
 			"err":     errors.New("No se obtuvo respuesta al aprobar el ajuste"),
+			"status":  "404",
+		})
+	}
+
+	c.ServeJSON()
+}
+
+// GetElementos ...
+// @Title GetElementos
+// @Description Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
+// @Param	id		path 	int	true		"The key for staticblock"
+// @Success 200 {object} []models.DetalleElemento__
+// @Failure 403 :id is empty
+// @router /automatico/elementos/:id [get]
+func (c *AjusteController) GetElementos() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un acta válida")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `GetElementos - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := ajustesHelper.GetDetalleElementosActa(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "GetElementos - ajustesHelper.GetDetalleElementosActa(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar los elementos"),
+			"status":  "404",
+		})
+	}
+
+	c.ServeJSON()
+}
+
+// GetOneAuto ...
+// @Title GetOneAuto
+// @Description Retorna la lista de elementos asociados a un ajuste y su transaccion contable
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.DetalleAjusteAutomatico
+// @Failure 403 :id is empty
+// @router /automatico/:id [get]
+func (c *AjusteController) GetOneAuto() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar un ajuste válido")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `GetOneAuto - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := ajustesHelper.GetAjusteAutomatico(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "GetOneAuto - ajustesHelper.GetAjusteAutomatico(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar el ajuste"),
 			"status":  "404",
 		})
 	}
