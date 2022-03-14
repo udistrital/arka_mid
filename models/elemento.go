@@ -47,3 +47,15 @@ type DetalleElemento struct {
 	FechaCreacion      time.Time
 	FechaModificacion  time.Time
 }
+
+type DetalleElemento_ struct {
+	Elemento
+	VidaUtil      float64
+	ValorResidual float64
+}
+
+type DetalleElemento__ struct {
+	DetalleElemento
+	VidaUtil      float64
+	ValorResidual float64
+}

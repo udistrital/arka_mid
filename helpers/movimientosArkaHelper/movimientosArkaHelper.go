@@ -96,6 +96,20 @@ func GetAllMovimiento(query string) (movimientos []*models.Movimiento, outputErr
 	return movimientos, nil
 }
 
+// GetAllNovedadElemento query controlador novedad_elemento del api movimientos_arka_crud
+func GetAllNovedadElemento(query string) (novedades []*models.NovedadElemento, outputError map[string]interface{}) {
+
+	funcion := "GetAllNovedadElemento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "novedad_elemento?" + query
+	if err := request.GetJson(urlcrud, &novedades); err != nil {
+		eval := " - request.GetJson(urlcrud, &novedades)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return
+}
+
 // GetMovimientoById consulta controlador movimiento/{id} del api movimientos_arka_crud
 func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
@@ -227,6 +241,38 @@ func PutSoporteMovimiento(soporte *models.SoporteMovimiento, soporteId int) (sop
 
 }
 
+// PutElementosMovimiento put controlador elementos_movimiento del api movimientos_arka_crud
+func PutElementosMovimiento(elementoM *models.ElementosMovimiento, elementoId int) (elementoM_ *models.ElementosMovimiento, outputError map[string]interface{}) {
+
+	funcion := "PutElementosMovimiento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/" + strconv.Itoa(elementoId)
+	if err := request.SendJson(urlcrud, "PUT", &elementoM_, &elementoM); err != nil {
+		eval := ` - request.SendJson(urlcrud, "PUT", &soporteR, &soporte)`
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return elementoM_, nil
+
+}
+
+// PutNovedadElemento put controlador novedad_elemento del api movimientos_arka_crud
+func PutNovedadElemento(novedad *models.NovedadElemento, novedadId int) (novedad_ *models.NovedadElemento, outputError map[string]interface{}) {
+
+	funcion := "PutNovedadElemento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "novedad_elemento/" + strconv.Itoa(novedadId)
+	if err := request.SendJson(urlcrud, "PUT", &novedad_, &novedad); err != nil {
+		eval := ` - request.SendJson(urlcrud, "PUT", &novedad_, &novedad)`
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return novedad_, nil
+
+}
+
 // GetElementosFuncionario query controlador elementos_movimiento/funcionario/{funcionarioId} del api movimientos_arka_crud
 func GetElementosFuncionario(funcionarioId int) (movimientos []int, outputError map[string]interface{}) {
 
@@ -284,4 +330,18 @@ func PostTrNovedadElemento(novedad *models.NovedadElemento) (novedadR *models.No
 	}
 
 	return novedadR, nil
+}
+
+// GetEntradaByActa consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
+func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputError map[string]interface{}) {
+
+	funcion := "GetEntradaByActa"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/entrada/" + strconv.Itoa(acta_recibido_id)
+	if err := request.GetJson(urlcrud, &entrada); err != nil {
+		eval := " - request.GetJson(urlcrud, &entrada)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
+	}
+	return entrada, nil
 }

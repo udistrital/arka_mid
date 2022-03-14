@@ -173,7 +173,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&sortby=ActaRecibidoId__Id&order=desc"
-	urlEstados += "&query=Activo:true"
+	urlEstados += "&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre:Regular"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
 		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
