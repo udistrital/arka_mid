@@ -116,7 +116,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 			}
 
 			movimientos = append(movimientos,
-				generaTrContable(el.ValorTotal-originales[idx].ValorTotal,
+				generaTrContable(originales[idx].ValorTotal, el.ValorTotal,
 					consecutivo,
 					tipoMovimiento,
 					movDebito,
@@ -143,7 +143,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 			}
 
 			movimientos = append(movimientos,
-				generaTrContable(el.ValorTotal-originales[idx].ValorTotal,
+				generaTrContable(originales[idx].ValorTotal, el.ValorTotal,
 					consecutivo,
 					tipoMovimiento,
 					movDebito,
@@ -345,7 +345,9 @@ func getDetalleContable(movimientos []*models.MovimientoTransaccion) (movimiento
 	for _, mov := range movimientos {
 		mov_ := new(models.PreMovAjuste)
 		mov_.Cuenta = mov.CuentaId
-		mov_.TerceroId = *mov.TerceroId
+		if mov.TerceroId != nil {
+			mov_.TerceroId = *mov.TerceroId
+		}
 		mov_.Descripcion = mov.Descripcion
 
 		if mov.TipoMovimientoId == crId {

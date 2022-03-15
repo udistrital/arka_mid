@@ -127,7 +127,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 			novedadesNuevas[key] = append(novedadesNuevas[key], novedadNueva)
 
 			movimientos = append(movimientos,
-				generaTrContable(dpNvo-dpOrg,
+				generaTrContable(dpOrg, dpNvo,
 					detalleMd[nv_.MovimientoId.Id].FechaCorte,
 					nv_.MovimientoId.FormatoTipoMovimientoId.Nombre,
 					movDebito,
