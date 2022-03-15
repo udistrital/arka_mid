@@ -244,15 +244,24 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 		return nil, outputError
 	}
 
-	for _, el := range elementosMov {
-		if idx := findElementoInArrayEM(elementosActa, el.ElementoActaId); idx > -1 {
-			var elemento_ *models.DetalleElemento__
-			if elemento_, outputError = fillElemento(elementosActa[idx], el); outputError != nil {
-				return nil, outputError
-			}
+	for _, el := range elementosActa {
+		var idx int
+		var elemento_ *models.DetalleElemento__
+		detalle := new(models.ElementosMovimiento)
 
-			elementos = append(elementos, elemento_)
+		if idx = findElementoInArrayElementosMovimiento(elementosMov, el.Id); idx > -1 {
+			detalle = elementosMov[idx]
+		} else {
+			detalle.ValorResidual = 0
+			detalle.VidaUtil = 0
 		}
+
+		if elemento_, outputError = fillElemento(el, detalle); outputError != nil {
+			return nil, outputError
+		}
+
+		elementos = append(elementos, elemento_)
+
 	}
 
 	if detalle.TrContable > 0 {
