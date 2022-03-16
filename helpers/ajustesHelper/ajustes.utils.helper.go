@@ -22,32 +22,34 @@ func generaTrContable(vInicial, vNuevo float64,
 
 	dsc := getDescripcionMovContable(tipoMedicion, consecutivo)
 	if sgOriginal > 0 {
-		if ctasSg[sgOriginal].CuentaCreditoId != ctasSg[sgNuevo].CuentaCreditoId {
-			movimientoR := asientoContable.CreaMovimiento(vInicial, dsc, tercero, ctas[ctasSg[sgOriginal].CuentaCreditoId], db)
-			movimiento := asientoContable.CreaMovimiento(vNuevo, dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], cr)
-			movimientos = append(movimientos, movimientoR, movimiento)
-		} else if vInicial != vNuevo {
-			tipoMovimiento := cr
-			if vNuevo-vInicial < 0 {
-				tipoMovimiento = db
+		if ctasSg[sgOriginal] != nil && ctasSg[sgNuevo] != nil {
+			if ctasSg[sgOriginal].CuentaCreditoId != ctasSg[sgNuevo].CuentaCreditoId {
+				movimientoR := asientoContable.CreaMovimiento(vInicial, dsc, tercero, ctas[ctasSg[sgOriginal].CuentaCreditoId], db)
+				movimiento := asientoContable.CreaMovimiento(vNuevo, dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], cr)
+				movimientos = append(movimientos, movimientoR, movimiento)
+			} else if vInicial != vNuevo {
+				tipoMovimiento := cr
+				if vNuevo-vInicial < 0 {
+					tipoMovimiento = db
+				}
+
+				movimiento := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimiento)
+				movimientos = append(movimientos, movimiento)
 			}
 
-			movimiento := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimiento)
-			movimientos = append(movimientos, movimiento)
-		}
+			if ctasSg[sgOriginal].CuentaDebitoId != ctasSg[sgNuevo].CuentaDebitoId {
+				movimientoR := asientoContable.CreaMovimiento(vInicial, dsc, tercero, ctas[ctasSg[sgOriginal].CuentaDebitoId], cr)
+				movimiento := asientoContable.CreaMovimiento(vNuevo, dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], db)
+				movimientos = append(movimientos, movimientoR, movimiento)
+			} else if vInicial != vNuevo {
+				tipoMovimiento := db
+				if vNuevo-vInicial < 0 {
+					tipoMovimiento = cr
+				}
 
-		if ctasSg[sgOriginal].CuentaDebitoId != ctasSg[sgNuevo].CuentaDebitoId {
-			movimientoR := asientoContable.CreaMovimiento(vInicial, dsc, tercero, ctas[ctasSg[sgOriginal].CuentaDebitoId], cr)
-			movimiento := asientoContable.CreaMovimiento(vNuevo, dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], db)
-			movimientos = append(movimientos, movimientoR, movimiento)
-		} else if vInicial != vNuevo {
-			tipoMovimiento := db
-			if vNuevo-vInicial < 0 {
-				tipoMovimiento = cr
+				movimiento := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimiento)
+				movimientos = append(movimientos, movimiento)
 			}
-
-			movimiento := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimiento)
-			movimientos = append(movimientos, movimiento)
 		}
 
 	} else {
