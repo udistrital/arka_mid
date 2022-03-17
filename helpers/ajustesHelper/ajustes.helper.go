@@ -10,10 +10,10 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -97,7 +97,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
 		parametroDebitoId = db_
@@ -189,7 +189,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
 		parametroDebitoId = db_
