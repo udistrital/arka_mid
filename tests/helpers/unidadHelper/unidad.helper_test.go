@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/unidadHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 )
 
 var parameters struct {
@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 // GetUnidad ...
 func TestGetUnidad(t *testing.T) {
 
-	if valor, err := unidadHelper.GetUnidad(1); err != nil {
+	if valor, err := administrativa.GetUnidad(1); err != nil {
 		t.Error("No se pudo consultar la unidad", err)
 		t.Fail()
 	} else {

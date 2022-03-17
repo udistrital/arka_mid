@@ -16,6 +16,7 @@ import (
 
 	// "github.com/udistrital/utils_oas/formatdata"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
@@ -486,15 +487,8 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		return nil, outputError
 	}
 
-	urlUnidad := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
-	if _, err := request.GetJsonTest(urlUnidad, &Unidades); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlUnidad, &Unidades)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if outputError = administrativa.GetUnidades(&Unidades); outputError != nil {
+		return
 	}
 
 	parametros = append(parametros, map[string]interface{}{
@@ -586,15 +580,8 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		return nil, outputError
 	}
 
-	urlAdmistrativa := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
-	if _, err := request.GetJsonTest(urlAdmistrativa, &Unidades); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlAdmistrativa, &Unidades)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if outputError = administrativa.GetUnidades(&Unidades); outputError != nil {
+		return
 	}
 
 	file, err := ioutil.ReadAll(c)

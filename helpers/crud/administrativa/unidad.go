@@ -1,4 +1,4 @@
-package unidadHelper
+package administrativa
 
 import (
 	"fmt"
@@ -62,4 +62,17 @@ func GetUnidad(unidadId int) (unidad []*models.Unidad, outputError map[string]in
 		}
 		return nil, outputError
 	}
+}
+
+func GetUnidades(respuesta interface{}) (outputError map[string]interface{}) {
+	urlUnidad := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
+	if _, err := request.GetJsonTest(urlUnidad, &respuesta); err != nil {
+		logs.Error(err)
+		outputError = map[string]interface{}{
+			"funcion": "GetUnidades - request.GetJsonTest(urlUnidad, &Unidades)",
+			"err":     err,
+			"status":  "502",
+		}
+	}
+	return
 }

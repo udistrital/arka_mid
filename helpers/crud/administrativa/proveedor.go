@@ -1,4 +1,4 @@
-package proveedorHelper
+package administrativa
 
 import (
 	"fmt"
@@ -11,8 +11,8 @@ import (
 )
 
 // GetProveedorById Retorna los datos de un proveedor a partir del Id como proveedor
-// NOTA: Esta función está DEPRECADA, en términos que a medio plazo se registrarán
-// los proveedores en Terceros. En lo posible usar Terceros API
+//
+// Deprecated: Traer de terceros_crud o terceros_mid
 func GetProveedorById(proveedorId int) (proveedor []*models.Proveedor, outputError map[string]interface{}) {
 
 	defer func() {
@@ -64,8 +64,8 @@ func GetProveedorById(proveedorId int) (proveedor []*models.Proveedor, outputErr
 }
 
 // GetProveedorByDoc Retorna los datos de un proveedor a partir del # de documento
-// NOTA: Esta función está DEPRECADA, en términos que a medio plazo se registrarán
-// los proveedores en Terceros. En lo posible usar Terceros API
+//
+// Deprecated: Traer de terceros_crud o terceros_mid
 func GetProveedorByDoc(docNum string) (proveedor *models.Proveedor, outputError map[string]interface{}) {
 
 	defer func() {

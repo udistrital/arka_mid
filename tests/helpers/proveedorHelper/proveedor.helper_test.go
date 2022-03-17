@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/proveedorHelper"
+
+	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 )
 
 var parameters struct {
@@ -22,7 +23,7 @@ func TestMain(m *testing.M) {
 
 // GetProveedorById ...
 func TestGetProveedorById(t *testing.T) {
-	valor, err := proveedorHelper.GetProveedorById(1)
+	valor, err := administrativa.GetProveedorById(1)
 	if err != nil {
 		t.Error("No se pudo consultar el proveedor", err)
 		t.Fail()
