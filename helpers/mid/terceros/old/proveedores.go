@@ -1,4 +1,4 @@
-package tercerosHelper
+package old
 
 import (
 	"fmt"
@@ -8,9 +8,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	// "github.com/udistrital/arka_mid/helpers/utilsHelper"
-
-	"github.com/udistrital/arka_mid/models"
 	// "github.com/udistrital/utils_oas/formatdata"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 

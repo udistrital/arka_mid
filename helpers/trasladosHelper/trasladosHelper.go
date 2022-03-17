@@ -8,10 +8,11 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -44,14 +45,14 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	}
 
 	// Se consulta el detalle del funcionario origen
-	if origen, err := tercerosMidHelper.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
+	if origen, err := midTerceros.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioOrigen = origen
 	}
 
 	// Se consulta el detalle del funcionario destino
-	if destino, err := tercerosMidHelper.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
+	if destino, err := midTerceros.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioDestino = destino
@@ -266,7 +267,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 
 			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					}
 					return nil, nil

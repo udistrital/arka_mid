@@ -1,4 +1,4 @@
-package tercerosHelper
+package terceros
 
 import (
 	"errors"

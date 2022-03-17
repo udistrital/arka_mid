@@ -10,7 +10,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -94,8 +94,8 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		return detalleD, nil
 	}
 
-	query = "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
-	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+	query = "query=TipoDocumentoId__Nombre:NIT,Numero:" + crudTerceros.GetDocUD()
+	if terceroUD_, err := crudTerceros.GetAllDatosIdentificacion(query); err != nil {
 		return nil, err
 	} else {
 		terceroUD = terceroUD_[0].TerceroId.Id
@@ -188,8 +188,8 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
-	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + crudTerceros.GetDocUD()
+	if terceroUD_, err := crudTerceros.GetAllDatosIdentificacion(query); err != nil {
 		return nil, err
 	} else {
 		terceroUD = terceroUD_[0].TerceroId.Id
@@ -318,8 +318,8 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		return detalleD, nil
 	}
 
-	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
-	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + crudTerceros.GetDocUD()
+	if terceroUD_, err := crudTerceros.GetAllDatosIdentificacion(query); err != nil {
 		return nil, err
 	} else {
 		terceroUD = terceroUD_[0].TerceroId.Id

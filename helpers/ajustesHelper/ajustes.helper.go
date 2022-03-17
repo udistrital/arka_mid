@@ -8,11 +8,12 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -145,7 +146,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		}
 
 		if mov.TerceroId > 0 {
-			if tercero_, err := tercerosHelper.GetTerceroById(mov.TerceroId); err != nil {
+			if tercero_, err := crudTerceros.GetTerceroById(mov.TerceroId); err != nil {
 				return nil, err
 			} else {
 				mov_.TerceroId = tercero_

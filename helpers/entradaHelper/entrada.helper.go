@@ -11,14 +11,14 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
-
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
@@ -367,7 +367,7 @@ func GetEncargadoElemento(placa string) (idElemento *models.Tercero, outputError
 			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
 			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
 				idtercero := int(resultado["funcionario"].(float64))
-				if tercero, err := tercerosHelper.GetTerceroById(idtercero); err == nil {
+				if tercero, err := crudTerceros.GetTerceroById(idtercero); err == nil {
 					return tercero, nil
 				} else {
 					return nil, err

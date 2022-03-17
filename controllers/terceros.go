@@ -6,7 +6,9 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	midTercerosOld "github.com/udistrital/arka_mid/helpers/mid/terceros/old"
 )
 
 // TercerosController operations for Terceros
@@ -47,7 +49,7 @@ func (c *TercerosController) GetOne() {
 
 	idStr := c.Ctx.Input.Param(":id")
 
-	if v, err := tercerosHelper.GetNombreTerceroById(idStr); err != nil {
+	if v, err := crudTerceros.GetNombreTerceroById(idStr); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
@@ -95,7 +97,7 @@ func (c *TercerosController) GetTipos() {
 		}
 	}()
 
-	if v, err := tercerosHelper.GetTipos(); err == nil {
+	if v, err := midTercerosOld.GetTipos(); err == nil {
 		c.Data["json"] = v
 		c.ServeJSON()
 	} else {
@@ -130,7 +132,7 @@ func (c *TercerosController) GetByTipo() {
 
 	tipo := c.Ctx.Input.Param(":tipo")
 
-	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
+	if helper, err := midTercerosOld.GetHelperTipo(tipo); err == nil {
 		if v, err := helper(0); err == nil {
 			c.Data["json"] = v
 		} else {
@@ -187,7 +189,7 @@ func (c *TercerosController) GetByTipoAndID() {
 		})
 	}
 
-	if helper, err := tercerosHelper.GetHelperTipo(tipo); err == nil {
+	if helper, err := midTercerosOld.GetHelperTipo(tipo); err == nil {
 		if v, err := helper(id); err == nil {
 			if len(v) == 0 {
 				err := fmt.Errorf("no se encontró un Tercero tipo '%s' con id '%d'", tipo, id)

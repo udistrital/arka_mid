@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -13,17 +14,14 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 
+	// "github.com/udistrital/utils_oas/formatdata"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-
-	// "github.com/udistrital/utils_oas/formatdata"
-	"net/url"
-
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -132,7 +130,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 			if proveedor || contratista {
 				// fmt.Println(usr.Documento)
-				if data, err := tercerosHelper.GetTerceroByDoc(usr.Documento); err == nil {
+				if data, err := crudTerceros.GetTerceroByDoc(usr.Documento); err == nil {
 					// fmt.Println(data.TerceroId.Id)
 					idTercero = data.TerceroId.Id
 				} else {
@@ -279,7 +277,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					} else {
 						return nil, err

@@ -1,7 +1,7 @@
-package tercerosMidHelper
+package terceros
 
 import (
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -26,7 +26,7 @@ func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionari
 	}
 
 	// Consulta correo
-	if correo_, err := tercerosHelper.GetCorreo(id); err != nil {
+	if correo_, err := crudTerceros.GetCorreo(id); err != nil {
 		return nil, err
 	} else {
 		DetalleFuncionario.Correo = correo_
@@ -51,7 +51,7 @@ func GetInfoTerceroById(id int) (InfoTercero *models.InfoTercero, outputError ma
 	InfoTercero = new(models.InfoTercero)
 
 	// Consulta nombre
-	if tercero_, err := tercerosHelper.GetTerceroById(id); err != nil {
+	if tercero_, err := crudTerceros.GetTerceroById(id); err != nil {
 		return nil, err
 	} else {
 		InfoTercero.Tercero = tercero_

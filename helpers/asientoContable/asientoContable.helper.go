@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -147,14 +148,14 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		if tr, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
-			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 				return nil, err
 			} else {
 				res["resultadoTransaccion"] = fillDetalle(infoCuentas, tr, tercero.Numero)
 			}
 		}
 	} else {
-		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+		if tercero, err := crudTerceros.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 			return nil, err
 		} else {
 			res["simulacro"] = fillDetalle(infoCuentas, &transaccion, tercero.Numero)

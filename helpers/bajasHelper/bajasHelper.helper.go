@@ -9,14 +9,15 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -362,7 +363,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 
 			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					}
 					return nil, nil
@@ -435,7 +436,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	// Se consulta el detalle del funcionario solicitante
 	if detalle.Funcionario > 0 {
-		if funcionario, err := tercerosMidHelper.GetInfoTerceroById(detalle.Funcionario); err != nil {
+		if funcionario, err := midTerceros.GetInfoTerceroById(detalle.Funcionario); err != nil {
 			return nil, err
 		} else {
 			Baja.Funcionario = funcionario
@@ -444,7 +445,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	// Se consulta el detalle del revisor si lo hay
 	if detalle.Revisor > 0 {
-		if revisor, err := tercerosMidHelper.GetInfoTerceroById(detalle.Revisor); err != nil {
+		if revisor, err := midTerceros.GetInfoTerceroById(detalle.Revisor); err != nil {
 			return nil, err
 		} else {
 			Baja.Revisor = revisor
@@ -524,7 +525,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 			Elemento.Ubicacion = ubicacion_
 		}
 
-		if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(fc); err != nil {
+		if funcionario_, err := midTerceros.GetInfoTerceroById(fc); err != nil {
 			return nil, err
 		} else {
 			Elemento.Funcionario = funcionario_
@@ -595,7 +596,7 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 					elemento.Ubicacion = ubicacion_
 				}
 
-				if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(fc); err != nil {
+				if funcionario_, err := midTerceros.GetInfoTerceroById(fc); err != nil {
 					return nil, err
 				} else {
 					elemento.Funcionario = funcionario_
