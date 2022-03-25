@@ -52,7 +52,7 @@ func generaTrContable(vInicial, vNuevo float64,
 			}
 		}
 
-	} else {
+	} else if ctasSg[sgNuevo] != nil {
 
 		tipoMovimientoC := cr
 		tipoMovimientoD := db
