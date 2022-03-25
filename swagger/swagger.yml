@@ -165,7 +165,7 @@ paths:
         description: body for Ajuste content
         required: true
         schema:
-          $ref: '#/definitions/ajustesHelper.PreTrAjuste'
+          $ref: '#/definitions/models.PreTrAjuste'
       responses:
         "201":
           description: ""
@@ -1008,9 +1008,6 @@ paths:
 definitions:
   '{}':
     title: '{}'
-    type: object
-  ajustesHelper.PreTrAjuste:
-    title: PreTrAjuste
     type: object
   map[string]interface{}:
     title: map[string]interface{}
@@ -2014,6 +2011,33 @@ definitions:
         $ref: '#/definitions/models.Parametro'
       TipoParametroId:
         $ref: '#/definitions/models.TipoParametro'
+  models.PreMovAjuste:
+    title: PreMovAjuste
+    type: object
+    properties:
+      Credito:
+        type: number
+        format: double
+      Cuenta:
+        type: string
+      Debito:
+        type: number
+        format: double
+      Descripcion:
+        type: string
+      TerceroId:
+        type: integer
+        format: int64
+  models.PreTrAjuste:
+    title: PreTrAjuste
+    type: object
+    properties:
+      Descripcion:
+        type: string
+      Movimientos:
+        type: array
+        items:
+          $ref: '#/definitions/models.PreMovAjuste'
   models.Salida:
     title: Salida
     type: object

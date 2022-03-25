@@ -18,8 +18,8 @@ type AjusteController struct {
 
 // URLMapping ...
 func (c *AjusteController) URLMapping() {
-	c.Mapping("Post", c.Post)
 	c.Mapping("Post", c.PostAjuste)
+	c.Mapping("Post", c.PostManual)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("GetOne", c.GetElementos)
 	c.Mapping("GetOne", c.GetOneAuto)
@@ -27,14 +27,14 @@ func (c *AjusteController) URLMapping() {
 	c.Mapping("Put", c.Put)
 }
 
-// Post ...
+// PostManual ...
 // @Title Create
 // @Description create Ajuste
-// @Param	body		body 	ajustesHelper.PreTrAjuste	true		"body for Ajuste content"
+// @Param	body		body 	models.PreTrAjuste	true		"body for Ajuste content"
 // @Success 201 {object} models.Movimiento
 // @Failure 403 body is empty
 // @router / [post]
-func (c *AjusteController) Post() {
+func (c *AjusteController) PostManual() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
 
@@ -53,7 +53,7 @@ func (c *AjusteController) Post() {
 	c.ServeJSON()
 }
 
-// Post ...
+// PostAjuste ...
 // @Title Create
 // @Description create Ajuste
 // @Param	body		body 	[]models.DetalleElemento_	true		"body for Ajuste content"

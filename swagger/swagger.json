@@ -240,7 +240,7 @@
                         "description": "body for Ajuste content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ajustesHelper.PreTrAjuste"
+                            "$ref": "#/definitions/models.PreTrAjuste"
                         }
                     }
                 ],
@@ -1500,10 +1500,6 @@
         }
     },
     "definitions": {
-        "ajustesHelper.PreTrAjuste": {
-            "title": "PreTrAjuste",
-            "type": "object"
-        },
         "map[string]interface{}": {
             "title": "map[string]interface{}",
             "type": "object"
@@ -2929,6 +2925,45 @@
                 },
                 "TipoParametroId": {
                     "$ref": "#/definitions/models.TipoParametro"
+                }
+            }
+        },
+        "models.PreMovAjuste": {
+            "title": "PreMovAjuste",
+            "type": "object",
+            "properties": {
+                "Credito": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Cuenta": {
+                    "type": "string"
+                },
+                "Debito": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "TerceroId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.PreTrAjuste": {
+            "title": "PreTrAjuste",
+            "type": "object",
+            "properties": {
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Movimientos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PreMovAjuste"
+                    }
                 }
             }
         },
