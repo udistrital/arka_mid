@@ -1,4 +1,4 @@
-package ubicacionHelper
+package oikos
 
 import (
 	"github.com/astaxie/beego"

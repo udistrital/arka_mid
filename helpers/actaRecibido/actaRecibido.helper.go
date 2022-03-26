@@ -18,9 +18,9 @@ import (
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -295,7 +295,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			idUbStr := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
 			reqUbicacion := func() (interface{}, map[string]interface{}) {
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idUbStr); err == nil {
+				if ubicacion, err := oikos.GetAsignacionSedeDependencia(idUbStr); err == nil {
 					return ubicacion, nil
 				} else {
 					logs.Error(err)

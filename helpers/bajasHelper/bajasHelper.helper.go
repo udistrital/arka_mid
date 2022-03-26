@@ -15,11 +15,11 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -520,7 +520,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	if fc, ub, err := GetEncargado(Elemento.Historial); err != nil {
 		return nil, err
 	} else {
-		if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(ub); err != nil {
+		if ubicacion_, err := oikos.GetSedeDependenciaUbicacion(ub); err != nil {
 			return nil, err
 		} else {
 			Elemento.Ubicacion = ubicacion_
@@ -591,7 +591,7 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 			if fc, ub, err := GetEncargado(elemento.Historial); err != nil {
 				return nil, err
 			} else {
-				if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(ub); err != nil {
+				if ubicacion_, err := oikos.GetSedeDependenciaUbicacion(ub); err != nil {
 					return nil, err
 				} else {
 					elemento.Ubicacion = ubicacion_

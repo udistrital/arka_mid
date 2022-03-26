@@ -12,9 +12,9 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -60,7 +60,7 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	}
 
 	// Se consulta la sede, dependencia correspondiente a la ubicacion
-	if ubicacionDetalle, err := ubicacionHelper.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
+	if ubicacionDetalle, err := oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
 		return nil, err
 	} else {
 		Traslado.Ubicacion = ubicacionDetalle
@@ -277,7 +277,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 
 			requestUbicacion := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Ubicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(id); err == nil {
+					if Ubicacion, err := oikos.GetSedeDependenciaUbicacion(id); err == nil {
 						return Ubicacion, nil
 					}
 					return nil, nil
