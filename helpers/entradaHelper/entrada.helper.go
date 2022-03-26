@@ -15,6 +15,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
@@ -53,7 +54,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
+	if consecutivo, _, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(\"%05.0f\", ctxConsecutivo, \"Registro Entrada Arka\")",
@@ -62,7 +63,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 		}
 		return nil, outputError
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = consecutivos.Format(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["consecutivo"] = consecutivo
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
@@ -297,11 +298,11 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 		for _, elemento := range detalleElementos {
 			placa := ""
 			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca {
-				if placa_, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+				if placa_, _, err := consecutivos.Get("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
 					return nil, err
 				} else {
 					year, month, day := time.Now().Date()
-					placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
+					placa = consecutivos.Format(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
 				}
 			}
 			elemento_ := models.Elemento{

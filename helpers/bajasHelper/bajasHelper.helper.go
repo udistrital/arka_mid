@@ -13,6 +13,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
@@ -48,10 +49,10 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
-	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Baja Arka"); err != nil {
+	if consecutivo, _, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Baja Arka"); err != nil {
 		return nil, err
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteBajas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = consecutivos.Format(getTipoComprobanteBajas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalle.Consecutivo = consecutivo
 	}
 

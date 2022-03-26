@@ -1,4 +1,4 @@
-package utilsHelper
+package consecutivos
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-func GetConsecutivo(format string, contextoId int, descripcion string) (consecutivo string, consecutivoId int, outputError map[string]interface{}) {
+func Get(format string, contextoId int, descripcion string) (consecutivo string, consecutivoId int, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -42,7 +42,7 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 		consecutivoId = int(res["Data"].(map[string]interface{})["Id"].(float64))
 	} else if strings.Contains(err.Error(), "invalid character") {
 		logs.Error(err)
-		consecutivo, consecutivoId, outputError = GetConsecutivo(format, contextoId, descripcion)
+		consecutivo, consecutivoId, outputError = Get(format, contextoId, descripcion)
 	} else {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -54,6 +54,6 @@ func GetConsecutivo(format string, contextoId int, descripcion string) (consecut
 	return consecutivo, consecutivoId, outputError
 }
 
-func FormatConsecutivo(prefix string, consecutivo string, suffix string) (consFormat string) {
+func Format(prefix string, consecutivo string, suffix string) (consFormat string) {
 	return prefix + consecutivo + suffix
 }

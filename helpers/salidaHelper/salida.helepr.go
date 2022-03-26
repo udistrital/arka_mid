@@ -14,6 +14,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -133,7 +134,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+		if consecutivo, _, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -142,7 +143,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			}
 			return nil, outputError
 		} else {
-			consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+			consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 			detalle["consecutivo"] = consecutivo
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
 				logs.Error(err)
@@ -288,7 +289,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 			if idx != index {
 
-				if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+				if consecutivo, _, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
 						"funcion": "PutTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -297,7 +298,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 					}
 					return nil, outputError
 				} else {
-					consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+					consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 					detalle["consecutivo"] = consecutivo
 					if detalleJSON, err := json.Marshal(detalle); err != nil {
 						logs.Error(err)

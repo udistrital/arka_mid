@@ -10,6 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
@@ -138,10 +139,10 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
-	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
+	if consecutivo, _, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
 		return nil, err
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = consecutivos.Format(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["Consecutivo"] = consecutivo
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
@@ -59,7 +60,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 
 	consecutivoId := 0
 	if submit {
-		if _, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
+		if _, consecutivoId_, err := consecutivos.Get("%05.0f", 1, "CNTB"); err != nil {
 			return nil, outputError
 		} else {
 			consecutivoId = consecutivoId_

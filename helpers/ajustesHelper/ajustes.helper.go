@@ -9,12 +9,12 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
@@ -30,10 +30,10 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 	detalle := new(models.FormatoAjuste)
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Ajuste Contable Arka"); err != nil {
+	if consecutivo, _, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Ajuste Contable Arka"); err != nil {
 		return nil, err
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteAjustes()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = consecutivos.Format(getTipoComprobanteAjustes()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalle.Consecutivo = consecutivo
 		detalle.PreTrAjuste = trContable
 	}
@@ -231,7 +231,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 
 	transaccion := new(models.TransaccionMovimientos)
 
-	if _, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
+	if _, consecutivoId_, err := consecutivos.Get("%05.0f", 1, "CNTB"); err != nil {
 		return nil, outputError
 	} else {
 		transaccion.ConsecutivoId = consecutivoId_
