@@ -178,7 +178,7 @@ paths:
       tags:
       - ajustes
       description: get Ajuste by id
-      operationId: AjusteController.GetOne
+      operationId: AjusteController.GetOneManual
       parameters:
       - in: path
         name: id

@@ -20,7 +20,7 @@ type AjusteController struct {
 func (c *AjusteController) URLMapping() {
 	c.Mapping("Post", c.PostAjuste)
 	c.Mapping("Post", c.PostManual)
-	c.Mapping("GetOne", c.GetOne)
+	c.Mapping("GetOne", c.GetOneManual)
 	c.Mapping("GetOne", c.GetElementos)
 	c.Mapping("GetOne", c.GetOneAuto)
 	c.Mapping("GetAll", c.GetAll)
@@ -79,14 +79,14 @@ func (c *AjusteController) PostAjuste() {
 	c.ServeJSON()
 }
 
-// GetOne ...
-// @Title GetOne
+// GetOneManual ...
+// @Title GetOneManual
 // @Description get Ajuste by id
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200 {object} models.DetalleAjuste
 // @Failure 403 :id is empty
 // @router /:id [get]
-func (c *AjusteController) GetOne() {
+func (c *AjusteController) GetOneManual() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
 
@@ -97,7 +97,7 @@ func (c *AjusteController) GetOne() {
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": `GetOne - c.GetInt(":id")`,
+			"funcion": `GetOneManual - c.GetInt(":id")`,
 			"err":     err,
 			"status":  "400",
 		})
