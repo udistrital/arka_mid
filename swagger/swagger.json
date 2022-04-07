@@ -986,6 +986,35 @@
                 }
             }
         },
+        "/entrada/{id}": {
+            "get": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada",
+                "operationId": "EntradaController.GetOne",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]interface{}"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/parametros_soporte/": {
             "get": {
                 "tags": [

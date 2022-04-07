@@ -6,6 +6,7 @@ import (
 
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
@@ -185,7 +186,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 	} else {
 		resultado.Movimiento = rs
 		if tr != nil && tr.Movimientos != nil && len(tr.Movimientos) > 0 {
-			if tr_, err := getDetalleContable(tr.Movimientos); err != nil {
+			if tr_, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
 				return nil, err
 			} else {
 				resultado.TrContable = tr_
@@ -268,7 +269,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 		if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.TrContable, "consecutivo", true); err != nil {
 			return nil, err
 		} else {
-			if detalleContable, err := getDetalleContable(tr.Movimientos); err != nil {
+			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
 				return nil, err
 			} else {
 				ajuste.TrContable = detalleContable

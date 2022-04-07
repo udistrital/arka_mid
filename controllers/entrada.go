@@ -10,6 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // EntradaController operations for Entrada
@@ -21,6 +22,7 @@ type EntradaController struct {
 func (c *EntradaController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Get", c.GetEncargadoElemento)
+	c.Mapping("GetOne", c.GetOne)
 }
 
 // Post ...
@@ -94,6 +96,49 @@ func (c *EntradaController) Post() {
 				"status":  "400",
 			})
 		}
+	}
+
+	c.ServeJSON()
+}
+
+// GetOne ...
+// @Title GetOne
+// @Description get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 :id is empty
+// @router /:id [get]
+func (c *EntradaController) GetOne() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("Se debe especificar una entrada válida")
+		}
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `GetOne - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	if respuesta, err := entradaHelper.DetalleEntrada(id); err == nil || respuesta != nil {
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+
+		panic(map[string]interface{}{
+			"funcion": "GetOne - entradaHelper.DetalleEntrada(id)",
+			"err":     errors.New("No se obtuvo respuesta al consultar la anetrada"),
+			"status":  "404",
+		})
 	}
 
 	c.ServeJSON()
