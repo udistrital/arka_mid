@@ -126,7 +126,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				// fmt.Println(usr.Documento)
 				if data, err := tercerosHelper.GetTerceroByDoc(usr.Documento); err == nil {
 					// fmt.Println(data.TerceroId.Id)
-					idTercero = data.TerceroId.Id
+					if data.TerceroId != nil {
+						idTercero = data.TerceroId.Id
+					} else {
+						return nil, nil
+					}
 				} else {
 					return nil, err
 				}
@@ -166,7 +170,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&sortby=ActaRecibidoId__Id&order=desc"
-	urlEstados += "&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre:Regular"
+	urlEstados += "&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
 		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
