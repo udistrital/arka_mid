@@ -250,14 +250,14 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 		var elemento_ *models.DetalleElemento__
 		detalle := new(models.ElementosMovimiento)
 
-		if idx = findElementoInArrayElementosMovimiento(elementosMov, el.Id); idx > -1 {
+		if idx = utilsHelper.FindElementoInArrayElementosMovimiento(elementosMov, el.Id); idx > -1 {
 			detalle = elementosMov[idx]
 		} else {
 			detalle.ValorResidual = 0
 			detalle.VidaUtil = 0
 		}
 
-		if elemento_, outputError = fillElemento(el, detalle); outputError != nil {
+		if elemento_, outputError = utilsHelper.FillElemento(el, detalle); outputError != nil {
 			return nil, outputError
 		}
 
@@ -316,7 +316,7 @@ func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleEle
 		for _, el := range elsMov {
 			if idx := findElementoInArrayEM(elsActa, el.ElementoActaId); idx > -1 {
 				var elemento_ *models.DetalleElemento__
-				if elemento_, outputError = fillElemento(elsActa[idx], el); outputError != nil {
+				if elemento_, outputError = utilsHelper.FillElemento(elsActa[idx], el); outputError != nil {
 					return nil, outputError
 				}
 

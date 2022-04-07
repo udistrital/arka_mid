@@ -86,7 +86,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "Entrada de almacen", detalle, historico.ProveedorId, true); tr_ == nil || err != nil {
+	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), detalle, "Entrada de almacen", historico.ProveedorId, true); tr_ == nil || err != nil {
 		return nil, err
 	} else {
 		trContable = tr_

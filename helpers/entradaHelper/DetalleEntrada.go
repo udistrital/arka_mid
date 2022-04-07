@@ -59,7 +59,12 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
 					return nil, err
 				} else {
-					resultado["trContable"] = detalleContable
+					trContable := map[string]interface{}{
+						"movimientos": detalleContable,
+						"concepto":    tr.Descripcion,
+						"fecha":       tr.FechaTransaccion,
+					}
+					resultado["trContable"] = trContable
 				}
 			}
 		}

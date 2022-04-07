@@ -145,16 +145,6 @@ func findElementoInArrayD(elementos []*models.DetalleElemento_, id int) (i int) 
 }
 
 // findElementoInArray Retorna la posicion en que se encuentra el id específicado
-func findElementoInArrayElementosMovimiento(elementos []*models.ElementosMovimiento, id int) (i int) {
-	for i, el_ := range elementos {
-		if int(el_.Id) == id {
-			return i
-		}
-	}
-	return -1
-}
-
-// findElementoInArray Retorna la posicion en que se encuentra el id específicado
 func findElementoInArrayE(elementos []*models.Elemento, id int) (i int) {
 	for i, el_ := range elementos {
 		if int(el_.Id) == id {

@@ -10,6 +10,8 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -193,6 +195,34 @@ func FindIdInArray(idsList []*models.Elemento, id int) (i int) {
 		}
 	}
 	return -1
+}
+
+// findElementoInArray Retorna la posicion en que se encuentra el id específicado
+func FindElementoInArrayElementosMovimiento(elementos []*models.ElementosMovimiento, id int) (i int) {
+	for i, el_ := range elementos {
+		if int(el_.Id) == id {
+			return i
+		}
+	}
+	return -1
+}
+
+// fillElemento Agrega la vida útil y valor residual al elemento del acta
+func FillElemento(elActa *models.DetalleElemento, elMov *models.ElementosMovimiento) (completo *models.DetalleElemento__, outputError map[string]interface{}) {
+
+	funcion := "fillElemento"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	if err := formatdata.FillStruct(elActa, &completo); err != nil {
+		logs.Error(err)
+		eval := " - formatdata.FillStruct(elActa, &completo)"
+		return nil, errorctrl.Error(funcion+eval, err, "500")
+	}
+	completo.VidaUtil = elMov.VidaUtil
+	completo.ValorResidual = elMov.ValorResidual
+
+	return completo, nil
+
 }
 
 // removeDuplicateIds Remueve de un vector los enteros duplicados
