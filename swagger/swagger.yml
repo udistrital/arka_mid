@@ -165,7 +165,7 @@ paths:
         description: body for Ajuste content
         required: true
         schema:
-          $ref: '#/definitions/ajustesHelper.PreTrAjuste'
+          $ref: '#/definitions/models.PreTrAjuste'
       responses:
         "201":
           description: ""
@@ -178,7 +178,7 @@ paths:
       tags:
       - ajustes
       description: get Ajuste by id
-      operationId: AjusteController.GetOne
+      operationId: AjusteController.GetOneManual
       parameters:
       - in: path
         name: id
@@ -210,6 +210,71 @@ paths:
             $ref: '#/definitions/models.Movimiento'
         "403":
           description: :id is not int
+  /ajustes/automatico:
+    post:
+      tags:
+      - ajustes
+      description: create Ajuste
+      operationId: AjusteController.Create
+      parameters:
+      - in: body
+        name: body
+        description: body for Ajuste content
+        required: true
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/models.DetalleElemento_'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.DetalleAjusteAutomatico'
+        "403":
+          description: body is empty
+  /ajustes/automatico/{id}:
+    get:
+      tags:
+      - ajustes
+      description: Retorna la lista de elementos asociados a un ajuste y su transaccion
+        contable
+      operationId: AjusteController.GetOneAuto
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.DetalleAjusteAutomatico'
+        "403":
+          description: :id is empty
+  /ajustes/automatico/elementos/{id}:
+    get:
+      tags:
+      - ajustes
+      description: Retorna la lista de elementos asociados a un acta con su respectiva
+        vida útil y valor residual iniciales
+      operationId: AjusteController.GetElementos
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.DetalleElemento__'
+        "403":
+          description: :id is empty
   /bajas_elementos/:
     post:
       tags:
@@ -539,6 +604,26 @@ paths:
           description: the request contains incorrect syntax
         "403":
           description: body is empty
+  /entrada/{id}:
+    get:
+      tags:
+      - entrada
+      description: get Detalle de entrada por Id. Retorna la transaccion contable
+        si la entrada ya  fue aprobada
+      operationId: EntradaController.GetOne
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/map[string]interface{}'
+        "403":
+          description: :id is empty
   /entrada/anular/{id}:
     get:
       tags:
@@ -944,9 +1029,6 @@ definitions:
   '{}':
     title: '{}'
     type: object
-  ajustesHelper.PreTrAjuste:
-    title: PreTrAjuste
-    type: object
   map[string]interface{}:
     title: map[string]interface{}
     type: object
@@ -1166,6 +1248,20 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.DetalleMovimientoContable'
+  models.DetalleAjusteAutomatico:
+    title: DetalleAjusteAutomatico
+    type: object
+    properties:
+      Elementos:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleElemento__'
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
+      TrContable:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleMovimientoContable'
   models.DetalleBaja:
     title: DetalleBaja
     type: object
@@ -1218,6 +1314,187 @@ definitions:
         format: int64
       SubtipoMovimientoId:
         $ref: '#/definitions/models.FormatoTipoMovimiento'
+  models.DetalleElemento:
+    title: DetalleElemento
+    type: object
+    properties:
+      ActaRecibidoId:
+        $ref: '#/definitions/models.ActaRecibido'
+      Activo:
+        type: boolean
+      Cantidad:
+        type: integer
+        format: int64
+      Descuento:
+        type: number
+        format: double
+      EstadoElementoId:
+        $ref: '#/definitions/models.EstadoElemento'
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      Marca:
+        type: string
+      Nombre:
+        type: string
+      Placa:
+        type: string
+      PorcentajeIvaId:
+        type: integer
+        format: int64
+      Serie:
+        type: string
+      SubgrupoCatalogoId:
+        $ref: '#/definitions/models.DetalleSubgrupo'
+      Subtotal:
+        type: number
+        format: double
+      UnidadMedida:
+        type: integer
+        format: int64
+      ValorFinal:
+        type: number
+        format: double
+      ValorIva:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
+  models.DetalleElemento_:
+    title: DetalleElemento_
+    type: object
+    properties:
+      ActaRecibidoId:
+        $ref: '#/definitions/models.ActaRecibido'
+      Activo:
+        type: boolean
+      Cantidad:
+        type: integer
+        format: int64
+      Descuento:
+        type: number
+        format: double
+      EstadoElementoId:
+        $ref: '#/definitions/models.EstadoElemento'
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      Marca:
+        type: string
+      Nombre:
+        type: string
+      Placa:
+        type: string
+      PorcentajeIvaId:
+        type: integer
+        format: int64
+      Serie:
+        type: string
+      SubgrupoCatalogoId:
+        type: integer
+        format: int64
+      Subtotal:
+        type: number
+        format: double
+      UnidadMedida:
+        type: integer
+        format: int64
+      ValorFinal:
+        type: number
+        format: double
+      ValorIva:
+        type: number
+        format: double
+      ValorResidual:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
+      VidaUtil:
+        type: number
+        format: double
+  models.DetalleElemento__:
+    title: DetalleElemento__
+    type: object
+    properties:
+      ActaRecibidoId:
+        $ref: '#/definitions/models.ActaRecibido'
+      Activo:
+        type: boolean
+      Cantidad:
+        type: integer
+        format: int64
+      Descuento:
+        type: number
+        format: double
+      EstadoElementoId:
+        $ref: '#/definitions/models.EstadoElemento'
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      Marca:
+        type: string
+      Nombre:
+        type: string
+      Placa:
+        type: string
+      PorcentajeIvaId:
+        type: integer
+        format: int64
+      Serie:
+        type: string
+      SubgrupoCatalogoId:
+        $ref: '#/definitions/models.DetalleSubgrupo'
+      Subtotal:
+        type: number
+        format: double
+      UnidadMedida:
+        type: integer
+        format: int64
+      ValorFinal:
+        type: number
+        format: double
+      ValorIva:
+        type: number
+        format: double
+      ValorResidual:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
+      VidaUtil:
+        type: number
+        format: double
   models.DetalleElementoBaja:
     title: DetalleElementoBaja
     type: object
@@ -1754,6 +2031,33 @@ definitions:
         $ref: '#/definitions/models.Parametro'
       TipoParametroId:
         $ref: '#/definitions/models.TipoParametro'
+  models.PreMovAjuste:
+    title: PreMovAjuste
+    type: object
+    properties:
+      Credito:
+        type: number
+        format: double
+      Cuenta:
+        type: string
+      Debito:
+        type: number
+        format: double
+      Descripcion:
+        type: string
+      TerceroId:
+        type: integer
+        format: int64
+  models.PreTrAjuste:
+    title: PreTrAjuste
+    type: object
+    properties:
+      Descripcion:
+        type: string
+      Movimientos:
+        type: array
+        items:
+          $ref: '#/definitions/models.PreMovAjuste'
   models.Salida:
     title: Salida
     type: object

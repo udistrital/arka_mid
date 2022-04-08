@@ -273,7 +273,3 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 
 	return movimiento, nil
 }
-
-func getTipoComprobanteAjustes() string {
-	return "N20"
-}

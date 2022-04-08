@@ -5,17 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -179,171 +180,6 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 	return resultado, nil
 }
 
-func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "PutTrSalidas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	var (
-		estadoMovimiento *models.EstadoMovimiento
-		salidaOriginal   *models.Movimiento
-	)
-
-	resultado = make(map[string]interface{})
-
-	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
-
-	if estadosMovimiento, err := crudMovimientosArka.GetAllEstadoMovimiento("Salida%20En%20Trámite"); err != nil {
-		return nil, err
-	} else {
-		estadoMovimiento = estadosMovimiento[0]
-	}
-
-	// En caso de generarse más de una salida, se debe actualizar
-
-	if len(m.Salidas) == 1 {
-		// Si no se generan nuevas salidas, simplemente se debe actualizar el funcionario y la ubicación del movimiento original
-
-		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
-		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
-			return nil, err
-		} else {
-			resultado["trSalida"] = trRes
-		}
-
-	} else {
-
-		// Si se generaron salidas a partir de la original, se debe asignar un consecutivo a cada una y una de ellas debe tener el original
-
-		// Se consulta la salida original
-		ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
-
-		// Se consulta el movimiento
-		if movimientoA, err := crudMovimientosArka.GetMovimientoById(salidaId); err != nil {
-			return nil, err
-		} else {
-			salidaOriginal = movimientoA
-		}
-
-		detalleOriginal := map[string]interface{}{}
-		if err := json.Unmarshal([]byte(salidaOriginal.Detalle), &detalleOriginal); err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "PutTrSalidas - json.Unmarshal([]byte(salidaOriginal.Detalle), &detalleOriginal)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-
-		// Se debe decidir a cuál de las nuevas asignarle el id y el consecutivo original
-		index := -1
-		detalleNueva := map[string]interface{}{}
-		for idx, l := range m.Salidas {
-			if err := json.Unmarshal([]byte(l.Salida.Detalle), &detalleNueva); err != nil {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "PutTrSalidas - json.Unmarshal([]byte(l.Salida.Detalle), &detalleNueva)",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
-			}
-			funcNuevo := detalleNueva["funcionario"]
-			funcOriginal := detalleOriginal["funcionario"]
-			ubcNuevo := detalleNueva["ubicacion"]
-			ubcOriginal := detalleOriginal["ubicacion"]
-			if funcNuevo == funcOriginal && ubcNuevo == ubcOriginal {
-				index = idx
-				break
-			} else if funcNuevo == funcOriginal {
-				index = idx
-				break
-			} else if ubcNuevo == ubcOriginal {
-				index = idx
-				break
-			}
-		}
-
-		for idx, salida := range m.Salidas {
-
-			salida.Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
-			detalle := map[string]interface{}{}
-			if err := json.Unmarshal([]byte(salida.Salida.Detalle), &detalle); err != nil {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "PutTrSalidas - json.Unmarshal([]byte(salida.Salida.Detalle), &detalle)",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
-			}
-
-			if idx != index {
-
-				if consecutivo, _, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "PutTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
-				} else {
-					consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-					detalle["consecutivo"] = consecutivo
-					if detalleJSON, err := json.Marshal(detalle); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "PutTrSalidas - json.Marshal(detalle)",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					} else {
-						salida.Salida.Detalle = string(detalleJSON)
-						// Si ninguna salida tiene el mismo funcionario o ubicación que la original, se asigna el id de la original a la primera del arreglo
-						if index == -1 && idx == 0 {
-							salida.Salida.Id = salidaId
-						}
-					}
-				}
-			} else {
-				detalle["consecutivo"] = detalleOriginal["consecutivo"]
-				if detalleJSON, err := json.Marshal(detalle); err != nil {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "PutTrSalidas - json.Marshal(detalle)",
-						"err":     err,
-						"status":  "500",
-					}
-					return nil, outputError
-				} else {
-					salida.Salida.Detalle = string(detalleJSON)
-					salida.Salida.Id = salidaId
-				}
-			}
-		}
-
-		// Hace el put api movimientos_arka_crud
-		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
-			return nil, err
-		} else {
-			resultado["trSalida"] = trRes
-		}
-	}
-
-	return resultado, nil
-}
-
 // AprobarSalida Aprobacion de una salida
 func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
@@ -374,7 +210,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 
 	fields := "SubgrupoCatalogoId,ValorTotal"
 	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
-	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
+	if elementos_, err := crudActas.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		if len(elementos_) == 0 {
@@ -478,113 +314,82 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 
 func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetSalida - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetSalida"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida/" + strconv.Itoa(id)
-	var salida_ map[string]interface{}
-	if _, err := request.GetJsonTest(urlcrud, &salida_); err == nil {
+	var (
+		trSalida           *models.TrSalida
+		detalle            map[string]interface{}
+		ids                []int
+		elementosActa      []*models.DetalleElemento
+		elementosCompletos []*models.DetalleElemento__
+	)
 
-		var data_ []map[string]interface{}
-		if jsonString, err := json.Marshal(salida_["Elementos"]); err == nil {
+	if tr_, err := crudMovimientosArka.GetTrSalida(id); err != nil {
+		return nil, err
+	} else {
+		trSalida = tr_
+	}
 
-			if err2 := json.Unmarshal(jsonString, &data_); err2 == nil {
+	for _, el := range trSalida.Elementos {
+		ids = append(ids, el.ElementoActaId)
+	}
 
-				for i, elemento := range data_ {
+	if elementosActa, outputError = actaRecibido.GetElementos(0, ids); outputError != nil {
+		return nil, outputError
+	}
 
-					var elemento_ []map[string]interface{}
-					urlcrud_ := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=Id:" + fmt.Sprintf("%v", elemento["ElementoActaId"]) + "&fields=Id,Nombre,Marca,Serie,Placa,SubgrupoCatalogoId"
-					if _, err := request.GetJsonTest(urlcrud_, &elemento_); err == nil {
-						var subgrupo_ []map[string]interface{}
+	for _, el := range elementosActa {
+		var idx int
+		var elemento_ *models.DetalleElemento__
+		detalle := new(models.ElementosMovimiento)
 
-						urlcrud_2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "detalle_subgrupo?query=SubgrupoId__Id:" + fmt.Sprintf("%v", elemento_[0]["SubgrupoCatalogoId"])
-						if _, err := request.GetJsonTest(urlcrud_2, &subgrupo_); err == nil {
-							data_[i]["Nombre"] = elemento_[0]["Nombre"]
-							data_[i]["TipoBienId"] = subgrupo_[0]["TipoBienId"]
-							data_[i]["SubgrupoCatalogoId"] = subgrupo_[0]["SubgrupoId"]
-							data_[i]["Marca"] = elemento_[0]["Marca"]
-							data_[i]["Serie"] = elemento_[0]["Serie"]
-							data_[i]["Placa"] = elemento_[0]["Placa"]
-
-						} else {
-							logs.Error(err)
-							outputError = map[string]interface{}{
-								"funcion": "GetSalida - request.GetJsonTest(urlcrud_2, &subgrupo_)",
-								"err":     err,
-								"status":  "502",
-							}
-							return nil, outputError
-						}
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "GetSalida - request.GetJsonTest(urlcrud_, &elemento_)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-
-					if _, err := request.GetJsonTest(urlcrud, &salida_); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "GetSalida - request.GetJsonTest(urlcrud, &salida_) (BIS)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-
-				}
-
-			} else {
-				logs.Error(err2)
-				outputError = map[string]interface{}{
-					"funcion": "GetSalida - json.Unmarshal(jsonString, &data_)",
-					"err":     err2,
-					"status":  "500",
-				}
-				return nil, outputError
-			}
+		if idx = utilsHelper.FindElementoInArrayElementosMovimiento(trSalida.Elementos, el.Id); idx > -1 {
+			detalle = trSalida.Elementos[idx]
 		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetSalida - json.Marshal(salida_[\"Elementos\"])",
-				"err":     err,
-				"status":  "500",
-			}
+			detalle.ValorResidual = 0
+			detalle.VidaUtil = 0
+		}
+
+		if elemento_, outputError = utilsHelper.FillElemento(el, detalle); outputError != nil {
 			return nil, outputError
 		}
 
-		if salida__, err := TraerDetalle(salida_["Salida"]); err == nil {
-
-			Salida_final := map[string]interface{}{
-				"Elementos": data_,
-				"Salida":    salida__,
-			}
-			return Salida_final, nil
-
-		} else {
-			return nil, err
-		}
-
-	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetSalida - request.GetJsonTest(urlcrud, &salida_)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		elementosCompletos = append(elementosCompletos, elemento_)
 	}
+
+	if salida__, err := TraerDetalle(trSalida.Salida); err != nil {
+		return nil, err
+	} else {
+		detalle = salida__
+	}
+
+	Salida_final := map[string]interface{}{
+		"Elementos": elementosCompletos,
+		"Salida":    detalle,
+	}
+
+	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" {
+		if val, ok := detalle["ConsecutivoId"]; ok && val != nil {
+			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
+				return nil, err
+			} else {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+					return nil, err
+				} else {
+					trContable := map[string]interface{}{
+						"movimientos": detalleContable,
+						"concepto":    tr.Descripcion,
+						"fecha":       tr.FechaTransaccion,
+					}
+					Salida_final["trContable"] = trContable
+				}
+			}
+		}
+	}
+
+	return Salida_final, nil
+
 }
 
 func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError map[string]interface{}) {
@@ -631,158 +436,22 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 	return Salidas, nil
 }
 
-func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputError map[string]interface{}) {
+// GetInfoSalida Retorna el funcionario y el consecutivo de una salida a partir del detalle del movimiento
+func GetInfoSalida(detalle string) (funcionarioId int, consecutivo string, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "TraerDetalle - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetInfoSalida"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	sedeVacia := map[string]interface{}{
-		"Id": 0,
-	}
-	ubicacionVacia := map[string]interface{}{
-		"DependenciaId":   0,
-		"EspacioFisicoId": 0,
-	}
+	var detalle_ map[string]interface{}
 
-	if jsonString, err := json.Marshal(salida); err == nil {
-
-		var data map[string]interface{}
-		if err := json.Unmarshal(jsonString, &data); err == nil {
-			str := fmt.Sprintf("%v", data["Detalle"])
-
-			var data2 map[string]interface{}
-			if err := json.Unmarshal([]byte(str), &data2); err == nil {
-
-				urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia"
-				urlcrud3 += "?query=Id:" + fmt.Sprintf("%v", data2["ubicacion"])
-
-				var tercero []map[string]interface{}
-				var ubicacion []map[string]interface{}
-				var sede []map[string]interface{}
-				if data2["ubicacion"] != nil {
-					if _, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil {
-
-						var ubicacion2 map[string]interface{}
-						if jsonString3, err := json.Marshal(ubicacion[0]["EspacioFisicoId"]); err == nil {
-							if err2 := json.Unmarshal(jsonString3, &ubicacion2); err2 == nil {
-								str2 := fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"])
-								rgxp := regexp.MustCompile("[0-9]")
-								str2 = rgxp.ReplaceAllString(str2, "")
-
-								urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + str2
-								if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
-									logs.Error(err)
-									outputError = map[string]interface{}{
-										"funcion": "TraerDetalle - request.GetJsonTest(urlcrud4, &sede)",
-										"err":     err,
-										"status":  "502",
-									}
-									return nil, outputError
-								}
-
-							} else {
-								logs.Error(err2)
-								outputError = map[string]interface{}{
-									"funcion": "TraerDetalle - json.Unmarshal(jsonString3, &ubicacion2)",
-									"err":     err2,
-									"status":  "500",
-								}
-								return nil, outputError
-							}
-						} else {
-							logs.Error(err)
-							outputError = map[string]interface{}{
-								"funcion": "TraerDetalle - json.Marshal(ubicacion[0][\"EspacioFisicoId\"])",
-								"err":     err,
-								"status":  "500",
-							}
-							return nil, outputError
-						}
-
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-				} else {
-					sede = append(sede, sedeVacia)
-					ubicacion = append(ubicacion, ubicacionVacia)
-				}
-
-				Salida2 := map[string]interface{}{
-					"Id":                      data["Id"],
-					"Observacion":             data["Observacion"],
-					"Sede":                    sede[0],
-					"Dependencia":             ubicacion[0]["DependenciaId"],
-					"Ubicacion":               ubicacion[0]["EspacioFisicoId"],
-					"FechaCreacion":           data["FechaCreacion"],
-					"FechaModificacion":       data["FechaModificacion"],
-					"Activo":                  data["Activo"],
-					"MovimientoPadreId":       data["MovimientoPadreId"],
-					"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
-					"EstadoMovimientoId":      data["EstadoMovimientoId"].(map[string]interface{})["Id"],
-					"Consecutivo":             data2["consecutivo"],
-				}
-
-				if data2["funcionario"] != nil {
-
-					urlcrud2 := "http://" + beego.AppConfig.String("tercerosService") + "tercero/?query=Id:" + fmt.Sprintf("%v", data2["funcionario"]) + "&fields=Id,NombreCompleto"
-					if _, err := request.GetJsonTest(urlcrud2, &tercero); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-
-					Salida2["Funcionario"] = tercero[0]
-
-				}
-
-				return Salida2, nil
-
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "TraerDetalle - json.Unmarshal([]byte(str), &data2)",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
-			}
-
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "TraerDetalle - json.Unmarshal(jsonString, &data)",
-				"err":     err,
-				"status":  "500",
-			}
-			return nil, outputError
-		}
-	} else {
+	if err := json.Unmarshal([]byte(detalle), &detalle_); err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "TraerDetalle - json.Marshal(salida)",
-			"err":     err,
-			"status":  "400",
-		}
-		return nil, outputError
+		eval := " - json.Unmarshal([]byte(detalle), &detalle_)"
+		return 0, "", errorctrl.Error(funcion+eval, err, "500")
 	}
+
+	return int(detalle_["funcionario"].(float64)), detalle_["consecutivo"].(string), nil
+
 }
 
 func getTipoComprobanteSalidas() string {
