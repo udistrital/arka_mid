@@ -133,7 +133,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+		if consecutivo, consecutivoId, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -144,6 +144,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 		} else {
 			consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 			detalle["consecutivo"] = consecutivo
+			detalle["consecutivoId"] = consecutivoId
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
 				logs.Error(err)
 				outputError = map[string]interface{}{
@@ -191,6 +192,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		elementosActa     []*models.Elemento
 		funcionarioId     int
 		tipoMovimiento    int
+		consecutivoId     int
 	)
 
 	resultado := make(map[string]interface{})
@@ -269,8 +271,12 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		tipoMovimiento = fm[0].Id
 	}
 
+	if val, ok := detallePrincipal["consecutivoId"]; ok && val != nil {
+		consecutivoId = int(val.(float64))
+	}
+
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteSalidas(), strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, true); err != nil {
+	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteSalidas(), strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, consecutivoId, true); err != nil {
 		return nil, err
 	} else {
 		trContable = tr_

@@ -32,6 +32,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		historico         *models.HistoricoActa
 		movimiento        *models.Movimiento
 		elementos         []*models.Elemento
+		consecutivoId     int
 	)
 
 	resultado := make(map[string]interface{})
@@ -85,24 +86,18 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		groups[elemento.SubgrupoCatalogoId] = x
 	}
 
+	if val, ok := detalleMovimiento["consecutivoId"]; ok && val != nil {
+		consecutivoId = int(val.(float64))
+	}
+
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteEntradas(), strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), detalle, "Entrada de almacen", historico.ProveedorId, true); tr_ == nil || err != nil {
+	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteEntradas(), strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), detalle, "Entrada de almacen", historico.ProveedorId, consecutivoId, true); tr_ == nil || err != nil {
 		return nil, err
 	} else {
 		trContable = tr_
 		if tr_["errorTransaccion"].(string) != "" {
 			return tr_, nil
 		}
-	}
-
-	t := trContable["resultadoTransaccion"]
-	detalleMovimiento["ConsecutivoContableId"] = t.(*models.DetalleTrContable).ConsecutivoId
-	if jsonString, err := json.Marshal(detalleMovimiento); err != nil {
-		logs.Error(err)
-		eval := " - json.Marshal(detalleMovimiento)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		movimiento.Detalle = string(jsonString[:])
 	}
 
 	if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, movimiento.Id); err != nil {

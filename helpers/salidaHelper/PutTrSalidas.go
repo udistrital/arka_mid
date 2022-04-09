@@ -123,7 +123,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 			if idx != index {
 
-				if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+				if consecutivo, consecutivoId, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
 						"funcion": "PutTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -134,6 +134,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 				} else {
 					consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 					detalle["consecutivo"] = consecutivo
+					detalle["consecutivoId"] = consecutivoId
 					if detalleJSON, err := json.Marshal(detalle); err != nil {
 						logs.Error(err)
 						outputError = map[string]interface{}{
@@ -152,6 +153,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 				}
 			} else {
 				detalle["consecutivo"] = detalleOriginal["consecutivo"]
+				detalle["consecutivoId"] = detalleOriginal["consecutivoId"]
 				if detalleJSON, err := json.Marshal(detalle); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{

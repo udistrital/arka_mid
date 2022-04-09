@@ -38,7 +38,7 @@ func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
-func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
+func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero, consecutivoId int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "AsientoContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -54,15 +54,6 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 
 	res = make(map[string]interface{})
 	res["errorTransaccion"] = ""
-
-	consecutivoId := 0
-	if submit {
-		if _, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
-			return nil, outputError
-		} else {
-			consecutivoId = consecutivoId_
-		}
-	}
 
 	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
 		return nil, err

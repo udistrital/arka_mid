@@ -43,7 +43,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-	if consecutivo, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
+	if consecutivo, consecutivoId, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Entrada Arka"); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - utilsHelper.GetConsecutivo(\"%05.0f\", ctxConsecutivo, \"Registro Entrada Arka\")",
@@ -54,6 +54,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 	} else {
 		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["consecutivo"] = consecutivo
+		detalleJSON["consecutivoId"] = consecutivoId
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
 
