@@ -270,7 +270,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(tipoMovimiento), "Salida de almacen", detalle, funcionarioId, true); err != nil {
+	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, true); err != nil {
 		return nil, err
 	} else {
 		trContable = tr_
@@ -333,8 +333,10 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 		ids = append(ids, el.ElementoActaId)
 	}
 
-	if elementosActa, outputError = actaRecibido.GetElementos(0, ids); outputError != nil {
-		return nil, outputError
+	if len(ids) > 0 {
+		if elementosActa, outputError = actaRecibido.GetElementos(0, ids); outputError != nil {
+			return nil, outputError
+		}
 	}
 
 	for _, el := range elementosActa {
