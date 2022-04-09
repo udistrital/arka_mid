@@ -11,9 +11,9 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -76,7 +76,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 
 	etiquetas := make(map[string]interface{})
 
-	if tipoComprobante_, err := cuentasContablesHelper.GetTipoComprobante("E"); err != nil {
+	if tipoComprobante_, err := cuentasContables.GetTipoComprobante("E"); err != nil {
 		return nil, err
 	} else if tipoComprobante_ != nil {
 		etiquetas["TipoComprobanteId"] = tipoComprobante_.Codigo
@@ -117,13 +117,13 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	for id := range totales {
 		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
 
-			if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+			if ctaCr_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId] = ctaCr_
 			}
 
-			if ctaDb_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+			if ctaDb_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId] = ctaDb_

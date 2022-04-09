@@ -7,8 +7,8 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	crudCatalogo "github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
@@ -68,7 +68,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 				if val, ok := detalleCtas[ctas[idx].CuentaCreditoId]; ok {
 					dCta.CuentaCreditoId = val
 				} else {
-					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
+					if cta, err := cuentasContables.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
 						return nil, err
 					} else if cta != nil {
 						var cdt *models.DetalleCuenta
@@ -86,7 +86,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 				if val, ok := detalleCtas[ctas[idx].CuentaDebitoId]; ok {
 					dCta.CuentaDebitoId = val
 				} else {
-					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
+					if cta, err := cuentasContables.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
 						return nil, err
 					} else if cta != nil {
 						var dbt *models.DetalleCuenta

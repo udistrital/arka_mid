@@ -8,8 +8,8 @@ import (
 
 	crud_actas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -95,7 +95,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		)
 
 		if idx := FindInArray(cuentasSubgrupo, idSubgrupo); idx > -1 {
-			if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+			if ctaCr_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else {
 				if err := formatdata.FillStruct(ctaCr_, &ctaCr); err != nil {
@@ -105,7 +105,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 				}
 			}
 
-			if ctaDb_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+			if ctaDb_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else {
 				if err := formatdata.FillStruct(ctaDb_, &ctaDb); err != nil {

@@ -3,9 +3,9 @@ package asientoContable
 import (
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
@@ -52,7 +52,7 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion) (movimiento
 		mov_ := new(models.DetalleMovimientoContable)
 		var cta *models.DetalleCuenta
 
-		if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(mov.Cuenta); err != nil {
+		if ctaCr_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
 			return nil, err
 		} else {
 			if err := formatdata.FillStruct(ctaCr_, &cta); err != nil {

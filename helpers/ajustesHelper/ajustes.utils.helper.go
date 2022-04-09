@@ -7,7 +7,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -122,7 +122,7 @@ func fillCuentas(cuentas map[string]*models.CuentaContable, cuentas_ []string) (
 
 	for _, id := range cuentas_ {
 		if _, ok := cuentas[id]; !ok {
-			if cta_, err := cuentasContablesHelper.GetCuentaContable(id); err != nil {
+			if cta_, err := cuentasContables.GetCuentaContable(id); err != nil {
 				return nil, err
 			} else {
 				cuentas[id] = cta_

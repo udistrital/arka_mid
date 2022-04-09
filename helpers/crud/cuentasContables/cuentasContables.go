@@ -1,4 +1,4 @@
-package cuentasContablesHelper
+package cuentasContables
 
 import (
 	"github.com/astaxie/beego"

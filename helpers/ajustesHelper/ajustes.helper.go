@@ -10,10 +10,10 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -134,7 +134,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		mov_ := new(models.DetalleMovimientoContable)
 		var cta *models.DetalleCuenta
 
-		if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(mov.Cuenta); err != nil {
+		if ctaCr_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
 			return nil, err
 		} else {
 			if err := formatdata.FillStruct(ctaCr_, &cta); err != nil {
@@ -201,7 +201,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		mov_ := new(models.MovimientoTransaccion)
 		var cta *models.DetalleCuenta
 
-		if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(mov.Cuenta); err != nil {
+		if ctaCr_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
 			return nil, err
 		} else {
 			if err := formatdata.FillStruct(ctaCr_, &cta); err != nil {
