@@ -8,11 +8,11 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -78,7 +78,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 
 	cuentasSubgrupo = make(map[int]*models.CuentaSubgrupo)
 	detalleCuenta = make(map[string]*models.CuentaContable)
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
 		movDebito = db_
@@ -165,19 +165,19 @@ func submitUpdates(elementosActa []*models.Elemento,
 	novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
 
 	for _, el := range elementosActa {
-		if _, err := actaRecibido.PutElemento(el, el.Id); err != nil {
+		if _, err := crudActas.PutElemento(el, el.Id); err != nil {
 			return err
 		}
 	}
 
 	for _, el := range elementosMovimiento {
-		if _, err := movimientosArkaHelper.PutElementosMovimiento(el, el.Id); err != nil {
+		if _, err := movimientosArka.PutElementosMovimiento(el, el.Id); err != nil {
 			return err
 		}
 	}
 
 	for _, nv := range novedades {
-		if _, err := movimientosArkaHelper.PutNovedadElemento(nv, nv.Id); err != nil {
+		if _, err := movimientosArka.PutNovedadElemento(nv, nv.Id); err != nil {
 			return err
 		}
 	}
@@ -258,13 +258,13 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 	movimiento = new(models.Movimiento)
 	detalle := new(models.FormatoAjusteAutomatico)
 	query := "query=Nombre:" + url.QueryEscape("Ajuste Automático")
-	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, nil, err
 	} else {
 		movimiento.FormatoTipoMovimientoId = fm[0]
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Ajuste Aprobado")); err != nil {
+	if sm, err := movimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Ajuste Aprobado")); err != nil {
 		return nil, nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -276,10 +276,10 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	if consecutivo, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Ajuste automático Arka"); err != nil {
+	if consecutivo, consecutivoId_, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Ajuste automático Arka"); err != nil {
 		return nil, nil, err
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteAjustes()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = consecutivos.Format(getTipoComprobanteAjustes()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		consecutivoId = consecutivoId_
 		detalle.Consecutivo = consecutivo
 		detalle.Elementos = ids
@@ -294,7 +294,7 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 		trContable.Etiquetas = ""
 		trContable.Descripcion = "Ajuste contable almacén"
 
-		if tr, err := movimientosContablesMidHelper.PostTrContable(trContable); err != nil {
+		if tr, err := movimientosContables.PostTrContable(trContable); err != nil {
 			return nil, nil, err
 		} else {
 			detalle.TrContable = tr.ConsecutivoId
@@ -313,7 +313,7 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 
 	movimiento.Activo = true
 
-	if res, err := movimientosArkaHelper.PostMovimiento(movimiento); err != nil {
+	if res, err := movimientosArka.PostMovimiento(movimiento); err != nil {
 		return nil, nil, err
 	} else {
 		return res, trContable, nil

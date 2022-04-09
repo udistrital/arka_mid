@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -84,7 +84,7 @@ func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + strconv.Itoa(movimientoId) + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(subgrupos, "|"))
-	if cuentas_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+	if cuentas_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		for _, cuenta := range cuentas_ {

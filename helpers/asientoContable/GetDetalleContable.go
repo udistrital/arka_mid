@@ -2,9 +2,10 @@ package asientoContable
 
 import (
 	"github.com/astaxie/beego/logs"
+
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
@@ -24,7 +25,7 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion) (movimiento
 
 	movimientos_ = make([]*models.DetalleMovimientoContable, 0)
 
-	if dbId, crId, outputError = parametrosHelper.GetParametrosDebitoCredito(); outputError != nil {
+	if dbId, crId, outputError = parametros.GetParametrosDebitoCredito(); outputError != nil {
 		return nil, outputError
 	}
 
@@ -63,7 +64,7 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion) (movimiento
 		}
 
 		if mov.TerceroId > 0 {
-			if tercero_, err := tercerosHelper.GetTerceroById(mov.TerceroId); err != nil {
+			if tercero_, err := terceros.GetTerceroById(mov.TerceroId); err != nil {
 				return nil, err
 			} else {
 				mov_.TerceroId = tercero_

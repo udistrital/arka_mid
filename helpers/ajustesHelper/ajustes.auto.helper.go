@@ -7,9 +7,10 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
+	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -46,13 +47,13 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 	}
 
 	query = "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elementos_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "0", "-1"); err != nil {
+	if elementos_, err := crudActas.GetAllElemento(query, "", "Id", "desc", "0", "-1"); err != nil {
 		return nil, err
 	} else {
 		orgiginalesActa = elementos_
 	}
 
-	if entrada_, err := movimientosArkaHelper.GetEntradaByActa(orgiginalesActa[0].ActaRecibidoId.Id); err != nil {
+	if entrada_, err := movimientosArka.GetEntradaByActa(orgiginalesActa[0].ActaRecibidoId.Id); err != nil {
 		return nil, err
 	} else if entrada_ == nil {
 		return nil, nil
@@ -74,7 +75,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		var consecutivo string
 
 		query = "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(orgiginalesActa[0].ActaRecibidoId.Id)
-		if ha, err := actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
+		if ha, err := crudActas.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 			return nil, err
 		} else {
 			proveedorId = ha[0].ProveedorId
@@ -96,7 +97,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 	if entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
 
 		query = "limit=-1&sortby=MovimientoId,ElementoActaId&order=desc,desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-		if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+		if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
 			return nil, err
 		} else {
 			if elementosSalida_, updateMp_, actualizados_, err := separarElementosPorSalida(elementos_, updateVls, updateSg, updateMp); err != nil {
@@ -109,7 +110,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 
 			if len(elementosSalida) > 0 {
 				query = "query=CodigoAbreviacion:SAL"
-				if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+				if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 					return nil, err
 				} else {
 					tipoMovimientoSalida = fm[0].Id
@@ -153,7 +154,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 
 	if len(ids) > 0 {
 		query = "limit=-1&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=ElementoMovimientoId__ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-		if novedades_, err := movimientosArkaHelper.GetAllNovedadElemento(query); err != nil {
+		if novedades_, err := movimientosArka.GetAllNovedadElemento(query); err != nil {
 			return nil, err
 		} else {
 			novedadesMedicion := separarNovedadesPorElemento(novedades_)
@@ -222,7 +223,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 
 	ajuste = new(models.DetalleAjusteAutomatico)
 
-	if movimiento, outputError = movimientosArkaHelper.GetMovimientoById(movimientoId); outputError != nil {
+	if movimiento, outputError = movimientosArka.GetMovimientoById(movimientoId); outputError != nil {
 		return nil, outputError
 	}
 
@@ -241,7 +242,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 	}
 
 	query = "limit=-1&sortby=Id&order=desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elementosMov, outputError = movimientosArkaHelper.GetAllElementosMovimiento(query); outputError != nil {
+	if elementosMov, outputError = movimientosArka.GetAllElementosMovimiento(query); outputError != nil {
 		return nil, outputError
 	}
 
@@ -266,7 +267,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 	}
 
 	if detalle.TrContable > 0 {
-		if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.TrContable, "consecutivo", true); err != nil {
+		if tr, err := movimientosContables.GetTransaccion(detalle.TrContable, "consecutivo", true); err != nil {
 			return nil, err
 		} else {
 			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
@@ -308,7 +309,7 @@ func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleEle
 	}
 
 	query = "limit=-1&sortby=Id&order=desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elsMov, outputError = movimientosArkaHelper.GetAllElementosMovimiento(query); outputError != nil {
+	if elsMov, outputError = movimientosArka.GetAllElementosMovimiento(query); outputError != nil {
 		return nil, outputError
 	}
 
