@@ -114,7 +114,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 					"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
 					"EstadoMovimientoId":      data["EstadoMovimientoId"].(map[string]interface{})["Id"],
 					"Consecutivo":             data2["consecutivo"],
-					"ConsecutivoId":           data2["ConsecutivoContableId"],
+					"ConsecutivoId":           data2["ConsecutivoId"],
 				}
 
 				if data2["funcionario"] != nil {

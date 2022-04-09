@@ -144,7 +144,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 		} else {
 			consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 			detalle["consecutivo"] = consecutivo
-			detalle["consecutivoId"] = consecutivoId
+			detalle["ConsecutivoId"] = consecutivoId
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
 				logs.Error(err)
 				outputError = map[string]interface{}{
@@ -271,7 +271,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		tipoMovimiento = fm[0].Id
 	}
 
-	if val, ok := detallePrincipal["consecutivoId"]; ok && val != nil {
+	if val, ok := detallePrincipal["ConsecutivoId"]; ok && val != nil {
 		consecutivoId = int(val.(float64))
 	}
 
@@ -283,17 +283,6 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		if tr_["errorTransaccion"].(string) != "" {
 			return tr_, nil
 		}
-	}
-
-	t := trContable["resultadoTransaccion"]
-	detallePrincipal["ConsecutivoContableId"] = t.(*models.DetalleTrContable).ConsecutivoId
-
-	if jsonString, err := json.Marshal(detallePrincipal); err != nil {
-		logs.Error(err)
-		eval := " - json.Marshal(detallePrincipal)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		trSalida.Salida.Detalle = string(jsonString[:])
 	}
 
 	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
