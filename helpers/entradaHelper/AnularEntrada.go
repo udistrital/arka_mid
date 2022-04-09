@@ -42,7 +42,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		estadoMovimiento        models.EstadoMovimiento
 		parametroTipoDebito     models.Parametro
 		parametroTipoCredito    models.Parametro
-		tipoComprobanteContable models.TipoComprobanteContable
+		tipoComprobanteContable models.TipoComprobante
 		consecutivoId           int
 		consecutivo             int
 		transaccion             models.TransaccionMovimientos

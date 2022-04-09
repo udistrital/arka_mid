@@ -1,6 +1,8 @@
 package cuentasContablesHelper
 
 import (
+	"strconv"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/models"
@@ -34,7 +36,7 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable *models.CuentaCo
 }
 
 // GetTipoComprobante Consulta controlador nodo_cuenta_contable/{UUID}
-func GetTipoComprobante(tipoDocumento string) (tipoComprobante *models.TipoComprobanteContable, outputError map[string]interface{}) {
+func GetTipoComprobante(tipoDocumento string) (tipoComprobante *models.TipoComprobante, outputError map[string]interface{}) {
 
 	funcion := "GetCuentaContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -46,7 +48,7 @@ func GetTipoComprobante(tipoDocumento string) (tipoComprobante *models.TipoCompr
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	var tiposComprobante []*models.TipoComprobanteContable
+	var tiposComprobante []*models.TipoComprobante
 	if err := formatdata.FillStruct(data.Body, &tiposComprobante); err != nil {
 		logs.Error(err)
 		eval := " - formatdata.FillStruct(data.Body, &tiposComprobante)"
@@ -61,4 +63,38 @@ func GetTipoComprobante(tipoDocumento string) (tipoComprobante *models.TipoCompr
 	}
 
 	return nil, nil
+}
+
+// GetComprobante Retorna el id para un tipo de comprobante dato
+func GetComprobante(tipoDocumento string, id *string) (outputError map[string]interface{}) {
+
+	funcion := "GetComprobante"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var (
+		data         models.RespuestaAPI2arr
+		comprobantes []*models.Comprobante
+	)
+
+	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "comprobante"
+	if err := request.GetJson(urlcrud, &data); err != nil || data.Code != 200 {
+		eval := " - request.GetJson(urlcrud, &data)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	if err := formatdata.FillStruct(data.Body, &comprobantes); err != nil {
+		logs.Error(err)
+		eval := " - formatdata.FillStruct(data.Body, &comprobantes)"
+		return errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	for _, comprobante := range comprobantes {
+		if comprobante.TipoComprobante.TipoDocumento+strconv.Itoa(comprobante.Numero) == tipoDocumento {
+			*id = comprobante.Id
+			return
+		}
+	}
+
+	return
+
 }

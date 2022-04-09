@@ -15,11 +15,25 @@ type CuentaContable struct {
 	NivelClasificacion *NivelClasificacion
 }
 
-type TipoComprobanteContable struct {
+type TipoComprobante struct {
 	Id            int
 	Activo        bool
 	Codigo        string
 	TipoDocumento string
+	Descripcion   string
+}
+
+type Comprobante struct {
+	Id              string `json:"_id" bson:"_id,omitempty"`
+	Codigo          int
+	Descripcion     string
+	Comprobante     string
+	Numero          int
+	TipoComprobante *TipoComprobante
+}
+
+type Etiquetas struct {
+	ComprobanteId string
 }
 
 type DetalleCuenta struct {

@@ -38,19 +38,18 @@ func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
-func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto string, descripcionAsiento string, idTercero int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
+func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "AsientoContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		res map[string]interface{}
-		//	elemento                []map[string]interface{}
-		transaccion models.TransaccionMovimientos
-		//	respuesta_peticion      map[string]interface{}
+		res                  map[string]interface{}
+		transaccion          models.TransaccionMovimientos
 		parametroTipoDebito  int
 		parametroTipoCredito int
 		cuentasSubgrupo      []*models.CuentaSubgrupo
+		comprobanteID        string
 	)
 
 	res = make(map[string]interface{})
@@ -72,12 +71,15 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 		parametroTipoCredito = cr_
 	}
 
-	etiquetas := make(map[string]interface{})
+	if comprobante != "" {
+		if err := cuentasContablesHelper.GetComprobante(comprobante, &comprobanteID); err != nil {
+			return nil, err
+		}
+	}
 
-	if tipoComprobante_, err := cuentasContablesHelper.GetTipoComprobante("E"); err != nil {
-		return nil, err
-	} else if tipoComprobante_ != nil {
-		etiquetas["TipoComprobanteId"] = tipoComprobante_.Codigo
+	if comprobanteID != "" {
+		etiquetas := *new(models.Etiquetas)
+		etiquetas.ComprobanteId = comprobanteID
 		if jsonData, err := json.Marshal(etiquetas); err != nil {
 			logs.Error(err)
 			eval := " - json.Marshal(etiquetas)"

@@ -270,7 +270,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, true); err != nil {
+	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteSalidas(), strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, true); err != nil {
 		return nil, err
 	} else {
 		trContable = tr_

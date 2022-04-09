@@ -111,7 +111,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	// Simula la transacción contable en caso de aprobarse
-	if trSimulada, err := asientoContable.AsientoContable(totales, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(totales, "", strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trSimulada
