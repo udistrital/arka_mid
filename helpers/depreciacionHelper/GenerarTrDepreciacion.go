@@ -5,10 +5,12 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
@@ -22,10 +24,11 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		infoCorte  []*models.DetalleCorteDepreciacion
-		movimiento *models.Movimiento
-		terceroUD  int
-		query      string
+		infoCorte     []*models.DetalleCorteDepreciacion
+		movimiento    *models.Movimiento
+		consecutivoId int
+		terceroUD     int
+		query         string
 	)
 
 	detalleD = make(map[string]interface{})
@@ -111,7 +114,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	// Simula la transacción contable en caso de aprobarse
-	if trSimulada, err := asientoContable.AsientoContable(totales, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(totales, "", strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, 0, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trSimulada
@@ -126,11 +129,18 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		movimiento.EstadoMovimientoId = sm[0]
 	}
 
+	ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
+	if _, consecutivoId_, err := consecutivos.Get("%05.0f", ctxt, "Registro "+info.Tipo+" Arka"); err != nil {
+		return nil, outputError
+	} else {
+		consecutivoId = consecutivoId_
+	}
+
 	detalle := models.FormatoDepreciacion{
-		TrContable:   0,
-		FechaCorte:   info.FechaCorte.Format("2006-01-02"),
-		Totales:      totales,
-		RazonRechazo: info.RazonRechazo,
+		FechaCorte:    info.FechaCorte.Format("2006-01-02"),
+		Totales:       totales,
+		RazonRechazo:  info.RazonRechazo,
+		ConsecutivoId: consecutivoId,
 	}
 
 	if detalle_, err := json.Marshal(detalle); err != nil {

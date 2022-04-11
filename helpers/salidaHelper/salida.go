@@ -135,7 +135,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, _, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+		if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -146,6 +146,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 		} else {
 			consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 			detalle["consecutivo"] = consecutivo
+			detalle["ConsecutivoId"] = consecutivoId
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
 				logs.Error(err)
 				outputError = map[string]interface{}{
@@ -193,6 +194,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		elementosActa     []*models.Elemento
 		funcionarioId     int
 		tipoMovimiento    int
+		consecutivoId     int
 	)
 
 	resultado := make(map[string]interface{})
@@ -271,25 +273,18 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		tipoMovimiento = fm[0].Id
 	}
 
+	if val, ok := detallePrincipal["ConsecutivoId"]; ok && val != nil {
+		consecutivoId = int(val.(float64))
+	}
+
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, strconv.Itoa(tipoMovimiento), "Salida de almacen", detalle, funcionarioId, true); err != nil {
+	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteSalidas(), strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, consecutivoId, true); err != nil {
 		return nil, err
 	} else {
 		trContable = tr_
 		if tr_["errorTransaccion"].(string) != "" {
 			return tr_, nil
 		}
-	}
-
-	t := trContable["resultadoTransaccion"]
-	detallePrincipal["ConsecutivoContableId"] = t.(*models.DetalleTrContable).ConsecutivoId
-
-	if jsonString, err := json.Marshal(detallePrincipal); err != nil {
-		logs.Error(err)
-		eval := " - json.Marshal(detallePrincipal)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		trSalida.Salida.Detalle = string(jsonString[:])
 	}
 
 	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
@@ -335,8 +330,10 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 		ids = append(ids, el.ElementoActaId)
 	}
 
-	if elementosActa, outputError = actaRecibido.GetElementos(0, ids); outputError != nil {
-		return nil, outputError
+	if len(ids) > 0 {
+		if elementosActa, outputError = actaRecibido.GetElementos(0, ids); outputError != nil {
+			return nil, outputError
+		}
 	}
 
 	for _, el := range elementosActa {

@@ -41,8 +41,8 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if val, ok := detalle["contrato_id"]; ok {
-		if val_, ok := detalle["vigencia_contrato"]; ok {
+	if val, ok := detalle["contrato_id"]; ok && val != nil {
+		if val_, ok := detalle["vigencia_contrato"]; ok && val_ != nil {
 			if contrato, err := administrativa.GetContrato(int(val.(float64)), val_.(string)); err != nil {
 				return nil, err
 			} else {
@@ -52,7 +52,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
-		if val, ok := detalle["ConsecutivoContableId"]; ok {
+		if val, ok := detalle["ConsecutivoId"]; ok && val != nil {
 			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
 				return nil, err
 			} else {

@@ -48,7 +48,7 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 		terceroUD = terceroUD_[0].TerceroId.Id
 	}
 
-	if trSimulada, err := asientoContable.AsientoContable(detalle.Totales, strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(detalle.Totales, "", strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, 0, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["TrContable"] = trSimulada
