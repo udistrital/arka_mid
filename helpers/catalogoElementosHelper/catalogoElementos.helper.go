@@ -1,6 +1,7 @@
 package catalogoElementosHelper
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
@@ -113,6 +115,29 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	}
 
 	return cuentas, nil
+}
+
+// GetCuentasByMovimientoSubgrupos Consulta las cuentas para una serie de subgrupos y las almacena en una estructura de fácil acceso
+func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentaSubgrupo) (
+	outputError map[string]interface{}) {
+
+	funcion := "GetCuentasByMovimientoSubgrupos"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
+	query += "query=Activo:true,SubtipoMovimientoId:" + strconv.Itoa(movimientoId)
+	query += ",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos, "|"))
+	if cuentas_, err := GetAllCuentasSubgrupo(query); err != nil {
+		return err
+	} else {
+		for _, cuenta := range cuentas_ {
+			cuentasSubgrupo[cuenta.SubgrupoId.Id] = *cuenta
+		}
+
+	}
+
+	return
+
 }
 
 // findIdInArray Retorna la posicion en que se encuentra el id específicado
