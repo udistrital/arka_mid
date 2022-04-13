@@ -231,19 +231,8 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	funcionario := ""
-	for k, v := range detallePrincipal {
-		if k == "funcionario" {
-			funcionario = fmt.Sprintf("%v", v)
-		}
-	}
-
-	if func_, err := strconv.Atoi(funcionario); err != nil {
-		logs.Error(err)
-		eval := " - strconv.Atoi(funcionario)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		funcionarioId = func_
+	if val, ok := detallePrincipal["funcionario"]; ok && val != nil {
+		funcionarioId = int(val.(float64))
 	}
 
 	detalle := ""
@@ -276,12 +265,14 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteSalidas(), strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, consecutivoId, true); err != nil {
-		return nil, err
-	} else {
-		trContable = tr_
-		if tr_["errorTransaccion"].(string) != "" {
-			return tr_, nil
+	if len(groups) > 0 && funcionarioId > 0 {
+		if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteSalidas(), strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, consecutivoId, true); err != nil {
+			return nil, err
+		} else {
+			trContable = tr_
+			if tr_["errorTransaccion"].(string) != "" {
+				return tr_, nil
+			}
 		}
 	}
 
@@ -400,7 +391,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		}
 	}()
 
-	query := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
+	query := "limit=-1&sortby=Id&order=desc&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS,EstadoMovimientoId__Nombre"
 	if tramiteOnly {
 		query += url.QueryEscape(":Salida En Trámite")
 	} else {

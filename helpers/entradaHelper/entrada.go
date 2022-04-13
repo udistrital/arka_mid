@@ -91,12 +91,14 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	var trContable map[string]interface{}
-	if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteEntradas(), strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), detalle, "Entrada de almacen", historico.ProveedorId, consecutivoId, true); tr_ == nil || err != nil {
-		return nil, err
-	} else {
-		trContable = tr_
-		if tr_["errorTransaccion"].(string) != "" {
-			return tr_, nil
+	if len(groups) > 0 && historico.ProveedorId > 0 {
+		if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteEntradas(), strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), detalle, "Entrada de almacen", historico.ProveedorId, consecutivoId, true); tr_ == nil || err != nil {
+			return nil, err
+		} else {
+			trContable = tr_
+			if tr_["errorTransaccion"].(string) != "" {
+				return tr_, nil
+			}
 		}
 	}
 
