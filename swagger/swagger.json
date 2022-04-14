@@ -1525,6 +1525,34 @@
                         "description": "not found resource"
                     }
                 }
+            },
+            "put": {
+                "tags": [
+                    "traslados"
+                ],
+                "description": "Actualiza el estado del traslado y genera la transacción contable correspondiente.",
+                "operationId": "TrasladosController.Put Aprobar traslado",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "Id del traslado",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]interface{}"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
             }
         }
     },
