@@ -89,6 +89,7 @@ type SalidaGeneral struct {
 
 type FormatoTraslado struct {
 	Consecutivo        string
+	ConsecutivoId      int
 	Ubicacion          int
 	FuncionarioOrigen  int
 	FuncionarioDestino int

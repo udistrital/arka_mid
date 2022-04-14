@@ -133,20 +133,21 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 
 	result = new(models.Movimiento)
 
-	detalleJSON := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
+	var detalle models.FormatoTraslado
+	if err := json.Unmarshal([]byte(data.Detalle), &detalle); err != nil {
 		panic(err.Error())
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
-	if consecutivo, _, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
+	if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
 		return nil, err
 	} else {
 		consecutivo = consecutivos.Format(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		detalleJSON["Consecutivo"] = consecutivo
+		detalle.Consecutivo = consecutivo
+		detalle.ConsecutivoId = consecutivoId
 	}
 
-	if jsonData, err := json.Marshal(detalleJSON); err != nil {
+	if jsonData, err := json.Marshal(detalle); err != nil {
 		logs.Error(err)
 		eval := " - json.Marshal(detalleJSON)"
 		return nil, errorctrl.Error(funcion+eval, err, "500")

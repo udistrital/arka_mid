@@ -5,14 +5,14 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
 	"github.com/udistrital/utils_oas/request"
 )
 
 // GetContrato ...
 func GetContrato(contratoId int, vigencia string) (contrato map[string]interface{}, outputError map[string]interface{}) {
 	if contratoId != 0 { // (1) error parametro
-		response := request.GetJsonWSO2("http://"+beego.AppConfig.String("administrativaJbpmService")+"informacion_contrato/"+strconv.Itoa(int(contratoId))+"/"+vigencia, &contrato) // (2) error servicio caido
-		logs.Debug(response)
+		request.GetJsonWSO2("http://"+beego.AppConfig.String("administrativaJbpmService")+"informacion_contrato/"+strconv.Itoa(int(contratoId))+"/"+vigencia, &contrato)
 		return contrato, nil
 
 	} else {
