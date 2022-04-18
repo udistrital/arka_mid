@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 )
 
 var parameters struct {
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 
 // GetCuentaContable ...
 func TestGetCuentaContable(t *testing.T) {
-	valor, err := cuentasContablesHelper.GetCuentaContable("4")
+	valor, err := cuentasContables.GetCuentaContable("4")
 	if err != nil {
 		t.Error("No se pudo consultar las cuentas contables", err)
 		t.Fail()
