@@ -139,6 +139,7 @@ type TrTraslado struct {
 
 type FormatoBaja struct {
 	Consecutivo    string
+	ConsecutivoId  int
 	Elementos      []int
 	FechaRevisionA string
 	FechaRevisionC string
