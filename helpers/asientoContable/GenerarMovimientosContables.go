@@ -7,7 +7,7 @@ import (
 
 // GenerarMovimientosContables Genera los movimientos contables para una serie de cuentas y valores
 func GenerarMovimientosContables(totales map[int]float64, detalleCuentas map[string]models.CuentaContable, cuentasSubgrupo map[int]models.CuentaSubgrupo,
-	parDebito, parCredito, terceoId int, ajuste bool, movimientos *[]*models.MovimientoTransaccion) (outputError map[string]interface{}) {
+	parDebito, parCredito, terceoId int, descripcion string, ajuste bool, movimientos *[]*models.MovimientoTransaccion) (outputError map[string]interface{}) {
 
 	funcion := "GenerarMovimientosContables"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
