@@ -124,9 +124,16 @@ func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuent
 	funcion := "GetCuentasByMovimientoSubgrupos"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
+	var subgrupos_ []int
+	for _, sg := range subgrupos {
+		if _, ok := cuentasSubgrupo[sg]; !ok {
+			subgrupos_ = append(subgrupos_, sg)
+		}
+	}
+
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=Activo:true,SubtipoMovimientoId:" + strconv.Itoa(movimientoId)
-	query += ",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos, "|"))
+	query += ",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos_, "|"))
 	if cuentas_, err := GetAllCuentasSubgrupo(query); err != nil {
 		return err
 	} else {
