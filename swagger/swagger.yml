@@ -1988,6 +1988,19 @@ definitions:
         $ref: '#/definitions/models.DatosIdentificacion'
       Tercero:
         $ref: '#/definitions/models.Tercero'
+  models.InfoTransaccionContable:
+    title: InfoTransaccionContable
+    type: object
+    properties:
+      Concepto:
+        type: string
+      Fecha:
+        type: string
+        format: datetime
+      movimientos:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleMovimientoContable'
   models.Movimiento:
     title: Movimiento
     type: object
@@ -2373,8 +2386,6 @@ definitions:
     title: TrBaja
     type: object
     properties:
-      Consecutivo:
-        type: string
       Elementos:
         type: array
         items:
@@ -2386,6 +2397,8 @@ definitions:
       Id:
         type: integer
         format: int64
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
       Observaciones:
         type: string
       RazonRechazo:
@@ -2399,6 +2412,8 @@ definitions:
         format: int64
       TipoBaja:
         $ref: '#/definitions/models.FormatoTipoMovimiento'
+      TrContable:
+        $ref: '#/definitions/models.InfoTransaccionContable'
   models.TrRevisionBaja:
     title: TrRevisionBaja
     type: object
@@ -2441,8 +2456,6 @@ definitions:
     title: TrTraslado
     type: object
     properties:
-      Detalle:
-        type: string
       Elementos:
         type: array
         items:
@@ -2451,8 +2464,12 @@ definitions:
         $ref: '#/definitions/models.DetalleFuncionario'
       FuncionarioOrigen:
         $ref: '#/definitions/models.DetalleFuncionario'
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
       Observaciones:
         type: string
+      TrContable:
+        $ref: '#/definitions/models.InfoTransaccionContable'
       Ubicacion:
         $ref: '#/definitions/models.DetalleSedeDependencia'
 tags:

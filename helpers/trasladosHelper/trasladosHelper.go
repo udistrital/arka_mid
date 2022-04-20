@@ -4,16 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -28,15 +31,18 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 	var (
 		movimiento *models.Movimiento
-		detalle    models.DetalleTraslado
+		detalle    models.FormatoTraslado
 	)
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	if movimientoA, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
+	query := "query=Id:" + strconv.Itoa(id)
+	if movimientoA, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
+	} else if len(movimientoA) == 1 {
+		movimiento = movimientoA[0]
 	} else {
-		movimiento = movimientoA
+		return nil, nil
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
@@ -72,7 +78,27 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	} else {
 		Traslado.Elementos = elementos
 	}
-	Traslado.Detalle = movimiento.Detalle
+
+	if movimiento.EstadoMovimientoId.Nombre == "Traslado Confirmado" {
+		if detalle.ConsecutivoId > 0 {
+			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+				return nil, err
+			} else if len(tr.Movimientos) > 0 {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+					return nil, err
+				} else {
+					trContable := models.InfoTransaccionContable{
+						Movimientos: detalleContable,
+						Concepto:    tr.Descripcion,
+						Fecha:       tr.FechaTransaccion,
+					}
+					Traslado.TrContable = &trContable
+				}
+			}
+		}
+	}
+
+	Traslado.Movimiento = movimiento
 	Traslado.Observaciones = movimiento.Observacion
 
 	return Traslado, nil

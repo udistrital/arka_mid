@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/bajasHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	// "github.com/udistrital/arka_mid/models"
@@ -272,10 +273,19 @@ func (c *BajaController) PutRevision() {
 		panic(errorctrl.Error("PutRevision - json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja)", err, "400"))
 	}
 
-	if v, err := bajasHelper.AprobarBajas(trBaja); err != nil {
-		panic(errorctrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
+	if !trBaja.Aprobacion {
+		if ids, err := movimientosArka.PutRevision(trBaja); err != nil {
+			panic(errorctrl.Error("PutRevision - movimientosArkaHelper.PutRevision(trBaja)", err, "404"))
+		} else {
+			c.Data["json"] = ids
+		}
 	} else {
-		c.Data["json"] = v
+		if v, err := bajasHelper.AprobarBajas(trBaja); err != nil {
+			panic(errorctrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
+		} else {
+			c.Data["json"] = v
+		}
 	}
+
 	c.ServeJSON()
 }

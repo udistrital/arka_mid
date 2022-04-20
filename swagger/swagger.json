@@ -2894,6 +2894,25 @@
                 }
             }
         },
+        "models.InfoTransaccionContable": {
+            "title": "InfoTransaccionContable",
+            "type": "object",
+            "properties": {
+                "Concepto": {
+                    "type": "string"
+                },
+                "Fecha": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "movimientos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DetalleMovimientoContable"
+                    }
+                }
+            }
+        },
         "models.Movimiento": {
             "title": "Movimiento",
             "type": "object",
@@ -3449,9 +3468,6 @@
             "title": "TrBaja",
             "type": "object",
             "properties": {
-                "Consecutivo": {
-                    "type": "string"
-                },
                 "Elementos": {
                     "type": "array",
                     "items": {
@@ -3467,6 +3483,9 @@
                 "Id": {
                     "type": "integer",
                     "format": "int64"
+                },
+                "Movimiento": {
+                    "$ref": "#/definitions/models.Movimiento"
                 },
                 "Observaciones": {
                     "type": "string"
@@ -3486,6 +3505,9 @@
                 },
                 "TipoBaja": {
                     "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                },
+                "TrContable": {
+                    "$ref": "#/definitions/models.InfoTransaccionContable"
                 }
             }
         },
@@ -3549,9 +3571,6 @@
             "title": "TrTraslado",
             "type": "object",
             "properties": {
-                "Detalle": {
-                    "type": "string"
-                },
                 "Elementos": {
                     "type": "array",
                     "items": {
@@ -3564,8 +3583,14 @@
                 "FuncionarioOrigen": {
                     "$ref": "#/definitions/models.DetalleFuncionario"
                 },
+                "Movimiento": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
                 "Observaciones": {
                     "type": "string"
+                },
+                "TrContable": {
+                    "$ref": "#/definitions/models.InfoTransaccionContable"
                 },
                 "Ubicacion": {
                     "$ref": "#/definitions/models.DetalleSedeDependencia"
