@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type CuentaContable struct {
 	Activo             bool
 	Id                 string
@@ -49,4 +51,10 @@ type DetalleMovimientoContable struct {
 	Credito     float64
 	Descripcion string
 	TerceroId   *Tercero
+}
+
+type InfoTransaccionContable struct {
+	Movimientos []*DetalleMovimientoContable `json:"movimientos"`
+	Concepto    string
+	Fecha       time.Time
 }

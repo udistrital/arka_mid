@@ -18,9 +18,9 @@ func GenerarMovimientosContables(totales map[int]float64, detalleCuentas map[str
 
 	for sg, valor := range totales {
 		ctaCr := detalleCuentas[cuentasSubgrupo[sg].CuentaCreditoId]
-		ctaDb := detalleCuentas[cuentasSubgrupo[sg].CuentaCreditoId]
-		movDb := CreaMovimiento(valor, descripcion, terceoId, &ctaDb, parDebito)
 		movCr := CreaMovimiento(valor, descripcion, terceoId, &ctaCr, parCredito)
+		ctaDb := detalleCuentas[cuentasSubgrupo[sg].CuentaDebitoId]
+		movDb := CreaMovimiento(valor, descripcion, terceoId, &ctaDb, parDebito)
 		*movimientos = append(*movimientos, movCr, movDb)
 	}
 

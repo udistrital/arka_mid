@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
@@ -26,15 +29,18 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 	var (
 		movimiento *models.Movimiento
-		detalle    models.DetalleTraslado
+		detalle    models.FormatoTraslado
 	)
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	if movimientoA, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	query := "query=Id:" + strconv.Itoa(id)
+	if movimientoA, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
 		return nil, err
+	} else if len(movimientoA) == 1 {
+		movimiento = movimientoA[0]
 	} else {
-		movimiento = movimientoA
+		return nil, nil
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
@@ -70,7 +76,27 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	} else {
 		Traslado.Elementos = elementos
 	}
-	Traslado.Detalle = movimiento.Detalle
+
+	if movimiento.EstadoMovimientoId.Nombre == "Traslado Confirmado" {
+		if detalle.ConsecutivoId > 0 {
+			if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+				return nil, err
+			} else if len(tr.Movimientos) > 0 {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+					return nil, err
+				} else {
+					trContable := models.InfoTransaccionContable{
+						Movimientos: detalleContable,
+						Concepto:    tr.Descripcion,
+						Fecha:       tr.FechaTransaccion,
+					}
+					Traslado.TrContable = &trContable
+				}
+			}
+		}
+	}
+
+	Traslado.Movimiento = movimiento
 	Traslado.Observaciones = movimiento.Observacion
 
 	return Traslado, nil

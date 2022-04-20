@@ -129,12 +129,13 @@ type DetalleElementoPlaca struct {
 }
 
 type TrTraslado struct {
-	Detalle            string
+	Movimiento         *Movimiento
 	Observaciones      string
 	Elementos          []*DetalleElementoPlaca
 	FuncionarioOrigen  *DetalleFuncionario
 	FuncionarioDestino *DetalleFuncionario
 	Ubicacion          *DetalleSedeDependencia
+	TrContable         *InfoTransaccionContable
 }
 
 type FormatoBaja struct {
@@ -173,7 +174,7 @@ type TrBaja struct {
 	Revisor        *InfoTercero
 	Soporte        int
 	TipoBaja       *FormatoTipoMovimiento
-	TrContable     map[string]interface{}
+	TrContable     *InfoTransaccionContable
 }
 
 type DetalleElementoBaja struct {

@@ -263,12 +263,12 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
 					return nil, err
 				} else {
-					trContable := map[string]interface{}{
-						"movimientos": detalleContable,
-						"concepto":    tr.Descripcion,
-						"fecha":       tr.FechaTransaccion,
+					trContable := models.InfoTransaccionContable{
+						Movimientos: detalleContable,
+						Concepto:    tr.Descripcion,
+						Fecha:       tr.FechaTransaccion,
 					}
-					Baja.TrContable = trContable
+					Baja.TrContable = &trContable
 				}
 			}
 		}
