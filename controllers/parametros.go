@@ -17,7 +17,6 @@ type ParametrosController struct {
 // URLMapping ...
 func (c *ParametrosController) URLMapping() {
 	c.Mapping("GetAll", c.GetAll)
-	c.Mapping("Post", c.Post)
 	c.Mapping("PostAsignacionEspacioDependencia", c.PostAsignacionEspacioDependencia)
 }
 

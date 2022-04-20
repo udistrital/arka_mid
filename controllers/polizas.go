@@ -16,7 +16,7 @@ type PolizasController struct {
 
 // URLMapping ...
 func (c *PolizasController) URLMapping() {
-	c.Mapping("GetAll", c.GetAllElementosPoliza)
+	c.Mapping("GetAllElementosPoliza", c.GetAllElementosPoliza)
 }
 
 // GetAll ...

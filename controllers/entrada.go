@@ -21,8 +21,10 @@ type EntradaController struct {
 // URLMapping ...
 func (c *EntradaController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("Get", c.GetEncargadoElemento)
 	c.Mapping("GetOne", c.GetOne)
+	c.Mapping("GetEncargadoElemento", c.GetEncargadoElemento)
+	c.Mapping("AnularEntrada", c.AnularEntrada)
+	c.Mapping("GetMovimientos", c.GetMovimientos)
 }
 
 // Post ...

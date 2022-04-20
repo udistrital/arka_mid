@@ -18,13 +18,13 @@ type AjusteController struct {
 
 // URLMapping ...
 func (c *AjusteController) URLMapping() {
-	c.Mapping("Post", c.PostAjuste)
-	c.Mapping("Post", c.PostManual)
-	c.Mapping("GetOne", c.GetOneManual)
-	c.Mapping("GetOne", c.GetElementos)
-	c.Mapping("GetOne", c.GetOneAuto)
+	c.Mapping("PostManual", c.PostManual)
+	c.Mapping("PostAjuste", c.PostAjuste)
+	c.Mapping("GetOneManual", c.GetOneManual)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
+	c.Mapping("GetElementos", c.GetElementos)
+	c.Mapping("GetOneAuto", c.GetOneAuto)
 }
 
 // PostManual ...

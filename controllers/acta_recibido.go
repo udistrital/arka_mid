@@ -23,7 +23,8 @@ func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
-	c.Mapping("GetElementosConsumo", c.GetAllElementosConsumo)
+	c.Mapping("GetAllElementosConsumo", c.GetAllElementosConsumo)
+	c.Mapping("GetAllActas", c.GetAllActas)
 }
 
 // Post ...
