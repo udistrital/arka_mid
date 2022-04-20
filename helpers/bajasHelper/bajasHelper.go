@@ -11,7 +11,9 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
 	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
@@ -105,6 +107,7 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 	}
 
 	return movimiento, nil
+
 }
 
 // GetAllSolicitudes Consulta información general de todas las bajas filtrando por las que están pendientes por revisar en almacén y en comité
@@ -189,9 +192,10 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 		}
 		return nil, outputError
 	}
+
 }
 
-// TraerDetalle Consulta el detalle de la baja, elementos, revisor, solicitante, soporte, tipo
+// TraerDetalle Consulta el detalle de la baja: elementos, revisor, solicitante, soporte, tipo
 func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface{}) {
 
 	funcion := "TraerDetalle"
@@ -204,10 +208,11 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	Baja = new(models.TrBaja)
 
 	// Se consulta el movimiento
-	if movimientoA, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	query := "query=Id:" + strconv.Itoa(id)
+	if movimientoA, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
 		return nil, err
-	} else {
-		movimiento = movimientoA
+	} else if len(movimientoA) > 0 {
+		movimiento = movimientoA[0]
 	}
 
 	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
@@ -243,16 +248,35 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	}
 
 	// Se consulta el detalle de los elementos relacionados en la solicitud
-	query := "query=MovimientoId__Id:" + strconv.Itoa(id)
+	query = "query=MovimientoId__Id:" + strconv.Itoa(id)
 	if soportes, err := movimientosArkaHelper.GetAllSoporteMovimiento(query); err != nil {
 		return nil, err
 	} else if len(soportes) > 0 {
 		Baja.Soporte = soportes[0].DocumentoId
 	}
 
+	if movimiento.EstadoMovimientoId.Nombre == "Baja Aprobada" {
+		if detalle.ConsecutivoId > 0 {
+			if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+				return nil, err
+			} else if len(tr.Movimientos) > 0 {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+					return nil, err
+				} else {
+					trContable := map[string]interface{}{
+						"movimientos": detalleContable,
+						"concepto":    tr.Descripcion,
+						"fecha":       tr.FechaTransaccion,
+					}
+					Baja.TrContable = trContable
+				}
+			}
+		}
+	}
+
 	Baja.Id = movimiento.Id
 	Baja.TipoBaja = movimiento.FormatoTipoMovimientoId
-	Baja.Consecutivo = detalle.Consecutivo
+	Baja.Movimiento = movimiento
 	Baja.Observaciones = movimiento.Observacion
 	Baja.RazonRechazo = detalle.RazonRechazo
 	Baja.Resolucion = detalle.Resolucion

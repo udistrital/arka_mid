@@ -2,7 +2,6 @@ package bajasHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"time"
 
@@ -285,17 +284,6 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		}
 
 	}
-
-	// Paso 2: Actualiza el estado de las bajas en api movimientos_arka_crud
-	// fmt.Println(detalleMediciones)
-	// fmt.Println(detalleBajas)
-	// fmt.Println(bajas)
-	// fmt.Println(totalesBaja)
-	// fmt.Println(totalesDp)
-	fmt.Println(totalesAm)
-	fmt.Println(cuentasDp)
-	fmt.Println(cuentasBaja, movAm, movDp, movBj)
-	fmt.Println(len(detalleCuentas))
 
 	return ids, nil
 }

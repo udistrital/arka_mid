@@ -1049,6 +1049,9 @@ definitions:
   '{}':
     title: '{}'
     type: object
+  19706.0xc000d671a0.false:
+    title: "false"
+    type: object
   map[string]interface{}:
     title: map[string]interface{}
     type: object
@@ -2373,8 +2376,6 @@ definitions:
     title: TrBaja
     type: object
     properties:
-      Consecutivo:
-        type: string
       Elementos:
         type: array
         items:
@@ -2386,6 +2387,8 @@ definitions:
       Id:
         type: integer
         format: int64
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
       Observaciones:
         type: string
       RazonRechazo:
@@ -2399,6 +2402,8 @@ definitions:
         format: int64
       TipoBaja:
         $ref: '#/definitions/models.FormatoTipoMovimiento'
+      TrContable:
+        $ref: '#/definitions/19706.0xc000d671a0.false'
   models.TrRevisionBaja:
     title: TrRevisionBaja
     type: object

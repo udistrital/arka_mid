@@ -162,17 +162,18 @@ type DetalleBaja struct {
 }
 
 type TrBaja struct {
-	Id             int
-	Soporte        int
-	Funcionario    *InfoTercero
-	Revisor        *InfoTercero
-	TipoBaja       *FormatoTipoMovimiento
 	Elementos      []*DetalleElementoBaja
+	FechaRevisionC string
+	Funcionario    *InfoTercero
+	Id             int
+	Movimiento     *Movimiento
 	Observaciones  string
-	Consecutivo    string
 	RazonRechazo   string
 	Resolucion     string
-	FechaRevisionC string
+	Revisor        *InfoTercero
+	Soporte        int
+	TipoBaja       *FormatoTipoMovimiento
+	TrContable     map[string]interface{}
 }
 
 type DetalleElementoBaja struct {
