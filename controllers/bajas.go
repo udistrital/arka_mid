@@ -21,11 +21,13 @@ type BajaController struct {
 
 // URLMapping ...
 func (c *BajaController) URLMapping() {
-	c.Mapping("Get", c.GetElemento)
 	c.Mapping("Post", c.Post)
 	c.Mapping("Put", c.Put)
+	c.Mapping("GetElemento", c.GetElemento)
+	c.Mapping("GetSolicitud", c.GetSolicitud)
+	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetDetalleElemento", c.GetDetalleElemento)
 	c.Mapping("PutRevision", c.PutRevision)
-	c.Mapping("GetElemento", c.GetDetalleElemento)
 }
 
 // Post ...

@@ -19,8 +19,8 @@ type DepreciacionController struct {
 // URLMapping ...
 func (c *DepreciacionController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("Put", c.Put)
 	c.Mapping("GetOne", c.GetOne)
+	c.Mapping("Put", c.Put)
 }
 
 // GetCorte ...

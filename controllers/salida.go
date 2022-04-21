@@ -22,8 +22,8 @@ type SalidaController struct {
 // URLMapping ...
 func (c *SalidaController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("Get", c.GetSalida)
-	c.Mapping("GetAll", c.GetSalidas)
+	c.Mapping("GetSalida", c.GetSalida)
+	c.Mapping("GetSalidas", c.GetSalidas)
 	c.Mapping("Put", c.Put)
 }
 

@@ -18,8 +18,9 @@ type TrasladosController struct {
 // URLMapping ...
 func (c *TrasladosController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("Get", c.GetTraslado)
+	c.Mapping("GetTraslado", c.GetTraslado)
 	c.Mapping("GetElementosFuncionario", c.GetElementosFuncionario)
+	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 }
 

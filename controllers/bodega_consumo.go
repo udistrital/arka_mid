@@ -17,9 +17,10 @@ type BodegaConsumoController struct {
 
 // URLMapping ...
 func (c *BodegaConsumoController) URLMapping() {
-	c.Mapping("GetOne", c.GetOneSolicitud)
-	c.Mapping("GetAll", c.GetElementos)
-	c.Mapping("Get", c.GetAllExistencias)
+	c.Mapping("GetOneSolicitud", c.GetOneSolicitud)
+	c.Mapping("GetElementos", c.GetElementos)
+	c.Mapping("GetAperturasKardex", c.GetAperturasKardex)
+	c.Mapping("GetAllExistencias", c.GetAllExistencias)
 }
 
 // GetOneSolicitud ...
@@ -166,30 +167,3 @@ func (c *BodegaConsumoController) GetAllExistencias() {
 		}
 	}
 }
-
-// Put ...
-// @Title Put
-// @Description update the Bodega-Consumo
-// @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.Bodega-Consumo	true		"body for Bodega-Consumo content"
-// @Success 200 {object} models.Bodega-Consumo
-// @Failure 403 :id is not int
-// @router /:id [put]
-/*
-func (c *BodegaConsumoController) Put() {
-
-}
-*/
-
-// Delete ...
-// @Title Delete
-// @Description delete the Bodega-Consumo
-// @Param	id		path 	string	true		"The id you want to delete"
-// @Success 200 {string} delete success!
-// @Failure 403 id is empty
-// @router /:id [delete]
-/*
-func (c *BodegaConsumoController) Delete() {
-
-}
-*/
