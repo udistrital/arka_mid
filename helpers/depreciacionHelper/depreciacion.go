@@ -6,10 +6,13 @@ import (
 	"time"
 
 	"github.com/astaxie/beego/logs"
-
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+
+	// "github.com/udistrital/arka_mid/helpers/asientoContable"
+	// "github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	// "github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -26,7 +29,7 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 	)
 	detalleD = make(map[string]interface{})
 
-	if mov_, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	if mov_, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
 		return nil, err
 	} else {
 		movimiento = mov_
@@ -38,8 +41,8 @@ func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[s
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
-	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + crudTerceros.GetDocUD()
+	if terceroUD_, err := crudTerceros.GetAllDatosIdentificacion(query); err != nil {
 		return nil, err
 	} else {
 		terceroUD = terceroUD_[0].TerceroId.Id

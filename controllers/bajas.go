@@ -8,7 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/bajasHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	// "github.com/udistrital/arka_mid/models"
@@ -276,7 +276,7 @@ func (c *BajaController) PutRevision() {
 	}
 
 	if !trBaja.Aprobacion {
-		if ids, err := movimientosArkaHelper.PutRevision(trBaja); err != nil {
+		if ids, err := movimientosArka.PutRevision(trBaja); err != nil {
 			panic(errorctrl.Error("PutRevision - movimientosArkaHelper.PutRevision(trBaja)", err, "404"))
 		} else {
 			c.Data["json"] = ids

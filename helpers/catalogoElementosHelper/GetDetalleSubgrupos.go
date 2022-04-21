@@ -3,6 +3,7 @@ package catalogoElementosHelper
 import (
 	"net/url"
 
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -17,7 +18,7 @@ func GetDetalleSubgrupos(subgrupos []int, detalleSubgrupo map[int]models.Detalle
 
 	query := "limit=-1&sortby=Id&order=desc&fields=Amortizacion,Depreciacion,SubgrupoId&query=Activo:true"
 	query += ",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos, "|"))
-	if detalles, err := GetAllDetalleSubgrupo(query); err != nil {
+	if detalles, err := catalogoElementos.GetAllDetalleSubgrupo(query); err != nil {
 		return err
 	} else {
 		for _, detalle := range detalles {

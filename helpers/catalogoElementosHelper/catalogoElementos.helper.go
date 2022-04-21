@@ -7,8 +7,9 @@ import (
 
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	crudCatalogo "github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -29,7 +30,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	)
 
 	query = "limit=1&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-	if detalle_, err := GetAllDetalleSubgrupo(query); err != nil {
+	if detalle_, err := crudCatalogo.GetAllDetalleSubgrupo(query); err != nil {
 		return nil, err
 	} else if len(detalle_) == 0 {
 		return nil, nil
@@ -38,7 +39,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	}
 
 	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&query=Activo:true"
-	if movs_, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if movs_, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		for _, fm := range movs_ {
@@ -52,7 +53,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 		}
 	}
 
-	if cuentas_, err := GetTrCuentasSubgrupo(subgrupoId); err != nil {
+	if cuentas_, err := crudCatalogo.GetTrCuentasSubgrupo(subgrupoId); err != nil {
 		return nil, err
 	} else {
 		ctas = cuentas_
@@ -69,7 +70,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 				if val, ok := detalleCtas[ctas[idx].CuentaCreditoId]; ok {
 					dCta.CuentaCreditoId = val
 				} else {
-					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
+					if cta, err := cuentasContables.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
 						return nil, err
 					} else if cta != nil {
 						var cdt *models.DetalleCuenta
@@ -87,7 +88,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 				if val, ok := detalleCtas[ctas[idx].CuentaDebitoId]; ok {
 					dCta.CuentaDebitoId = val
 				} else {
-					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
+					if cta, err := cuentasContables.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
 						return nil, err
 					} else if cta != nil {
 						var dbt *models.DetalleCuenta
@@ -134,7 +135,7 @@ func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuent
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=Activo:true,SubtipoMovimientoId:" + strconv.Itoa(movimientoId)
 	query += ",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos_, "|"))
-	if cuentas_, err := GetAllCuentasSubgrupo(query); err != nil {
+	if cuentas_, err := crudCatalogo.GetAllCuentasSubgrupo(query); err != nil {
 		return err
 	} else {
 		for _, cuenta := range cuentas_ {

@@ -8,7 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	// "github.com/udistrital/utils_oas/formatdata"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -58,7 +58,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 		if err := json.Unmarshal([]byte(str), &data); err == nil {
 
 			// logs.Debug("data:", data)
-			if tercero, err := tercerosHelper.GetNombreTerceroById(fmt.Sprintf("%v", data["Funcionario"])); err == nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(fmt.Sprintf("%v", data["Funcionario"])); err == nil {
 				solicitud_[0]["Funcionario"] = tercero
 			} else {
 				return nil, err

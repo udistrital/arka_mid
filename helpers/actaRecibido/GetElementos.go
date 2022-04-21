@@ -7,7 +7,8 @@ import (
 
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	// "github.com/udistrital/utils_oas/formatdata"
@@ -46,7 +47,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 			query += "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 		}
 
-		if elementos, err := GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
+		if elementos, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
 			return nil, err
 		} else {
 
@@ -73,7 +74,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 				reqSubgrupo := func() (interface{}, map[string]interface{}) {
 					urlcrud = "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(idSubgrupo)
 					urlcrud += "&fields=SubgrupoId,TipoBienId,Depreciacion,Amortizacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
-					if detalleSubgrupo_, err := catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud); err == nil && len(detalleSubgrupo_) > 0 {
+					if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(urlcrud); err == nil && len(detalleSubgrupo_) > 0 {
 						return detalleSubgrupo_[0], nil
 					} else if err != nil {
 						return nil, err

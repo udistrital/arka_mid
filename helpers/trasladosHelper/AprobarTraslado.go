@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
+	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	cuentasContablesHelper "github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -43,7 +44,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 
 	resultado = make(map[string]interface{})
 
-	if movimiento_, err := movimientosArkaHelper.GetMovimientoById(id); err != nil {
+	if movimiento_, err := movimientosArka.GetMovimientoById(id); err != nil {
 		return
 	} else {
 		movimiento = *movimiento_
@@ -61,7 +62,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 
 	query = "limit=-1&fields=Id,ElementoActaId,ValorTotal&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementosMovimiento = make(map[int]models.ElementosMovimiento)
@@ -73,7 +74,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 
 	query = "limit=-1&fields=ElementoMovimientoId,ValorLibros&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=Activo:true,ElementoMovimientoId__Id__in:"
 	query += utilsHelper.ArrayToString(ids, "|")
-	if novedades_, err := movimientosArkaHelper.GetAllNovedadElemento(query); err != nil {
+	if novedades_, err := movimientosArka.GetAllNovedadElemento(query); err != nil {
 		return nil, err
 	} else {
 		novedades = make(map[int]models.NovedadElemento)
@@ -90,7 +91,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 
 	fields := "Id,SubgrupoCatalogoId"
 	query = "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
+	if elementos_, err := crudActas.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementosActa = make(map[int]models.Elemento)
@@ -128,7 +129,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 	}
 
 	query = "query=CodigoAbreviacion:SAL"
-	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		tipoMovimiento = fm[0].Id
@@ -154,7 +155,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		return nil, err
 	}
 
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
 		parDebito = db_
@@ -172,7 +173,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		transaccion.Etiquetas = ""
 		transaccion.FechaTransaccion = time.Now()
 
-		if _, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
+		if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		}
 	}
@@ -188,13 +189,13 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		resultado["trContable"] = trContable
 	}
 
-	if em, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Traslado Confirmado")); err != nil {
+	if em, err := movimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Traslado Confirmado")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = em[0]
 	}
 
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(&movimiento, movimiento.Id); err != nil {
+	if movimiento_, err := movimientosArka.PutMovimiento(&movimiento, movimiento.Id); err != nil {
 		return nil, err
 	} else {
 		resultado["movimiento"] = movimiento_

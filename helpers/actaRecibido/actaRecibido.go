@@ -10,10 +10,10 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/models"
-
 	// "github.com/udistrital/utils_oas/formatdata"
 
+	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -133,15 +133,8 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		return nil, outputError
 	}
 
-	urlUnidad := "http://" + beego.AppConfig.String("AdministrativaService") + "unidad?limit=-1"
-	if _, err := request.GetJsonTest(urlUnidad, &Unidades); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlUnidad, &Unidades)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if outputError = administrativa.GetUnidades(&Unidades); outputError != nil {
+		return
 	}
 
 	parametros = append(parametros, map[string]interface{}{

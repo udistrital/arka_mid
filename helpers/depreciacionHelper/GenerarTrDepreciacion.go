@@ -10,9 +10,9 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -34,7 +34,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	detalleD = make(map[string]interface{})
 
 	// Consulta los valores para generar el corte de depreciación
-	if elementos, err := movimientosArkaHelper.GetCorteDepreciacion(info.FechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
+	if elementos, err := crudMovimientosArka.GetCorteDepreciacion(info.FechaCorte.AddDate(0, 0, 1).Format("2006-01-02")); err != nil {
 		return nil, err
 	} else if elementos == nil {
 		return detalleD, nil
@@ -97,8 +97,8 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		return detalleD, nil
 	}
 
-	query = "query=TipoDocumentoId__Nombre:NIT,Numero:" + tercerosHelper.GetDocUD()
-	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(query); err != nil {
+	query = "query=TipoDocumentoId__Nombre:NIT,Numero:" + crudTerceros.GetDocUD()
+	if terceroUD_, err := crudTerceros.GetAllDatosIdentificacion(query); err != nil {
 		return nil, err
 	} else {
 		terceroUD = terceroUD_[0].TerceroId.Id
@@ -107,7 +107,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	movimiento = new(models.Movimiento)
 
 	query = "query=Nombre:" + info.Tipo
-	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		movimiento.FormatoTipoMovimientoId = fm[0]
@@ -123,14 +123,14 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		}
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Depr Generada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Depr Generada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
 	}
 
 	ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
-	if _, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", ctxt, "Registro "+info.Tipo+" Arka"); err != nil {
+	if _, consecutivoId_, err := consecutivos.Get("%05.0f", ctxt, "Registro "+info.Tipo+" Arka"); err != nil {
 		return nil, outputError
 	} else {
 		consecutivoId = consecutivoId_
@@ -157,14 +157,14 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	if info.Id > 0 {
 		// Actualiza el registro el registro del movimiento correspondiente a la solicitud
 		movimiento.Id = info.Id
-		if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, info.Id); err != nil {
+		if movimiento_, err := crudMovimientosArka.PutMovimiento(movimiento, info.Id); err != nil {
 			return nil, err
 		} else {
 			detalleD["Movimiento"] = movimiento_
 		}
 	} else {
 		// Crea el registro del movimiento correspondiente a la solicitud
-		if movimiento_, err := movimientosArkaHelper.PostMovimiento(movimiento); err != nil {
+		if movimiento_, err := crudMovimientosArka.PostMovimiento(movimiento); err != nil {
 			return nil, err
 		} else {
 			detalleD["Movimiento"] = movimiento_

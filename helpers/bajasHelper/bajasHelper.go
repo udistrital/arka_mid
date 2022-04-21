@@ -12,11 +12,12 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
+	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -44,10 +45,10 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
-	if consecutivo, consecutivoId, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Baja Arka"); err != nil {
+	if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Baja Arka"); err != nil {
 		return nil, err
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteBajas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = consecutivos.Format(getTipoComprobanteBajas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalle.Consecutivo = consecutivo
 		detalle.ConsecutivoId = consecutivoId
 	}
@@ -60,7 +61,7 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if movimiento_, err := movimientosArkaHelper.PostMovimiento(baja.Movimiento); err != nil {
+	if movimiento_, err := crudMovimientosArka.PostMovimiento(baja.Movimiento); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_
@@ -68,7 +69,7 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 
 	// Crea registro en table soporte_movimiento si es necesario
 	baja.Soporte.MovimientoId = movimiento
-	if _, err := movimientosArkaHelper.PostSoporteMovimiento(baja.Soporte); err != nil {
+	if _, err := crudMovimientosArka.PostSoporteMovimiento(baja.Soporte); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +88,7 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 	)
 
 	// Actualiza registro en api movimientos_arka_crud
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(baja.Movimiento, bajaId); err != nil {
+	if movimiento_, err := crudMovimientosArka.PutMovimiento(baja.Movimiento, bajaId); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_
@@ -95,14 +96,14 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 
 	// Actualiza el documento soporte en la tabla soporte_movimiento
 	query := "query=MovimientoId__Id:" + strconv.Itoa(bajaId)
-	if soporte_, err := movimientosArkaHelper.GetAllSoporteMovimiento(query); err != nil {
+	if soporte_, err := crudMovimientosArka.GetAllSoporteMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		soporte = soporte_[0]
 		soporte.DocumentoId = baja.Soporte.DocumentoId
 	}
 
-	if _, err := movimientosArkaHelper.PutSoporteMovimiento(soporte, soporte.Id); err != nil {
+	if _, err := crudMovimientosArka.PutSoporteMovimiento(soporte, soporte.Id); err != nil {
 		return nil, err
 	}
 
@@ -126,7 +127,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 		urlcrud += "__startswith:Baja"
 	}
 
-	if Solicitudes, err := movimientosArkaHelper.GetAllMovimiento(urlcrud); err == nil {
+	if Solicitudes, err := crudMovimientosArka.GetAllMovimiento(urlcrud); err == nil {
 
 		if len(Solicitudes) == 0 {
 			return nil, nil
@@ -147,7 +148,7 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 
 			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					}
 					return nil, nil
@@ -209,7 +210,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	// Se consulta el movimiento
 	query := "query=Id:" + strconv.Itoa(id)
-	if movimientoA, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+	if movimientoA, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else if len(movimientoA) > 0 {
 		movimiento = movimientoA[0]
@@ -222,7 +223,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	// Se consulta el detalle del funcionario solicitante
 	if detalle.Funcionario > 0 {
-		if funcionario, err := tercerosMidHelper.GetInfoTerceroById(detalle.Funcionario); err != nil {
+		if funcionario, err := midTerceros.GetInfoTerceroById(detalle.Funcionario); err != nil {
 			return nil, err
 		} else {
 			Baja.Funcionario = funcionario
@@ -231,7 +232,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	// Se consulta el detalle del revisor si lo hay
 	if detalle.Revisor > 0 {
-		if revisor, err := tercerosMidHelper.GetInfoTerceroById(detalle.Revisor); err != nil {
+		if revisor, err := midTerceros.GetInfoTerceroById(detalle.Revisor); err != nil {
 			return nil, err
 		} else {
 			Baja.Revisor = revisor
@@ -249,7 +250,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	query = "query=MovimientoId__Id:" + strconv.Itoa(id)
-	if soportes, err := movimientosArkaHelper.GetAllSoporteMovimiento(query); err != nil {
+	if soportes, err := crudMovimientosArka.GetAllSoporteMovimiento(query); err != nil {
 		return nil, err
 	} else if len(soportes) > 0 {
 		Baja.Soporte = soportes[0].DocumentoId
@@ -257,7 +258,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 
 	if movimiento.EstadoMovimientoId.Nombre == "Baja Aprobada" {
 		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 				return nil, err
 			} else if len(tr.Movimientos) > 0 {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
@@ -307,7 +308,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	}
 
 	query := "sortby=Id&order=desc&query=ElementoActaId:" + strconv.Itoa(id)
-	if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementoMovimiento_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else if len(elementoMovimiento_) > 0 {
 		elementoMovimiento = elementoMovimiento_[0]
@@ -315,7 +316,7 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 		return Elemento, nil
 	}
 
-	if historial_, err := movimientosArkaHelper.GetHistorialElemento(elementoMovimiento.Id, true); err != nil {
+	if historial_, err := crudMovimientosArka.GetHistorialElemento(elementoMovimiento.Id, true); err != nil {
 		return nil, err
 	} else {
 		Elemento.Historial = historial_
@@ -324,13 +325,13 @@ func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputErr
 	if fc, ub, err := GetEncargado(Elemento.Historial); err != nil {
 		return nil, err
 	} else {
-		if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(ub); err != nil {
+		if ubicacion_, err := oikos.GetSedeDependenciaUbicacion(ub); err != nil {
 			return nil, err
 		} else {
 			Elemento.Ubicacion = ubicacion_
 		}
 
-		if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(fc); err != nil {
+		if funcionario_, err := midTerceros.GetInfoTerceroById(fc); err != nil {
 			return nil, err
 		} else {
 			Elemento.Funcionario = funcionario_
@@ -362,7 +363,7 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 	// Consulta asignación de los elementos
 	query := "sortby=ElementoActaId&order=desc&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementoMovimiento_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementosMovimiento = elementoMovimiento_
@@ -386,7 +387,7 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 
 			elemento := new(models.DetalleElementoBaja)
 
-			if historial_, err := movimientosArkaHelper.GetHistorialElemento(elementosMovimiento[i].Id, true); err != nil {
+			if historial_, err := crudMovimientosArka.GetHistorialElemento(elementosMovimiento[i].Id, true); err != nil {
 				return nil, err
 			} else {
 				elemento.Historial = historial_
@@ -395,13 +396,13 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 			if fc, ub, err := GetEncargado(elemento.Historial); err != nil {
 				return nil, err
 			} else {
-				if ubicacion_, err := ubicacionHelper.GetSedeDependenciaUbicacion(ub); err != nil {
+				if ubicacion_, err := oikos.GetSedeDependenciaUbicacion(ub); err != nil {
 					return nil, err
 				} else {
 					elemento.Ubicacion = ubicacion_
 				}
 
-				if funcionario_, err := tercerosMidHelper.GetInfoTerceroById(fc); err != nil {
+				if funcionario_, err := midTerceros.GetInfoTerceroById(fc); err != nil {
 					return nil, err
 				} else {
 					elemento.Funcionario = funcionario_

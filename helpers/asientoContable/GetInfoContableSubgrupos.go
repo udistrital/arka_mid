@@ -2,7 +2,7 @@ package asientoContable
 
 import (
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/models"
 )
 
@@ -19,7 +19,7 @@ func GetInfoContableSubgrupos(tipoMovimiento int, subgrupos []int, cuentasSubgru
 		idsCuentas = append(idsCuentas, cta.CuentaDebitoId)
 	}
 
-	if err := cuentasContablesHelper.GetDetalleCuentasContables(idsCuentas, detalleCuentas); err != nil {
+	if err := cuentasContables.GetDetalleCuentasContables(idsCuentas, detalleCuentas); err != nil {
 		return err
 	}
 

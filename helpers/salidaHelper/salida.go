@@ -13,8 +13,10 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
+	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -133,7 +135,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, consecutivoId, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+		if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -142,7 +144,7 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			}
 			return nil, outputError
 		} else {
-			consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+			consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 			detalle["consecutivo"] = consecutivo
 			detalle["ConsecutivoId"] = consecutivoId
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
@@ -197,7 +199,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 
 	resultado := make(map[string]interface{})
 
-	if tr_, err := movimientosArkaHelper.GetTrSalida(salidaId); err != nil {
+	if tr_, err := crudMovimientosArka.GetTrSalida(salidaId); err != nil {
 		return nil, err
 	} else {
 		trSalida = tr_
@@ -210,7 +212,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 
 	fields := "SubgrupoCatalogoId,ValorTotal"
 	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
-	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
+	if elementos_, err := crudActas.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		if len(elementos_) == 0 {
@@ -254,7 +256,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	}
 
 	query = "query=CodigoAbreviacion:SAL"
-	if fm, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		tipoMovimiento = fm[0].Id
@@ -276,13 +278,13 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		}
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
 		return nil, err
 	} else {
 		trSalida.Salida.EstadoMovimientoId = sm[0]
 	}
 
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(trSalida.Salida, trSalida.Salida.Id); err != nil {
+	if movimiento_, err := crudMovimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id); err != nil {
 		return nil, err
 	} else {
 		trSalida.Salida = movimiento_
@@ -309,7 +311,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 		elementosCompletos []*models.DetalleElemento__
 	)
 
-	if tr_, err := movimientosArkaHelper.GetTrSalida(id); err != nil {
+	if tr_, err := crudMovimientosArka.GetTrSalida(id); err != nil {
 		return nil, err
 	} else {
 		trSalida = tr_
@@ -357,7 +359,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 
 	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" {
 		if val, ok := detalle["ConsecutivoId"]; ok && val != nil {
-			if tr, err := movimientosContablesMidHelper.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
+			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
 				return nil, err
 			} else {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
@@ -398,7 +400,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		query += url.QueryEscape("__startswith:Salida")
 	}
 
-	if salidas_, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+	if salidas_, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		if len(salidas_) == 0 {

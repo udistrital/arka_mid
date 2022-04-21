@@ -7,9 +7,9 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/contratoHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -29,7 +29,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	resultado := make(map[string]interface{})
 
 	query = "query=Id:" + strconv.Itoa(entradaId)
-	if mov, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else if len(mov) > 0 {
 		movimiento = mov[0]
@@ -43,7 +43,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if val, ok := detalle["contrato_id"]; ok && val != nil {
 		if val_, ok := detalle["vigencia_contrato"]; ok && val_ != nil {
-			if contrato, err := contratoHelper.GetContrato(int(val.(float64)), val_.(string)); err != nil {
+			if contrato, err := administrativa.GetContrato(int(val.(float64)), val_.(string)); err != nil {
 				return nil, err
 			} else {
 				resultado["contrato"] = contrato["contrato"]
@@ -53,7 +53,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
 		if val, ok := detalle["ConsecutivoId"]; ok && val != nil {
-			if tr, err := movimientosContablesMidHelper.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
+			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
 				return nil, err
 			} else {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {

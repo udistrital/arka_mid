@@ -7,14 +7,15 @@ import (
 
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/depreciacionHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -45,24 +46,24 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		comprobanteID                     string
 	)
 
-	if err := movimientosArkaHelper.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
+	if err := crudMovimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
 		return nil, err
 	}
-	if err := movimientosArkaHelper.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movDp, "DEP"); err != nil {
+	if err := crudMovimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movDp, "DEP"); err != nil {
 		return nil, err
 	}
-	if err := movimientosArkaHelper.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movAm, "AMT"); err != nil {
+	if err := crudMovimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movAm, "AMT"); err != nil {
 		return nil, err
 	}
 
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
 		parDebito = db_
 		parCredito = cr_
 	}
 
-	if err := cuentasContablesHelper.GetComprobante(tipoComprobanteBaja(), &comprobanteID); err != nil {
+	if err := cuentasContables.GetComprobante(tipoComprobanteBaja(), &comprobanteID); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +73,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	// Paso 1: Consulta los movimientos
 	query := "fields=Detalle,Id,FechaCreacion&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(data.Bajas, "|"))
-	if bajas_, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+	if bajas_, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else {
 
@@ -97,20 +98,19 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	// Paso 2: Consulta los elementos
 	query = "limit=-1&fields=Id,ElementoActaId,ValorTotal,ValorResidual,VidaUtil,MovimientoId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementos_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementosMovimiento = make(map[int]models.ElementosMovimiento)
 		for _, el := range elementos_ {
 			elementosMovimiento[el.Id] = *el
 		}
-
 	}
 
 	// Paso 3: Consulta las novedades
 	query = "limit=-1&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=Activo:true,ElementoMovimientoId__Id__in:"
 	query += utilsHelper.ArrayToString(ids, "|")
-	if novedades_, err := movimientosArkaHelper.GetAllNovedadElemento(query); err != nil {
+	if novedades_, err := crudMovimientosArka.GetAllNovedadElemento(query); err != nil {
 		return nil, err
 	} else {
 		novedades = make(map[int]models.NovedadElemento)
@@ -270,14 +270,14 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			transaccion.FechaTransaccion = time.Now()
 			transaccion.Movimientos = movimientos
 
-			if _, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
+			if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 				return nil, err
 			}
 		}
 
 		data_ := data
 		data_.Bajas = []int{baja.Id}
-		if ids_, err := movimientosArkaHelper.PutRevision(data_); err != nil {
+		if ids_, err := movimientosArka.PutRevision(data_); err != nil {
 			return nil, err
 		} else {
 			ids = ids_

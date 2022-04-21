@@ -9,13 +9,15 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosMidHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
+	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -35,7 +37,7 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 	// Se consulta el movimiento
 	query := "query=Id:" + strconv.Itoa(id)
-	if movimientoA, err := movimientosArkaHelper.GetAllMovimiento(query); err != nil {
+	if movimientoA, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else if len(movimientoA) == 1 {
 		movimiento = movimientoA[0]
@@ -50,21 +52,21 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	}
 
 	// Se consulta el detalle del funcionario origen
-	if origen, err := tercerosMidHelper.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
+	if origen, err := midTerceros.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioOrigen = origen
 	}
 
 	// Se consulta el detalle del funcionario destino
-	if destino, err := tercerosMidHelper.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
+	if destino, err := midTerceros.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioDestino = destino
 	}
 
 	// Se consulta la sede, dependencia correspondiente a la ubicacion
-	if ubicacionDetalle, err := ubicacionHelper.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
+	if ubicacionDetalle, err := oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
 		return nil, err
 	} else {
 		Traslado.Ubicacion = ubicacionDetalle
@@ -79,7 +81,7 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 	if movimiento.EstadoMovimientoId.Nombre == "Traslado Confirmado" {
 		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContablesMidHelper.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 				return nil, err
 			} else if len(tr.Movimientos) > 0 {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
@@ -115,7 +117,7 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 
 	query = "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+	if elementos_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementos = elementos_
@@ -163,10 +165,10 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
-	if consecutivo, consecutivoId, err := utilsHelper.GetConsecutivo("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
+	if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
 		return nil, err
 	} else {
-		consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+		consecutivo = consecutivos.Format(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalle.Consecutivo = consecutivo
 		detalle.ConsecutivoId = consecutivoId
 	}
@@ -180,7 +182,7 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if res, err := movimientosArkaHelper.PostMovimiento(data); err != nil {
+	if res, err := crudMovimientosArka.PostMovimiento(data); err != nil {
 		return nil, err
 	} else {
 		return res, nil
@@ -201,7 +203,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	Elementos = make([]*models.DetalleElementoPlaca, 0)
 
 	// Consulta lista de elementos asignados al funcionario
-	if elemento_, err := movimientosArkaHelper.GetElementosFuncionario(id); err != nil {
+	if elemento_, err := crudMovimientosArka.GetElementosFuncionario(id); err != nil {
 		return nil, err
 	} else {
 		elementosF = elemento_
@@ -211,7 +213,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	if len(elementosF) > 0 {
 		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
 		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
-		if elementoMovimiento_, err := movimientosArkaHelper.GetAllElementosMovimiento(query); err != nil {
+		if elementoMovimiento_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
 			return nil, err
 		} else {
 			elementosM = elementoMovimiento_
@@ -268,7 +270,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 		urlcrud += "__startswith:Traslado"
 	}
 
-	if Solicitudes, err := movimientosArkaHelper.GetAllMovimiento(urlcrud); err != nil {
+	if Solicitudes, err := crudMovimientosArka.GetAllMovimiento(urlcrud); err != nil {
 		return nil, err
 	} else {
 		if len(Solicitudes) == 0 {
@@ -293,7 +295,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 
 			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					}
 					return nil, nil
@@ -302,7 +304,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 
 			requestUbicacion := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Ubicacion, err := ubicacionHelper.GetSedeDependenciaUbicacion(id); err == nil {
+					if Ubicacion, err := oikos.GetSedeDependenciaUbicacion(id); err == nil {
 						return Ubicacion, nil
 					}
 					return nil, nil

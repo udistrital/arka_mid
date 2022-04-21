@@ -11,9 +11,9 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	// "github.com/udistrital/utils_oas/formatdata"
-	"github.com/udistrital/arka_mid/helpers/autenticacion"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
@@ -124,13 +124,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 			if proveedor || contratista {
 				// fmt.Println(usr.Documento)
-				if data, err := tercerosHelper.GetTerceroByDoc(usr.Documento); err == nil {
+				if data, err := crudTerceros.GetTerceroByDoc(usr.Documento); err == nil {
 					// fmt.Println(data.TerceroId.Id)
-					if data.TerceroId != nil {
-						idTercero = data.TerceroId.Id
-					} else {
-						return nil, nil
-					}
+					idTercero = data.TerceroId.Id
 				} else {
 					return nil, err
 				}
@@ -170,7 +166,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&sortby=ActaRecibidoId__Id&order=desc"
-	urlEstados += "&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
+	urlEstados += "&query=Activo:true"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
 		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
@@ -275,7 +271,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := tercerosHelper.GetTerceroById(id); err == nil {
+					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
 						return Tercero, nil
 					} else {
 						return nil, err
@@ -292,7 +288,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			idUbStr := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
 			reqUbicacion := func() (interface{}, map[string]interface{}) {
-				if ubicacion, err := ubicacionHelper.GetAsignacionSedeDependencia(idUbStr); err == nil {
+				if ubicacion, err := oikos.GetAsignacionSedeDependencia(idUbStr); err == nil {
 					return ubicacion, nil
 				} else {
 					logs.Error(err)

@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -55,7 +56,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	res = make(map[string]interface{})
 	res["errorTransaccion"] = ""
 
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
 		parametroTipoDebito = db_
@@ -63,7 +64,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	}
 
 	if comprobante != "" {
-		if err := cuentasContablesHelper.GetComprobante(comprobante, &comprobanteID); err != nil {
+		if err := cuentasContables.GetComprobante(comprobante, &comprobanteID); err != nil {
 			return nil, err
 		}
 	}
@@ -98,7 +99,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + tipomvto + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
-	if elementos_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = elementos_
@@ -108,13 +109,13 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	for id := range totales {
 		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
 
-			if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+			if ctaCr_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId] = ctaCr_
 			}
 
-			if ctaDb_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+			if ctaDb_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId] = ctaDb_
@@ -126,7 +127,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, err := catalogoElementosHelper.GetSubgrupoById(id)
+			subgrupo, err := catalogoElementos.GetSubgrupoById(id)
 			if err != nil {
 				return nil, err
 			} else {
@@ -137,17 +138,17 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	}
 
 	if submit {
-		if tr, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
+		if tr, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
-			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 				return nil, err
 			} else {
 				res["resultadoTransaccion"] = fillDetalle(infoCuentas, tr, tercero.Numero)
 			}
 		}
 	} else {
-		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+		if tercero, err := crudTerceros.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
 			return nil, err
 		} else {
 			res["simulacro"] = fillDetalle(infoCuentas, &transaccion, tercero.Numero)

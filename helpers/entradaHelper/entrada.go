@@ -12,9 +12,11 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	actasCrud "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -37,7 +39,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	resultado := make(map[string]interface{})
 
-	if mov, err := movimientosArkaHelper.GetMovimientoById(entradaId); err != nil {
+	if mov, err := crudMovimientosArka.GetMovimientoById(entradaId); err != nil {
 		return nil, err
 	} else {
 		movimiento = mov
@@ -49,20 +51,20 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if sm, err := movimientosArkaHelper.GetAllEstadoMovimiento(url.QueryEscape("Entrada Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Entrada Aprobada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
 	}
 
 	query := "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-	if ha, err := actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
+	if ha, err := actasCrud.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		historico = ha[0]
 	}
 
-	if el_, err := actaRecibido.GetAllElemento(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
+	if el_, err := actasCrud.GetAllElemento(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementos = el_
@@ -102,7 +104,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 	}
 
-	if movimiento_, err := movimientosArkaHelper.PutMovimiento(movimiento, movimiento.Id); err != nil {
+	if movimiento_, err := crudMovimientosArka.PutMovimiento(movimiento, movimiento.Id); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_
@@ -136,11 +138,11 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 		for _, elemento := range detalleElementos {
 			placa := ""
 			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca {
-				if placa_, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+				if placa_, _, err := consecutivos.Get("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
 					return nil, err
 				} else {
 					year, month, day := time.Now().Date()
-					placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
+					placa = consecutivos.Format(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
 				}
 			}
 			elemento_ := models.Elemento{
@@ -206,7 +208,7 @@ func GetEncargadoElemento(placa string) (idElemento *models.Tercero, outputError
 			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
 			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
 				idtercero := int(resultado["funcionario"].(float64))
-				if tercero, err := tercerosHelper.GetTerceroById(idtercero); err == nil {
+				if tercero, err := crudTerceros.GetTerceroById(idtercero); err == nil {
 					return tercero, nil
 				} else {
 					return nil, err

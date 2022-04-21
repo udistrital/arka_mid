@@ -8,8 +8,10 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	// "github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	// "github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
 )
 
@@ -35,7 +37,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
 
-	if estadosMovimiento, err := movimientosArkaHelper.GetAllEstadoMovimiento("Salida%20En%20Trámite"); err != nil {
+	if estadosMovimiento, err := crudMovimientosArka.GetAllEstadoMovimiento("Salida%20En%20Trámite"); err != nil {
 		return nil, err
 	} else {
 		estadoMovimiento = estadosMovimiento[0]
@@ -47,7 +49,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		// Si no se generan nuevas salidas, simplemente se debe actualizar el funcionario y la ubicación del movimiento original
 
 		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
-		if trRes, err := movimientosArkaHelper.PutTrSalida(m); err != nil {
+		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
 			return nil, err
 		} else {
 			resultado["trSalida"] = trRes
@@ -61,7 +63,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
 
 		// Se consulta el movimiento
-		if movimientoA, err := movimientosArkaHelper.GetMovimientoById(salidaId); err != nil {
+		if movimientoA, err := crudMovimientosArka.GetMovimientoById(salidaId); err != nil {
 			return nil, err
 		} else {
 			salidaOriginal = movimientoA
@@ -123,7 +125,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 			if idx != index {
 
-				if consecutivo, consecutivoId, err := utilsHelper.GetConsecutivo("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+				if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
 						"funcion": "PutTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
@@ -132,7 +134,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 					}
 					return nil, outputError
 				} else {
-					consecutivo = utilsHelper.FormatConsecutivo(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
+					consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 					detalle["consecutivo"] = consecutivo
 					detalle["consecutivoId"] = consecutivoId
 					if detalleJSON, err := json.Marshal(detalle); err != nil {
@@ -170,7 +172,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		}
 
 		// Hace el put api movimientos_arka_crud
-		if trRes, err := movimientosArkaHelper.PutTrSalida(m); err != nil {
+		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
 			return nil, err
 		} else {
 			resultado["trSalida"] = trRes
