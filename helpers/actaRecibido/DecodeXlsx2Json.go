@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
-	"strconv"
-	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -18,8 +16,8 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-// "DecodeXlsx2Json ..."
-func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, outputError map[string]interface{}) {
+// DecodeXlsx2Json Convierte el archivo excel en una lista de elementos
+func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -122,122 +120,142 @@ func DecodeXlsx2Json(c multipart.File) (Archivo []map[string]interface{}, output
 		return nil, outputError
 	}
 
-	Respuesta := make([]map[string]interface{}, 0)
-	Elemento := make([]map[string]interface{}, 0)
+	resultado = make(map[string]interface{})
 
 	var hojas []string
-	var campos []string
-	var elementos [14]string
-	tipoBien := new(models.TipoBien)
-	subgrupoId := new(models.Subgrupo)
-	var subgrupo = map[string]interface{}{
-		"SubgrupoId": &subgrupoId,
-		"TipoBienId": &tipoBien,
+	subgrupo := &models.DetalleSubgrupo{
+		SubgrupoId: &models.Subgrupo{},
+		TipoBienId: &models.TipoBien{},
 	}
 
-	validar_campos := []string{"Nivel Inventarios", "Tipo de Bien", "Subgrupo Catalogo", "Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Tipo IVA", "Valor IVA", "Valor Total"}
-
+	validar_campos := []string{"Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Porcentaje IVA", "Valor IVA", "Valor Total"}
+	elementos := make([]*models.PlantillaActa, 0)
 	for s, sheet := range xlFile.Sheets {
 
 		if s == 0 {
+			indexes := make(map[string]int)
 			hojas = append(hojas, sheet.Name)
 			for r, row := range sheet.Rows {
 				if r == 0 {
-					for i, cell := range row.Cells {
-						campos = append(campos, cell.String())
-						if campos[i] != validar_campos[i] {
-							err := fmt.Errorf("el formato no corresponde a las columnas necesarias")
-							logs.Error(err)
-							outputError = map[string]interface{}{
-								"funcion": "DecodeXlsx2Json - campos[i] != validar_campos[i]",
-								"err":     err,
-								"status":  "400",
+					for _, label := range validar_campos {
+						index := -1
+						for i, cell := range row.Cells {
+							if label == cell.String() {
+								index = i
+								break
 							}
-							return nil, outputError
+						}
+
+						if index > -1 {
+							indexes[label] = index
+						} else {
+							resultado["Mensaje"] = "errorPlantillaActa"
+							return resultado, nil
 						}
 					}
+
 				} else {
+					emptyRow := true
+					end := false
+					fila := new(models.PlantillaActa)
 
 					for i, cell := range row.Cells {
-						elementos[i] = cell.String()
+						if i == 0 && cell.String() == "Subtotal" {
+							end = true
+							break
+						}
+
+						if emptyRow && cell.String() != "" {
+							emptyRow = false
+						}
+
+						if i == indexes["Nombre"] {
+							fila.Nombre = cell.String()
+						}
+
+						if i == indexes["Marca"] {
+							fila.Marca = cell.String()
+						}
+
+						if i == indexes["Serie"] {
+							fila.Serie = cell.String()
+						}
+
+						if i == indexes["Cantidad"] {
+							var cant int
+							if cant, err = cell.Int(); err != nil {
+								cant = 0
+							}
+							fila.Cantidad = cant
+						}
+
+						if i == indexes["Valor Unitario"] {
+							var unit float64
+							if unit, err = cell.Float(); err != nil {
+								unit = 0.0
+							}
+							fila.ValorUnitario = unit
+						}
+
+						if i == indexes["Descuento"] {
+							var dcto float64
+							if dcto, err = cell.Float(); err != nil {
+								dcto = 0.0
+							}
+							fila.Descuento = dcto
+						}
+
+						if i == indexes["Porcentaje IVA"] {
+							var tarifa int
+							if tarifa_, err := cell.Float(); err != nil {
+								tarifa = 0
+							} else {
+								tarifa = int(tarifa_ * 100)
+							}
+
+							for _, tarifa_ := range IvaTest {
+								if tarifa == tarifa_.Tarifa {
+									fila.PorcentajeIvaId = &tarifa
+									break
+								}
+							}
+
+						}
+
+						if i == indexes["Unidad de Medida"] {
+							if cell.String() != "" {
+								for _, unidad := range Unidades {
+									if cell.String() == unidad.Unidad {
+										fila.UnidadMedida = unidad.Id
+										break
+									}
+								}
+							}
+						}
+
 					}
 
-					var vlrcantidad int64
-					var tarifaIva float64
-					var vlrsubtotal float64
-					var vlrdcto float64
-					var vlrunitario float64
-					var vlrIva = float64(-1)
-
-					if elementos[0] != "Totales" {
-						if vlrcantidad, err = strconv.ParseInt(elementos[6], 10, 64); err != nil {
-							vlrcantidad = 0
-						}
-
-						if vlrunitario, err = strconv.ParseFloat(elementos[8], 64); err != nil {
-							vlrunitario = float64(0)
-						}
-
-						if vlrdcto, err = strconv.ParseFloat(elementos[10], 64); err != nil {
-							vlrdcto = float64(0)
-						}
-
-						vlrsubtotal = float64(vlrcantidad) * (vlrunitario - vlrdcto)
-
-						if tarifaIva, err = strconv.ParseFloat(strings.ReplaceAll(elementos[11], "%", ""), 64); err == nil {
-							for _, valor_iva := range IvaTest {
-								if tarifaIva == float64(valor_iva.Tarifa) {
-									vlrIva = (vlrsubtotal) * float64(tarifaIva) / 100
-								}
-							}
-							if vlrIva == -1 {
-								tarifaIva = 0
-								vlrIva = 0
-							}
-						} else {
-							tarifaIva = 0
-							vlrIva = 0
-						}
-
-						vlrtotal := vlrsubtotal + vlrIva
-
-						convertir2 := strings.ToUpper(elementos[7])
-						if err == nil {
-							for _, unidad := range Unidades {
-								if convertir2 == unidad.Unidad {
-									elementos[7] = strconv.Itoa(unidad.Id)
-								}
-							}
-						} else {
-							logs.Warn(err)
-						}
-
-						Elemento = append(Elemento, map[string]interface{}{
-							"Id":                 0,
-							"SubgrupoCatalogoId": subgrupo,
-							"Nombre":             elementos[3],
-							"Marca":              elementos[4],
-							"Serie":              elementos[5],
-							"Cantidad":           vlrcantidad,
-							"UnidadMedida":       elementos[7],
-							"ValorUnitario":      vlrunitario,
-							"Subtotal":           vlrsubtotal,
-							"Descuento":          vlrdcto,
-							"PorcentajeIvaId":    tarifaIva,
-							"ValorIva":           vlrIva,
-							"ValorTotal":         vlrtotal,
-						})
-					} else {
-						Respuesta = append(Respuesta, map[string]interface{}{
-							"Hoja":      hojas,
-							"Campos":    campos,
-							"Elementos": Elemento,
-						})
+					if end {
 						break
+					} else if emptyRow {
+						continue
+					} else {
+						fila.Subtotal = float64(fila.Cantidad) * (fila.ValorUnitario - fila.Descuento)
+						if fila.PorcentajeIvaId != nil {
+							fila.ValorIva = float64(*fila.PorcentajeIvaId) * fila.Subtotal / 100
+						}
+						fila.ValorTotal = fila.Subtotal + fila.ValorIva
+
+						fila.SubgrupoCatalogoId = subgrupo
+						elementos = append(elementos, fila)
 					}
+
 				}
 			}
 		}
 	}
-	return Respuesta, nil
+
+	resultado["Elementos"] = elementos
+
+	return resultado, nil
 }
