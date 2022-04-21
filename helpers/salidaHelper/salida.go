@@ -240,7 +240,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 	detalle := ""
 	for k, v := range detalleMovimiento {
 		if k == "consecutivo" {
-			detalle = detalle + k + ": " + fmt.Sprintf("%v", v) + " "
+			detalle = "Entrada: " + fmt.Sprintf("%v", v) + " "
 		}
 	}
 
