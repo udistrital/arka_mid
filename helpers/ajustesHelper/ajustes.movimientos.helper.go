@@ -76,7 +76,6 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 		detalleCuenta   map[string]*models.CuentaContable
 	)
 
-	cuentasSubgrupo = make(map[int]*models.CuentaSubgrupo)
 	detalleCuenta = make(map[string]*models.CuentaContable)
 	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err

@@ -77,7 +77,7 @@ func (c *BajaController) Put() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una baja válida")
+			err = errors.New("se debe especificar una baja válida")
 		}
 		panic(errorctrl.Error("Put - c.GetInt(\":id\")", err, "400"))
 	} else {
@@ -117,7 +117,7 @@ func (c *BajaController) GetElemento() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un elemento válido")
+			err = errors.New("se debe especificar un elemento válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -153,7 +153,7 @@ func (c *BajaController) GetSolicitud() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una baja válida")
+			err = errors.New("se debe especificar una baja válida")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -238,7 +238,7 @@ func (c *BajaController) GetDetalleElemento() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un elemento válido")
+			err = errors.New("se debe especificar un elemento válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{

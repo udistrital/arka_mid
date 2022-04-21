@@ -67,7 +67,7 @@ func (c *TrasladosController) Post() {
 
 		panic(map[string]interface{}{
 			"funcion": "trasladoshelper.RegistrarTraslado(&v)",
-			"err":     errors.New("No se obtuvo respuesta al registrar el traslado"),
+			"err":     errors.New("no se obtuvo respuesta al registrar el traslado"),
 			"status":  "404",
 		})
 	}
@@ -101,7 +101,7 @@ func (c *TrasladosController) GetTraslado() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un traslado válido")
+			err = errors.New("se debe especificar un traslado válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -122,7 +122,7 @@ func (c *TrasladosController) GetTraslado() {
 
 		panic(map[string]interface{}{
 			"funcion": "GetTraslado - trasladoshelper.GetDetalleTraslado(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar el traslado"),
+			"err":     errors.New("no se obtuvo respuesta al consultar el traslado"),
 			"status":  "404",
 		})
 	}
@@ -144,7 +144,7 @@ func (c *TrasladosController) GetElementosFuncionario() {
 	var id int
 	if v, err := c.GetInt(":funcionarioId"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un tercero válido")
+			err = errors.New("se debe especificar un tercero válido")
 		}
 		panic(errorctrl.Error("GetElementosFuncionario - c.GetInt(\":funcionarioId\")", err, "400"))
 	} else {
@@ -208,7 +208,7 @@ func (c *TrasladosController) Put() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un traslado válido")
+			err = errors.New("se debe especificar un traslado válido")
 		}
 		panic(errorctrl.Error(`Put - c.GetInt(":id")`, err, "400"))
 	} else {

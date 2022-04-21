@@ -190,7 +190,7 @@ func GetEncargadoElemento(placa string) (idElemento *models.Tercero, outputError
 	var detalle []map[string]interface{}
 
 	if placa == "" {
-		err := fmt.Errorf("La placa no puede estar en blanco")
+		err := fmt.Errorf("la placa no puede estar en blanco")
 		logs.Error(err)
 		outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - placa == ''", "status": "400", "err": err}
 		return nil, outputError
@@ -198,7 +198,7 @@ func GetEncargadoElemento(placa string) (idElemento *models.Tercero, outputError
 
 	if id, err := actaRecibido.GetIdElementoPlaca(placa); err == nil {
 		if id == "" {
-			err := fmt.Errorf("La placa '%s' no ha sido asignada a una salida", placa)
+			err := fmt.Errorf("la placa '%s' no ha sido asignada a una salida", placa)
 			logs.Error(err)
 			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - id == ''", "status": "404", "err": err}
 			return nil, outputError
@@ -219,7 +219,7 @@ func GetEncargadoElemento(placa string) (idElemento *models.Tercero, outputError
 
 		} else {
 			if err == nil {
-				err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - request.GetJsonTest(urlelemento, &detalle) ", "status": "500", "err": err}

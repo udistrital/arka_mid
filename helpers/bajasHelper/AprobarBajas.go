@@ -12,7 +12,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/depreciacionHelper"
@@ -49,13 +48,13 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		terceroUD                         int
 	)
 
-	if err := crudMovimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
 		return nil, err
 	}
-	if err := crudMovimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movDp, "DEP"); err != nil {
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movDp, "DEP"); err != nil {
 		return nil, err
 	}
-	if err := crudMovimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movAm, "AMT"); err != nil {
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movAm, "AMT"); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +82,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	// Paso 1: Consulta los movimientos
 	query = "fields=Detalle,Id,FechaCreacion&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(data.Bajas, "|"))
-	if bajas_, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
+	if bajas_, err := movimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else {
 
@@ -108,7 +107,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	// Paso 2: Consulta los elementos
 	query = "limit=-1&fields=Id,ElementoActaId,ValorTotal,ValorResidual,VidaUtil,MovimientoId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
+	if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementosMovimiento = make(map[int]models.ElementosMovimiento)
@@ -120,7 +119,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	// Paso 3: Consulta las novedades
 	query = "limit=-1&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=Activo:true,ElementoMovimientoId__Id__in:"
 	query += utilsHelper.ArrayToString(ids, "|")
-	if novedades_, err := crudMovimientosArka.GetAllNovedadElemento(query); err != nil {
+	if novedades_, err := movimientosArka.GetAllNovedadElemento(query); err != nil {
 		return nil, err
 	} else {
 		novedades = make(map[int]models.NovedadElemento)

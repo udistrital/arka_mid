@@ -34,7 +34,7 @@ func GetUnidad(unidadId int) (unidad []*models.Unidad, outputError map[string]in
 				unidad = append(unidad, unidadAux)
 				return unidad, nil
 			} else {
-				err := fmt.Errorf("Undesired Status: %s", response.Status)
+				err := fmt.Errorf("undesired Status: %s", response.Status)
 				logs.Error(err)
 				outputError = map[string]interface{}{
 					"funcion": "GetUnidad - request.GetJsonTest(urlUnidad, &unidadAux) / response.StatusCode == 200",

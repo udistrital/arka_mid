@@ -140,9 +140,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 	}
 
 	for _, nv := range novedadesNuevas {
-		for _, nv_ := range nv {
-			novedades_ = append(novedades_, nv_)
-		}
+		novedades_ = append(novedades_, nv...)
 	}
 
 	return movimientos, novedades_, nil

@@ -28,7 +28,7 @@ func GetNombreTerceroById(idTercero string) (tercero *IdentificacionTercero, out
 	var terceroId int
 	if v, err := strconv.Atoi(idTercero); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("El idTercero debe ser mayor a 0")
+			err = errors.New("el idTercero debe ser mayor a 0")
 		}
 		logs.Error(err)
 		eval := " - strconv.Atoi(idTercero)"
@@ -87,7 +87,7 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 				"NombreCompleto": data.NombreCompleto,
 			}
 		} else if len(terceros) == 0 || terceros[0].TipoContribuyenteId == nil {
-			err := fmt.Errorf("El usuario '%s' aún no está asignado a un registro en Terceros", usuario)
+			err := fmt.Errorf("el usuario '%s' aún no está asignado a un registro en Terceros", usuario)
 			outputError = map[string]interface{}{
 				"funcion": "GetTerceroByUsuarioWSO2 - len(datosTerceros) == 1 && datosTerceros[0].TerceroId != nil",
 				"err":     err,
@@ -100,7 +100,7 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 			if q >= 10 {
 				s = " - o más"
 			}
-			err := fmt.Errorf("El usuario '%s' tiene más de un registro en Terceros (%d registros%s)", usuario, q, s)
+			err := fmt.Errorf("el usuario '%s' tiene más de un registro en Terceros (%d registros%s)", usuario, q, s)
 			logs.Warn(err)
 			outputError = map[string]interface{}{
 				"funcion": "GetTerceroByUsuarioWSO2 - len(datosTerceros) == 1 && datosTerceros[0].TerceroId != nil",
@@ -111,7 +111,7 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 		}
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -144,7 +144,7 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 		if len(terceros) == 1 {
 			return terceros[0], nil
 		} else if len(terceros) == 0 {
-			err := fmt.Errorf("El documento '%s' aún no está asignado a un registro en Terceros", doc)
+			err := fmt.Errorf("el documento '%s' aún no está asignado a un registro en Terceros", doc)
 			outputError = map[string]interface{}{
 				"funcion": "GetTerceroByDoc - len(datosTerceros) == 1 ",
 				"err":     err,
@@ -157,7 +157,7 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 			if q >= 10 {
 				s = " - o más"
 			}
-			err := fmt.Errorf("El Documento '%s' tiene más de un registro en Terceros (%d registros%s)", doc, q, s)
+			err := fmt.Errorf("el Documento '%s' tiene más de un registro en Terceros (%d registros%s)", doc, q, s)
 			logs.Warn(err)
 			outputError = map[string]interface{}{
 				"funcion": "GetTerceroByDoc - len(datosTerceros) == 1 && datosTerceros[0].TerceroId != nil",
@@ -169,7 +169,7 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", resp.StatusCode)
+			err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{

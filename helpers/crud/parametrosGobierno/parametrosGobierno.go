@@ -33,7 +33,7 @@ func GetIva(ivaId int) (iva []*models.ParametrosGobierno, outputError map[string
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				return iva, nil
 			} else {
-				err := fmt.Errorf("Undesired Status: %s", response.Status)
+				err := fmt.Errorf("undesired Status: %s", response.Status)
 				logs.Error(err)
 				outputError = map[string]interface{}{
 					"funcion": "GetIva - request.GetJsonTest(urlParametroIVA, &iva)",

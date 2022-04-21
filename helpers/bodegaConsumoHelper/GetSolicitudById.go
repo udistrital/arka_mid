@@ -42,7 +42,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 		// Por máximo debería retornar el arreglo vacío! (sin el objeto vacío, [])
 		// (Y uno de los siguientes estados: 204 o 404)
 		if len(solicitud_) == 0 || len(solicitud_[0]) == 0 {
-			err := fmt.Errorf("Movimiento %d no encontrado", id)
+			err := fmt.Errorf("movimiento %d no encontrado", id)
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "/GetSolicitudById",

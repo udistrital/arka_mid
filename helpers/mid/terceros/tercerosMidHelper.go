@@ -61,7 +61,7 @@ func GetInfoTerceroById(id int) (InfoTercero *models.InfoTercero, outputError ma
 	if documento_, err := GetDocumentoTercero(id); err != nil {
 		return nil, err
 	} else {
-		if documento_ != nil && len(documento_) > 0 {
+		if len(documento_) != 0 {
 			InfoTercero.Identificacion = documento_[0]
 		}
 	}

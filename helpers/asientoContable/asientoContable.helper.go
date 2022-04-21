@@ -2,7 +2,6 @@ package asientoContable
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strconv"
 	"time"
@@ -131,7 +130,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 			if err != nil {
 				return nil, err
 			} else {
-				res["errorTransaccion"] = fmt.Sprintf("Debe parametrizar las cuentas del subgrupo ") + subgrupo.Nombre
+				res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Nombre
 				return res, nil
 			}
 		}

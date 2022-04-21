@@ -33,7 +33,7 @@ func GetProveedorById(proveedorId int) (proveedor []*models.Proveedor, outputErr
 			if response.StatusCode == 200 { // (3) error estado de la solicitud
 				return proveedor, nil
 			} else {
-				err := fmt.Errorf("Undesired Status: %s", response.Status)
+				err := fmt.Errorf("undesired Status: %s", response.Status)
 				logs.Error(err)
 				outputError = map[string]interface{}{
 					"funcion": "GetProveedorById - request.GetJsonTest(urlProveedor, &proveedor)",
@@ -87,7 +87,7 @@ func GetProveedorByDoc(docNum string) (proveedor *models.Proveedor, outputError 
 			if len(proveedores) == 1 && proveedores[0].Id > 0 {
 				return proveedores[0], nil
 			} else if len(proveedores) == 0 || proveedores[0].Id == 0 {
-				err = fmt.Errorf("Proveedor con Doc.Num.: '%s' no registrado", docNum)
+				err = fmt.Errorf("proveedor con Doc.Num.: '%s' no registrado", docNum)
 				status = "404"
 			} else { // len(proveedores) > 1
 				n := len(proveedores)
@@ -95,7 +95,7 @@ func GetProveedorByDoc(docNum string) (proveedor *models.Proveedor, outputError 
 				if n >= 10 {
 					s = " (o más)"
 				}
-				err = fmt.Errorf("Proveedor con Doc.Num.: '%s' registrado %d%s veces", docNum, n, s)
+				err = fmt.Errorf("proveedor con Doc.Num.: '%s' registrado %d%s veces", docNum, n, s)
 				status = "409"
 			}
 			logs.Warn(err)
@@ -107,7 +107,7 @@ func GetProveedorByDoc(docNum string) (proveedor *models.Proveedor, outputError 
 			return nil, outputError
 		} else {
 			if err == nil {
-				err = fmt.Errorf("Undesired Status Code: %d", response.StatusCode)
+				err = fmt.Errorf("undesired Status Code: %d", response.StatusCode)
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
@@ -118,7 +118,7 @@ func GetProveedorByDoc(docNum string) (proveedor *models.Proveedor, outputError 
 			return nil, outputError
 		}
 	} else {
-		err := fmt.Errorf("No se especificó un documento")
+		err := fmt.Errorf("no se especificó un documento")
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "GetProveedorByDoc - docNum != \"\"",

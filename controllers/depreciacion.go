@@ -63,7 +63,7 @@ func (c *DepreciacionController) GetOne() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una depreciación válida")
+			err = errors.New("se debe especificar una depreciación válida")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -84,7 +84,7 @@ func (c *DepreciacionController) GetOne() {
 
 		panic(map[string]interface{}{
 			"funcion": "GetOne - depreciacionHelper.GetDepreciacion(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar la depreciación"),
+			"err":     errors.New("no se obtuvo respuesta al consultar la depreciación"),
 			"status":  "404",
 		})
 	}
@@ -106,7 +106,7 @@ func (c *DepreciacionController) Put() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una depreciación válida")
+			err = errors.New("se debe especificar una depreciación válida")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -127,7 +127,7 @@ func (c *DepreciacionController) Put() {
 
 		panic(map[string]interface{}{
 			"funcion": "Put - depreciacionHelper.AprobarDepreciacion(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar la depreciación"),
+			"err":     errors.New("no se obtuvo respuesta al consultar la depreciación"),
 			"status":  "404",
 		})
 	}

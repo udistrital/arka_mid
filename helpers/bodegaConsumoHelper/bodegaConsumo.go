@@ -56,7 +56,7 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 		if res, err := request.GetJsonTest(urlcrud4, &sede); err != nil || res.StatusCode != 200 {
 			if err == nil {
-				err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+				err = fmt.Errorf("undesired Status Code: %d", res.StatusCode)
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
@@ -94,7 +94,7 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+			err = fmt.Errorf("undesired Status Code: %d", res.StatusCode)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -155,7 +155,7 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+			err = fmt.Errorf("undesired Status Code: %d", res.StatusCode)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -201,7 +201,7 @@ func UltimoMovimientoKardex(id_catalogo int) (Elemento_Movimiento map[string]int
 	if res, err := request.GetJsonTest(url3, &elemento_catalogo); err == nil && res.StatusCode == 200 {
 
 		if len(elemento_catalogo) != 1 || len(elemento_catalogo[0]) == 0 {
-			err = fmt.Errorf("No hay un elemento del Catalogo de Elementos con id:%s", idStr)
+			err = fmt.Errorf("no hay un elemento del Catalogo de Elementos con id:%s", idStr)
 			logs.Error(err)
 			outputError = map[string]interface{}{
 				"funcion": "UltimoMovimientoKardex - len(elemento_catalogo) != 1 || len(elemento_catalogo[0]) == 0",
@@ -226,7 +226,7 @@ func UltimoMovimientoKardex(id_catalogo int) (Elemento_Movimiento map[string]int
 
 		} else {
 			if err == nil {
-				err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+				err = fmt.Errorf("undesired Status Code: %d", res.StatusCode)
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
@@ -239,7 +239,7 @@ func UltimoMovimientoKardex(id_catalogo int) (Elemento_Movimiento map[string]int
 
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+			err = fmt.Errorf("undesired Status Code: %d", res.StatusCode)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{

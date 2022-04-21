@@ -93,7 +93,7 @@ func (c *PolizasController) GetAllElementosPoliza() {
 		for _, cond := range strings.Split(v, ",") {
 			kv := strings.SplitN(cond, ":", 2)
 			if len(kv) != 2 {
-				c.Data["json"] = errors.New("Error: invalid query key/value pair")
+				c.Data["json"] = errors.New("error: invalid query key/value pair")
 				c.ServeJSON()
 				return
 			}

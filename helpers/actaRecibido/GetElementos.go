@@ -57,12 +57,10 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 
 			for _, elemento := range elementos {
 
-				var subgrupoId *models.Subgrupo
-				subgrupoId = new(models.Subgrupo)
-				var tipoBienId *models.TipoBien
-				tipoBienId = new(models.TipoBien)
+				subgrupoId := new(models.Subgrupo)
+				tipoBienId := new(models.TipoBien)
 				auxE = new(models.DetalleElemento)
-				subgrupo := *&models.DetalleSubgrupo{
+				subgrupo := models.DetalleSubgrupo{
 					SubgrupoId: subgrupoId,
 					TipoBienId: tipoBienId,
 				}

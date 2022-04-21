@@ -112,7 +112,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 
 	} else {
 		if err == nil {
-			err = fmt.Errorf("Undesired Status Code: %d", res.StatusCode)
+			err = fmt.Errorf("undesired Status Code: %d", res.StatusCode)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{

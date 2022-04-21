@@ -86,7 +86,7 @@ func (c *EntradaController) Post() {
 			} else {
 				panic(map[string]interface{}{
 					"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
-					"err":     errors.New("No se obtuvo respuesta al registrar la entrada"),
+					"err":     errors.New("no se obtuvo respuesta al registrar la entrada"),
 					"status":  "404",
 				})
 			}
@@ -117,7 +117,7 @@ func (c *EntradaController) GetOne() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una entrada válida")
+			err = errors.New("se debe especificar una entrada válida")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -138,7 +138,7 @@ func (c *EntradaController) GetOne() {
 
 		panic(map[string]interface{}{
 			"funcion": "GetOne - entradaHelper.DetalleEntrada(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar la anetrada"),
+			"err":     errors.New("no se obtuvo respuesta al consultar la anetrada"),
 			"status":  "404",
 		})
 	}

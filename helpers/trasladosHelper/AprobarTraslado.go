@@ -56,9 +56,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	for _, el := range detalle.Elementos {
-		ids = append(ids, el)
-	}
+	ids = append(ids, detalle.Elementos...)
 
 	query = "limit=-1&fields=Id,ElementoActaId,ValorTotal&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
@@ -109,21 +107,12 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		}
 
 		if val, ok := novedades[el_]; ok {
-			if _, ok := totales[sg]; ok {
-				totales[sg] += val.ValorLibros
-			} else {
-				totales[sg] = val.ValorLibros
-			}
+			totales[sg] += val.ValorLibros
 			continue
-
 		}
 
 		if val, ok := elementosMovimiento[el_]; ok {
-			if _, ok := totales[sg]; ok {
-				totales[sg] += val.ValorTotal
-			} else {
-				totales[sg] = val.ValorTotal
-			}
+			totales[sg] += val.ValorTotal
 		}
 
 	}
