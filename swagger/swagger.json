@@ -507,6 +507,35 @@
                 }
             }
         },
+        "/bajas_elementos/elemento_arka/{id}": {
+            "get": {
+                "tags": [
+                    "bajas_elementos"
+                ],
+                "description": "get Salida by id",
+                "operationId": "BajaController.Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Salida"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/bajas_elementos/solicitud/": {
             "get": {
                 "tags": [

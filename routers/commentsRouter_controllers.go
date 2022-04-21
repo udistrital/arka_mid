@@ -144,7 +144,7 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
         beego.ControllerComments{
-            Method: "GetElemento",
+            Method: "GetDetalleElemento",
             Router: "/elemento/:id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
@@ -153,8 +153,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
         beego.ControllerComments{
-            Method: "GetDetalleElemento",
-            Router: "/elemento/:id",
+            Method: "GetElemento",
+            Router: "/elemento_arka/:id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,

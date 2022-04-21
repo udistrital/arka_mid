@@ -23,11 +23,6 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-type InfoCuentasSubgrupos struct {
-	CuentaDebito  *models.CuentaContable
-	CuentaCredito *models.CuentaContable
-}
-
 // RegistrarBaja Crea registro de baja
 func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
