@@ -26,7 +26,7 @@ func GetAsignacionSedeDependencia(Id string) (Relacion map[string]interface{}, o
 	}()
 
 	var ubicacion []map[string]interface{}
-	relacion := make(map[string]interface{}, 0)
+	relacion := make(map[string]interface{})
 
 	urlcrud := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + Id
 

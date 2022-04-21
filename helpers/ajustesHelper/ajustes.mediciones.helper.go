@@ -232,7 +232,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 // separarNovedadesPorElemento Separa las novedades por elementos
 func separarNovedadesPorElemento(novedades []*models.NovedadElemento) (novedades_ map[int][]*models.NovedadElemento) {
 
-	novedades_ = make(map[int][]*models.NovedadElemento, 0)
+	novedades_ = make(map[int][]*models.NovedadElemento)
 	for _, nv := range novedades {
 		novedades_[nv.ElementoMovimientoId.Id] = append(novedades_[nv.ElementoMovimientoId.Id], nv)
 	}

@@ -15,7 +15,9 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.PARAMETROS_GOBIERNO_CRUD = os.Getenv("PARAMETROS_GOBIERNO_CRUD")
-	beego.AppConfig.Set("parametrosGobiernoService", os.Getenv("PARAMETROS_GOBIERNO_CRUD"))
+	if err := beego.AppConfig.Set("parametrosGobiernoService", os.Getenv("PARAMETROS_GOBIERNO_CRUD")); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }

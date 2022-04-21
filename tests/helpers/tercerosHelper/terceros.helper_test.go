@@ -18,11 +18,17 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.PARAMETROS_CRUD = os.Getenv("PARAMETROS_CRUD")
-	beego.AppConfig.Set("parametrosService", parameters.PARAMETROS_CRUD)
+	if err := beego.AppConfig.Set("parametrosService", parameters.PARAMETROS_CRUD); err != nil {
+		panic(err)
+	}
 	parameters.TERCEROS_SERVICE = os.Getenv("TERCEROS_SERVICE")
-	beego.AppConfig.Set("tercerosService", parameters.TERCEROS_SERVICE)
+	if err := beego.AppConfig.Set("tercerosService", parameters.TERCEROS_SERVICE); err != nil {
+		panic(err)
+	}
 	parameters.OIKOS2_CRUD = os.Getenv("OIKOS2_CRUD")
-	beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD)
+	if err := beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }

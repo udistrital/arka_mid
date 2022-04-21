@@ -15,7 +15,9 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.ADMINISTRATIVA_SERVICE = os.Getenv("ADMINISTRATIVA_SERVICE")
-	beego.AppConfig.Set("administrativaService", parameters.ADMINISTRATIVA_SERVICE)
+	if err := beego.AppConfig.Set("administrativaService", parameters.ADMINISTRATIVA_SERVICE); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }

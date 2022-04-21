@@ -160,7 +160,7 @@ func (c *BodegaConsumoController) GetAllExistencias() {
 		panic(err)
 	} else {
 		if len(v) == 0 || v == nil {
-			c.Ctx.Output.Body([]byte("[]"))
+			c.Data["json"] = []interface{}{}
 		} else {
 			c.Data["json"] = v
 			c.ServeJSON()

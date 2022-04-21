@@ -20,7 +20,9 @@ var parameters struct {
 // Ya estaba! Se desconoce su proposito, se podría eliminar...?
 func TestMain(m *testing.M) {
 	parameters.ACTA_RECIBIDO_CRUD = os.Getenv("ACTA_RECIBIDO_CRUD")
-	beego.AppConfig.Set("ActaRecibidoService", os.Getenv("ACTA_RECIBIDO_CRUD"))
+	if err := beego.AppConfig.Set("ActaRecibidoService", os.Getenv("ACTA_RECIBIDO_CRUD")); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }
