@@ -311,7 +311,7 @@ func GetTerceroIdEncargado(elementoId int, terceroId *int) (outputError map[stri
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var historial models.Historial
-	if historial_, err := crudMovimientosArka.GetHistorialElemento(elementoId, true); err != nil {
+	if historial_, err := movimientosArka.GetHistorialElemento(elementoId, true); err != nil {
 		return err
 	} else {
 		historial = *historial_
