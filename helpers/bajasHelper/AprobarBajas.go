@@ -14,6 +14,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/depreciacionHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -44,6 +45,8 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		parCredito                        int
 		totalesDp, totalesAm, totalesBaja map[int]float64
 		comprobanteID                     string
+		query                             string
+		terceroUD                         int
 	)
 
 	if err := crudMovimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
@@ -67,11 +70,18 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		return nil, err
 	}
 
+	query = "query=TipoDocumentoId__Nombre:NIT,Numero:" + crudTerceros.GetDocUD()
+	if terceroUD_, err := crudTerceros.GetAllDatosIdentificacion(query); err != nil {
+		return nil, err
+	} else {
+		terceroUD = terceroUD_[0].TerceroId.Id
+	}
+
 	detalleCuentas = make(map[string]models.CuentaContable)
 	cuentasBaja, cuentasDp, cuentasAm = make(map[int]models.CuentaSubgrupo), make(map[int]models.CuentaSubgrupo), make(map[int]models.CuentaSubgrupo)
 
 	// Paso 1: Consulta los movimientos
-	query := "fields=Detalle,Id,FechaCreacion&limit=-1&query=Id__in:"
+	query = "fields=Detalle,Id,FechaCreacion&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(data.Bajas, "|"))
 	if bajas_, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
@@ -209,22 +219,30 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 					}
 				}
 
-				utilsHelper.FillMapTotales(totalesBaja, sg, valorPresente-valorMedicion)
+				if valorPresente-valorMedicion > 0 {
+					var tercero int
+					totalesBaja = make(map[int]float64)
+					if err := GetTerceroIdEncargado(el, &tercero); err != nil {
+						return nil, err
+					}
+
+					utilsHelper.FillMapTotales(totalesBaja, sg, valorPresente-valorMedicion)
+					asientoContable.GetInfoContableSubgrupos(movBj, []int{sg}, cuentasBaja, detalleCuentas)
+					asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, descMovBaja(), false, &movimientos)
+				}
 
 			} else {
+				var tercero int
+				totalesBaja = make(map[int]float64)
+				if err := GetTerceroIdEncargado(el, &tercero); err != nil {
+					return nil, err
+				}
+
 				utilsHelper.FillMapTotales(totalesBaja, sg, valorPresente)
+				asientoContable.GetInfoContableSubgrupos(movBj, []int{sg}, cuentasBaja, detalleCuentas)
+				asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, descMovBaja(), false, &movimientos)
 			}
 
-		}
-
-		if len(totalesBaja) > 0 {
-			ids = []int{}
-			for sg := range totalesBaja {
-				ids = append(ids, sg)
-			}
-
-			asientoContable.GetInfoContableSubgrupos(movBj, ids, cuentasBaja, detalleCuentas)
-			asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, 10000, descMovBaja(), false, &movimientos)
 		}
 
 		if len(totalesDp) > 0 {
@@ -234,7 +252,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			}
 
 			asientoContable.GetInfoContableSubgrupos(movDp, ids, cuentasDp, detalleCuentas)
-			asientoContable.GenerarMovimientosContables(totalesDp, detalleCuentas, cuentasDp, parDebito, parCredito, 10000, descMovDp(), false, &movimientos)
+			asientoContable.GenerarMovimientosContables(totalesDp, detalleCuentas, cuentasDp, parDebito, parCredito, terceroUD, descMovDp(), false, &movimientos)
 		}
 
 		if len(totalesAm) > 0 {
@@ -244,7 +262,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			}
 
 			asientoContable.GetInfoContableSubgrupos(movAm, ids, cuentasAm, detalleCuentas)
-			asientoContable.GenerarMovimientosContables(totalesAm, detalleCuentas, cuentasAm, parDebito, parCredito, 10000, descMovAm(), false, &movimientos)
+			asientoContable.GenerarMovimientosContables(totalesAm, detalleCuentas, cuentasAm, parDebito, parCredito, terceroUD, descMovAm(), false, &movimientos)
 		}
 
 		if len(movimientos) > 0 {
@@ -286,6 +304,27 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	}
 
 	return ids, nil
+}
+
+func GetTerceroIdEncargado(elementoId int, terceroId *int) (outputError map[string]interface{}) {
+
+	funcion := "GetTerceroIdEncargado"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var historial models.Historial
+	if historial_, err := crudMovimientosArka.GetHistorialElemento(elementoId, true); err != nil {
+		return err
+	} else {
+		historial = *historial_
+	}
+
+	if tercero, _, err := GetEncargado(&historial); err != nil {
+		return err
+	} else {
+		*terceroId = tercero
+	}
+
+	return
 }
 
 func descMovBaja() string {
