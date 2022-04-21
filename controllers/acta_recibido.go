@@ -11,6 +11,7 @@ import (
 
 	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/utils_oas/formatdata"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -72,6 +73,7 @@ func (c *ActaRecibidoController) Post() {
 // @Title Get All
 // @Description get ActaRecibido
 // @Success 200 {object} models.ActaRecibido
+// @Param debug query bool false "add more to logs"
 // @Failure 404 not found resource
 // @router / [get]
 func (c *ActaRecibidoController) GetAll() {
@@ -89,6 +91,18 @@ func (c *ActaRecibidoController) GetAll() {
 			}
 		}
 	}()
+
+	var debug bool
+	var err error
+	if debug, err = c.GetBool("debug", false); err != nil {
+		panic(err)
+	}
+	if debug {
+		logs.Debug("Headers:")
+		formatdata.JsonPrint(c.Ctx.Request.Header)
+		fmt.Println()
+		logs.Debug("Host:", c.Ctx.Request.Host)
+	}
 
 	if l, err := actaRecibido.GetAllParametrosActa(); err != nil {
 		panic(err)

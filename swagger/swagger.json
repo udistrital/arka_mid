@@ -22,6 +22,14 @@
                 ],
                 "description": "get ActaRecibido",
                 "operationId": "ActaRecibidoController.Get All",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "debug",
+                        "description": "add more to logs",
+                        "type": "boolean"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
