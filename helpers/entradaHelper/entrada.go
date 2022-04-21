@@ -88,7 +88,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		groups[elemento.SubgrupoCatalogoId] = x
 	}
 
-	if val, ok := detalleMovimiento["ConsecutivoId"]; ok && val != nil {
+	if val, ok := detalleMovimiento["consecutivoId"]; ok && val != nil {
 		consecutivoId = int(val.(float64))
 	}
 
