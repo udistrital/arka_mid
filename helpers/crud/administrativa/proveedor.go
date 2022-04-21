@@ -83,7 +83,7 @@ func GetProveedorByDoc(docNum string) (proveedor *models.Proveedor, outputError 
 		var proveedores []*models.Proveedor
 		urlProveedor := "http://" + beego.AppConfig.String("administrativaService") + "informacion_proveedor?query=NumDocumento:" + docNum
 		if response, err := request.GetJsonTest(urlProveedor, &proveedores); err == nil && response.StatusCode == 200 { // (2) error servicio caido
-			status := "500"
+			var status string
 			if len(proveedores) == 1 && proveedores[0].Id > 0 {
 				return proveedores[0], nil
 			} else if len(proveedores) == 0 || proveedores[0].Id == 0 {

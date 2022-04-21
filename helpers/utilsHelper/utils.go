@@ -97,7 +97,7 @@ func ArrayFind(Objeto__ []map[string]interface{}, campo string, valor string) (B
 		return nil, nil
 	}
 
-	Busqueda_ := make(map[string]interface{}, 0)
+	Busqueda_ := make(map[string]interface{})
 	if keys := len(Objeto__[0]); keys != 0 {
 
 		for _, value := range Objeto__ {

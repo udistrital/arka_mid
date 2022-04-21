@@ -15,7 +15,9 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.CUENTAS_CONTABLES_SERVICE = os.Getenv("CUENTAS_CONTABLES_SERVICE")
-	beego.AppConfig.Set("cuentasContablesService", os.Getenv("CUENTAS_CONTABLES_SERVICE"))
+	if err := beego.AppConfig.Set("cuentasContablesService", os.Getenv("CUENTAS_CONTABLES_SERVICE")); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }

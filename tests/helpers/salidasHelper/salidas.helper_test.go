@@ -19,15 +19,25 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.MOVIMIENTOS_ARKA_SERVICE = os.Getenv("MOVIMIENTOS_ARKA_SERVICE")
-	beego.AppConfig.Set("movimientosArkaService", parameters.MOVIMIENTOS_ARKA_SERVICE)
+	if err := beego.AppConfig.Set("movimientosArkaService", parameters.MOVIMIENTOS_ARKA_SERVICE); err != nil {
+		panic(err)
+	}
 	parameters.ACTA_RECIBIDO_CRUD = os.Getenv("ACTA_RECIBIDO_CRUD")
-	beego.AppConfig.Set("actaRecibidoService", parameters.ACTA_RECIBIDO_CRUD)
+	if err := beego.AppConfig.Set("actaRecibidoService", parameters.ACTA_RECIBIDO_CRUD); err != nil {
+		panic(err)
+	}
 	parameters.CATALOGO_ELEMENTOS_SERVICE = os.Getenv("CATALOGO_ELEMENTOS_SERVICE")
-	beego.AppConfig.Set("catalogoElementosService", parameters.CATALOGO_ELEMENTOS_SERVICE)
+	if err := beego.AppConfig.Set("catalogoElementosService", parameters.CATALOGO_ELEMENTOS_SERVICE); err != nil {
+		panic(err)
+	}
 	parameters.TERCEROS_SERVICE = os.Getenv("TERCEROS_SERVICE")
-	beego.AppConfig.Set("tercerosService", parameters.TERCEROS_SERVICE)
+	if err := beego.AppConfig.Set("tercerosService", parameters.TERCEROS_SERVICE); err != nil {
+		panic(err)
+	}
 	parameters.OIKOS2_CRUD = os.Getenv("OIKOS2_CRUD")
-	beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD)
+	if err := beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }

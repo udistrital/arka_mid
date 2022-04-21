@@ -15,7 +15,9 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.OIKOS2_CRUD = os.Getenv("OIKOS2_CRUD")
-	beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD)
+	if err := beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }

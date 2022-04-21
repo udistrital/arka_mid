@@ -15,7 +15,9 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.MOVIMIENTOS_ARKA_SERVICE = os.Getenv("MOVIMIENTOS_ARKA_SERVICE")
-	beego.AppConfig.Set("movimientosArkaService", os.Getenv("MOVIMIENTOS_ARKA_SERVICE"))
+	if err := beego.AppConfig.Set("movimientosArkaService", os.Getenv("MOVIMIENTOS_ARKA_SERVICE")); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }
