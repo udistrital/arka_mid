@@ -65,7 +65,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		parCredito = cr_
 	}
 
-	if err := cuentasContables.GetComprobante(tipoComprobanteBaja(), &comprobanteID); err != nil {
+	if err := cuentasContables.GetComprobante(getTipoComprobanteBajas(), &comprobanteID); err != nil {
 		return nil, err
 	}
 
@@ -338,6 +338,6 @@ func descMovAm() string {
 	return "Amortización restante en baja de elementos"
 }
 
-func tipoComprobanteBaja() string {
-	return "H21"
+func getTipoComprobanteBajas() string {
+	return "H23"
 }

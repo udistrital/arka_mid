@@ -418,10 +418,6 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 	return Elementos, nil
 }
 
-func getTipoComprobanteBajas() string {
-	return "B"
-}
-
 // findIdInArray Retorna la posicion en que se encuentra el id específicado
 func FindInArray(cuentasSg []*models.CuentaSubgrupo, subgrupoId int) (i int) {
 	for i, cuentaSg := range cuentasSg {
