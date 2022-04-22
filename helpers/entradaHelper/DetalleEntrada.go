@@ -7,8 +7,10 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -66,6 +68,24 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 					}
 					resultado["trContable"] = trContable
 				}
+			}
+		}
+	}
+
+	if val, ok := detalle["acta_recibido_id"]; ok {
+		query = "ActaRecibidoId__Id:" + strconv.Itoa(int(val.(float64)))
+		var acta *models.HistoricoActa
+		if tr, err := actaRecibido.GetAllHistoricoActa(query, "", "Id", "desc", "", "1"); err != nil {
+			return nil, err
+		} else {
+			acta = tr[0]
+		}
+
+		if acta.ProveedorId > 0 {
+			if tercero, err := terceros.GetTerceroById(acta.ProveedorId); err != nil {
+				return nil, err
+			} else {
+				resultado["proveedor"] = tercero
 			}
 		}
 	}

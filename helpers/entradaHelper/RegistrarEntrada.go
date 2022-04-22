@@ -54,7 +54,7 @@ func RegistrarEntrada(data models.Movimiento) (result map[string]interface{}, ou
 	} else {
 		consecutivo = consecutivos.Format(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
 		detalleJSON["consecutivo"] = consecutivo
-		detalleJSON["consecutivoId"] = consecutivoId
+		detalleJSON["ConsecutivoId"] = consecutivoId
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
 
