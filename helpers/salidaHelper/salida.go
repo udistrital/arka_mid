@@ -334,6 +334,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 
 		if idx = utilsHelper.FindElementoInArrayElementosMovimiento(trSalida.Elementos, el.Id); idx > -1 {
 			detalle = trSalida.Elementos[idx]
+			detalle.ValorResidual = detalle.ValorResidual * 100 / detalle.ValorTotal
 		} else {
 			detalle.ValorResidual = 0
 			detalle.VidaUtil = 0
