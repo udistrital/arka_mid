@@ -134,7 +134,8 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 	}
 
 	// Registra la transacción contable
-	if trContable, err := asientoContable.AsientoContable(totales, "", strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, detalle.ConsecutivoId, true); err != nil {
+	if trContable, err := asientoContable.AsientoContable(totales, getTipoComprobanteCierre(),
+		strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, detalle.ConsecutivoId, true); err != nil {
 		return nil, err
 	} else {
 		detalleD["trContable"] = trContable

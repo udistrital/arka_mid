@@ -206,6 +206,7 @@ type Historial struct {
 
 type FormatoDepreciacion struct {
 	ConsecutivoId int
+	Consecutivo   string
 	FechaCorte    string
 	Totales       map[int]float64
 	RazonRechazo  string

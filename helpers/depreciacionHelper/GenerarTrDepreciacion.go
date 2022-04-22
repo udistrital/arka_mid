@@ -2,8 +2,10 @@ package depreciacionHelper
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -28,6 +30,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		movimiento    *models.Movimiento
 		consecutivoId int
 		terceroUD     int
+		consecutivo   string
 		query         string
 	)
 
@@ -114,7 +117,8 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	// Simula la transacción contable en caso de aprobarse
-	if trSimulada, err := asientoContable.AsientoContable(totales, "", strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), "", descAsiento(), terceroUD, 0, false); err != nil {
+	if trSimulada, err := asientoContable.AsientoContable(totales, "",
+		strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), getDescripcionMovmientoCierre(), descAsiento(), terceroUD, 0, false); err != nil {
 		return nil, outputError
 	} else {
 		detalleD["trContable"] = trSimulada
@@ -129,11 +133,33 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		movimiento.EstadoMovimientoId = sm[0]
 	}
 
-	ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
-	if _, consecutivoId_, err := consecutivos.Get("%05.0f", ctxt, "Registro "+info.Tipo+" Arka"); err != nil {
-		return nil, outputError
+	if info.Id == 0 {
+		ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
+		if consecutivo_, consecutivoId_, err := consecutivos.Get("%02.0f", ctxt, "Registro "+info.Tipo+" Arka"); err != nil {
+			return nil, outputError
+		} else {
+			consecutivoId = consecutivoId_
+			consecutivo = consecutivos.Format(getTipoComprobanteCierre()+"-", consecutivo_, fmt.Sprintf("%s%02d", "-", time.Now().Year()))
+		}
 	} else {
-		consecutivoId = consecutivoId_
+		var (
+			detalle_    models.FormatoDepreciacion
+			movimiento_ models.Movimiento
+		)
+
+		if mov_, err := crudMovimientosArka.GetMovimientoById(info.Id); err != nil {
+			return nil, err
+		} else {
+			movimiento_ = *mov_
+		}
+
+		if err := json.Unmarshal([]byte(movimiento_.Detalle), &detalle_); err != nil {
+			logs.Error(err)
+			eval := " - json.Unmarshal([]byte(movimiento_.Detalle), &detalle_)"
+			return nil, errorctrl.Error(funcion+eval, err, "500")
+		}
+
+		consecutivo, consecutivoId = detalle_.Consecutivo, detalle_.ConsecutivoId
 	}
 
 	detalle := models.FormatoDepreciacion{
@@ -141,6 +167,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		Totales:       totales,
 		RazonRechazo:  info.RazonRechazo,
 		ConsecutivoId: consecutivoId,
+		Consecutivo:   consecutivo,
 	}
 
 	if detalle_, err := json.Marshal(detalle); err != nil {
@@ -172,4 +199,12 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	return detalleD, nil
+}
+
+func getTipoComprobanteCierre() string {
+	return "H22"
+}
+
+func getDescripcionMovmientoCierre() string {
+	return "Mediciones posteriores"
 }
