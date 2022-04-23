@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"errors"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // TercerosController operations for Terceros
@@ -26,23 +29,24 @@ func (c *TercerosController) URLMapping() {
 // @router /:id [get]
 func (c *TercerosController) GetOne() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TercerosController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
+	defer errorctrl.ErrorControlController(c.Controller, "TercerosController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("se debe especificar un tercero válido")
 		}
-	}()
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": `GetOne - GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
 
-	idStr := c.Ctx.Input.Param(":id")
-
-	if v, err := terceros.GetNombreTerceroById(idStr); err != nil {
+	if v, err := terceros.GetNombreTerceroById(id); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v

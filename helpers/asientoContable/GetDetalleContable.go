@@ -1,8 +1,6 @@
 package asientoContable
 
 import (
-	"strconv"
-
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
@@ -66,7 +64,7 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion) (movimiento
 		}
 
 		if mov.TerceroId > 0 {
-			if tercero, err := terceros.GetNombreTerceroById(strconv.Itoa(mov.TerceroId)); err != nil {
+			if tercero, err := terceros.GetNombreTerceroById(mov.TerceroId); err != nil {
 				return nil, err
 			} else {
 				mov_.TerceroId = tercero

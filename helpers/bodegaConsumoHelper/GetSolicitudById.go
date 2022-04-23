@@ -58,7 +58,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 		if err := json.Unmarshal([]byte(str), &data); err == nil {
 
 			// logs.Debug("data:", data)
-			if tercero, err := crudTerceros.GetNombreTerceroById(fmt.Sprintf("%v", data["Funcionario"])); err == nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(int(data["Funcionario"].(float64))); err == nil {
 				solicitud_[0]["Funcionario"] = tercero
 			} else {
 				return nil, err

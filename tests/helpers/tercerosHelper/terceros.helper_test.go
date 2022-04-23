@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 // TestGetFuncionariosPlanta ...
 func TestGetNombreTerceroById(t *testing.T) {
 
-	if valor, err := terceros.GetNombreTerceroById("81"); err != nil {
+	if valor, err := terceros.GetNombreTerceroById(81); err != nil {
 		t.Error("No se pudo consultar el tercero", err)
 		t.Fail()
 	} else {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -147,7 +146,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		}
 
 		if mov.TerceroId > 0 {
-			if tercero, err := terceros.GetNombreTerceroById(strconv.Itoa(mov.TerceroId)); err != nil {
+			if tercero, err := terceros.GetNombreTerceroById(mov.TerceroId); err != nil {
 				return nil, err
 			} else {
 				mov_.TerceroId = tercero

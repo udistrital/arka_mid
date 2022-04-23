@@ -3,7 +3,6 @@ package asientoContable
 import (
 	"encoding/json"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/astaxie/beego/logs"
@@ -140,14 +139,14 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 		if tr, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
-			if tercero, err := crudTerceros.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
 				return nil, err
 			} else {
 				res["resultadoTransaccion"] = fillDetalle(infoCuentas, tr, tercero.Numero)
 			}
 		}
 	} else {
-		if tercero, err := crudTerceros.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+		if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
 			return nil, err
 		} else {
 			res["simulacro"] = fillDetalle(infoCuentas, &transaccion, tercero.Numero)

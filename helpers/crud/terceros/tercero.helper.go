@@ -14,30 +14,25 @@ import (
 )
 
 //GetNombreTerceroById trae el nombre de un encargado por su id
-func GetNombreTerceroById(idTercero string) (tercero *models.IdentificacionTercero, outputError map[string]interface{}) {
+func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero, outputError map[string]interface{}) {
 
 	funcion := "GetNombreTerceroById"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	var terceroId int
-	if v, err := strconv.Atoi(idTercero); err != nil || v <= 0 {
-		if err == nil {
-			err = errors.New("el idTercero debe ser mayor a 0")
-		}
+	if idTercero <= 0 {
+		err := errors.New("el idTercero debe ser mayor a 0")
 		logs.Error(err)
 		eval := " - strconv.Atoi(idTercero)"
 		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		terceroId = v
 	}
 
-	urlcrud := "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + idTercero
+	urlcrud := "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero)
 	if datosId, err := GetAllDatosIdentificacion(urlcrud); err != nil {
 		return nil, err
 	} else {
 		tercero = new(models.IdentificacionTercero)
 		if len(datosId) == 0 || datosId[0].Id == 0 {
-			if tercero_, err := GetTerceroById(terceroId); err != nil {
+			if tercero_, err := GetTerceroById(idTercero); err != nil {
 				return nil, err
 			} else {
 				tercero.Id = tercero_.Id
