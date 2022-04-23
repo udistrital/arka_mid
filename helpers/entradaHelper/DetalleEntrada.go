@@ -82,7 +82,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 
 		if acta.ProveedorId > 0 {
-			if tercero, err := terceros.GetTerceroById(acta.ProveedorId); err != nil {
+			if tercero, err := terceros.GetNombreTerceroById(strconv.Itoa(acta.ProveedorId)); err != nil {
 				return nil, err
 			} else {
 				resultado["proveedor"] = tercero
