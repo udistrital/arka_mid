@@ -150,7 +150,7 @@ func AprobarDepreciacion(id int) (detalleD map[string]interface{}, outputError m
 		}
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Depr Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Depr Aprobada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]

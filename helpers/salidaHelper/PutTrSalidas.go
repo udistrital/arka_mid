@@ -3,6 +3,7 @@ package salidaHelper
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -37,7 +38,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
 
-	if estadosMovimiento, err := crudMovimientosArka.GetAllEstadoMovimiento("Salida%20En%20Trámite"); err != nil {
+	if estadosMovimiento, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Salida En Trámite")); err != nil {
 		return nil, err
 	} else {
 		estadoMovimiento = estadosMovimiento[0]

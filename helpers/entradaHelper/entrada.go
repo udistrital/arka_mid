@@ -51,7 +51,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Entrada Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Entrada Aprobada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -72,7 +72,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	detalle := ""
 	for k, v := range detalleMovimiento {
-		if k != "consecutivo" {
+		if k != "consecutivo" && k != "ConsecutivoId" {
 			detalle = detalle + k + ": " + fmt.Sprintf("%v", v) + " "
 		}
 	}

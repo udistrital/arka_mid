@@ -12,7 +12,6 @@ type Movimiento struct {
 	MovimientoPadreId       *Movimiento
 	FormatoTipoMovimientoId *FormatoTipoMovimiento
 	EstadoMovimientoId      *EstadoMovimiento
-	SoporteMovimientoId     int
 }
 
 type ElementosMovimiento struct {
@@ -72,6 +71,14 @@ type NovedadElemento struct {
 	Activo               bool
 	FechaCreacion        time.Time
 	FechaModificacion    time.Time
+}
+
+type TransaccionEntrada struct {
+	Id                      int
+	Observacion             string
+	Detalle                 string
+	FormatoTipoMovimientoId string
+	SoporteMovimientoId     int
 }
 
 type TrSoporteMovimiento struct {

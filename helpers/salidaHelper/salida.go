@@ -278,7 +278,7 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 		}
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Salida Aprobada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Salida Aprobada")); err != nil {
 		return nil, err
 	} else {
 		trSalida.Salida.EstadoMovimientoId = sm[0]

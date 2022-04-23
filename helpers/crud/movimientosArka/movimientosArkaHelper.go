@@ -1,11 +1,9 @@
 package movimientosArka
 
 import (
-	"errors"
 	"strconv"
 
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -13,32 +11,18 @@ import (
 )
 
 // GetAllEstadoMovimiento query controlador estado_movimiento del api movimientos_arka_crud
-func GetAllEstadoMovimiento(nombre string) (estado []*models.EstadoMovimiento, outputError map[string]interface{}) {
+func GetAllEstadoMovimiento(query string) (estados []*models.EstadoMovimiento, outputError map[string]interface{}) {
 
 	funcion := "GetAllEstadoMovimiento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	var (
-		resEstadoMovimiento []*models.EstadoMovimiento
-		urlcrud             string
-	)
-
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:" + nombre
-	if err := request.GetJson(urlcrud, &resEstadoMovimiento); err != nil || len(resEstadoMovimiento) == 0 {
-		status := "502"
-		if err == nil {
-			err = errors.New("len(resEstadoMovimiento) == 0")
-			status = "404"
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllEstadoMovimiento - request.GetJson(urlcrud, &resEstadoMovimiento)",
-			"err":     err,
-			"status":  status,
-		}
-		return nil, outputError
+	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?" + query
+	if err := request.GetJson(urlcrud, &estados); err != nil {
+		eval := " - request.GetJson(urlcrud, &estados)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
-	return resEstadoMovimiento, nil
+
+	return
 }
 
 // GetAllFormatoTipoMovimiento query controlador formato_tipo_movimiento del api movimientos_arka_crud

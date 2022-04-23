@@ -53,7 +53,7 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 		movimiento.FormatoTipoMovimientoId = fm[0]
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Ajuste En Trámite")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste En Trámite")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -251,7 +251,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		detalle.RazonRechazo = ""
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Ajuste Aprobado")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste Aprobado")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]

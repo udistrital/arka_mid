@@ -2865,10 +2865,6 @@
                 },
                 "Observacion": {
                     "type": "string"
-                },
-                "SoporteMovimientoId": {
-                    "type": "integer",
-                    "format": "int64"
                 }
             }
         },

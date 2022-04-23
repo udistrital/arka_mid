@@ -1971,9 +1971,6 @@ definitions:
         $ref: '#/definitions/models.Movimiento'
       Observacion:
         type: string
-      SoporteMovimientoId:
-        type: integer
-        format: int64
   models.OrdenadorGasto:
     title: OrdenadorGasto
     type: object

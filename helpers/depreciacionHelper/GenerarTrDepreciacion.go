@@ -127,7 +127,7 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		}
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Depr Generada")); err != nil {
+	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Depr Generada")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]

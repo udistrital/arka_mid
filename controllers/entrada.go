@@ -72,9 +72,9 @@ func (c *EntradaController) Post() {
 			panic(err)
 		}
 	} else {
-		var v models.Movimiento
+		var v models.TransaccionEntrada
 		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := entradaHelper.RegistrarEntrada(v); err == nil && respuesta != nil {
+			if respuesta, err := entradaHelper.RegistrarEntrada(&v); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
 			} else if err != nil {

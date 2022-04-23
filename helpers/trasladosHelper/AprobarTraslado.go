@@ -178,7 +178,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		resultado["trContable"] = trContable
 	}
 
-	if em, err := movimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Traslado Confirmado")); err != nil {
+	if em, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Traslado Confirmado")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = em[0]
