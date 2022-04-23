@@ -90,6 +90,16 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 	}
 
+	if val, ok := detalle["factura"]; ok && val != nil {
+		if int(val.(float64)) > 0 {
+			soporte := *new(models.SoporteActa)
+			if err := actaRecibido.GetSoporteById(int(val.(float64)), &soporte); err != nil {
+				return nil, err
+			}
+			resultado["factura"] = soporte
+		}
+	}
+
 	resultado["movimiento"] = movimiento
 
 	return resultado, nil

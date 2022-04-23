@@ -70,3 +70,18 @@ func PutElemento(elemento *models.Elemento, elementoId int) (elemento_ *models.E
 	return
 
 }
+
+// GetSoporteById query controlador soporte_acta del api acta_recibido_crud
+func GetSoporteById(id int, soporte *models.SoporteActa) (outputError map[string]interface{}) {
+
+	funcion := "GetSoporteById"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &soporte); err != nil {
+		eval := " - request.GetJson(urlcrud, &soporte)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
