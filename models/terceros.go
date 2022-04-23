@@ -160,3 +160,9 @@ type InfoTercero struct {
 	Tercero        *Tercero
 	Identificacion *DatosIdentificacion
 }
+
+type IdentificacionTercero struct {
+	Id             int
+	Numero         string
+	NombreCompleto string
+}

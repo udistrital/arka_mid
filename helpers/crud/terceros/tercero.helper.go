@@ -13,14 +13,8 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-type IdentificacionTercero struct {
-	Id             int
-	Numero         string
-	NombreCompleto string
-}
-
 //GetNombreTerceroById trae el nombre de un encargado por su id
-func GetNombreTerceroById(idTercero string) (tercero *IdentificacionTercero, outputError map[string]interface{}) {
+func GetNombreTerceroById(idTercero string) (tercero *models.IdentificacionTercero, outputError map[string]interface{}) {
 
 	funcion := "GetNombreTerceroById"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -41,7 +35,7 @@ func GetNombreTerceroById(idTercero string) (tercero *IdentificacionTercero, out
 	if datosId, err := GetAllDatosIdentificacion(urlcrud); err != nil {
 		return nil, err
 	} else {
-		tercero = new(IdentificacionTercero)
+		tercero = new(models.IdentificacionTercero)
 		if len(datosId) == 0 || datosId[0].Id == 0 {
 			if tercero_, err := GetTerceroById(terceroId); err != nil {
 				return nil, err

@@ -50,7 +50,7 @@ type DetalleMovimientoContable struct {
 	Debito      float64
 	Credito     float64
 	Descripcion string
-	TerceroId   *Tercero
+	TerceroId   *IdentificacionTercero
 }
 
 type InfoTransaccionContable struct {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -11,9 +12,9 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
-	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
-	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -47,13 +48,13 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 	}
 
 	query = "query=Nombre:" + url.QueryEscape("Ajuste Contable")
-	if fm, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		movimiento.FormatoTipoMovimientoId = fm[0]
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste En Trámite")); err != nil {
+	if sm, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste En Trámite")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -61,7 +62,7 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 
 	movimiento.Activo = true
 
-	if res, err := crudMovimientosArka.PostMovimiento(movimiento); err != nil {
+	if res, err := movimientosArka.PostMovimiento(movimiento); err != nil {
 		return nil, err
 	} else {
 		return res, nil
@@ -85,7 +86,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 
 	Ajuste = new(models.DetalleAjuste)
 
-	if movimiento_, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
+	if movimiento_, err := movimientosArka.GetMovimientoById(id); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_
@@ -146,10 +147,10 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		}
 
 		if mov.TerceroId > 0 {
-			if tercero_, err := crudTerceros.GetTerceroById(mov.TerceroId); err != nil {
+			if tercero, err := terceros.GetNombreTerceroById(strconv.Itoa(mov.TerceroId)); err != nil {
 				return nil, err
 			} else {
-				mov_.TerceroId = tercero_
+				mov_.TerceroId = tercero
 			}
 		}
 		mov_.Credito = mov.Credito
@@ -177,7 +178,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		parametroDebitoId  int
 	)
 
-	if movimiento_, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
+	if movimiento_, err := movimientosArka.GetMovimientoById(id); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_
@@ -251,7 +252,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		detalle.RazonRechazo = ""
 	}
 
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste Aprobado")); err != nil {
+	if sm, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste Aprobado")); err != nil {
 		return nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -265,7 +266,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		movimiento.Detalle = string(jsonData[:])
 	}
 
-	if movimiento_, err := crudMovimientosArka.PutMovimiento(movimiento, movimiento.Id); err != nil {
+	if movimiento_, err := movimientosArka.PutMovimiento(movimiento, movimiento.Id); err != nil {
 		return nil, err
 	} else {
 		movimiento = movimiento_

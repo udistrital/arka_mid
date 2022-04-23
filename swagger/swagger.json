@@ -914,7 +914,7 @@
                         "name": "body",
                         "description": "Detalles de la entrada. Se valida solo si el id es 0",
                         "schema": {
-                            "$ref": "#/definitions/models.Entrada"
+                            "$ref": "#/definitions/models.TransaccionEntrada"
                         }
                     }
                 ],
@@ -922,7 +922,7 @@
                     "201": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Entrada"
+                            "$ref": "#/definitions/models.Movimiento"
                         }
                     },
                     "400": {
@@ -2242,7 +2242,7 @@
                     "type": "string"
                 },
                 "TerceroId": {
-                    "$ref": "#/definitions/models.Tercero"
+                    "$ref": "#/definitions/models.IdentificacionTercero"
                 }
             }
         },
@@ -2547,10 +2547,6 @@
                 }
             }
         },
-        "models.Entrada": {
-            "title": "Entrada",
-            "type": "object"
-        },
         "models.EspacioFisico": {
             "title": "EspacioFisico",
             "type": "object",
@@ -2725,6 +2721,22 @@
                     "items": {
                         "$ref": "#/definitions/models.Movimiento"
                     }
+                }
+            }
+        },
+        "models.IdentificacionTercero": {
+            "title": "IdentificacionTercero",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NombreCompleto": {
+                    "type": "string"
+                },
+                "Numero": {
+                    "type": "string"
                 }
             }
         },
@@ -3509,6 +3521,29 @@
                 },
                 "Ubicacion": {
                     "$ref": "#/definitions/models.DetalleSedeDependencia"
+                }
+            }
+        },
+        "models.TransaccionEntrada": {
+            "title": "TransaccionEntrada",
+            "type": "object",
+            "properties": {
+                "Detalle": {
+                    "type": "string"
+                },
+                "FormatoTipoMovimientoId": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
