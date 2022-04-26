@@ -33,7 +33,7 @@ func (c *CatalogoElementosController) GetOne() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una subgrupo válido")
+			err = errors.New("se debe especificar una subgrupo válido")
 		}
 		panic(errorctrl.Error(`GetOne - c.GetInt(":id")`, err, "400"))
 	} else {

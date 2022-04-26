@@ -23,7 +23,8 @@ func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
-	c.Mapping("GetElementosConsumo", c.GetAllElementosConsumo)
+	c.Mapping("GetAllElementosConsumo", c.GetAllElementosConsumo)
+	c.Mapping("GetAllActas", c.GetAllActas)
 }
 
 // Post ...
@@ -49,7 +50,6 @@ func (c *ActaRecibidoController) Post() {
 		}
 	}()
 
-	fmt.Println(c.GetFile("archivo"))
 	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
 		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
 			c.Ctx.Output.SetStatus(201)

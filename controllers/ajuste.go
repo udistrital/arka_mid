@@ -18,23 +18,23 @@ type AjusteController struct {
 
 // URLMapping ...
 func (c *AjusteController) URLMapping() {
-	c.Mapping("Post", c.Post)
-	c.Mapping("Post", c.PostAjuste)
-	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetOne", c.GetElementos)
-	c.Mapping("GetOne", c.GetOneAuto)
+	c.Mapping("PostManual", c.PostManual)
+	c.Mapping("PostAjuste", c.PostAjuste)
+	c.Mapping("GetOneManual", c.GetOneManual)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
+	c.Mapping("GetElementos", c.GetElementos)
+	c.Mapping("GetOneAuto", c.GetOneAuto)
 }
 
-// Post ...
+// PostManual ...
 // @Title Create
 // @Description create Ajuste
-// @Param	body		body 	ajustesHelper.PreTrAjuste	true		"body for Ajuste content"
+// @Param	body		body 	models.PreTrAjuste	true		"body for Ajuste content"
 // @Success 201 {object} models.Movimiento
 // @Failure 403 body is empty
 // @router / [post]
-func (c *AjusteController) Post() {
+func (c *AjusteController) PostManual() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
 
@@ -53,7 +53,7 @@ func (c *AjusteController) Post() {
 	c.ServeJSON()
 }
 
-// Post ...
+// PostAjuste ...
 // @Title Create
 // @Description create Ajuste
 // @Param	body		body 	[]models.DetalleElemento_	true		"body for Ajuste content"
@@ -79,25 +79,25 @@ func (c *AjusteController) PostAjuste() {
 	c.ServeJSON()
 }
 
-// GetOne ...
-// @Title GetOne
+// GetOneManual ...
+// @Title GetOneManual
 // @Description get Ajuste by id
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200 {object} models.DetalleAjuste
 // @Failure 403 :id is empty
 // @router /:id [get]
-func (c *AjusteController) GetOne() {
+func (c *AjusteController) GetOneManual() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un ajuste válido")
+			err = errors.New("se debe especificar un ajuste válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
-			"funcion": `GetOne - c.GetInt(":id")`,
+			"funcion": `GetOneManual - c.GetInt(":id")`,
 			"err":     err,
 			"status":  "400",
 		})
@@ -114,7 +114,7 @@ func (c *AjusteController) GetOne() {
 
 		panic(map[string]interface{}{
 			"funcion": "GetOne - ajustesHelper.GetDetalleAjuste(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar el ajuste"),
+			"err":     errors.New("no se obtuvo respuesta al consultar el ajuste"),
 			"status":  "404",
 		})
 	}
@@ -140,7 +140,7 @@ func (c *AjusteController) GetAll() {
 
 	panic(map[string]interface{}{
 		"funcion": "All",
-		"err":     errors.New("No implementado"),
+		"err":     errors.New("no implementado"),
 		"status":  "501",
 	})
 }
@@ -159,7 +159,7 @@ func (c *AjusteController) Put() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un ajuste válido")
+			err = errors.New("se debe especificar un ajuste válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -180,7 +180,7 @@ func (c *AjusteController) Put() {
 
 		panic(map[string]interface{}{
 			"funcion": "Put - ajustesHelper.AprobarAjuste(id)",
-			"err":     errors.New("No se obtuvo respuesta al aprobar el ajuste"),
+			"err":     errors.New("no se obtuvo respuesta al aprobar el ajuste"),
 			"status":  "404",
 		})
 	}
@@ -202,7 +202,7 @@ func (c *AjusteController) GetElementos() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un acta válida")
+			err = errors.New("se debe especificar un acta válida")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -223,7 +223,7 @@ func (c *AjusteController) GetElementos() {
 
 		panic(map[string]interface{}{
 			"funcion": "GetElementos - ajustesHelper.GetDetalleElementosActa(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar los elementos"),
+			"err":     errors.New("no se obtuvo respuesta al consultar los elementos"),
 			"status":  "404",
 		})
 	}
@@ -245,7 +245,7 @@ func (c *AjusteController) GetOneAuto() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un ajuste válido")
+			err = errors.New("se debe especificar un ajuste válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -266,7 +266,7 @@ func (c *AjusteController) GetOneAuto() {
 
 		panic(map[string]interface{}{
 			"funcion": "GetOneAuto - ajustesHelper.GetAjusteAutomatico(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar el ajuste"),
+			"err":     errors.New("no se obtuvo respuesta al consultar el ajuste"),
 			"status":  "404",
 		})
 	}

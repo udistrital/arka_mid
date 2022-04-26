@@ -2,17 +2,16 @@ package asientoContable
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosContablesMidHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -38,46 +37,39 @@ func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
-func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto string, descripcionAsiento string, idTercero int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
+func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero, consecutivoId int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "AsientoContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		res map[string]interface{}
-		//	elemento                []map[string]interface{}
-		transaccion models.TransaccionMovimientos
-		//	respuesta_peticion      map[string]interface{}
+		res                  map[string]interface{}
+		transaccion          models.TransaccionMovimientos
 		parametroTipoDebito  int
 		parametroTipoCredito int
 		cuentasSubgrupo      []*models.CuentaSubgrupo
+		comprobanteID        string
 	)
 
 	res = make(map[string]interface{})
 	res["errorTransaccion"] = ""
 
-	consecutivoId := 0
-	if submit {
-		if _, consecutivoId_, err := utilsHelper.GetConsecutivo("%05.0f", 1, "CNTB"); err != nil {
-			return nil, outputError
-		} else {
-			consecutivoId = consecutivoId_
-		}
-	}
-
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, err
 	} else {
 		parametroTipoDebito = db_
 		parametroTipoCredito = cr_
 	}
 
-	etiquetas := make(map[string]interface{})
+	if comprobante != "" {
+		if err := cuentasContables.GetComprobante(comprobante, &comprobanteID); err != nil {
+			return nil, err
+		}
+	}
 
-	if tipoComprobante_, err := cuentasContablesHelper.GetTipoComprobante("E"); err != nil {
-		return nil, err
-	} else if tipoComprobante_ != nil {
-		etiquetas["TipoComprobanteId"] = tipoComprobante_.Codigo
+	if comprobanteID != "" {
+		etiquetas := *new(models.Etiquetas)
+		etiquetas.ComprobanteId = comprobanteID
 		if jsonData, err := json.Marshal(etiquetas); err != nil {
 			logs.Error(err)
 			eval := " - json.Marshal(etiquetas)"
@@ -105,7 +97,7 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + tipomvto + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
-	if elementos_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = elementos_
@@ -115,13 +107,13 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 	for id := range totales {
 		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
 
-			if ctaCr_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+			if ctaCr_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId] = ctaCr_
 			}
 
-			if ctaDb_, err := cuentasContablesHelper.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+			if ctaDb_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId] = ctaDb_
@@ -133,28 +125,28 @@ func AsientoContable(totales map[int]float64, tipomvto string, descripcionMovto 
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, err := catalogoElementosHelper.GetSubgrupoById(id)
+			subgrupo, err := catalogoElementos.GetSubgrupoById(id)
 			if err != nil {
 				return nil, err
 			} else {
-				res["errorTransaccion"] = fmt.Sprintf("Debe parametrizar las cuentas del subgrupo ") + subgrupo.Nombre
+				res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Nombre
 				return res, nil
 			}
 		}
 	}
 
 	if submit {
-		if tr, err := movimientosContablesMidHelper.PostTrContable(&transaccion); err != nil {
+		if tr, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 			return nil, err
 		} else {
-			if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
 				return nil, err
 			} else {
 				res["resultadoTransaccion"] = fillDetalle(infoCuentas, tr, tercero.Numero)
 			}
 		}
 	} else {
-		if tercero, err := tercerosHelper.GetNombreTerceroById(strconv.Itoa(idTercero)); err != nil {
+		if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
 			return nil, err
 		} else {
 			res["simulacro"] = fillDetalle(infoCuentas, &transaccion, tercero.Numero)

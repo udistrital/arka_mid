@@ -1,0 +1,2 @@
+output:
+  format: junit-xml

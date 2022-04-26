@@ -3,9 +3,9 @@ package ajustesHelper
 import (
 	"time"
 
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/depreciacionHelper"
-	"github.com/udistrital/arka_mid/helpers/parametrosHelper"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -32,14 +32,14 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 	detalleMd := make(map[int]*models.FormatoDepreciacion)
 	novedadesNuevas := make(map[int][]*models.NovedadElemento)
 
-	if db_, cr_, err := parametrosHelper.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return nil, nil, err
 	} else {
 		movDebito = db_
 		movCredito = cr_
 	}
 
-	if terceroUD_, err := tercerosHelper.GetAllDatosIdentificacion(queryUD + tercerosHelper.GetDocUD()); err != nil {
+	if terceroUD_, err := terceros.GetAllDatosIdentificacion(queryUD + terceros.GetDocUD()); err != nil {
 		return nil, nil, err
 	} else {
 		terceroUD = terceroUD_[0].TerceroId.Id
@@ -127,7 +127,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 			novedadesNuevas[key] = append(novedadesNuevas[key], novedadNueva)
 
 			movimientos = append(movimientos,
-				generaTrContable(dpNvo-dpOrg,
+				generaTrContable(dpOrg, dpNvo,
 					detalleMd[nv_.MovimientoId.Id].FechaCorte,
 					nv_.MovimientoId.FormatoTipoMovimientoId.Nombre,
 					movDebito,
@@ -140,9 +140,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 	}
 
 	for _, nv := range novedadesNuevas {
-		for _, nv_ := range nv {
-			novedades_ = append(novedades_, nv_)
-		}
+		novedades_ = append(novedades_, nv...)
 	}
 
 	return movimientos, novedades_, nil
@@ -234,7 +232,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 // separarNovedadesPorElemento Separa las novedades por elementos
 func separarNovedadesPorElemento(novedades []*models.NovedadElemento) (novedades_ map[int][]*models.NovedadElemento) {
 
-	novedades_ = make(map[int][]*models.NovedadElemento, 0)
+	novedades_ = make(map[int][]*models.NovedadElemento)
 	for _, nv := range novedades {
 		novedades_[nv.ElementoMovimientoId.Id] = append(novedades_[nv.ElementoMovimientoId.Id], nv)
 	}

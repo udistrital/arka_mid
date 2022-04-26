@@ -18,8 +18,10 @@ type TrasladosController struct {
 // URLMapping ...
 func (c *TrasladosController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("Get", c.GetTraslado)
+	c.Mapping("GetTraslado", c.GetTraslado)
 	c.Mapping("GetElementosFuncionario", c.GetElementosFuncionario)
+	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("Put", c.Put)
 }
 
 // Post ...
@@ -65,7 +67,7 @@ func (c *TrasladosController) Post() {
 
 		panic(map[string]interface{}{
 			"funcion": "trasladoshelper.RegistrarTraslado(&v)",
-			"err":     errors.New("No se obtuvo respuesta al registrar el traslado"),
+			"err":     errors.New("no se obtuvo respuesta al registrar el traslado"),
 			"status":  "404",
 		})
 	}
@@ -99,7 +101,7 @@ func (c *TrasladosController) GetTraslado() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un traslado válido")
+			err = errors.New("se debe especificar un traslado válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -120,7 +122,7 @@ func (c *TrasladosController) GetTraslado() {
 
 		panic(map[string]interface{}{
 			"funcion": "GetTraslado - trasladoshelper.GetDetalleTraslado(id)",
-			"err":     errors.New("No se obtuvo respuesta al consultar el traslado"),
+			"err":     errors.New("no se obtuvo respuesta al consultar el traslado"),
 			"status":  "404",
 		})
 	}
@@ -142,7 +144,7 @@ func (c *TrasladosController) GetElementosFuncionario() {
 	var id int
 	if v, err := c.GetInt(":funcionarioId"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un tercero válido")
+			err = errors.New("se debe especificar un tercero válido")
 		}
 		panic(errorctrl.Error("GetElementosFuncionario - c.GetInt(\":funcionarioId\")", err, "400"))
 	} else {
@@ -189,5 +191,40 @@ func (c *TrasladosController) GetAll() {
 	} else {
 		panic(err)
 	}
+	c.ServeJSON()
+}
+
+// Put ...
+// @Title Put Aprobar traslado
+// @Description Actualiza el estado del traslado y genera la transacción contable correspondiente.
+// @Param	id		path 	int						true	"Id del traslado"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 body is empty
+// @router /:id [put]
+func (c *TrasladosController) Put() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("se debe especificar un traslado válido")
+		}
+		panic(errorctrl.Error(`Put - c.GetInt(":id")`, err, "400"))
+	} else {
+		id = v
+	}
+
+	if respuesta, err := trasladoshelper.AprobarTraslado(id); err == nil && respuesta != nil {
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = respuesta
+	} else {
+		if err != nil {
+			panic(err)
+		}
+		panic(errorctrl.Error("Put - trasladoshelper.AprobarTraslado(id)", err, "404"))
+
+	}
+
 	c.ServeJSON()
 }

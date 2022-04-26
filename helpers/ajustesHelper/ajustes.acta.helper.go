@@ -7,7 +7,8 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -28,7 +29,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 	if org.SubgrupoCatalogoId != nvo.SubgrupoCatalogoId {
 
 		urlcrud := "fields=TipoBienId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(nvo.SubgrupoCatalogoId)
-		if detalleSubgrupo_, err := catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud); err != nil {
+		if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(urlcrud); err != nil {
 			return false, false, false, err
 		} else if len(detalleSubgrupo_) == 0 {
 			err := "len(detalleSubgrupo_) = 0"
@@ -37,11 +38,11 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 		} else {
 			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa == "" {
 				ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
-				if placa_, _, err := utilsHelper.GetConsecutivo("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+				if placa_, _, err := consecutivos.Get("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
 					return false, false, false, err
 				} else {
 					year, month, day := time.Now().Date()
-					nvo.Placa = utilsHelper.FormatConsecutivo(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
+					nvo.Placa = consecutivos.Format(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
 				}
 			} else if !detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa != "" {
 				nvo.Placa = ""
@@ -90,7 +91,7 @@ func fillElementos(elsOrg []*models.DetalleElemento_) (completos []*models.Detal
 
 	query = "fields=SubgrupoId,TipoBienId,Depreciacion,Amortizacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
 	query += "&query=Activo:true,SubgrupoId__Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if sg, err := catalogoElementosHelper.GetAllDetalleSubgrupo(query); err != nil {
+	if sg, err := catalogoElementos.GetAllDetalleSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		subgrupos = make(map[int]*models.DetalleSubgrupo)
@@ -128,24 +129,6 @@ func fillElementos(elsOrg []*models.DetalleElemento_) (completos []*models.Detal
 	}
 
 	return completos, nil
-
-}
-
-// fillElemento Agrega la vida útil y valor residual al elemento del acta
-func fillElemento(elActa *models.DetalleElemento, elMov *models.ElementosMovimiento) (completo *models.DetalleElemento__, outputError map[string]interface{}) {
-
-	funcion := "fillElemento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	if err := formatdata.FillStruct(elActa, &completo); err != nil {
-		logs.Error(err)
-		eval := " - formatdata.FillStruct(elActa, &completo)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-	completo.VidaUtil = elMov.VidaUtil
-	completo.ValorResidual = elMov.ValorResidual
-
-	return completo, nil
 
 }
 

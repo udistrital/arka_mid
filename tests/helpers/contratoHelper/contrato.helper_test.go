@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/contratoHelper"
+
+	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 )
 
 var parameters struct {
@@ -15,14 +16,16 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.ADMINISTRATIVA_JBPM = os.Getenv("ADMINISTRATIVA_JBPM")
-	beego.AppConfig.Set("administrativaJbpmService", os.Getenv("ADMINISTRATIVA_JBPM"))
+	if err := beego.AppConfig.Set("administrativaJbpmService", os.Getenv("ADMINISTRATIVA_JBPM")); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }
 
 // GetCatalogoById ...
 func TestGetContrato(t *testing.T) {
-	valor, err := contratoHelper.GetContrato(15, "2020")
+	valor, err := administrativa.GetContrato(15, "2020")
 	if err != nil || valor == nil {
 		if err != nil {
 			t.Error("No se pudo consultar el contrato", err)

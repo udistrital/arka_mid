@@ -1,13 +1,16 @@
 package catalogoElementosHelper
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
-	"github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
+	crudCatalogo "github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
@@ -27,7 +30,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	)
 
 	query = "limit=1&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-	if detalle_, err := GetAllDetalleSubgrupo(query); err != nil {
+	if detalle_, err := crudCatalogo.GetAllDetalleSubgrupo(query); err != nil {
 		return nil, err
 	} else if len(detalle_) == 0 {
 		return nil, nil
@@ -36,7 +39,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	}
 
 	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&query=Activo:true"
-	if movs_, err := movimientosArkaHelper.GetAllFormatoTipoMovimiento(query); err != nil {
+	if movs_, err := crudMovimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		for _, fm := range movs_ {
@@ -50,7 +53,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 		}
 	}
 
-	if cuentas_, err := GetTrCuentasSubgrupo(subgrupoId); err != nil {
+	if cuentas_, err := crudCatalogo.GetTrCuentasSubgrupo(subgrupoId); err != nil {
 		return nil, err
 	} else {
 		ctas = cuentas_
@@ -67,7 +70,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 				if val, ok := detalleCtas[ctas[idx].CuentaCreditoId]; ok {
 					dCta.CuentaCreditoId = val
 				} else {
-					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
+					if cta, err := cuentasContables.GetCuentaContable(ctas[idx].CuentaCreditoId); err != nil {
 						return nil, err
 					} else if cta != nil {
 						var cdt *models.DetalleCuenta
@@ -85,7 +88,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 				if val, ok := detalleCtas[ctas[idx].CuentaDebitoId]; ok {
 					dCta.CuentaDebitoId = val
 				} else {
-					if cta, err := cuentasContablesHelper.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
+					if cta, err := cuentasContables.GetCuentaContable(ctas[idx].CuentaDebitoId); err != nil {
 						return nil, err
 					} else if cta != nil {
 						var dbt *models.DetalleCuenta
@@ -113,6 +116,36 @@ func GetCuentasContablesSubgrupo(subgrupoId int) (cuentas []*models.DetalleCuent
 	}
 
 	return cuentas, nil
+}
+
+// GetCuentasByMovimientoSubgrupos Consulta las cuentas para una serie de subgrupos y las almacena en una estructura de fácil acceso
+func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentaSubgrupo) (
+	outputError map[string]interface{}) {
+
+	funcion := "GetCuentasByMovimientoSubgrupos"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	var subgrupos_ []int
+	for _, sg := range subgrupos {
+		if _, ok := cuentasSubgrupo[sg]; !ok {
+			subgrupos_ = append(subgrupos_, sg)
+		}
+	}
+
+	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
+	query += "query=Activo:true,SubtipoMovimientoId:" + strconv.Itoa(movimientoId)
+	query += ",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos_, "|"))
+	if cuentas_, err := crudCatalogo.GetAllCuentasSubgrupo(query); err != nil {
+		return err
+	} else {
+		for _, cuenta := range cuentas_ {
+			cuentasSubgrupo[cuenta.SubgrupoId.Id] = *cuenta
+		}
+
+	}
+
+	return
+
 }
 
 // findIdInArray Retorna la posicion en que se encuentra el id específicado

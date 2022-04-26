@@ -165,7 +165,7 @@ paths:
         description: body for Ajuste content
         required: true
         schema:
-          $ref: '#/definitions/ajustesHelper.PreTrAjuste'
+          $ref: '#/definitions/models.PreTrAjuste'
       responses:
         "201":
           description: ""
@@ -178,7 +178,7 @@ paths:
       tags:
       - ajustes
       description: get Ajuste by id
-      operationId: AjusteController.GetOne
+      operationId: AjusteController.GetOneManual
       parameters:
       - in: path
         name: id
@@ -359,6 +359,25 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.DetalleElementoBaja'
+        "404":
+          description: not found resource
+  /bajas_elementos/elemento_arka/{id}:
+    get:
+      tags:
+      - bajas_elementos
+      description: get Salida by id
+      operationId: BajaController.Get User
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Salida'
         "404":
           description: not found resource
   /bajas_elementos/solicitud/:
@@ -594,16 +613,36 @@ paths:
         name: body
         description: Detalles de la entrada. Se valida solo si el id es 0
         schema:
-          $ref: '#/definitions/models.Entrada'
+          $ref: '#/definitions/models.TransaccionEntrada'
       responses:
         "201":
           description: ""
           schema:
-            $ref: '#/definitions/models.Entrada'
+            $ref: '#/definitions/models.Movimiento'
         "400":
           description: the request contains incorrect syntax
         "403":
           description: body is empty
+  /entrada/{id}:
+    get:
+      tags:
+      - entrada
+      description: get Detalle de entrada por Id. Retorna la transaccion contable
+        si la entrada ya  fue aprobada
+      operationId: EntradaController.GetOne
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/map[string]interface{}'
+        "403":
+          description: :id is empty
   /entrada/anular/{id}:
     get:
       tags:
@@ -850,80 +889,6 @@ paths:
             $ref: '#/definitions/models.Terceros'
         "403":
           description: :id is empty
-  /terceros/tipo/:
-    get:
-      tags:
-      - terceros
-      description: List the Tercero types that can be used to gather Terceros by {tipo}
-      operationId: TercerosController.GetAll
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              type: string
-  /terceros/tipo/{tipo}:
-    get:
-      tags:
-      - terceros
-      description: get Terceros with the specified {tipo}
-      operationId: TercerosController.GetAll
-      parameters:
-      - in: path
-        name: tipo
-        description: Tercero type available from /tipo/
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/map[string]interface{}'
-        "500":
-          description: Internal Error
-        "501":
-          description: '{tipo} Not Implemented'
-        "502":
-          description: Error with external API
-  /terceros/tipo/{tipo}/{id}:
-    get:
-      tags:
-      - terceros
-      description: get Terceros with the specified {tipo} and {id} of a record in
-        terceros table from Terceros CRUD API
-      operationId: TercerosController.GetAll
-      parameters:
-      - in: path
-        name: tipo
-        description: Tercero type available from /tipo/
-        required: true
-        type: string
-      - in: path
-        name: id
-        description: ID. MUST be greater than 0
-        required: true
-        type: integer
-        format: int32
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/map[string]interface{}'
-        "400":
-          description: Wrong ID
-        "404":
-          description: ID with {tipo} Not Found
-        "500":
-          description: Internal Error
-        "501":
-          description: '{tipo} Not Implemented'
-        "502":
-          description: Error with external API
   /traslados/:
     get:
       tags:
@@ -985,6 +950,26 @@ paths:
             $ref: '#/definitions/models.TrTraslado'
         "404":
           description: not found resource
+    put:
+      tags:
+      - traslados
+      description: Actualiza el estado del traslado y genera la transacción contable
+        correspondiente.
+      operationId: TrasladosController.Put Aprobar traslado
+      parameters:
+      - in: path
+        name: id
+        description: Id del traslado
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/map[string]interface{}'
+        "403":
+          description: body is empty
   /traslados/funcionario/{funcionarioId}:
     get:
       tags:
@@ -1008,9 +993,6 @@ paths:
 definitions:
   '{}':
     title: '{}'
-    type: object
-  ajustesHelper.PreTrAjuste:
-    title: PreTrAjuste
     type: object
   map[string]interface{}:
     title: map[string]interface{}
@@ -1553,7 +1535,7 @@ definitions:
       Descripcion:
         type: string
       TerceroId:
-        $ref: '#/definitions/models.Tercero'
+        $ref: '#/definitions/models.IdentificacionTercero'
   models.DetalleSedeDependencia:
     title: DetalleSedeDependencia
     type: object
@@ -1767,9 +1749,6 @@ definitions:
       VidaUtil:
         type: number
         format: double
-  models.Entrada:
-    title: Entrada
-    type: object
   models.EspacioFisico:
     title: EspacioFisico
     type: object
@@ -1893,6 +1872,17 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.Movimiento'
+  models.IdentificacionTercero:
+    title: IdentificacionTercero
+    type: object
+    properties:
+      Id:
+        type: integer
+        format: int64
+      NombreCompleto:
+        type: string
+      Numero:
+        type: string
   models.InfoComplementaria:
     title: InfoComplementaria
     type: object
@@ -1951,6 +1941,19 @@ definitions:
         $ref: '#/definitions/models.DatosIdentificacion'
       Tercero:
         $ref: '#/definitions/models.Tercero'
+  models.InfoTransaccionContable:
+    title: InfoTransaccionContable
+    type: object
+    properties:
+      Concepto:
+        type: string
+      Fecha:
+        type: string
+        format: datetime
+      movimientos:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleMovimientoContable'
   models.Movimiento:
     title: Movimiento
     type: object
@@ -1976,9 +1979,6 @@ definitions:
         $ref: '#/definitions/models.Movimiento'
       Observacion:
         type: string
-      SoporteMovimientoId:
-        type: integer
-        format: int64
   models.OrdenadorGasto:
     title: OrdenadorGasto
     type: object
@@ -2014,6 +2014,33 @@ definitions:
         $ref: '#/definitions/models.Parametro'
       TipoParametroId:
         $ref: '#/definitions/models.TipoParametro'
+  models.PreMovAjuste:
+    title: PreMovAjuste
+    type: object
+    properties:
+      Credito:
+        type: number
+        format: double
+      Cuenta:
+        type: string
+      Debito:
+        type: number
+        format: double
+      Descripcion:
+        type: string
+      TerceroId:
+        type: integer
+        format: int64
+  models.PreTrAjuste:
+    title: PreTrAjuste
+    type: object
+    properties:
+      Descripcion:
+        type: string
+      Movimientos:
+        type: array
+        items:
+          $ref: '#/definitions/models.PreMovAjuste'
   models.Salida:
     title: Salida
     type: object
@@ -2309,8 +2336,6 @@ definitions:
     title: TrBaja
     type: object
     properties:
-      Consecutivo:
-        type: string
       Elementos:
         type: array
         items:
@@ -2322,6 +2347,8 @@ definitions:
       Id:
         type: integer
         format: int64
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
       Observaciones:
         type: string
       RazonRechazo:
@@ -2335,6 +2362,8 @@ definitions:
         format: int64
       TipoBaja:
         $ref: '#/definitions/models.FormatoTipoMovimiento'
+      TrContable:
+        $ref: '#/definitions/models.InfoTransaccionContable'
   models.TrRevisionBaja:
     title: TrRevisionBaja
     type: object
@@ -2377,8 +2406,6 @@ definitions:
     title: TrTraslado
     type: object
     properties:
-      Detalle:
-        type: string
       Elementos:
         type: array
         items:
@@ -2387,10 +2414,30 @@ definitions:
         $ref: '#/definitions/models.DetalleFuncionario'
       FuncionarioOrigen:
         $ref: '#/definitions/models.DetalleFuncionario'
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
       Observaciones:
         type: string
+      TrContable:
+        $ref: '#/definitions/models.InfoTransaccionContable'
       Ubicacion:
         $ref: '#/definitions/models.DetalleSedeDependencia'
+  models.TransaccionEntrada:
+    title: TransaccionEntrada
+    type: object
+    properties:
+      Detalle:
+        type: string
+      FormatoTipoMovimientoId:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Observacion:
+        type: string
+      SoporteMovimientoId:
+        type: integer
+        format: int64
 tags:
 - name: acta_recibido
   description: |

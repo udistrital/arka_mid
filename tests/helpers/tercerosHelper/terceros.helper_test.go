@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/tercerosHelper"
+
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 )
 
 var parameters struct {
@@ -17,67 +18,25 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.PARAMETROS_CRUD = os.Getenv("PARAMETROS_CRUD")
-	beego.AppConfig.Set("parametrosService", parameters.PARAMETROS_CRUD)
+	if err := beego.AppConfig.Set("parametrosService", parameters.PARAMETROS_CRUD); err != nil {
+		panic(err)
+	}
 	parameters.TERCEROS_SERVICE = os.Getenv("TERCEROS_SERVICE")
-	beego.AppConfig.Set("tercerosService", parameters.TERCEROS_SERVICE)
+	if err := beego.AppConfig.Set("tercerosService", parameters.TERCEROS_SERVICE); err != nil {
+		panic(err)
+	}
 	parameters.OIKOS2_CRUD = os.Getenv("OIKOS2_CRUD")
-	beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD)
+	if err := beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
-}
-
-// TestGetContratista ...
-func TestGetContratista(t *testing.T) {
-
-	if valor, err := tercerosHelper.GetContratista(9825); err != nil {
-		t.Error("No se pudo consultar el contratista", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetContratista Finalizado Correctamente")
-	}
-}
-
-// TestGetFuncionariosPlanta ...
-func TestGetFuncionariosPlanta(t *testing.T) {
-
-	if valor, err := tercerosHelper.GetFuncionariosPlanta(9801); err != nil {
-		t.Error("No se pudo consultar el funcionario", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetFuncionariosPlanta Finalizado Correctamente")
-	}
-}
-
-// TestGetFuncionariosPlanta ...
-func TestGetOrdenadores(t *testing.T) {
-
-	if valor, err := tercerosHelper.GetOrdenadores(9804); err != nil {
-		t.Error("No se pudo consultar el ordenador", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetOrdenadores Finalizado Correctamente")
-	}
-}
-
-// TestGetFuncionariosPlanta ...
-func TestGetProveedor(t *testing.T) {
-
-	if valor, err := tercerosHelper.GetProveedor(9769); err != nil {
-		t.Error("No se pudo consultar el proveedor", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetProveedor Finalizado Correctamente")
-	}
 }
 
 // TestGetFuncionariosPlanta ...
 func TestGetNombreTerceroById(t *testing.T) {
 
-	if valor, err := tercerosHelper.GetNombreTerceroById("81"); err != nil {
+	if valor, err := terceros.GetNombreTerceroById(81); err != nil {
 		t.Error("No se pudo consultar el tercero", err)
 		t.Fail()
 	} else {
@@ -89,7 +48,7 @@ func TestGetNombreTerceroById(t *testing.T) {
 // TestGetFuncionariosPlanta ...
 func TestGetTerceroByUsuarioWSO2(t *testing.T) {
 
-	if valor, err := tercerosHelper.GetTerceroByUsuarioWSO2("utest01"); err != nil {
+	if valor, err := terceros.GetTerceroByUsuarioWSO2("utest01"); err != nil {
 		t.Error("No se pudo consultar el tercero", err)
 		t.Fail()
 	} else {
@@ -101,24 +60,12 @@ func TestGetTerceroByUsuarioWSO2(t *testing.T) {
 // TestGetTerceroByDoc ...
 func TestGetTerceroByDoc(t *testing.T) {
 
-	if valor, err := tercerosHelper.GetTerceroByDoc("80000000"); err != nil {
+	if valor, err := terceros.GetTerceroByDoc("80000000"); err != nil {
 		t.Error("No se pudo consultar el tercero", err)
 		t.Fail()
 	} else {
 		t.Log(valor)
 		t.Log("TestGetTerceroByDoc Finalizado Correctamente")
-	}
-}
-
-// TestGetTipos ...
-func TestGetTipos(t *testing.T) {
-
-	if valor, err := tercerosHelper.GetTipos(); err != nil {
-		t.Error("No se pudo consultar los tipos", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetTipos Finalizado Correctamente")
 	}
 }
 

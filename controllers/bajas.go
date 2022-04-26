@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/bajasHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	// "github.com/udistrital/arka_mid/models"
@@ -20,11 +21,13 @@ type BajaController struct {
 
 // URLMapping ...
 func (c *BajaController) URLMapping() {
-	c.Mapping("Get", c.GetElemento)
 	c.Mapping("Post", c.Post)
 	c.Mapping("Put", c.Put)
+	c.Mapping("GetElemento", c.GetElemento)
+	c.Mapping("GetSolicitud", c.GetSolicitud)
+	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetDetalleElemento", c.GetDetalleElemento)
 	c.Mapping("PutRevision", c.PutRevision)
-	c.Mapping("GetElemento", c.GetDetalleElemento)
 }
 
 // Post ...
@@ -74,7 +77,7 @@ func (c *BajaController) Put() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una baja válida")
+			err = errors.New("se debe especificar una baja válida")
 		}
 		panic(errorctrl.Error("Put - c.GetInt(\":id\")", err, "400"))
 	} else {
@@ -106,7 +109,7 @@ func (c *BajaController) Put() {
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200 {object} models.Salida
 // @Failure 404 not found resource
-// @router /elemento/:id [get]
+// @router /elemento_arka/:id [get]
 func (c *BajaController) GetElemento() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
@@ -114,7 +117,7 @@ func (c *BajaController) GetElemento() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un elemento válido")
+			err = errors.New("se debe especificar un elemento válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -150,7 +153,7 @@ func (c *BajaController) GetSolicitud() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una baja válida")
+			err = errors.New("se debe especificar una baja válida")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -235,7 +238,7 @@ func (c *BajaController) GetDetalleElemento() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar un elemento válido")
+			err = errors.New("se debe especificar un elemento válido")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -272,10 +275,19 @@ func (c *BajaController) PutRevision() {
 		panic(errorctrl.Error("PutRevision - json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja)", err, "400"))
 	}
 
-	if v, err := bajasHelper.AprobarBajas(trBaja); err != nil {
-		panic(errorctrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
+	if !trBaja.Aprobacion {
+		if ids, err := movimientosArka.PutRevision(trBaja); err != nil {
+			panic(errorctrl.Error("PutRevision - movimientosArkaHelper.PutRevision(trBaja)", err, "404"))
+		} else {
+			c.Data["json"] = ids
+		}
 	} else {
-		c.Data["json"] = v
+		if v, err := bajasHelper.AprobarBajas(trBaja); err != nil {
+			panic(errorctrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
+		} else {
+			c.Data["json"] = v
+		}
 	}
+
 	c.ServeJSON()
 }

@@ -12,7 +12,6 @@ type Movimiento struct {
 	MovimientoPadreId       *Movimiento
 	FormatoTipoMovimientoId *FormatoTipoMovimiento
 	EstadoMovimientoId      *EstadoMovimiento
-	SoporteMovimientoId     int
 }
 
 type ElementosMovimiento struct {
@@ -74,6 +73,14 @@ type NovedadElemento struct {
 	FechaModificacion    time.Time
 }
 
+type TransaccionEntrada struct {
+	Id                      int
+	Observacion             string
+	Detalle                 string
+	FormatoTipoMovimientoId string
+	SoporteMovimientoId     int
+}
+
 type TrSoporteMovimiento struct {
 	Movimiento *Movimiento
 	Soporte    *SoporteMovimiento
@@ -89,6 +96,7 @@ type SalidaGeneral struct {
 
 type FormatoTraslado struct {
 	Consecutivo        string
+	ConsecutivoId      int
 	Ubicacion          int
 	FuncionarioOrigen  int
 	FuncionarioDestino int
@@ -128,16 +136,18 @@ type DetalleElementoPlaca struct {
 }
 
 type TrTraslado struct {
-	Detalle            string
+	Movimiento         *Movimiento
 	Observaciones      string
 	Elementos          []*DetalleElementoPlaca
 	FuncionarioOrigen  *DetalleFuncionario
 	FuncionarioDestino *DetalleFuncionario
 	Ubicacion          *DetalleSedeDependencia
+	TrContable         *InfoTransaccionContable
 }
 
 type FormatoBaja struct {
 	Consecutivo    string
+	ConsecutivoId  int
 	Elementos      []int
 	FechaRevisionA string
 	FechaRevisionC string
@@ -160,17 +170,18 @@ type DetalleBaja struct {
 }
 
 type TrBaja struct {
-	Id             int
-	Soporte        int
-	Funcionario    *InfoTercero
-	Revisor        *InfoTercero
-	TipoBaja       *FormatoTipoMovimiento
 	Elementos      []*DetalleElementoBaja
+	FechaRevisionC string
+	Funcionario    *InfoTercero
+	Id             int
+	Movimiento     *Movimiento
 	Observaciones  string
-	Consecutivo    string
 	RazonRechazo   string
 	Resolucion     string
-	FechaRevisionC string
+	Revisor        *InfoTercero
+	Soporte        int
+	TipoBaja       *FormatoTipoMovimiento
+	TrContable     *InfoTransaccionContable
 }
 
 type DetalleElementoBaja struct {
@@ -201,10 +212,11 @@ type Historial struct {
 }
 
 type FormatoDepreciacion struct {
-	TrContable   int
-	FechaCorte   string
-	Totales      map[int]float64
-	RazonRechazo string
+	ConsecutivoId int
+	Consecutivo   string
+	FechaCorte    string
+	Totales       map[int]float64
+	RazonRechazo  string
 }
 
 type DetalleCorteDepreciacion struct {

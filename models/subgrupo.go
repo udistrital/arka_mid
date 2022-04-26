@@ -12,11 +12,6 @@ type SubgrupoModelo struct {
 	Codigo            int
 }
 
-type SubgrupoTransaccion struct {
-	data     *Subgrupo
-	children []*Subgrupo
-}
-
 //SubgrupoCuentas define la estructura requerida para devolver las cuentas asociadas a un subgrupo especifico
 type SubgrupoCuentas struct {
 	Id                int

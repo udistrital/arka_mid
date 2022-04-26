@@ -22,8 +22,8 @@ type SalidaController struct {
 // URLMapping ...
 func (c *SalidaController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("Get", c.GetSalida)
-	c.Mapping("GetAll", c.GetSalidas)
+	c.Mapping("GetSalida", c.GetSalida)
+	c.Mapping("GetSalidas", c.GetSalidas)
 	c.Mapping("Put", c.Put)
 }
 
@@ -63,7 +63,7 @@ func (c *SalidaController) Post() {
 			if err == nil {
 				panic(map[string]interface{}{
 					"funcion": "Post - salidaHelper.AprobarSalida(salidaId)",
-					"err":     errors.New("No se obtuvo respuesta al aprobar la salida"),
+					"err":     errors.New("no se obtuvo respuesta al aprobar la salida"),
 					"status":  "404",
 				})
 			}
@@ -79,7 +79,7 @@ func (c *SalidaController) Post() {
 				status := "400"
 				if err == nil {
 					err = map[string]interface{}{
-						"err": errors.New("No se obtuvo respuesta al registrar la(s) salida(s)"),
+						"err": errors.New("no se obtuvo respuesta al registrar la(s) salida(s)"),
 					}
 					status = "404"
 				}
@@ -214,7 +214,7 @@ func (c *SalidaController) Put() {
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
-			err = errors.New("Se debe especificar una salida válida")
+			err = errors.New("se debe especificar una salida válida")
 		}
 		logs.Error(err)
 		panic(map[string]interface{}{
@@ -246,7 +246,7 @@ func (c *SalidaController) Put() {
 
 		panic(map[string]interface{}{
 			"funcion": "Put - salidaHelper.PutTrSalidas(&v, id)",
-			"err":     errors.New("No se obtuvo respuesta al actualizar la salida"),
+			"err":     errors.New("no se obtuvo respuesta al actualizar la salida"),
 			"status":  "404",
 		})
 	}

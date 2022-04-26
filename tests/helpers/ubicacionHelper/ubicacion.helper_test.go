@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 )
 
 var parameters struct {
@@ -15,7 +15,9 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.OIKOS2_CRUD = os.Getenv("OIKOS2_CRUD")
-	beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD)
+	if err := beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }
@@ -23,7 +25,7 @@ func TestMain(m *testing.M) {
 // GetAsignacionSedeDependencia ...
 func TestGetAsignacionSedeDependencia(t *testing.T) {
 
-	if valor, err := ubicacionHelper.GetAsignacionSedeDependencia("2"); err != nil {
+	if valor, err := oikos.GetAsignacionSedeDependencia("2"); err != nil {
 		t.Error("No se pudo consultar la ubicacion", err)
 		t.Fail()
 	} else {
@@ -35,7 +37,7 @@ func TestGetAsignacionSedeDependencia(t *testing.T) {
 // GetAsignacionSedeDependencia ...
 func TestGetSedeDependenciaUbicacion(t *testing.T) {
 
-	if s, err := ubicacionHelper.GetSedeDependenciaUbicacion(2); err != nil {
+	if s, err := oikos.GetSedeDependenciaUbicacion(2); err != nil {
 		t.Error("No se pudo consultar la ubicacion", err)
 		t.Fail()
 	} else {

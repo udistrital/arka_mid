@@ -15,7 +15,9 @@ var parameters struct {
 
 func TestMain(m *testing.M) {
 	parameters.CATALOGO_ELEMENTOS_SERVICE = os.Getenv("CATALOGO_ELEMENTOS_SERVICE")
-	beego.AppConfig.Set("catalogoElementosService", os.Getenv("CATALOGO_ELEMENTOS_SERVICE"))
+	if err := beego.AppConfig.Set("catalogoElementosService", os.Getenv("CATALOGO_ELEMENTOS_SERVICE")); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }

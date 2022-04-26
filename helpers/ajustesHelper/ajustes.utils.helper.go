@@ -6,15 +6,15 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
-	"github.com/udistrital/arka_mid/helpers/cuentasContablesHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // generaTrContable Dado un valor, subgrupo nuevo y original genera la transacción contable.
-func generaTrContable(delta float64,
+func generaTrContable(vInicial, vNuevo float64,
 	consecutivo, tipoMedicion string,
 	db, cr, sgOriginal, sgNuevo, tercero int,
 	ctasSg map[int]*models.CuentaSubgrupo,
@@ -22,46 +22,48 @@ func generaTrContable(delta float64,
 
 	dsc := getDescripcionMovContable(tipoMedicion, consecutivo)
 	if sgOriginal > 0 {
-		if ctasSg[sgOriginal].CuentaCreditoId != ctasSg[sgNuevo].CuentaCreditoId {
-			movimientoR := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgOriginal].CuentaDebitoId], cr)
-			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], db)
-			movimientos = append(movimientos, movimientoR, movimiento)
-		} else if delta != 0 {
-			tipoMovimiento := cr
-			if delta < 0 {
-				tipoMovimiento = db
+		if ctasSg[sgOriginal] != nil && ctasSg[sgNuevo] != nil {
+			if ctasSg[sgOriginal].CuentaCreditoId != ctasSg[sgNuevo].CuentaCreditoId {
+				movimientoR := asientoContable.CreaMovimiento(vInicial, dsc, tercero, ctas[ctasSg[sgOriginal].CuentaCreditoId], db)
+				movimiento := asientoContable.CreaMovimiento(vNuevo, dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], cr)
+				movimientos = append(movimientos, movimientoR, movimiento)
+			} else if vInicial != vNuevo {
+				tipoMovimiento := cr
+				if vNuevo-vInicial < 0 {
+					tipoMovimiento = db
+				}
+
+				movimiento := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimiento)
+				movimientos = append(movimientos, movimiento)
 			}
 
-			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimiento)
-			movimientos = append(movimientos, movimiento)
-		}
+			if ctasSg[sgOriginal].CuentaDebitoId != ctasSg[sgNuevo].CuentaDebitoId {
+				movimientoR := asientoContable.CreaMovimiento(vInicial, dsc, tercero, ctas[ctasSg[sgOriginal].CuentaDebitoId], cr)
+				movimiento := asientoContable.CreaMovimiento(vNuevo, dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], db)
+				movimientos = append(movimientos, movimientoR, movimiento)
+			} else if vInicial != vNuevo {
+				tipoMovimiento := db
+				if vNuevo-vInicial < 0 {
+					tipoMovimiento = cr
+				}
 
-		if ctasSg[sgOriginal].CuentaDebitoId != ctasSg[sgNuevo].CuentaDebitoId {
-			movimientoR := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgOriginal].CuentaCreditoId], db)
-			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], cr)
-			movimientos = append(movimientos, movimientoR, movimiento)
-		} else if delta != 0 {
-			tipoMovimiento := db
-			if delta < 0 {
-				tipoMovimiento = cr
+				movimiento := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimiento)
+				movimientos = append(movimientos, movimiento)
 			}
-
-			movimiento := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimiento)
-			movimientos = append(movimientos, movimiento)
 		}
 
-	} else {
+	} else if ctasSg[sgNuevo] != nil {
 
 		tipoMovimientoC := cr
 		tipoMovimientoD := db
 
-		if delta < 0 {
+		if vNuevo-vInicial < 0 {
 			tipoMovimientoC = db
 			tipoMovimientoD = cr
 		}
 
-		movimientoC := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimientoC)
-		movimientoD := asientoContable.CreaMovimiento(math.Abs(delta), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimientoD)
+		movimientoC := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaCreditoId], tipoMovimientoC)
+		movimientoD := asientoContable.CreaMovimiento(math.Abs(vNuevo-vInicial), dsc, tercero, ctas[ctasSg[sgNuevo].CuentaDebitoId], tipoMovimientoD)
 		movimientos = append(movimientos, movimientoC, movimientoD)
 
 	}
@@ -82,7 +84,7 @@ func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + strconv.Itoa(movimientoId) + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(subgrupos, "|"))
-	if cuentas_, err := catalogoElementosHelper.GetAllCuentasSubgrupo(query); err != nil {
+	if cuentas_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
 		return nil, err
 	} else {
 		for _, cuenta := range cuentas_ {
@@ -120,7 +122,7 @@ func fillCuentas(cuentas map[string]*models.CuentaContable, cuentas_ []string) (
 
 	for _, id := range cuentas_ {
 		if _, ok := cuentas[id]; !ok {
-			if cta_, err := cuentasContablesHelper.GetCuentaContable(id); err != nil {
+			if cta_, err := cuentasContables.GetCuentaContable(id); err != nil {
 				return nil, err
 			} else {
 				cuentas[id] = cta_
