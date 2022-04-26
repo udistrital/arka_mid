@@ -17,10 +17,3 @@ type ElementoSolicitud struct {
 	Dependencia        *Dependencia
 	Ubicacion          *AsignacionEspacioFisicoDependencia
 }
-
-type ElementoCatalogo struct {
-	Id          uint
-	Nombre      string
-	Descripcion string
-	Activo      bool
-}

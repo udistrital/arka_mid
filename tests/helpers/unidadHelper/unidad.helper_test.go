@@ -6,33 +6,35 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/arka_mid/helpers/ubicacionHelper"
+	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 )
 
 var parameters struct {
-	OIKOS_CRUD string
+	ADMINISTRATIVA_SERVICE string
 }
 
 func TestMain(m *testing.M) {
-	parameters.OIKOS_CRUD = os.Getenv("OIKOS_CRUD")
-	beego.AppConfig.Set("oikosService", os.Getenv("OIKOS_CRUD"))
+	parameters.ADMINISTRATIVA_SERVICE = os.Getenv("ADMINISTRATIVA_SERVICE")
+	if err := beego.AppConfig.Set("administrativaService", parameters.ADMINISTRATIVA_SERVICE); err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	os.Exit(m.Run())
 }
 
 // GetUnidad ...
 func TestGetUnidad(t *testing.T) {
-	valor, err := ubicacionHelper.GetUbicacion(1)
-	if err != nil {
-		t.Error("No se pudo consultar la ubicacion", err)
+
+	if valor, err := administrativa.GetUnidad(1); err != nil {
+		t.Error("No se pudo consultar la unidad", err)
 		t.Fail()
 	} else {
 		t.Log(valor)
-		t.Log("TestGetUnidad Finalizado Correctamente (OK)")
+		t.Log("TestGetUnidad Finalizado Correctamente")
 	}
 }
 
-func TestEndPointGetOikosService(t *testing.T) {
-	t.Log("Testing EndPoint OikosService")
-	t.Log(parameters.OIKOS_CRUD)
+func TestEndPointAdministrativaService(t *testing.T) {
+	t.Log("Testing EndPoint administrativaService")
+	t.Log(parameters.ADMINISTRATIVA_SERVICE)
 }
