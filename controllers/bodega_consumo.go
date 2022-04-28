@@ -8,6 +8,8 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/bodegaConsumoHelper"
+	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // BodegaConsumoController operations for Bodega-Consumo
@@ -18,6 +20,7 @@ type BodegaConsumoController struct {
 // URLMapping ...
 func (c *BodegaConsumoController) URLMapping() {
 	c.Mapping("GetOneSolicitud", c.GetOneSolicitud)
+	c.Mapping("GetAllSolicitud", c.GetAllSolicitud)
 	c.Mapping("GetElementos", c.GetElementos)
 	c.Mapping("GetAperturasKardex", c.GetAperturasKardex)
 	c.Mapping("GetAllExistencias", c.GetAllExistencias)
@@ -70,6 +73,37 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 	} else {
 		panic(err)
 	}
+	c.ServeJSON()
+}
+
+// GetAllSolicitud ...
+// @Title GetAllSolicitud
+// @Description get Lista solicitudes de elementos de la bodega de consumo.
+// @Param	tramite_only		query	bool false	"Retornar solo las solicitudes en estado pendiente"
+// @Success 200 {object} []models.DetalleSolicitudBodega
+// @router /solicitud/ [get]
+func (c *BodegaConsumoController) GetAllSolicitud() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+
+	var (
+		tramiteOnly bool
+	)
+	if v, err := c.GetBool("tramite_only"); err == nil {
+		tramiteOnly = v
+	}
+
+	solicitudes := make([]models.DetalleSolicitudBodega, 0)
+	if err := bodegaConsumoHelper.GetAllSolicitudes(tramiteOnly, &solicitudes); err == nil {
+		if solicitudes != nil {
+			c.Data["json"] = solicitudes
+		} else {
+			c.Data["json"] = []interface{}{}
+		}
+	} else {
+		panic(err)
+	}
+
 	c.ServeJSON()
 }
 

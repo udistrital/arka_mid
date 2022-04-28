@@ -17,3 +17,12 @@ type ElementoSolicitud struct {
 	Dependencia        *Dependencia
 	Ubicacion          *AsignacionEspacioFisicoDependencia
 }
+
+type FormatoSolicitudBodega struct {
+	Funcionario int
+}
+
+type DetalleSolicitudBodega struct {
+	Movimiento
+	Solicitante IdentificacionTercero
+}
