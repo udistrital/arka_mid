@@ -220,7 +220,7 @@ func UltimoMovimientoKardex(id_catalogo int) (Elemento_Movimiento map[string]int
 
 			Elemento := ultimo_movimiento_kardex[0]
 			Elemento["ElementoCatalogoId"] = elemento_catalogo[0]
-			Elemento["Nombre"] = elemento_catalogo[0]["Nombre"]
+			Elemento["SubgrupoCatalogoId"] = elemento_catalogo[0]["SubgrupoId"]
 
 			return Elemento, nil
 
