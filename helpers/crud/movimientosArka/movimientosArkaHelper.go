@@ -128,23 +128,19 @@ func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]inte
 }
 
 // PostMovimiento post controlador movimiento del api movimientos_arka_crud
-func PostMovimiento(movimiento *models.Movimiento) (movimientoR *models.Movimiento, outputError map[string]interface{}) {
+func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "PostMovimiento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	var (
-		res *models.Movimiento
-	)
-
 	// Crea registro en api movimientos_arka_crud
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
-	if err := request.SendJson(urlcrud, "POST", &res, &movimiento); err != nil {
-		eval := " - request.SendJson(urlcrud, \"POST\", &res, &movimiento)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+	if err := request.SendJson(urlcrud, "POST", &movimiento, &movimiento); err != nil {
+		eval := ` - request.SendJson(urlcrud, "POST", &movimiento, &movimiento)`
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return res, nil
+	return
 }
 
 // PostSoporteMovimiento post controlador soporte_movimiento del api movimientos_arka_crud
