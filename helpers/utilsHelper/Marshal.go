@@ -7,6 +7,7 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
+// Marshal Hace el encode de cualquier estructura y la retorna en un string.
 func Marshal(in interface{}, out *string) (outputError map[string]interface{}) {
 
 	funcion := "Marshal"

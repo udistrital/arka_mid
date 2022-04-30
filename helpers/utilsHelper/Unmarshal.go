@@ -7,6 +7,7 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
+// Unmarshal Hace el decode de un string a el tipo de variable indicado.
 func Unmarshal(in string, out interface{}) (outputError map[string]interface{}) {
 
 	funcion := "Unmarshal"
