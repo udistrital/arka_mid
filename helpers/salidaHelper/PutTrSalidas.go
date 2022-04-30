@@ -6,27 +6,16 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-
-	// "github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	// "github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
-	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "PutTrSalidas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
+	funcion := "PutTrSalidas"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 	var (
 		estadoMovimiento *models.EstadoMovimiento
 		salidaOriginal   *models.Movimiento
@@ -36,7 +25,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 
 	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
 
-	if estadosMovimiento, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Salida En Trámite")); err != nil {
+	if estadosMovimiento, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Salida En Trámite")); err != nil {
 		return nil, err
 	} else {
 		estadoMovimiento = estadosMovimiento[0]
@@ -48,7 +37,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		// Si no se generan nuevas salidas, simplemente se debe actualizar el funcionario y la ubicación del movimiento original
 
 		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimiento.Id
-		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
+		if trRes, err := movimientosArka.PutTrSalida(m); err != nil {
 			return nil, err
 		} else {
 			resultado["trSalida"] = trRes
@@ -62,7 +51,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
 
 		// Se consulta el movimiento
-		if movimientoA, err := crudMovimientosArka.GetMovimientoById(salidaId); err != nil {
+		if movimientoA, err := movimientosArka.GetMovimientoById(salidaId); err != nil {
 			return nil, err
 		} else {
 			salidaOriginal = movimientoA
@@ -126,28 +115,26 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 				var consecutivo models.Consecutivo
 				if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
 					return nil, err
+				}
+
+				detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
+				detalle["ConsecutivoId"] = consecutivo.Id
+
+				if detalleJSON, err := json.Marshal(detalle); err != nil {
+					logs.Error(err)
+					eval := " - json.Marshal(detalle)"
+					return nil, errorctrl.Error(funcion+eval, err, "500")
 				} else {
-					detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
-					detalle["consecutivoId"] = consecutivo.Id
-					if detalleJSON, err := json.Marshal(detalle); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "PutTrSalidas - json.Marshal(detalle)",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					} else {
-						salida.Salida.Detalle = string(detalleJSON)
-						// Si ninguna salida tiene el mismo funcionario o ubicación que la original, se asigna el id de la original a la primera del arreglo
-						if index == -1 && idx == 0 {
-							salida.Salida.Id = salidaId
-						}
+					salida.Salida.Detalle = string(detalleJSON)
+					// Si ninguna salida tiene el mismo funcionario o ubicación que la original, se asigna el id de la original a la primera del arreglo
+					if index == -1 && idx == 0 {
+						salida.Salida.Id = salidaId
 					}
 				}
+
 			} else {
 				detalle["consecutivo"] = detalleOriginal["consecutivo"]
-				detalle["consecutivoId"] = detalleOriginal["consecutivoId"]
+				detalle["ConsecutivoId"] = detalleOriginal["ConsecutivoId"]
 				if detalleJSON, err := json.Marshal(detalle); err != nil {
 					logs.Error(err)
 					outputError = map[string]interface{}{
@@ -164,7 +151,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		}
 
 		// Hace el put api movimientos_arka_crud
-		if trRes, err := crudMovimientosArka.PutTrSalida(m); err != nil {
+		if trRes, err := movimientosArka.PutTrSalida(m); err != nil {
 			return nil, err
 		} else {
 			resultado["trSalida"] = trRes

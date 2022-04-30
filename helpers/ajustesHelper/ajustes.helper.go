@@ -34,11 +34,11 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
 	if err := consecutivos.Get(ctxConsecutivo, "Ajuste Contable Arka", &consecutivo); err != nil {
 		return nil, err
-	} else {
-		detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo)
-		detalle.ConsecutivoId = consecutivo.Id
-		detalle.PreTrAjuste = trContable
 	}
+
+	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo)
+	detalle.ConsecutivoId = consecutivo.Id
+	detalle.PreTrAjuste = trContable
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
 		logs.Error(err)

@@ -168,10 +168,10 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
 	if err := consecutivos.Get(ctxConsecutivo, "Registro Traslado Arka", &consecutivo); err != nil {
 		return nil, err
-	} else {
-		detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo)
-		detalle.ConsecutivoId = consecutivo.Id
 	}
+
+	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo)
+	detalle.ConsecutivoId = consecutivo.Id
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
 		logs.Error(err)

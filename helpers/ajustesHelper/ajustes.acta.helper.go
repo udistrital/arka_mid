@@ -41,10 +41,9 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 				ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
 				if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
 					return false, false, false, err
-				} else {
-					year, month, day := time.Now().Date()
-					nvo.Placa = fmt.Sprintf("%04d%02d%02d%05d", year, month, day, consecutivo.Consecutivo)
 				}
+				year, month, day := time.Now().Date()
+				nvo.Placa = fmt.Sprintf("%04d%02d%02d%05d", year, month, day, consecutivo.Consecutivo)
 			} else if !detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa != "" {
 				nvo.Placa = ""
 			}

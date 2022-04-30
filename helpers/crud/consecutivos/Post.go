@@ -16,7 +16,7 @@ var ConsecutivosCRUD = "http://" + beego.AppConfig.String("consecutivosService")
 // Post post controlador consecutivo del api consecutivos_crud
 func Post(consecutivo interface{}) (outputError map[string]interface{}) {
 
-	funcion := "PostConsecutivo"
+	funcion := "Post"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := ConsecutivosCRUD + "consecutivo"
@@ -40,9 +40,9 @@ func Post(consecutivo interface{}) (outputError map[string]interface{}) {
 		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	if err := formatdata.FillStruct(&response.Data, &consecutivo); err != nil {
+	if err := formatdata.FillStruct(response.Data, &consecutivo); err != nil {
 		logs.Error(err)
-		eval := " - formatdata.FillStruct(nuevos, &actualizados)"
+		eval := " - formatdata.FillStruct(response.Data, &consecutivo)"
 		return errorctrl.Error(funcion+eval, err, "500")
 	}
 

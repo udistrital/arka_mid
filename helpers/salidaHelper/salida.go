@@ -87,16 +87,8 @@ func AsignarPlaca(m *models.Elemento) (resultado map[string]interface{}, outputE
 // PostTrSalidas Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
 func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "PostTrSalidas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "PostTrSalidas"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		res                 map[string][](map[string]interface{})
@@ -138,20 +130,17 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 		var consecutivo models.Consecutivo
 		if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
 			return nil, err
+		}
+
+		detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
+		detalle["ConsecutivoId"] = consecutivo.Id
+
+		if detalleJSON, err := json.Marshal(detalle); err != nil {
+			logs.Error(err)
+			eval := " - json.Marshal(detalle)"
+			return nil, errorctrl.Error(funcion+eval, err, "500")
 		} else {
-			detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
-			detalle["ConsecutivoId"] = consecutivo.Id
-			if detalleJSON, err := json.Marshal(detalle); err != nil {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "PostTrSalidas - json.Marshal(detalle)",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
-			} else {
-				salida.Salida.Detalle = string(detalleJSON)
-			}
+			salida.Salida.Detalle = string(detalleJSON)
 		}
 
 		salida.Salida.EstadoMovimientoId.Id = resEstadoMovimiento[0].Id

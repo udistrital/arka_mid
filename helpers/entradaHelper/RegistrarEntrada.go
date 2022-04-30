@@ -39,11 +39,11 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
 	if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
 		return nil, err
-	} else {
-		detalleJSON["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
-		detalleJSON["ConsecutivoId"] = consecutivo.Id
-		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
+
+	detalleJSON["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
+	detalleJSON["ConsecutivoId"] = consecutivo.Id
+	resultado["Consecutivo"] = detalleJSON["consecutivo"]
 
 	if jsonData, err := json.Marshal(detalleJSON); err != nil {
 		logs.Error(err)

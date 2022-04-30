@@ -136,10 +136,11 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
 		if err := consecutivos.Get(ctxt, "Registro "+info.Tipo+" Arka", &consecutivo_); err != nil {
 			return nil, outputError
-		} else {
-			consecutivoId = consecutivo_.Id
-			consecutivo = consecutivos.Format("%02d", getTipoComprobanteCierre(), &consecutivo_)
 		}
+
+		consecutivoId = consecutivo_.Id
+		consecutivo = consecutivos.Format("%02d", getTipoComprobanteCierre(), &consecutivo_)
+
 	} else {
 		var (
 			detalle_    models.FormatoDepreciacion

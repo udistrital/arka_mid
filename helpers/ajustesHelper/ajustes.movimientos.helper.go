@@ -276,11 +276,11 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
 	if err := consecutivos.Get(ctxConsecutivo, "Ajuste automático Arka", &consecutivo); err != nil {
 		return nil, nil, err
-	} else {
-		detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo)
-		detalle.ConsecutivoId = consecutivo.Id
-		detalle.Elementos = ids
 	}
+
+	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo)
+	detalle.ConsecutivoId = consecutivo.Id
+	detalle.Elementos = ids
 
 	if len(movContables) > 0 {
 		trContable = new(models.TransaccionMovimientos)

@@ -40,10 +40,10 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
 	if err := consecutivos.Get(ctxConsecutivo, "Registro Baja Arka", &consecutivo); err != nil {
 		return nil, err
-	} else {
-		detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteBajas(), &consecutivo)
-		detalle.ConsecutivoId = consecutivo.Id
 	}
+
+	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteBajas(), &consecutivo)
+	detalle.ConsecutivoId = consecutivo.Id
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
 		eval := " - json.Marshal(detalle)"

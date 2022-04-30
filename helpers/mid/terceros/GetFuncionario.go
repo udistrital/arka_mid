@@ -15,14 +15,14 @@ var tercerosMID = beego.AppConfig.String("tercerosMidService")
 
 func GetFuncionario(id int) (funcionario []*models.DetalleTercero, outputError map[string]interface{}) {
 
-	funcion := "GetTercerosByTipo"
+	funcion := "GetFuncionario"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	// Consulta información general y documento de identidad
 	urlcrud := "http://" + tercerosMID + "tipo/funcionarios/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &funcionario); err != nil {
 		logs.Error(urlcrud + ", " + err.Error())
-		eval := " - request.GetJson(urlcrud, &terceros)"
+		eval := " - request.GetJson(urlcrud, &funcionario)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 

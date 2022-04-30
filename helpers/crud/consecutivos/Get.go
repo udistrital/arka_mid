@@ -11,7 +11,7 @@ import (
 // Genera un consecutivo con el año actual y para un contextoId determinado
 func Get(contextoId int, descripcion string, data *models.Consecutivo) (outputError map[string]interface{}) {
 
-	funcion := "PostConsecutivo"
+	funcion := "Get"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	year := time.Now().Year()
@@ -32,6 +32,10 @@ func Get(contextoId int, descripcion string, data *models.Consecutivo) (outputEr
 
 // Le da formato a un consecutivo, para un prefijo indicado, un formato determinado para el número del consecutivo. Se toma el año como el sufijo.
 func Format(format, prefix string, consecutivo *models.Consecutivo) (consFormat string) {
+
+	funcion := "Format"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
 	consecutivo_ := fmt.Sprintf(format, consecutivo.Consecutivo)
 	suffix := fmt.Sprintf("%04d", consecutivo.Year)
 	return prefix + "-" + consecutivo_ + "-" + suffix
