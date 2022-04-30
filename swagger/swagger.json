@@ -701,6 +701,37 @@
                 }
             }
         },
+        "/bodega_consumo/solicitud": {
+            "post": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.",
+                "operationId": "BodegaConsumoController.Post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Detalle de la solicitud a la bodega de consumo",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.FormatoSolicitudBodega"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Movimiento"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/bodega_consumo/solicitud/": {
             "get": {
                 "tags": [
@@ -2524,6 +2555,28 @@
                 }
             }
         },
+        "models.ElementoSolicitud_": {
+            "title": "ElementoSolicitud_",
+            "type": "object",
+            "properties": {
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "CantidadAprobada": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ElementoCatalogoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Ubicacion": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
         "models.ElementosMovimiento": {
             "title": "ElementosMovimiento",
             "type": "object",
@@ -2674,6 +2727,29 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.FormatoSolicitudBodega": {
+            "title": "FormatoSolicitudBodega",
+            "type": "object",
+            "properties": {
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementoSolicitud_"
+                    }
+                },
+                "Funcionario": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },

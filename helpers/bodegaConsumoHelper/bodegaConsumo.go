@@ -68,12 +68,12 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 		}
 
 		var idElemento int
-		if id, err := strconv.Atoi(fmt.Sprintf("%v", Elemento["ElementoActa"])); err == nil {
+		if id, err := strconv.Atoi(fmt.Sprintf("%v", Elemento["ElementoCatalogoId"])); err == nil {
 			idElemento = id
 		} else {
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "TraerElementoSolicitud - strconv.Atoi(fmt.Sprintf(\"%v\", Elemento[\"ElementoActa\"]))",
+				"funcion": "TraerElementoSolicitud - strconv.Atoi(fmt.Sprintf(\"%v\", Elemento[\"ElementoCatalogoId\"]))",
 				"err":     err,
 				"status":  "400",
 			}

@@ -18,8 +18,17 @@ type ElementoSolicitud struct {
 	Ubicacion          *AsignacionEspacioFisicoDependencia
 }
 
+type ElementoSolicitud_ struct {
+	Cantidad           int
+	Ubicacion          int
+	ElementoCatalogoId int
+	CantidadAprobada   int
+}
 type FormatoSolicitudBodega struct {
-	Funcionario int
+	Funcionario   int
+	ConsecutivoId int
+	Consecutivo   string
+	Elementos     []ElementoSolicitud_
 }
 
 type DetalleSolicitudBodega struct {

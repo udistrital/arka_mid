@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/bodegaConsumoHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -19,11 +20,42 @@ type BodegaConsumoController struct {
 
 // URLMapping ...
 func (c *BodegaConsumoController) URLMapping() {
+	c.Mapping("Post", c.Post)
 	c.Mapping("GetOneSolicitud", c.GetOneSolicitud)
 	c.Mapping("GetAllSolicitud", c.GetAllSolicitud)
 	c.Mapping("GetElementos", c.GetElementos)
 	c.Mapping("GetAperturasKardex", c.GetAperturasKardex)
 	c.Mapping("GetAllExistencias", c.GetAllExistencias)
+}
+
+// Post ...
+// @Title Post
+// @Description Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
+// @Param	body	body	models.FormatoSolicitudBodega	true	"Detalle de la solicitud a la bodega de consumo"
+// @Success 200 {object} models.Movimiento
+// @Failure 404 not found resource
+// @router /solicitud [post]
+func (c *BodegaConsumoController) Post() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+
+	var (
+		v         models.FormatoSolicitudBodega
+		solicitud models.Movimiento
+	)
+
+	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
+		panic(errorctrl.Error("Post - utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v)", err, "400"))
+	} else {
+		if err := bodegaConsumoHelper.PostSolicitud(&v, &solicitud); err != nil {
+			logs.Error(err)
+			c.Data["system"] = err
+			c.Abort("404")
+		} else {
+			c.Data["json"] = solicitud
+		}
+	}
+	c.ServeJSON()
 }
 
 // GetOneSolicitud ...
