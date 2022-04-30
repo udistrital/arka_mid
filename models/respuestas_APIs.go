@@ -31,6 +31,13 @@ type RespuestaAPI1Str struct {
 	Data string
 }
 
+// RespuestaAPI1Arr es un RespuestaAPI1 donde
+// los datos varían según la petición
+type RespuestaAPI1Interface struct {
+	RespuestaAPI1
+	Data interface{}
+}
+
 // RespuestaAPI2 es similar a RespuestaAPI1
 // Agrupa las estructuras comunes y por lo mismo
 // NO se debe usar directamente
