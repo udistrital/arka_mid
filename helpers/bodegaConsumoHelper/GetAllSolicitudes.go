@@ -10,6 +10,8 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
+const estadoSolicitudPendiente = "Solicitud Pendiente"
+
 func GetAllSolicitudes(pendientesOnly bool, solictudes_ *[]models.DetalleSolicitudBodega) (outputError map[string]interface{}) {
 
 	funcion := "GetAllSolicitudes"
@@ -22,7 +24,7 @@ func GetAllSolicitudes(pendientesOnly bool, solictudes_ *[]models.DetalleSolicit
 
 	query := "limit=-1&sortby=FechaCreacion&order=desc&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion:SOL_BOD"
 	if pendientesOnly {
-		query += ",EstadoMovimientoId__Nombre:" + url.QueryEscape("Solicitud Pendiente")
+		query += ",EstadoMovimientoId__Nombre:" + url.QueryEscape(estadoSolicitudPendiente)
 	}
 
 	if movimientos, err := movimientosArka.GetAllMovimiento(query); err != nil {

@@ -88,20 +88,21 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 
 	var (
 		tramiteOnly bool
+		err         error
 	)
-	if v, err := c.GetBool("tramite_only"); err == nil {
-		tramiteOnly = v
+	if tramiteOnly, err = c.GetBool("tramite_only", false); err != nil {
+		panic(err)
 	}
 
 	solicitudes := make([]models.DetalleSolicitudBodega, 0)
-	if err := bodegaConsumoHelper.GetAllSolicitudes(tramiteOnly, &solicitudes); err == nil {
-		if solicitudes != nil {
-			c.Data["json"] = solicitudes
-		} else {
-			c.Data["json"] = []interface{}{}
-		}
-	} else {
+	if err := bodegaConsumoHelper.GetAllSolicitudes(tramiteOnly, &solicitudes); err != nil {
 		panic(err)
+	}
+
+	if solicitudes != nil {
+		c.Data["json"] = solicitudes
+	} else {
+		c.Data["json"] = []interface{}{}
 	}
 
 	c.ServeJSON()
