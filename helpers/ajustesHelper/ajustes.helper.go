@@ -61,11 +61,11 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 
 	movimiento.Activo = true
 
-	if res, err := movimientosArka.PostMovimiento(movimiento); err != nil {
+	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
 		return nil, err
-	} else {
-		return res, nil
 	}
+
+	return movimiento, nil
 
 }
 

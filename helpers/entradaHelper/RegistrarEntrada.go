@@ -81,10 +81,8 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoMovimiento},
 	}
 
-	if mov, err := movimientosArka.PostMovimiento(&movimiento); err != nil {
+	if err := movimientosArka.PostMovimiento(&movimiento); err != nil {
 		return nil, err
-	} else {
-		movimiento = *mov
 	}
 
 	// Crea registro en table soporte_movimiento si es necesario

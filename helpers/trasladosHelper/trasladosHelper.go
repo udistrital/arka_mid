@@ -182,11 +182,12 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if res, err := crudMovimientosArka.PostMovimiento(data); err != nil {
+	if err := crudMovimientosArka.PostMovimiento(data); err != nil {
 		return nil, err
-	} else {
-		return res, nil
 	}
+
+	return data, nil
+
 }
 
 func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {

@@ -30,8 +30,7 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		movimiento *models.Movimiento
-		detalle    *models.FormatoBaja
+		detalle *models.FormatoBaja
 	)
 
 	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalle); err != nil {
@@ -56,19 +55,17 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if movimiento_, err := crudMovimientosArka.PostMovimiento(baja.Movimiento); err != nil {
+	if err := crudMovimientosArka.PostMovimiento(baja.Movimiento); err != nil {
 		return nil, err
-	} else {
-		movimiento = movimiento_
 	}
 
 	// Crea registro en table soporte_movimiento si es necesario
-	baja.Soporte.MovimientoId = movimiento
+	baja.Soporte.MovimientoId = baja.Movimiento
 	if _, err := crudMovimientosArka.PostSoporteMovimiento(baja.Soporte); err != nil {
 		return nil, err
 	}
 
-	return movimiento, nil
+	return baja.Movimiento, nil
 }
 
 // ActualizarBaja Actualiza información de baja

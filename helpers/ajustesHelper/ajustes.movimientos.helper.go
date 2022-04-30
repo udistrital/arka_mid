@@ -312,11 +312,11 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 
 	movimiento.Activo = true
 
-	if res, err := movimientosArka.PostMovimiento(movimiento); err != nil {
+	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
 		return nil, nil, err
-	} else {
-		return res, trContable, nil
 	}
+
+	return movimiento, trContable, nil
 
 }
 

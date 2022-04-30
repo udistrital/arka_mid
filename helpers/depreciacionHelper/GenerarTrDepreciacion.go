@@ -191,11 +191,10 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		}
 	} else {
 		// Crea el registro del movimiento correspondiente a la solicitud
-		if movimiento_, err := crudMovimientosArka.PostMovimiento(movimiento); err != nil {
+		if err := crudMovimientosArka.PostMovimiento(movimiento); err != nil {
 			return nil, err
-		} else {
-			detalleD["Movimiento"] = movimiento_
 		}
+		detalleD["Movimiento"] = movimiento
 	}
 
 	return detalleD, nil
