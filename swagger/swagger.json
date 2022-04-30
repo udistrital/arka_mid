@@ -889,40 +889,6 @@
                 }
             }
         },
-        "/elemento/": {
-            "post": {
-                "tags": [
-                    "elemento"
-                ],
-                "description": "create Salida",
-                "operationId": "ElementoController.Create",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for Salida content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.SalidaGeneral"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.TrSalida2"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "body is empty"
-                    }
-                }
-            }
-        },
         "/entrada/": {
             "post": {
                 "tags": [
@@ -3545,10 +3511,6 @@
                 }
             }
         },
-        "models.TrSalida2": {
-            "title": "TrSalida2",
-            "type": "object"
-        },
         "models.TrSoporteMovimiento": {
             "title": "TrSoporteMovimiento",
             "type": "object",
@@ -3627,10 +3589,6 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
-        },
-        {
-            "name": "elemento",
-            "description": "SalidaController operations for Salida\n"
         },
         {
             "name": "parametros_soporte",

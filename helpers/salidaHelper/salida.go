@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -22,67 +21,6 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
-
-type Consecutivo struct {
-	Id          int
-	ContextoId  int
-	Year        int
-	Consecutivo int
-	Descripcion string
-	Activo      bool
-}
-
-// AsignarPlaca Transacción para asignar las placas
-func AsignarPlaca(m *models.Elemento) (resultado map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "AsignarPlaca - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	year, month, day := time.Now().Date()
-
-	consec := Consecutivo{0, 0, year, 0, "Placas", true}
-	var (
-		res map[string]interface{} // models.SalidaGeneral
-	)
-
-	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
-	putElemento := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/" + fmt.Sprintf("%d", m.Id)
-
-	// Inserta salida en Movimientos ARKA
-	// AsignarPlaca Transacción para asignar las placas
-	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
-		resultado, _ := res["Data"].(map[string]interface{})
-		fecstring := fmt.Sprintf("%4d", year) + fmt.Sprintf("%02d", int(month)) + fmt.Sprintf("%02d", day) + fmt.Sprintf("%05.0f", resultado["Consecutivo"])
-		m.Placa = fecstring
-		if err := request.SendJson(putElemento, "PUT", &resultado, &m); err == nil {
-			return resultado, nil
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "AsignarPlaca - request.SendJson(putElemento, \"PUT\", &resultado, &m)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AsignarPlaca - request.SendJson(apiCons, \"POST\", &res, &consec)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-}
 
 // PostTrSalidas Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
 func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, outputError map[string]interface{}) {

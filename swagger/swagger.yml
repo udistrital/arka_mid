@@ -594,28 +594,6 @@ paths:
             $ref: '#/definitions/models.ElementosMovimiento'
         "400":
           description: the request contains incorrect syntax
-  /elemento/:
-    post:
-      tags:
-      - elemento
-      description: create Salida
-      operationId: ElementoController.Create
-      parameters:
-      - in: body
-        name: body
-        description: body for Salida content
-        required: true
-        schema:
-          $ref: '#/definitions/models.SalidaGeneral'
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/models.TrSalida2'
-        "403":
-          description: body is empty
   /entrada/:
     post:
       tags:
@@ -2436,9 +2414,6 @@ definitions:
           $ref: '#/definitions/models.ElementosMovimiento'
       Salida:
         $ref: '#/definitions/models.Movimiento'
-  models.TrSalida2:
-    title: TrSalida2
-    type: object
   models.TrSoporteMovimiento:
     title: TrSoporteMovimiento
     type: object
@@ -2490,9 +2465,6 @@ tags:
 - name: entrada
   description: |
     EntradaController operations for Entrada
-- name: elemento
-  description: |
-    SalidaController operations for Salida
 - name: parametros_soporte
   description: |
     ParametrosController operations for Parametros
