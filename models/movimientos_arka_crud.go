@@ -260,7 +260,7 @@ type ElementosPorActualizarSalida struct {
 }
 
 type FormatoAjusteAutomatico struct {
-	Consecutivo string
-	Elementos   []int
-	TrContable  int
+	Consecutivo   string
+	ConsecutivoId int
+	Elementos     []int
 }

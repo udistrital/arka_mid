@@ -2,9 +2,7 @@ package entradaHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -28,6 +26,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 		actaRecibido     models.TransaccionActaRecibido
 		tipoMovimiento   int
 		estadoMovimiento int
+		consecutivo      models.Consecutivo
 	)
 
 	resultado := make(map[string]interface{})
@@ -38,12 +37,11 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-	if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Entradas Arka"); err != nil {
-		return nil, outputError
+	if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
+		return nil, err
 	} else {
-		consecutivo = consecutivos.Format(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		detalleJSON["consecutivo"] = consecutivo
-		detalleJSON["ConsecutivoId"] = consecutivoId
+		detalleJSON["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
+		detalleJSON["ConsecutivoId"] = consecutivo.Id
 		resultado["Consecutivo"] = detalleJSON["consecutivo"]
 	}
 

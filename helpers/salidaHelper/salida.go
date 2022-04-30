@@ -135,18 +135,12 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
+		var consecutivo models.Consecutivo
+		if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
+			return nil, err
 		} else {
-			consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-			detalle["consecutivo"] = consecutivo
-			detalle["ConsecutivoId"] = consecutivoId
+			detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
+			detalle["ConsecutivoId"] = consecutivo.Id
 			if detalleJSON, err := json.Marshal(detalle); err != nil {
 				logs.Error(err)
 				outputError = map[string]interface{}{
@@ -362,7 +356,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 		if val, ok := detalle["ConsecutivoId"]; ok && val != nil {
 			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
 				return nil, err
-			} else {
+			} else if len(tr.Movimientos) > 0 {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
 					return nil, err
 				} else {

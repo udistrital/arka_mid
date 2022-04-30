@@ -2,10 +2,8 @@ package bajasHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -30,7 +28,8 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		detalle *models.FormatoBaja
+		detalle     *models.FormatoBaja
+		consecutivo models.Consecutivo
 	)
 
 	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalle); err != nil {
@@ -39,12 +38,11 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
-	if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Baja Arka"); err != nil {
+	if err := consecutivos.Get(ctxConsecutivo, "Registro Baja Arka", &consecutivo); err != nil {
 		return nil, err
 	} else {
-		consecutivo = consecutivos.Format(getTipoComprobanteBajas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		detalle.Consecutivo = consecutivo
-		detalle.ConsecutivoId = consecutivoId
+		detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteBajas(), &consecutivo)
+		detalle.ConsecutivoId = consecutivo.Id
 	}
 
 	if jsonData, err := json.Marshal(detalle); err != nil {

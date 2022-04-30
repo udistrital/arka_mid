@@ -138,11 +138,12 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 		for _, elemento := range detalleElementos {
 			placa := ""
 			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca {
-				if placa_, _, err := consecutivos.Get("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+				var consecutivo models.Consecutivo
+				if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
 					return nil, err
 				} else {
 					year, month, day := time.Now().Date()
-					placa = consecutivos.Format(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
+					placa = fmt.Sprintf("%04d%02d%02d%05d", year, month, day, consecutivo.Consecutivo)
 				}
 			}
 			elemento_ := models.Elemento{

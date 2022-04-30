@@ -2,9 +2,7 @@ package salidaHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -125,19 +123,12 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 			}
 
 			if idx != index {
-
-				if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
-					logs.Error(err)
-					outputError = map[string]interface{}{
-						"funcion": "PutTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
-						"err":     err,
-						"status":  "502",
-					}
-					return nil, outputError
+				var consecutivo models.Consecutivo
+				if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
+					return nil, err
 				} else {
-					consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-					detalle["consecutivo"] = consecutivo
-					detalle["consecutivoId"] = consecutivoId
+					detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
+					detalle["consecutivoId"] = consecutivo.Id
 					if detalleJSON, err := json.Marshal(detalle); err != nil {
 						logs.Error(err)
 						outputError = map[string]interface{}{

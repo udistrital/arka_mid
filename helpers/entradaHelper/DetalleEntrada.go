@@ -55,7 +55,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		if detalle.ConsecutivoId > 0 {
 			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 				return nil, err
-			} else {
+			} else if len(tr.Movimientos) > 0 {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
 					return nil, err
 				} else {
