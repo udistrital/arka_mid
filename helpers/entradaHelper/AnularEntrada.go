@@ -122,13 +122,12 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																							for _, sliceTipoComprobante := range resMap["Body"].([]interface{}) {
 																								if sliceTipoComprobante.(map[string]interface{})["TipoDocumento"] == "E" {
 																									if jsonString, err = json.Marshal(sliceTipoComprobante); err == nil {
-																										if err = json.Unmarshal(jsonString, &tipoComprobanteContable); err == nil {
-																											resMap = make(map[string]interface{})
-																										} else {
+																										if err = json.Unmarshal(jsonString, &tipoComprobanteContable); err != nil {
 																											logs.Error(err)
 																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 																											return nil, outputError
 																										}
+																										resMap = make(map[string]interface{})
 																									} else {
 																										logs.Error(err)
 																										outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
@@ -200,20 +199,19 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																																if err = request.GetJson(urlcrud, &resMap); err == nil { // Se trae información de cuenta crédito de api cuentas_contables_crud
 
 																																	if jsonString, err = json.Marshal(resMap["Body"]); err == nil {
-																																		if err = json.Unmarshal(jsonString, &cuentaCredito); err == nil {
-																																			movimientoCredito.NombreCuenta = cuentaCredito.Nombre
-																																			movimientoCredito.CuentaId = cuentaCredito.Codigo
-																																			movimientoCredito.TipoMovimientoId = parametroTipoDebito.Id
-																																			movimientoCredito.Valor = valor
-																																			movimientoCredito.Descripcion = "Movimiento débito registrado desde sistema arka"
-																																			movimientoCredito.Activo = true
-																																			movimientoCredito.TerceroId = nil // Provisional
-																																			transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
-																																		} else {
+																																		if err = json.Unmarshal(jsonString, &cuentaCredito); err != nil {
 																																			logs.Error(err)
 																																			outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 																																			return nil, outputError
 																																		}
+																																		movimientoCredito.NombreCuenta = cuentaCredito.Nombre
+																																		movimientoCredito.CuentaId = cuentaCredito.Codigo
+																																		movimientoCredito.TipoMovimientoId = parametroTipoDebito.Id
+																																		movimientoCredito.Valor = valor
+																																		movimientoCredito.Descripcion = "Movimiento débito registrado desde sistema arka"
+																																		movimientoCredito.Activo = true
+																																		movimientoCredito.TerceroId = nil // Provisional
+																																		transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
 																																	} else {
 																																		logs.Error(err)
 																																		outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
@@ -270,15 +268,14 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																															if err = request.SendJson(urlcrud, "PUT", &movimientosKronos, &movimientosKronos); err == nil { // Put api movimientos_crud
 
 																																urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-																																if err = request.SendJson(urlcrud, "PUT", &transaccionActaRecibido, &transaccionActaRecibido); err == nil { // Puesto que se anula la entrada, el acta debe quedar disponible para volver ser asociada a una entrada
-																																	res["movArkaId"] = movimientoArka.EstadoMovimientoId.Id
-																																	res["movKronosId"] = movimientosKronos.TipoMovimientoId.Id
-																																	res["EstadoActaId"] = transaccionActaRecibido.UltimoEstado.EstadoActaId.Id
-																																} else {
+																																if err = request.SendJson(urlcrud, "PUT", &transaccionActaRecibido, &transaccionActaRecibido); err != nil { // Puesto que se anula la entrada, el acta debe quedar disponible para volver ser asociada a una entrada
 																																	logs.Error(err)
 																																	outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
 																																	return nil, outputError
 																																}
+																																res["movArkaId"] = movimientoArka.EstadoMovimientoId.Id
+																																res["movKronosId"] = movimientosKronos.TipoMovimientoId.Id
+																																res["EstadoActaId"] = transaccionActaRecibido.UltimoEstado.EstadoActaId.Id
 																															} else {
 																																logs.Error(err)
 																																outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
