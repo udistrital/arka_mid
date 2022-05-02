@@ -147,153 +147,152 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 																							urlcrud = "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
 																							if err = request.SendJson(urlcrud, "POST", &resMap, &postConsecutivo); err == nil {
 																								if consecutivoId, err = strconv.Atoi(fmt.Sprint(resMap["Data"].(map[string]interface{})["Id"])); err == nil {
-																									if consecutivo, err = strconv.Atoi(fmt.Sprint(resMap["Data"].(map[string]interface{})["Consecutivo"])); err == nil {
-																										resMap = make(map[string]interface{})
-																										transaccion.ConsecutivoId = consecutivoId
-
-																										// Se crea map para agrupar los valores totales según el código del subgrupo
-																										mapSubgruposTotales := map[int]float64{}
-																										for _, elemento := range transaccionActaRecibido.Elementos { // Proceso para registrar el movimiento contable para cada elemento
-																											if mapSubgruposTotales[elemento.SubgrupoCatalogoId] == 0 {
-																												mapSubgruposTotales[elemento.SubgrupoCatalogoId] = elemento.ValorTotal
-																											} else {
-																												mapSubgruposTotales[elemento.SubgrupoCatalogoId] += elemento.ValorTotal
-																											}
-																										}
-
-																										etiquetas := make(map[string]interface{})
-																										etiquetas["TipoComprobanteId"] = tipoComprobanteContable.Codigo
-																										if jsonString, err = json.Marshal(etiquetas); err != nil {
-																											logs.Error(err)
-																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
-																											return nil, outputError
-																										}
-																										transaccion.Etiquetas = string(jsonString)
-																										transaccion.Activo = true
-																										transaccion.FechaTransaccion = time_bogota.Tiempo_bogota()
-																										transaccion.Descripcion = "Transacción para registrar movimientos contables correspondientes a entrada del sistema arka"
-
-																										for SubgrupoId, valor := range mapSubgruposTotales {
-																											var cuentaDebito models.CuentaContable
-																											var cuentaCredito models.CuentaContable
-																											var movimientoDebito models.MovimientoTransaccion
-																											var movimientoCredito models.MovimientoTransaccion
-
-																											urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?query=SubgrupoId__Id:" + strconv.Itoa(SubgrupoId) + ",SubtipoMovimientoId:" + strconv.Itoa(TipoEntradaKronos.Id) + ",Activo:true"
-																											if err = request.GetJson(urlcrud, &cuentasSubgrupo); err != nil { // Obtiene cuentas que deben ser afectadas
-																												logs.Error(err)
-																												outputError = map[string]interface{}{"funcion": "AnularEntrada - catalogoElementos.cuentasSubgrupo(subgrupo);", "status": "502", "err": err}
-																												return nil, outputError
-																											}
-																											urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentasSubgrupo[0].CuentaDebitoId
-																											if err = request.GetJson(urlcrud, &resMap); err != nil { // Se trae información de cuenta débito de api cuentas_contables_crud
-																												logs.Error(err)
-																												outputError = map[string]interface{}{"funcion": "AnularEntrada - cuentasContables.nodo_cuenta_contable(cuenta);", "status": "502", "err": err}
-																												return nil, outputError
-																											}
-																											if jsonString, err = json.Marshal(resMap["Body"]); err != nil {
-																												logs.Error(err)
-																												outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
-																												return nil, outputError
-																											}
-																											if err := json.Unmarshal(jsonString, &cuentaDebito); err != nil {
-																												logs.Error(err)
-																												outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
-																												return nil, outputError
-																											}
-																											resMap = make(map[string]interface{})
-
-																											movimientoDebito.NombreCuenta = cuentaDebito.Nombre
-																											movimientoDebito.CuentaId = cuentaDebito.Codigo
-																											movimientoDebito.TipoMovimientoId = parametroTipoCredito.Id
-																											movimientoDebito.Valor = valor
-																											movimientoDebito.Descripcion = "Movimiento crédito registrado desde sistema arka"
-																											movimientoDebito.Activo = true
-																											movimientoDebito.TerceroId = nil // Provisional
-																											transaccion.Movimientos = append(transaccion.Movimientos, &movimientoDebito)
-
-																											urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentasSubgrupo[0].CuentaCreditoId
-																											if err = request.GetJson(urlcrud, &resMap); err != nil { // Se trae información de cuenta crédito de api cuentas_contables_crud
-																												logs.Error(err)
-																												outputError = map[string]interface{}{"funcion": "AnularEntrada - cuentasContables.nodo_cuenta_contable(cuenta);", "status": "502", "err": err}
-																												return nil, outputError
-																											}
-																											if jsonString, err = json.Marshal(resMap["Body"]); err != nil {
-																												logs.Error(err)
-																												outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
-																												return nil, outputError
-																											}
-																											if err = json.Unmarshal(jsonString, &cuentaCredito); err != nil {
-																												logs.Error(err)
-																												outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
-																												return nil, outputError
-																											}
-																											movimientoCredito.NombreCuenta = cuentaCredito.Nombre
-																											movimientoCredito.CuentaId = cuentaCredito.Codigo
-																											movimientoCredito.TipoMovimientoId = parametroTipoDebito.Id
-																											movimientoCredito.Valor = valor
-																											movimientoCredito.Descripcion = "Movimiento débito registrado desde sistema arka"
-																											movimientoCredito.Activo = true
-																											movimientoCredito.TerceroId = nil // Provisional
-																											transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
-																										}
-
-																										res["transaccion"] = transaccion
-																										var resMovmientoContable interface{}
-
-																										urlcrud = "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos"
-																										if err = request.SendJson(urlcrud, "POST", &resMovmientoContable, &transaccion); err != nil {
-																											logs.Error(err)
-																											outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosContablesMid.postTransaccion(movimiento);", "status": "502", "err": err}
-																											return nil, outputError
-																										}
-																										if resMovmientoContable.(map[string]interface{})["Status"] != "201" {
-																											res["Respuesta movimientos contables Entradas"] = resMovmientoContable.(map[string]interface{})["Data"]
-																											outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosContablesMid.postTransaccion;", "status": "502", "err": resMovmientoContable.(map[string]interface{})["Data"]}
-																											return res, outputError
-																										}
-																										res["Respuesta movimientos contables Entradas"] = resMovmientoContable
-
-																										// Anulación de salidas asociadas
-																										// Si el estado de movimientoArka es Entrada Asociada a una salida, continuar con la anulación de las salidas
-
-																										consecutivoAjuste := "H20-" + fmt.Sprintf("%05d", consecutivo) + "-" + strconv.Itoa(year)
-																										detalleMovimiento["consecutivo_ajuste"] = consecutivoAjuste
-																										detalleMovimiento["mov_contable_ajuste_consecutivo_id"] = transaccion.ConsecutivoId
-
-																										if jsonString, err = json.Marshal(detalleMovimiento); err != nil {
-																											logs.Error(err)
-																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
-																											return nil, outputError
-																										}
-																										movimientoArka.Detalle = string(jsonString)
-																										urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(movimientoId))
-																										if err = request.SendJson(urlcrud, "PUT", &movimientoArka, &movimientoArka); err != nil { // Put en el api movimientos_arka_crud
-																											logs.Error(err)
-																											outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.Movimiento(id);", "status": "502", "err": err}
-																											return nil, outputError
-																										}
-																										res["arka"] = movimientoArka.Detalle
-																										urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(movimientoArka.Id)
-																										if err = request.SendJson(urlcrud, "PUT", &movimientosKronos, &movimientosKronos); err != nil { // Put api movimientos_crud
-																											logs.Error(err)
-																											outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
-																											return nil, outputError
-																										}
-																										urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-																										if err = request.SendJson(urlcrud, "PUT", &transaccionActaRecibido, &transaccionActaRecibido); err != nil { // Puesto que se anula la entrada, el acta debe quedar disponible para volver ser asociada a una entrada
-																											logs.Error(err)
-																											outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
-																											return nil, outputError
-																										}
-																										res["movArkaId"] = movimientoArka.EstadoMovimientoId.Id
-																										res["movKronosId"] = movimientosKronos.TipoMovimientoId.Id
-																										res["EstadoActaId"] = transaccionActaRecibido.UltimoEstado.EstadoActaId.Id
-																									} else {
+																									if consecutivo, err = strconv.Atoi(fmt.Sprint(resMap["Data"].(map[string]interface{})["Consecutivo"])); err != nil {
 																										logs.Error(err)
 																										outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
 																										return nil, outputError
 																									}
+																									resMap = make(map[string]interface{})
+																									transaccion.ConsecutivoId = consecutivoId
+
+																									// Se crea map para agrupar los valores totales según el código del subgrupo
+																									mapSubgruposTotales := map[int]float64{}
+																									for _, elemento := range transaccionActaRecibido.Elementos { // Proceso para registrar el movimiento contable para cada elemento
+																										if mapSubgruposTotales[elemento.SubgrupoCatalogoId] == 0 {
+																											mapSubgruposTotales[elemento.SubgrupoCatalogoId] = elemento.ValorTotal
+																										} else {
+																											mapSubgruposTotales[elemento.SubgrupoCatalogoId] += elemento.ValorTotal
+																										}
+																									}
+
+																									etiquetas := make(map[string]interface{})
+																									etiquetas["TipoComprobanteId"] = tipoComprobanteContable.Codigo
+																									if jsonString, err = json.Marshal(etiquetas); err != nil {
+																										logs.Error(err)
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																										return nil, outputError
+																									}
+																									transaccion.Etiquetas = string(jsonString)
+																									transaccion.Activo = true
+																									transaccion.FechaTransaccion = time_bogota.Tiempo_bogota()
+																									transaccion.Descripcion = "Transacción para registrar movimientos contables correspondientes a entrada del sistema arka"
+
+																									for SubgrupoId, valor := range mapSubgruposTotales {
+																										var cuentaDebito models.CuentaContable
+																										var cuentaCredito models.CuentaContable
+																										var movimientoDebito models.MovimientoTransaccion
+																										var movimientoCredito models.MovimientoTransaccion
+
+																										urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?query=SubgrupoId__Id:" + strconv.Itoa(SubgrupoId) + ",SubtipoMovimientoId:" + strconv.Itoa(TipoEntradaKronos.Id) + ",Activo:true"
+																										if err = request.GetJson(urlcrud, &cuentasSubgrupo); err != nil { // Obtiene cuentas que deben ser afectadas
+																											logs.Error(err)
+																											outputError = map[string]interface{}{"funcion": "AnularEntrada - catalogoElementos.cuentasSubgrupo(subgrupo);", "status": "502", "err": err}
+																											return nil, outputError
+																										}
+																										urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentasSubgrupo[0].CuentaDebitoId
+																										if err = request.GetJson(urlcrud, &resMap); err != nil { // Se trae información de cuenta débito de api cuentas_contables_crud
+																											logs.Error(err)
+																											outputError = map[string]interface{}{"funcion": "AnularEntrada - cuentasContables.nodo_cuenta_contable(cuenta);", "status": "502", "err": err}
+																											return nil, outputError
+																										}
+																										if jsonString, err = json.Marshal(resMap["Body"]); err != nil {
+																											logs.Error(err)
+																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																											return nil, outputError
+																										}
+																										if err := json.Unmarshal(jsonString, &cuentaDebito); err != nil {
+																											logs.Error(err)
+																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																											return nil, outputError
+																										}
+																										resMap = make(map[string]interface{})
+
+																										movimientoDebito.NombreCuenta = cuentaDebito.Nombre
+																										movimientoDebito.CuentaId = cuentaDebito.Codigo
+																										movimientoDebito.TipoMovimientoId = parametroTipoCredito.Id
+																										movimientoDebito.Valor = valor
+																										movimientoDebito.Descripcion = "Movimiento crédito registrado desde sistema arka"
+																										movimientoDebito.Activo = true
+																										movimientoDebito.TerceroId = nil // Provisional
+																										transaccion.Movimientos = append(transaccion.Movimientos, &movimientoDebito)
+
+																										urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "nodo_cuenta_contable/" + cuentasSubgrupo[0].CuentaCreditoId
+																										if err = request.GetJson(urlcrud, &resMap); err != nil { // Se trae información de cuenta crédito de api cuentas_contables_crud
+																											logs.Error(err)
+																											outputError = map[string]interface{}{"funcion": "AnularEntrada - cuentasContables.nodo_cuenta_contable(cuenta);", "status": "502", "err": err}
+																											return nil, outputError
+																										}
+																										if jsonString, err = json.Marshal(resMap["Body"]); err != nil {
+																											logs.Error(err)
+																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																											return nil, outputError
+																										}
+																										if err = json.Unmarshal(jsonString, &cuentaCredito); err != nil {
+																											logs.Error(err)
+																											outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																											return nil, outputError
+																										}
+																										movimientoCredito.NombreCuenta = cuentaCredito.Nombre
+																										movimientoCredito.CuentaId = cuentaCredito.Codigo
+																										movimientoCredito.TipoMovimientoId = parametroTipoDebito.Id
+																										movimientoCredito.Valor = valor
+																										movimientoCredito.Descripcion = "Movimiento débito registrado desde sistema arka"
+																										movimientoCredito.Activo = true
+																										movimientoCredito.TerceroId = nil // Provisional
+																										transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
+																									}
+
+																									res["transaccion"] = transaccion
+																									var resMovmientoContable interface{}
+
+																									urlcrud = "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos"
+																									if err = request.SendJson(urlcrud, "POST", &resMovmientoContable, &transaccion); err != nil {
+																										logs.Error(err)
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosContablesMid.postTransaccion(movimiento);", "status": "502", "err": err}
+																										return nil, outputError
+																									}
+																									if resMovmientoContable.(map[string]interface{})["Status"] != "201" {
+																										res["Respuesta movimientos contables Entradas"] = resMovmientoContable.(map[string]interface{})["Data"]
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosContablesMid.postTransaccion;", "status": "502", "err": resMovmientoContable.(map[string]interface{})["Data"]}
+																										return res, outputError
+																									}
+																									res["Respuesta movimientos contables Entradas"] = resMovmientoContable
+
+																									// Anulación de salidas asociadas
+																									// Si el estado de movimientoArka es Entrada Asociada a una salida, continuar con la anulación de las salidas
+
+																									consecutivoAjuste := "H20-" + fmt.Sprintf("%05d", consecutivo) + "-" + strconv.Itoa(year)
+																									detalleMovimiento["consecutivo_ajuste"] = consecutivoAjuste
+																									detalleMovimiento["mov_contable_ajuste_consecutivo_id"] = transaccion.ConsecutivoId
+
+																									if jsonString, err = json.Marshal(detalleMovimiento); err != nil {
+																										logs.Error(err)
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+																										return nil, outputError
+																									}
+																									movimientoArka.Detalle = string(jsonString)
+																									urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(movimientoId))
+																									if err = request.SendJson(urlcrud, "PUT", &movimientoArka, &movimientoArka); err != nil { // Put en el api movimientos_arka_crud
+																										logs.Error(err)
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientosArka.Movimiento(id);", "status": "502", "err": err}
+																										return nil, outputError
+																									}
+																									res["arka"] = movimientoArka.Detalle
+																									urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(movimientoArka.Id)
+																									if err = request.SendJson(urlcrud, "PUT", &movimientosKronos, &movimientosKronos); err != nil { // Put api movimientos_crud
+																										logs.Error(err)
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - movimientos.MovimientoProcesoExterno(id);", "status": "502", "err": err}
+																										return nil, outputError
+																									}
+																									urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+																									if err = request.SendJson(urlcrud, "PUT", &transaccionActaRecibido, &transaccionActaRecibido); err != nil { // Puesto que se anula la entrada, el acta debe quedar disponible para volver ser asociada a una entrada
+																										logs.Error(err)
+																										outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
+																										return nil, outputError
+																									}
+																									res["movArkaId"] = movimientoArka.EstadoMovimientoId.Id
+																									res["movKronosId"] = movimientosKronos.TipoMovimientoId.Id
+																									res["EstadoActaId"] = transaccionActaRecibido.UltimoEstado.EstadoActaId.Id
 																								} else {
 																									logs.Error(err)
 																									outputError = map[string]interface{}{"funcion": "AnularEntrada - consecutivos.postConsecutivo; No se retornó un consecutivo válido", "status": "502", "err": err}
