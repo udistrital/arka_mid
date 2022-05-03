@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
@@ -30,107 +33,48 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		resMap                  map[string]interface{}
 		movimientoArka          models.Movimiento
 		transaccionActaRecibido models.TransaccionActaRecibido
-		movimientosKronos       models.MovimientoProcesoExterno
 		detalleMovimiento       map[string]interface{}
-		tipoMovimiento          models.TipoMovimiento
 		estadoActa              models.EstadoActa
-		estadoMovimiento        models.EstadoMovimiento
-		parametroTipoDebito     models.Parametro
-		parametroTipoCredito    models.Parametro
-		tipoComprobanteContable models.TipoComprobante
+		estadoMovimiento        int
+		parametroTipoDebito     int
+		parametroTipoCredito    int
+		tipoComprobante         string
 		consecutivoId           int
 		consecutivo             int
 		transaccion             models.TransaccionMovimientos
 		cuentasSubgrupo         []models.CuentaSubgrupo
-		TipoEntradaKronos       models.TipoMovimiento
+		jsonString              []byte
 	)
 
 	res = make(map[string]interface{})
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + strconv.Itoa(int(movimientoId))
-	var resMovArka []models.Movimiento
-	if err = request.GetJson(urlcrud, &resMovArka); err != nil { // Get movimiento de api movimientos_arka_crud
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resMovArka)", err, fmt.Sprint(http.StatusBadGateway))
+	query := "query=Id:" + strconv.Itoa(int(movimientoId))
+	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
+		return nil, err
+	} else {
+		movimientoArka = *mov[0]
 	}
-	movimientoArka = resMovArka[0]
-	if movimientoArka.Id <= 0 {
-		logs.Error(err)
-		return nil, e.Error(funcion+"movimientoArka.Id <= 0", err, fmt.Sprint(http.StatusBadGateway))
-	}
-	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo?query=ProcesoExterno:" + strconv.Itoa(int(movimientoId))
-	if err = request.GetJson(urlcrud, &resMap); err != nil { // Get movimiento de api movimientos_crud
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resMap)", err, fmt.Sprint(http.StatusBadGateway))
-	}
-	var resMovKronos []models.MovimientoProcesoExterno
-	var jsonString []byte
-	if jsonString, err = json.Marshal(resMap["Body"]); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+`json.Marshal(resMap["Body"])`, err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	if err = json.Unmarshal(jsonString, &resMovKronos); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+"json.Unmarshal(jsonString, &resMovKronos)", err, fmt.Sprint(http.StatusInternalServerError))
-	}
-
-	resMap = make(map[string]interface{})
-	movimientosKronos = resMovKronos[0]
 
 	if err = json.Unmarshal([]byte(movimientoArka.Detalle), &detalleMovimiento); err != nil {
 		logs.Error(err)
-		return nil, e.Error(funcion+"json.Unmarshal([]byte(movimientoArka.Detalle), &detalleMovimiento)", err, fmt.Sprint(http.StatusInternalServerError))
+		outputError = map[string]interface{}{"funcion": "AnularEntrada - entrada.AnularEntrada(entrada);", "status": "500", "err": err}
+		return nil, outputError
 	}
 
 	var resTrActa []models.TransaccionActaRecibido
-
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
 	if err = request.GetJson(urlcrud, &resTrActa); err != nil { // Get informacion acta de api acta_recibido_crud
 		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resTrActa)", err, fmt.Sprint(http.StatusBadGateway))
+		outputError = map[string]interface{}{"funcion": "AnularEntrada - actaRecibido.TransaccionActaRecibido(acta);", "status": "502", "err": err}
+		return nil, outputError
 	}
+
 	transaccionActaRecibido = resTrActa[0]
-	var resEstadoMovimiento []models.EstadoMovimiento
+	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimiento, "Entrada Anulada"); err != nil {
+		return nil, err
+	}
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "estado_movimiento?query=Nombre:Entrada%20Anulada"
-	if err = request.GetJson(urlcrud, &resEstadoMovimiento); err != nil { // Get parametrización estado_movimiento de api movimientos_arka_crud
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resEstadoMovimiento)", err, fmt.Sprint(http.StatusBadGateway))
-	}
-	estadoMovimiento = resEstadoMovimiento[0]
-
-	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre:Entrada%20Anulada"
-	if err = request.GetJson(urlcrud, &resMap); err != nil { // Get parametrización tipo_movimiento de api movimientos_crud
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resMap)", err, fmt.Sprint(http.StatusBadGateway))
-	}
-	var resTipoMovimiento []models.TipoMovimiento
-	if jsonString, err = json.Marshal(resMap["Body"]); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+`json.Marshal(resMap["Body"])`, err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	if err = json.Unmarshal(jsonString, &resTipoMovimiento); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+"json.Unmarshal(jsonString, &resTipoMovimiento)", err, fmt.Sprint(http.StatusInternalServerError))
-	}
 	resMap = make(map[string]interface{})
-	tipoMovimiento = resTipoMovimiento[0]
-
-	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "tipo_movimiento?query=Nombre__iexact:" + strings.ReplaceAll(movimientoArka.FormatoTipoMovimientoId.Nombre, " ", "%20")
-	if err = request.GetJson(urlcrud, &resMap); err != nil { // Get parametrización tipo_movimiento de api movimientos_crud
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resMap)", err, fmt.Sprint(http.StatusBadGateway))
-	}
-	if jsonString, err = json.Marshal(resMap["Body"]); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+`json.Marshal(resMap["Body"])`, err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	if err = json.Unmarshal(jsonString, &resTipoMovimiento); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+"json.Unmarshal(jsonString, &resTipoMovimiento)", err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	resMap = make(map[string]interface{})
-	TipoEntradaKronos = resTipoMovimiento[0]
 	var resEstadoActa []models.EstadoActa
 
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_acta?query=Nombre:Aceptada"
@@ -139,61 +83,19 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resEstadoActa)", err, fmt.Sprint(http.StatusBadGateway))
 	}
 	estadoActa = resEstadoActa[0]
-	movimientoArka.EstadoMovimientoId.Id = estadoMovimiento.Id
-	movimientosKronos.TipoMovimientoId.Id = tipoMovimiento.Id
+	movimientoArka.EstadoMovimientoId.Id = estadoMovimiento
 	transaccionActaRecibido.UltimoEstado.EstadoActaId.Id = estadoActa.Id
 	transaccionActaRecibido.UltimoEstado.Id = 0
 
-	urlcrud = "http://" + beego.AppConfig.String("parametrosService") + "parametro?query=CodigoAbreviacion:MCC"
-	if err = request.GetJson(urlcrud, &resMap); err != nil { // Get parámetro tipo movimiento contable crédito
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resMap)", err, fmt.Sprint(http.StatusBadGateway))
+	if dt, cr, err := parametros.GetParametrosDebitoCredito(); err != nil {
+		return nil, err
+	} else {
+		parametroTipoDebito = dt
+		parametroTipoCredito = cr
 	}
-	if jsonString, err = json.Marshal(resMap["Data"]); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+`json.Marshal(resMap["Data"])`, err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	var parametro []models.Parametro
-	if err = json.Unmarshal(jsonString, &parametro); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+"json.Unmarshal(jsonString, &parametro)", err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	resMap = make(map[string]interface{})
-	parametroTipoDebito = parametro[0]
 
-	urlcrud = "http://" + beego.AppConfig.String("parametrosService") + "parametro?query=CodigoAbreviacion:MCD"
-	if err = request.GetJson(urlcrud, &resMap); err != nil { // Get parámetro tipo movimiento contable débito
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resMap)", err, fmt.Sprint(http.StatusBadGateway))
-	}
-	if jsonString, err = json.Marshal(resMap["Data"]); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+`json.Marshal(resMap["Data"])`, err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	if err = json.Unmarshal(jsonString, &parametro); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+"json.Unmarshal(jsonString, &parametro)", err, fmt.Sprint(http.StatusInternalServerError))
-	}
-	resMap = make(map[string]interface{})
-	parametroTipoCredito = parametro[0]
-
-	urlcrud = "http://" + beego.AppConfig.String("cuentasContablesService") + "tipo_comprobante"
-	if err = request.GetJson(urlcrud, &resMap); err != nil { // Para obtener código del tipo de comprobante
-		logs.Error(err)
-		return nil, e.Error(funcion+"request.GetJson(urlcrud, &resMap)", err, fmt.Sprint(http.StatusBadGateway))
-	}
-	for _, sliceTipoComprobante := range resMap["Body"].([]interface{}) {
-		if sliceTipoComprobante.(map[string]interface{})["TipoDocumento"] == "E" {
-			if jsonString, err = json.Marshal(sliceTipoComprobante); err != nil {
-				logs.Error(err)
-				return nil, e.Error(funcion+"json.Marshal(sliceTipoComprobante)", err, fmt.Sprint(http.StatusInternalServerError))
-			}
-			if err = json.Unmarshal(jsonString, &tipoComprobanteContable); err != nil {
-				logs.Error(err)
-				return nil, e.Error(funcion+"json.Unmarshal(jsonString, &tipoComprobanteContable)", err, fmt.Sprint(http.StatusInternalServerError))
-			}
-			resMap = make(map[string]interface{})
-		}
+	if err := cuentasContables.GetComprobante("E", &tipoComprobante); err != nil {
+		return nil, err
 	}
 
 	year, _, _ := time.Now().Date()
@@ -233,7 +135,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 	}
 
 	etiquetas := make(map[string]interface{})
-	etiquetas["TipoComprobanteId"] = tipoComprobanteContable.Codigo
+	etiquetas["TipoComprobanteId"] = tipoComprobante
 	if jsonString, err = json.Marshal(etiquetas); err != nil {
 		logs.Error(err)
 		return nil, e.Error(funcion+"json.Marshal(etiquetas)", err, fmt.Sprint(http.StatusInternalServerError))
@@ -249,7 +151,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		var movimientoDebito models.MovimientoTransaccion
 		var movimientoCredito models.MovimientoTransaccion
 
-		urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?query=SubgrupoId__Id:" + strconv.Itoa(SubgrupoId) + ",SubtipoMovimientoId:" + strconv.Itoa(TipoEntradaKronos.Id) + ",Activo:true"
+		urlcrud = "http://" + beego.AppConfig.String("catalogoElementosService") + "cuentas_subgrupo?query=SubgrupoId__Id:" + strconv.Itoa(SubgrupoId) + ",SubtipoMovimientoId:" + strconv.Itoa(movimientoArka.EstadoMovimientoId.Id) + ",Activo:true"
 		if err = request.GetJson(urlcrud, &cuentasSubgrupo); err != nil { // Obtiene cuentas que deben ser afectadas
 			logs.Error(err)
 			return nil, e.Error(funcion+"request.GetJson(urlcrud, &cuentasSubgrupo)", err, fmt.Sprint(http.StatusBadGateway))
@@ -271,7 +173,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 
 		movimientoDebito.NombreCuenta = cuentaDebito.Nombre
 		movimientoDebito.CuentaId = cuentaDebito.Codigo
-		movimientoDebito.TipoMovimientoId = parametroTipoCredito.Id
+		movimientoDebito.TipoMovimientoId = parametroTipoCredito
 		movimientoDebito.Valor = valor
 		movimientoDebito.Descripcion = "Movimiento crédito registrado desde sistema arka"
 		movimientoDebito.Activo = true
@@ -293,7 +195,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		}
 		movimientoCredito.NombreCuenta = cuentaCredito.Nombre
 		movimientoCredito.CuentaId = cuentaCredito.Codigo
-		movimientoCredito.TipoMovimientoId = parametroTipoDebito.Id
+		movimientoCredito.TipoMovimientoId = parametroTipoDebito
 		movimientoCredito.Valor = valor
 		movimientoCredito.Descripcion = "Movimiento débito registrado desde sistema arka"
 		movimientoCredito.Activo = true
@@ -301,19 +203,11 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		transaccion.Movimientos = append(transaccion.Movimientos, &movimientoCredito)
 	}
 
-	res["transaccion"] = transaccion
-	var resMovmientoContable interface{}
-
 	urlcrud = "http://" + beego.AppConfig.String("movimientosContablesmidService") + "transaccion_movimientos/transaccion_movimientos"
-	if err = request.SendJson(urlcrud, "POST", &resMovmientoContable, &transaccion); err != nil {
-		logs.Error(err)
-		return nil, e.Error(funcion+`request.SendJson(urlcrud, "POST", &resMovmientoContable, &transaccion)`, err, fmt.Sprint(http.StatusBadGateway))
+	if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
+		return nil, err
 	}
-	if resMovmientoContable.(map[string]interface{})["Status"] != "201" {
-		res["Respuesta movimientos contables Entradas"] = resMovmientoContable.(map[string]interface{})["Data"]
-		return res, e.Error(funcion+`resMovmientoContable.(map[string]interface{})["Status"] != "201"`, err, fmt.Sprint(http.StatusBadGateway))
-	}
-	res["Respuesta movimientos contables Entradas"] = resMovmientoContable
+	res["transaccion"] = transaccion
 
 	// Anulación de salidas asociadas
 	// Si el estado de movimientoArka es Entrada Asociada a una salida, continuar con la anulación de las salidas
@@ -327,24 +221,16 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		return nil, e.Error(funcion+"json.Marshal(detalleMovimiento)", err, fmt.Sprint(http.StatusInternalServerError))
 	}
 	movimientoArka.Detalle = string(jsonString)
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + strconv.Itoa(int(movimientoId))
-	if err = request.SendJson(urlcrud, "PUT", &movimientoArka, &movimientoArka); err != nil { // Put en el api movimientos_arka_crud
-		logs.Error(err)
-		return nil, e.Error(funcion+`request.SendJson(urlcrud, "PUT", &movimientoArka, &movimientoArka)`, err, fmt.Sprint(http.StatusBadGateway))
+	if _, err := movimientosArka.PutMovimiento(&movimientoArka, movimientoArka.Id); err != nil {
+		return nil, err
 	}
 	res["arka"] = movimientoArka.Detalle
-	urlcrud = "http://" + beego.AppConfig.String("movimientosKronosService") + "movimiento_proceso_externo/" + strconv.Itoa(movimientoArka.Id)
-	if err = request.SendJson(urlcrud, "PUT", &movimientosKronos, &movimientosKronos); err != nil { // Put api movimientos_crud
-		logs.Error(err)
-		return nil, e.Error(funcion+`request.SendJson(urlcrud, "PUT", &movimientosKronos, &movimientosKronos)`, err, fmt.Sprint(http.StatusBadGateway))
-	}
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
 	if err = request.SendJson(urlcrud, "PUT", &transaccionActaRecibido, &transaccionActaRecibido); err != nil { // Puesto que se anula la entrada, el acta debe quedar disponible para volver ser asociada a una entrada
 		logs.Error(err)
 		return nil, e.Error(funcion+`request.SendJson(urlcrud, "PUT", &transaccionActaRecibido, &transaccionActaRecibido)`, err, fmt.Sprint(http.StatusBadGateway))
 	}
 	res["movArkaId"] = movimientoArka.EstadoMovimientoId.Id
-	res["movKronosId"] = movimientosKronos.TipoMovimientoId.Id
 	res["EstadoActaId"] = transaccionActaRecibido.UltimoEstado.EstadoActaId.Id
 	return res, nil
 }
