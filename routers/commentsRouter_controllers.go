@@ -207,6 +207,24 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"],
         beego.ControllerComments{
+            Method: "Post",
+            Router: "/solicitud",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"],
+        beego.ControllerComments{
+            Method: "GetAllSolicitud",
+            Router: "/solicitud/",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"],
+        beego.ControllerComments{
             Method: "GetOneSolicitud",
             Router: "/solicitud/:id",
             AllowHTTPMethods: []string{"get"},
@@ -246,15 +264,6 @@ func init() {
             Method: "Put",
             Router: "/:id",
             AllowHTTPMethods: []string{"put"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ElementoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ElementoController"],
-        beego.ControllerComments{
-            Method: "Put",
-            Router: "/",
-            AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})

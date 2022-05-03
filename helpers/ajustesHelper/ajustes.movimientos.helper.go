@@ -2,7 +2,6 @@ package ajustesHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"time"
 
@@ -253,7 +252,7 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 	funcion := "generarMovimientoAjuste"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	var consecutivoId int
+	var consecutivo models.Consecutivo
 	movimiento = new(models.Movimiento)
 	detalle := new(models.FormatoAjusteAutomatico)
 	query := "query=Nombre:" + url.QueryEscape("Ajuste Automático")
@@ -275,31 +274,26 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	if consecutivo, consecutivoId_, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Ajuste automático Arka"); err != nil {
+	if err := consecutivos.Get(ctxConsecutivo, "Ajuste automático Arka", &consecutivo); err != nil {
 		return nil, nil, err
-	} else {
-		consecutivo = consecutivos.Format(getTipoComprobanteAjustes()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		consecutivoId = consecutivoId_
-		detalle.Consecutivo = consecutivo
-		detalle.Elementos = ids
 	}
+
+	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo)
+	detalle.ConsecutivoId = consecutivo.Id
+	detalle.Elementos = ids
 
 	if len(movContables) > 0 {
 		trContable = new(models.TransaccionMovimientos)
 		trContable.Movimientos = movContables
-		trContable.ConsecutivoId = consecutivoId
+		trContable.ConsecutivoId = consecutivo.Id
 		trContable.FechaTransaccion = time.Now()
 		trContable.Activo = true
 		trContable.Etiquetas = ""
 		trContable.Descripcion = "Ajuste contable almacén"
 
-		if tr, err := movimientosContables.PostTrContable(trContable); err != nil {
+		if _, err := movimientosContables.PostTrContable(trContable); err != nil {
 			return nil, nil, err
-		} else {
-			detalle.TrContable = tr.ConsecutivoId
 		}
-	} else {
-		detalle.TrContable = 0
 	}
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
@@ -312,11 +306,11 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 
 	movimiento.Activo = true
 
-	if res, err := movimientosArka.PostMovimiento(movimiento); err != nil {
+	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
 		return nil, nil, err
-	} else {
-		return res, trContable, nil
 	}
+
+	return movimiento, trContable, nil
 
 }
 

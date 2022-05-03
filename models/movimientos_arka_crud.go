@@ -81,6 +81,17 @@ type TransaccionEntrada struct {
 	SoporteMovimientoId     int
 }
 
+type FormatoBaseEntrada struct {
+	ActaRecibidoId   int `json:"acta_recibido_id"`
+	ConsecutivoId    int
+	Consecutivo      string `json:"consecutivo"`
+	Factura          int    `json:"factura"`
+	VigenciaContrato string `json:"vigencia_contrato"`
+	ContratoId       int    `json:"contrato_id"`
+	SupervisorId     int    `json:"supervisor"`
+	OrdenadorGastoId int    `json:"ordenador_gasto_id"`
+}
+
 type TrSoporteMovimiento struct {
 	Movimiento *Movimiento
 	Soporte    *SoporteMovimiento
@@ -249,7 +260,7 @@ type ElementosPorActualizarSalida struct {
 }
 
 type FormatoAjusteAutomatico struct {
-	Consecutivo string
-	Elementos   []int
-	TrContable  int
+	Consecutivo   string
+	ConsecutivoId int
+	Elementos     []int
 }

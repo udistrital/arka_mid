@@ -2,9 +2,7 @@ package entradaHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -28,6 +26,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 		actaRecibido     models.TransaccionActaRecibido
 		tipoMovimiento   int
 		estadoMovimiento int
+		consecutivo      models.Consecutivo
 	)
 
 	resultado := make(map[string]interface{})
@@ -38,14 +37,13 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-	if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Entradas Arka"); err != nil {
-		return nil, outputError
-	} else {
-		consecutivo = consecutivos.Format(getTipoComprobanteEntradas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		detalleJSON["consecutivo"] = consecutivo
-		detalleJSON["ConsecutivoId"] = consecutivoId
-		resultado["Consecutivo"] = detalleJSON["consecutivo"]
+	if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
+		return nil, err
 	}
+
+	detalleJSON["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
+	detalleJSON["ConsecutivoId"] = consecutivo.Id
+	resultado["Consecutivo"] = detalleJSON["consecutivo"]
 
 	if jsonData, err := json.Marshal(detalleJSON); err != nil {
 		logs.Error(err)
@@ -81,10 +79,8 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoMovimiento},
 	}
 
-	if mov, err := movimientosArka.PostMovimiento(&movimiento); err != nil {
+	if err := movimientosArka.PostMovimiento(&movimiento); err != nil {
 		return nil, err
-	} else {
-		movimiento = *mov
 	}
 
 	// Crea registro en table soporte_movimiento si es necesario

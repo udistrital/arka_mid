@@ -2,10 +2,8 @@ package trasladoshelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -159,19 +157,21 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 
 	result = new(models.Movimiento)
 
-	var detalle models.FormatoTraslado
+	var (
+		detalle     models.FormatoTraslado
+		consecutivo models.Consecutivo
+	)
 	if err := json.Unmarshal([]byte(data.Detalle), &detalle); err != nil {
 		panic(err.Error())
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
-	if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Registro Traslado Arka"); err != nil {
+	if err := consecutivos.Get(ctxConsecutivo, "Registro Traslado Arka", &consecutivo); err != nil {
 		return nil, err
-	} else {
-		consecutivo = consecutivos.Format(getTipoComprobanteTraslados()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		detalle.Consecutivo = consecutivo
-		detalle.ConsecutivoId = consecutivoId
 	}
+
+	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo)
+	detalle.ConsecutivoId = consecutivo.Id
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
 		logs.Error(err)
@@ -182,11 +182,12 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if res, err := crudMovimientosArka.PostMovimiento(data); err != nil {
+	if err := crudMovimientosArka.PostMovimiento(data); err != nil {
 		return nil, err
-	} else {
-		return res, nil
 	}
+
+	return data, nil
+
 }
 
 func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {

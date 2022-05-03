@@ -8,6 +8,9 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/bodegaConsumoHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // BodegaConsumoController operations for Bodega-Consumo
@@ -17,10 +20,41 @@ type BodegaConsumoController struct {
 
 // URLMapping ...
 func (c *BodegaConsumoController) URLMapping() {
+	c.Mapping("Post", c.Post)
 	c.Mapping("GetOneSolicitud", c.GetOneSolicitud)
+	c.Mapping("GetAllSolicitud", c.GetAllSolicitud)
 	c.Mapping("GetElementos", c.GetElementos)
 	c.Mapping("GetAperturasKardex", c.GetAperturasKardex)
 	c.Mapping("GetAllExistencias", c.GetAllExistencias)
+}
+
+// Post ...
+// @Title Post
+// @Description Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
+// @Param	body	body	models.FormatoSolicitudBodega	true	"Detalle de la solicitud a la bodega de consumo"
+// @Success 200 {object} models.Movimiento
+// @Failure 404 not found resource
+// @router /solicitud [post]
+func (c *BodegaConsumoController) Post() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+
+	var (
+		v         models.FormatoSolicitudBodega
+		solicitud models.Movimiento
+	)
+
+	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
+		panic(errorctrl.Error("Post - utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v)", err, "400"))
+	}
+
+	if err := bodegaConsumoHelper.PostSolicitud(&v, &solicitud); err != nil {
+		panic(err)
+	}
+
+	c.Data["json"] = solicitud
+	c.ServeJSON()
+
 }
 
 // GetOneSolicitud ...
@@ -70,6 +104,38 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 	} else {
 		panic(err)
 	}
+	c.ServeJSON()
+}
+
+// GetAllSolicitud ...
+// @Title GetAllSolicitud
+// @Description get Lista solicitudes de elementos de la bodega de consumo.
+// @Param	tramite_only		query	bool false	"Retornar solo las solicitudes en estado pendiente"
+// @Success 200 {object} []models.DetalleSolicitudBodega
+// @router /solicitud/ [get]
+func (c *BodegaConsumoController) GetAllSolicitud() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+
+	var (
+		tramiteOnly bool
+		err         error
+	)
+	if tramiteOnly, err = c.GetBool("tramite_only", false); err != nil {
+		panic(err)
+	}
+
+	solicitudes := make([]models.DetalleSolicitudBodega, 0)
+	if err := bodegaConsumoHelper.GetAllSolicitudes(tramiteOnly, &solicitudes); err != nil {
+		panic(err)
+	}
+
+	if solicitudes != nil {
+		c.Data["json"] = solicitudes
+	} else {
+		c.Data["json"] = []interface{}{}
+	}
+
 	c.ServeJSON()
 }
 

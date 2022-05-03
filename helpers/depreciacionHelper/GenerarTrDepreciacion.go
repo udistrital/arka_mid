@@ -2,10 +2,8 @@ package depreciacionHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -134,13 +132,15 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 	}
 
 	if info.Id == 0 {
+		var consecutivo_ models.Consecutivo
 		ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
-		if consecutivo_, consecutivoId_, err := consecutivos.Get("%02.0f", ctxt, "Registro "+info.Tipo+" Arka"); err != nil {
+		if err := consecutivos.Get(ctxt, "Registro "+info.Tipo+" Arka", &consecutivo_); err != nil {
 			return nil, outputError
-		} else {
-			consecutivoId = consecutivoId_
-			consecutivo = consecutivos.Format(getTipoComprobanteCierre()+"-", consecutivo_, fmt.Sprintf("%s%02d", "-", time.Now().Year()))
 		}
+
+		consecutivoId = consecutivo_.Id
+		consecutivo = consecutivos.Format("%02d", getTipoComprobanteCierre(), &consecutivo_)
+
 	} else {
 		var (
 			detalle_    models.FormatoDepreciacion
@@ -191,11 +191,10 @@ func GenerarTrDepreciacion(info *models.InfoDepreciacion) (detalleD map[string]i
 		}
 	} else {
 		// Crea el registro del movimiento correspondiente a la solicitud
-		if movimiento_, err := crudMovimientosArka.PostMovimiento(movimiento); err != nil {
+		if err := crudMovimientosArka.PostMovimiento(movimiento); err != nil {
 			return nil, err
-		} else {
-			detalleD["Movimiento"] = movimiento_
 		}
+		detalleD["Movimiento"] = movimiento
 	}
 
 	return detalleD, nil

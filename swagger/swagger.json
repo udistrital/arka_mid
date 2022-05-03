@@ -701,6 +701,65 @@
                 }
             }
         },
+        "/bodega_consumo/solicitud": {
+            "post": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.",
+                "operationId": "BodegaConsumoController.Post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Detalle de la solicitud a la bodega de consumo",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.FormatoSolicitudBodega"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Movimiento"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/bodega_consumo/solicitud/": {
+            "get": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "get Lista solicitudes de elementos de la bodega de consumo.",
+                "operationId": "BodegaConsumoController.GetAllSolicitud",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "tramite_only",
+                        "description": "Retornar solo las solicitudes en estado pendiente",
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DetalleSolicitudBodega"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/bodega_consumo/solicitud/{id}": {
             "get": {
                 "tags": [
@@ -857,40 +916,6 @@
                     },
                     "400": {
                         "description": "the request contains incorrect syntax"
-                    }
-                }
-            }
-        },
-        "/elemento/": {
-            "post": {
-                "tags": [
-                    "elemento"
-                ],
-                "description": "create Salida",
-                "operationId": "ElementoController.Create",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for Salida content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.SalidaGeneral"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.TrSalida2"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "body is empty"
                     }
                 }
             }
@@ -2261,6 +2286,45 @@
                 }
             }
         },
+        "models.DetalleSolicitudBodega": {
+            "title": "DetalleSolicitudBodega",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Detalle": {
+                    "type": "string"
+                },
+                "EstadoMovimientoId": {
+                    "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FormatoTipoMovimientoId": {
+                    "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoPadreId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "Solicitante": {
+                    "$ref": "#/definitions/models.IdentificacionTercero"
+                }
+            }
+        },
         "models.DetalleSubgrupo": {
             "title": "DetalleSubgrupo",
             "type": "object",
@@ -2491,6 +2555,28 @@
                 }
             }
         },
+        "models.ElementoSolicitud_": {
+            "title": "ElementoSolicitud_",
+            "type": "object",
+            "properties": {
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "CantidadAprobada": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ElementoCatalogoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Ubicacion": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
         "models.ElementosMovimiento": {
             "title": "ElementosMovimiento",
             "type": "object",
@@ -2641,6 +2727,29 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.FormatoSolicitudBodega": {
+            "title": "FormatoSolicitudBodega",
+            "type": "object",
+            "properties": {
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementoSolicitud_"
+                    }
+                },
+                "Funcionario": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
@@ -3478,10 +3587,6 @@
                 }
             }
         },
-        "models.TrSalida2": {
-            "title": "TrSalida2",
-            "type": "object"
-        },
         "models.TrSoporteMovimiento": {
             "title": "TrSoporteMovimiento",
             "type": "object",
@@ -3560,10 +3665,6 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
-        },
-        {
-            "name": "elemento",
-            "description": "SalidaController operations for Salida\n"
         },
         {
             "name": "parametros_soporte",

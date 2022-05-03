@@ -2,7 +2,6 @@ package ajustesHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"time"
 
@@ -25,18 +24,21 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 	funcion := "PostAjuste"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	var query string
+	var (
+		query       string
+		consecutivo models.Consecutivo
+	)
 	movimiento = new(models.Movimiento)
 	detalle := new(models.FormatoAjuste)
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	if consecutivo, _, err := consecutivos.Get("%05.0f", ctxConsecutivo, "Ajuste Contable Arka"); err != nil {
+	if err := consecutivos.Get(ctxConsecutivo, "Ajuste Contable Arka", &consecutivo); err != nil {
 		return nil, err
-	} else {
-		consecutivo = consecutivos.Format(getTipoComprobanteAjustes()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-		detalle.Consecutivo = consecutivo
-		detalle.PreTrAjuste = trContable
 	}
+
+	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo)
+	detalle.ConsecutivoId = consecutivo.Id
+	detalle.PreTrAjuste = trContable
 
 	if jsonData, err := json.Marshal(detalle); err != nil {
 		logs.Error(err)
@@ -61,11 +63,11 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 
 	movimiento.Activo = true
 
-	if res, err := movimientosArka.PostMovimiento(movimiento); err != nil {
+	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
 		return nil, err
-	} else {
-		return res, nil
 	}
+
+	return movimiento, nil
 
 }
 
@@ -231,12 +233,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 
 	transaccion := new(models.TransaccionMovimientos)
 
-	if _, consecutivoId_, err := consecutivos.Get("%05.0f", 1, "CNTB"); err != nil {
-		return nil, outputError
-	} else {
-		transaccion.ConsecutivoId = consecutivoId_
-	}
-
+	transaccion.ConsecutivoId = detalle.ConsecutivoId
 	transaccion.Movimientos = movs
 	transaccion.FechaTransaccion = time.Now()
 	transaccion.Activo = true

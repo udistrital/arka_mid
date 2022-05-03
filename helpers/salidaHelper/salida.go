@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -23,80 +22,11 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-type Consecutivo struct {
-	Id          int
-	ContextoId  int
-	Year        int
-	Consecutivo int
-	Descripcion string
-	Activo      bool
-}
-
-// AsignarPlaca Transacción para asignar las placas
-func AsignarPlaca(m *models.Elemento) (resultado map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "AsignarPlaca - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	year, month, day := time.Now().Date()
-
-	consec := Consecutivo{0, 0, year, 0, "Placas", true}
-	var (
-		res map[string]interface{} // models.SalidaGeneral
-	)
-
-	apiCons := "http://" + beego.AppConfig.String("consecutivosService") + "consecutivo"
-	putElemento := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento/" + fmt.Sprintf("%d", m.Id)
-
-	// Inserta salida en Movimientos ARKA
-	// AsignarPlaca Transacción para asignar las placas
-	if err := request.SendJson(apiCons, "POST", &res, &consec); err == nil {
-		resultado, _ := res["Data"].(map[string]interface{})
-		fecstring := fmt.Sprintf("%4d", year) + fmt.Sprintf("%02d", int(month)) + fmt.Sprintf("%02d", day) + fmt.Sprintf("%05.0f", resultado["Consecutivo"])
-		m.Placa = fecstring
-		if err := request.SendJson(putElemento, "PUT", &resultado, &m); err == nil {
-			return resultado, nil
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "AsignarPlaca - request.SendJson(putElemento, \"PUT\", &resultado, &m)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "AsignarPlaca - request.SendJson(apiCons, \"POST\", &res, &consec)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-}
-
 // PostTrSalidas Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
 func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "PostTrSalidas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "PostTrSalidas"
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		res                 map[string][](map[string]interface{})
@@ -135,29 +65,20 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 			return nil, outputError
 		}
 
-		if consecutivo, consecutivoId, err := consecutivos.Get("%05.0f", ctxSalida, "Registro Salida Arka"); err != nil {
+		var consecutivo models.Consecutivo
+		if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
+			return nil, err
+		}
+
+		detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
+		detalle["ConsecutivoId"] = consecutivo.Id
+
+		if detalleJSON, err := json.Marshal(detalle); err != nil {
 			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "PostTrSalidas - utilsHelper.GetConsecutivo(\"%05.0f\", ctxSalida, \"Registro Salida Arka\")",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
+			eval := " - json.Marshal(detalle)"
+			return nil, errorctrl.Error(funcion+eval, err, "500")
 		} else {
-			consecutivo = consecutivos.Format(getTipoComprobanteSalidas()+"-", consecutivo, fmt.Sprintf("%s%04d", "-", time.Now().Year()))
-			detalle["consecutivo"] = consecutivo
-			detalle["ConsecutivoId"] = consecutivoId
-			if detalleJSON, err := json.Marshal(detalle); err != nil {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "PostTrSalidas - json.Marshal(detalle)",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
-			} else {
-				salida.Salida.Detalle = string(detalleJSON)
-			}
+			salida.Salida.Detalle = string(detalleJSON)
 		}
 
 		salida.Salida.EstadoMovimientoId.Id = resEstadoMovimiento[0].Id
@@ -362,7 +283,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 		if val, ok := detalle["ConsecutivoId"]; ok && val != nil {
 			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
 				return nil, err
-			} else {
+			} else if len(tr.Movimientos) > 0 {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
 					return nil, err
 				} else {
