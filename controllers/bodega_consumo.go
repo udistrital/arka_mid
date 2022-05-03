@@ -46,16 +46,15 @@ func (c *BodegaConsumoController) Post() {
 
 	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
 		panic(errorctrl.Error("Post - utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v)", err, "400"))
-	} else {
-		if err := bodegaConsumoHelper.PostSolicitud(&v, &solicitud); err != nil {
-			logs.Error(err)
-			c.Data["system"] = err
-			c.Abort("404")
-		} else {
-			c.Data["json"] = solicitud
-		}
 	}
+
+	if err := bodegaConsumoHelper.PostSolicitud(&v, &solicitud); err != nil {
+		panic(err)
+	}
+
+	c.Data["json"] = solicitud
 	c.ServeJSON()
+
 }
 
 // GetOneSolicitud ...
