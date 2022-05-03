@@ -2,7 +2,7 @@ package configuracion
 
 const (
 	NombreParametroRoles              = "RolesRegistrados"
-	NombreParametroTiposDeComprobante = "TiposDeComprobante"
+	NombreParametroTiposDeComprobante = "ComprobantesKronos"
 )
 
 var (
@@ -12,4 +12,5 @@ var (
 
 func init() {
 	ActualizaRolesArka()
+	ActualizaTiposDeComprobante()
 }

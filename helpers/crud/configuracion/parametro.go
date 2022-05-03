@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	// "github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	modelsConfiguracion "github.com/udistrital/configuracion_api/models"
@@ -20,7 +20,7 @@ func GetParametros(query utilsHelper.Query, parametros *[]modelsConfiguracion.Pa
 
 	qString := query.Encode()
 	urlParametros := "http://" + beego.AppConfig.String("configuracionCrud") + "parametro?" + qString
-	logs.Debug(urlParametros)
+	// logs.Debug(urlParametros)
 	var respuestaApi interface{}
 	if resp, err := request.GetJsonTest(urlParametros, &respuestaApi); err != nil || resp.StatusCode != http.StatusOK {
 		const contexto = "request.GetJsonTest(urlParametros, &respuestaApi)"
@@ -30,6 +30,7 @@ func GetParametros(query utilsHelper.Query, parametros *[]modelsConfiguracion.Pa
 		outputError = e.Error(funcion+contexto, err, fmt.Sprint(http.StatusBadGateway))
 		return
 	}
+	// formatdata.JsonPrint(respuestaApi)
 	if err := formatdata.FillStruct(respuestaApi, &parametros); err != nil {
 		const contexto = "formatdata.FillStruct(respuestaApi, &parametros)"
 		outputError = e.Error(funcion+contexto, err, fmt.Sprint(http.StatusInternalServerError))

@@ -1,6 +1,7 @@
 package configuracion
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	modelsConfiguracion "github.com/udistrital/configuracion_api/models"
 	e "github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/formatdata"
 )
 
 // ActualizaRolesArka se puede llamar periodicamente. Un candidato podría ser
@@ -21,7 +21,7 @@ func ActualizaRolesArka() {
 	defer e.ErrorControlFunction(funcion+"unhandled error", fmt.Sprint(http.StatusInternalServerError))
 
 	// parametro de roles registrados
-	getParametrosArka("RolesRegistrados", 1, &roles)
+	getParametroArka(NombreParametroRoles, &roles)
 }
 
 // ActualizaTiposDeComprobante carga los tipos de comprobante
@@ -29,10 +29,10 @@ func ActualizaTiposDeComprobante() {
 	const funcion = "ActualizaTiposDeComprobante - "
 	defer e.ErrorControlFunction(funcion+"unhandled error!", fmt.Sprint(http.StatusInternalServerError))
 
-	getParametrosArka("TiposDeComprobante", 1, &comprobantes)
+	getParametroArka(NombreParametroTiposDeComprobante, &comprobantes)
 }
 
-func getParametrosArka(parametro string, resultadosEsperados uint, out interface{}) {
+func getParametroArka(parametro string, out interface{}) {
 	const funcion = "parametroArka - "
 	defer e.ErrorControlFunction(funcion+"unhandled error!", fmt.Sprint(http.StatusInternalServerError))
 
@@ -42,7 +42,8 @@ func getParametrosArka(parametro string, resultadosEsperados uint, out interface
 			"Aplicacion__Nombre": beego.AppConfig.String("nombreAplicacion"),
 			"Nombre":             parametro,
 		},
-		Limit: -1,
+		Fields: []string{"Nombre", "Valor"},
+		Limit:  -1,
 	}
 	if err := configuracion.GetParametros(query, &parametros); err != nil {
 		logs.Critical(err)
@@ -53,12 +54,12 @@ func getParametrosArka(parametro string, resultadosEsperados uint, out interface
 		if len(parametros) >= 10 {
 			cond = " (o más)"
 		}
-		err := fmt.Errorf("se esperaba encontrar %d registro(s) con Nombre:%s en configuracion_crud/parametros, hay: %d%s",
-			resultadosEsperados, parametro, len(parametros), cond)
+		err := fmt.Errorf("se esperaba encontrar un solo registro con Nombre:%s en configuracion_crud/parametros, hay: %d%s",
+			parametro, len(parametros), cond)
 		logs.Critical(err)
 		panic(err)
 	}
-	if err := formatdata.FillStruct(parametros[0].Valor, &out); err != nil {
+	if err := json.Unmarshal([]byte(parametros[0].Valor), &out); err != nil {
 		logs.Critical(err)
 		panic(err)
 	}
