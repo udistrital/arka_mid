@@ -1,17 +1,15 @@
 package trasladoshelper
 
 import (
-	"encoding/json"
 	"net/url"
 	"strconv"
 
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
-	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
@@ -35,7 +33,7 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 
 	// Se consulta el movimiento
 	query := "query=Id:" + strconv.Itoa(id)
-	if movimientoA, err := crudMovimientosArka.GetAllMovimiento(query); err != nil {
+	if movimientoA, err := movimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
 	} else if len(movimientoA) == 1 {
 		movimiento = movimientoA[0]
@@ -43,10 +41,8 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 		return nil, nil
 	}
 
-	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-		logs.Error(err)
-		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
+		return nil, err
 	}
 
 	// Se consulta el detalle del funcionario origen
@@ -115,7 +111,7 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 
 	query = "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
+	if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return nil, err
 	} else {
 		elementos = elementos_
@@ -161,11 +157,12 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 		detalle     models.FormatoTraslado
 		consecutivo models.Consecutivo
 	)
-	if err := json.Unmarshal([]byte(data.Detalle), &detalle); err != nil {
-		panic(err.Error())
+
+	if err := utilsHelper.Unmarshal(data.Detalle, &detalle); err != nil {
+		return nil, err
 	}
 
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtTrasladoCons")
+	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
 	if err := consecutivos.Get(ctxConsecutivo, "Registro Traslado Arka", &consecutivo); err != nil {
 		return nil, err
 	}
@@ -173,16 +170,12 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo)
 	detalle.ConsecutivoId = consecutivo.Id
 
-	if jsonData, err := json.Marshal(detalle); err != nil {
-		logs.Error(err)
-		eval := " - json.Marshal(detalleJSON)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		data.Detalle = string(jsonData[:])
+	if err := utilsHelper.Marshal(detalle, &data.Detalle); err != nil {
+		return nil, err
 	}
 
 	// Crea registro en api movimientos_arka_crud
-	if err := crudMovimientosArka.PostMovimiento(data); err != nil {
+	if err := movimientosArka.PostMovimiento(data); err != nil {
 		return nil, err
 	}
 
@@ -204,7 +197,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	Elementos = make([]*models.DetalleElementoPlaca, 0)
 
 	// Consulta lista de elementos asignados al funcionario
-	if elemento_, err := crudMovimientosArka.GetElementosFuncionario(id); err != nil {
+	if elemento_, err := movimientosArka.GetElementosFuncionario(id); err != nil {
 		return nil, err
 	} else {
 		elementosF = elemento_
@@ -214,7 +207,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	if len(elementosF) > 0 {
 		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
 		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
-		if elementoMovimiento_, err := crudMovimientosArka.GetAllElementosMovimiento(query); err != nil {
+		if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
 			return nil, err
 		} else {
 			elementosM = elementoMovimiento_
@@ -260,7 +253,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 // GetAllTraslados Consulta información general de todos los traslados filtrando por las que están pendientes por revisar
 func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista, outputError map[string]interface{}) {
 
-	funcion := "GetAllSolicitudes"
+	funcion := "GetAllTraslados"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre"
@@ -271,7 +264,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 		urlcrud += "__startswith:Traslado"
 	}
 
-	if Solicitudes, err := crudMovimientosArka.GetAllMovimiento(urlcrud); err != nil {
+	if Solicitudes, err := movimientosArka.GetAllMovimiento(urlcrud); err != nil {
 		return nil, err
 	} else {
 		if len(Solicitudes) == 0 {
@@ -289,9 +282,8 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 				Ubicacion_ string
 			)
 
-			if err := json.Unmarshal([]byte(solicitud.Detalle), &detalle); err != nil {
-				eval := " - json.Unmarshal([]byte(solicitud.Detalle), &detalle)"
-				return nil, errorctrl.Error(funcion+eval, err, "500")
+			if err := utilsHelper.Unmarshal(solicitud.Detalle, &detalle); err != nil {
+				return nil, err
 			}
 
 			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
@@ -347,7 +339,7 @@ func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista
 }
 
 func getTipoComprobanteTraslados() string {
-	return "T"
+	return "N39"
 }
 
 func removeDuplicateInt(intSlice []*models.ElementosMovimiento) []*models.ElementosMovimiento {
