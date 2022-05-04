@@ -132,6 +132,10 @@ func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuent
 		}
 	}
 
+	if len(subgrupos_) == 0 {
+		return
+	}
+
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=Activo:true,SubtipoMovimientoId:" + strconv.Itoa(movimientoId)
 	query += ",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos_, "|"))

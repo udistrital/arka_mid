@@ -28,24 +28,23 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		bajas                             map[int]models.Movimiento
-		elementosMovimiento               map[int]models.ElementosMovimiento
-		novedades                         map[int]models.NovedadElemento
-		elementosActa                     map[int]models.Elemento
-		cuentasBaja                       map[int]models.CuentaSubgrupo
-		cuentasDp                         map[int]models.CuentaSubgrupo
-		cuentasAm                         map[int]models.CuentaSubgrupo
-		detalleCuentas                    map[string]models.CuentaContable
-		detalleSubgrupos                  map[int]models.DetalleSubgrupo
-		detalleMediciones                 map[int]models.FormatoDepreciacion
-		detalleBajas                      map[int]models.FormatoBaja
-		movBj, movDp, movAm               int
-		parDebito                         int
-		parCredito                        int
-		totalesDp, totalesAm, totalesBaja map[int]float64
-		comprobanteID                     string
-		query                             string
-		terceroUD                         int
+		bajas               map[int]models.Movimiento
+		elementosMovimiento map[int]models.ElementosMovimiento
+		novedades           map[int]models.NovedadElemento
+		elementosActa       map[int]models.Elemento
+		cuentasBaja         map[int]models.CuentaSubgrupo
+		cuentasDp           map[int]models.CuentaSubgrupo
+		cuentasAm           map[int]models.CuentaSubgrupo
+		detalleCuentas      map[string]models.CuentaContable
+		detalleSubgrupos    map[int]models.DetalleSubgrupo
+		detalleMediciones   map[int]models.FormatoDepreciacion
+		detalleBajas        map[int]models.FormatoBaja
+		movBj, movDp, movAm int
+		parDebito           int
+		parCredito          int
+		comprobanteID       string
+		query               string
+		terceroUD           int
 	)
 
 	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
@@ -160,13 +159,20 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 	// Paso 5: Calcula el valor de la transaccion contable para cada baja (si aplica)
 	detalleMediciones = make(map[int]models.FormatoDepreciacion)
 	for _, baja := range bajas {
-		totalesBaja, totalesAm, totalesDp = make(map[int]float64), make(map[int]float64), make(map[int]float64)
+
 		movimientos := make([]*models.MovimientoTransaccion, 0)
 		for _, el := range detalleBajas[baja.Id].Elementos {
-			var sg int
-			var ref time.Time
-			var valorPresente, valorResidual, vidaUtil float64
-			var detalleSg models.DetalleSubgrupo
+			var (
+				sg            int
+				detalleSg     models.DetalleSubgrupo
+				ref           time.Time
+				valorPresente float64
+				valorResidual float64
+				vidaUtil      float64
+				depreciacion  float64
+				amortizacion  float64
+				gasto         float64
+			)
 
 			if val, ok := elementosActa[elementosMovimiento[el].ElementoActaId]; ok {
 				sg = val.SubgrupoCatalogoId
@@ -212,56 +218,26 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 
 				if valorMedicion > 0 {
 					if detalleSg.Depreciacion {
-						utilsHelper.FillMapTotales(totalesDp, sg, valorMedicion)
+						depreciacion = valorMedicion
+						asientoContable.GetInfoContableSubgrupos(movDp, []int{sg}, cuentasDp, detalleCuentas)
 					} else if detalleSg.Amortizacion {
-						utilsHelper.FillMapTotales(totalesAm, sg, valorMedicion)
+						amortizacion = valorMedicion
+						asientoContable.GetInfoContableSubgrupos(movAm, []int{sg}, cuentasAm, detalleCuentas)
 					}
 				}
 
 				if valorPresente-valorMedicion > 0 {
-					var tercero int
-					totalesBaja = make(map[int]float64)
-					if err := GetTerceroIdEncargado(el, &tercero); err != nil {
-						return nil, err
-					}
-
-					utilsHelper.FillMapTotales(totalesBaja, sg, valorPresente-valorMedicion)
+					gasto = valorPresente - valorMedicion
 					asientoContable.GetInfoContableSubgrupos(movBj, []int{sg}, cuentasBaja, detalleCuentas)
-					asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, tercero, descMovBaja(), false, &movimientos)
 				}
 
 			} else {
-				var tercero int
-				totalesBaja = make(map[int]float64)
-				if err := GetTerceroIdEncargado(el, &tercero); err != nil {
-					return nil, err
-				}
-
-				utilsHelper.FillMapTotales(totalesBaja, sg, valorPresente)
+				gasto = valorPresente
 				asientoContable.GetInfoContableSubgrupos(movBj, []int{sg}, cuentasBaja, detalleCuentas)
-				asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, tercero, descMovBaja(), false, &movimientos)
 			}
 
-		}
+			movimientosContablesBaja(cuentasBaja, cuentasDp, cuentasAm, gasto, depreciacion, amortizacion, sg, parCredito, parDebito, terceroUD, detalleCuentas, &movimientos)
 
-		if len(totalesDp) > 0 {
-			ids = []int{}
-			for sg := range totalesDp {
-				ids = append(ids, sg)
-			}
-
-			asientoContable.GetInfoContableSubgrupos(movDp, ids, cuentasDp, detalleCuentas)
-			asientoContable.GenerarMovimientosContables(totalesDp, detalleCuentas, cuentasDp, parDebito, parCredito, terceroUD, terceroUD, descMovDp(), false, &movimientos)
-		}
-
-		if len(totalesAm) > 0 {
-			ids = []int{}
-			for sg := range totalesAm {
-				ids = append(ids, sg)
-			}
-
-			asientoContable.GetInfoContableSubgrupos(movAm, ids, cuentasAm, detalleCuentas)
-			asientoContable.GenerarMovimientosContables(totalesAm, detalleCuentas, cuentasAm, parDebito, parCredito, terceroUD, terceroUD, descMovAm(), false, &movimientos)
 		}
 
 		if len(movimientos) > 0 {
@@ -322,8 +298,47 @@ func GetTerceroIdEncargado(elementoId int, terceroId *int) (outputError map[stri
 	return
 }
 
-func descMovBaja() string {
-	return "Baja de elementos"
+// movimientosContablesBaja Genera los tres movimientos contables para un elemenento dado de baja.
+func movimientosContablesBaja(cuentasBj, cuentasDp, cuentasAm map[int]models.CuentaSubgrupo,
+	gasto, depreciacion, amortizacion float64, subgrupo, credito, debito, terceroUD int,
+	detalleCuentas map[string]models.CuentaContable, movimientos *[]*models.MovimientoTransaccion) {
+
+	var medicion float64
+
+	if depreciacion > 0 {
+		medicion = depreciacion
+		ctaDp := detalleCuentas[cuentasDp[subgrupo].CuentaDebitoId]
+		movDp := asientoContable.CreaMovimiento(depreciacion, descMovDp(), terceroUD, &ctaDp, debito)
+		*movimientos = append(*movimientos, movDp)
+	} else if amortizacion > 0 {
+		medicion = amortizacion
+		ctaAm := detalleCuentas[cuentasAm[subgrupo].CuentaDebitoId]
+		movAm := asientoContable.CreaMovimiento(amortizacion, descMovAm(), terceroUD, &ctaAm, debito)
+		*movimientos = append(*movimientos, movAm)
+	}
+
+	if gasto > 0 {
+		ctaGasto := detalleCuentas[cuentasBj[subgrupo].CuentaDebitoId]
+		movGasto := asientoContable.CreaMovimiento(gasto, descMovGasto(), terceroUD, &ctaGasto, debito)
+		*movimientos = append(*movimientos, movGasto)
+	}
+
+	if gasto+medicion > 0 {
+		ctaInventario := detalleCuentas[cuentasBj[subgrupo].CuentaCreditoId]
+		movInventario := asientoContable.CreaMovimiento(gasto+medicion, descMovInventario(), terceroUD, &ctaInventario, credito)
+		*movimientos = append(*movimientos, movInventario)
+	}
+
+	return
+
+}
+
+func descMovInventario() string {
+	return "Movimiento a cuenta de inventario"
+}
+
+func descMovGasto() string {
+	return "Movimiento a cuenta de gasto"
 }
 
 func descMovDp() string {
