@@ -251,7 +251,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 				return nil, err
 			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
 					return nil, err
 				} else {
 					trContable := models.InfoTransaccionContable{

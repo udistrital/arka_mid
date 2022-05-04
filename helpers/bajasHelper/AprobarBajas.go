@@ -227,7 +227,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 
 					utilsHelper.FillMapTotales(totalesBaja, sg, valorPresente-valorMedicion)
 					asientoContable.GetInfoContableSubgrupos(movBj, []int{sg}, cuentasBaja, detalleCuentas)
-					asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, descMovBaja(), false, &movimientos)
+					asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, tercero, descMovBaja(), false, &movimientos)
 				}
 
 			} else {
@@ -239,7 +239,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 
 				utilsHelper.FillMapTotales(totalesBaja, sg, valorPresente)
 				asientoContable.GetInfoContableSubgrupos(movBj, []int{sg}, cuentasBaja, detalleCuentas)
-				asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, descMovBaja(), false, &movimientos)
+				asientoContable.GenerarMovimientosContables(totalesBaja, detalleCuentas, cuentasBaja, parDebito, parCredito, tercero, tercero, descMovBaja(), false, &movimientos)
 			}
 
 		}
@@ -251,7 +251,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			}
 
 			asientoContable.GetInfoContableSubgrupos(movDp, ids, cuentasDp, detalleCuentas)
-			asientoContable.GenerarMovimientosContables(totalesDp, detalleCuentas, cuentasDp, parDebito, parCredito, terceroUD, descMovDp(), false, &movimientos)
+			asientoContable.GenerarMovimientosContables(totalesDp, detalleCuentas, cuentasDp, parDebito, parCredito, terceroUD, terceroUD, descMovDp(), false, &movimientos)
 		}
 
 		if len(totalesAm) > 0 {
@@ -261,7 +261,7 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			}
 
 			asientoContable.GetInfoContableSubgrupos(movAm, ids, cuentasAm, detalleCuentas)
-			asientoContable.GenerarMovimientosContables(totalesAm, detalleCuentas, cuentasAm, parDebito, parCredito, terceroUD, descMovAm(), false, &movimientos)
+			asientoContable.GenerarMovimientosContables(totalesAm, detalleCuentas, cuentasAm, parDebito, parCredito, terceroUD, terceroUD, descMovAm(), false, &movimientos)
 		}
 
 		if len(movimientos) > 0 {
@@ -270,12 +270,8 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 			if comprobanteID != "" {
 				etiquetas := *new(models.Etiquetas)
 				etiquetas.ComprobanteId = comprobanteID
-				if jsonData, err := json.Marshal(etiquetas); err != nil {
-					logs.Error(err)
-					eval := " - json.Marshal(etiquetas)"
-					return nil, errorctrl.Error(funcion+eval, err, "500")
-				} else {
-					transaccion.Etiquetas = string(jsonData[:])
+				if err := utilsHelper.Marshal(etiquetas, &transaccion.Etiquetas); err != nil {
+					return nil, err
 				}
 			} else {
 				transaccion.Etiquetas = ""

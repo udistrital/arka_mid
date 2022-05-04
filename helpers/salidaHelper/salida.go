@@ -284,7 +284,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
 				return nil, err
 			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
 					return nil, err
 				} else {
 					trContable := map[string]interface{}{
