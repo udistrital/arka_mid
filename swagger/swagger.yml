@@ -62,13 +62,11 @@ paths:
       parameters:
       - in: query
         name: states
-        description: If specified, returns only acts with the specified state(s) from
-          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        description: If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
         type: string
       - in: query
         name: u
-        description: WSO2 User. When specified, acts will be filtered upon the available
-          roles for the specified user
+        description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
         type: string
       responses:
         "200":
@@ -136,8 +134,7 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -236,8 +233,7 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un ajuste y su transaccion
-        contable
+      description: Retorna la lista de elementos asociados a un ajuste y su transaccion contable
       operationId: AjusteController.GetOneAuto
       parameters:
       - in: path
@@ -256,8 +252,7 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un acta con su respectiva
-        vida útil y valor residual iniciales
+      description: Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
       operationId: AjusteController.GetElementos
       parameters:
       - in: path
@@ -377,21 +372,19 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Salida'
+            $ref: '#/definitions/models.ElementoBajaDetalle'
         "404":
           description: not found resource
   /bajas_elementos/solicitud/:
     get:
       tags:
       - bajas_elementos
-      description: Consulta todas las bajas y permite filtrar por las que estan para
-        revision de almacen o comite
+      description: Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite
       operationId: BajaController.Get All
       parameters:
       - in: query
         name: revComite
-        description: Indica si se traen las bajas en espera de comite. Tiene prioridad
-          sobre la revision de almacen
+        description: Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen
         type: boolean
       - in: query
         name: revAlmacen
@@ -472,8 +465,7 @@ paths:
     post:
       tags:
       - bodega_consumo
-      description: Genera el movimiento correspondiente a una solicitud de bodega
-        de consumo. Asigna el consecutivo correspondiente.
+      description: Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
       operationId: BodegaConsumoController.Post
       parameters:
       - in: body
@@ -537,8 +529,7 @@ paths:
     get:
       tags:
       - catalogo_elementos
-      description: Devuelve el detalle de la última cuenta de cada movimiento requerido
-        y subgrupo determinado
+      description: Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado
       operationId: CatalogoElementosController.GetCuentasSubgrupoById
       parameters:
       - in: path
@@ -558,8 +549,7 @@ paths:
     post:
       tags:
       - depreciacion
-      description: Actualiza el estado de las solicitudes una vez se registra la revision
-        del comite de almacen
+      description: Actualiza el estado de las solicitudes una vez se registra la revision del comite de almacen
       operationId: DepreciacionController.GetCorte
       parameters:
       - in: body
@@ -644,8 +634,7 @@ paths:
     get:
       tags:
       - entrada
-      description: get Detalle de entrada por Id. Retorna la transaccion contable
-        si la entrada ya  fue aprobada
+      description: get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada
       operationId: EntradaController.GetOne
       parameters:
       - in: path
@@ -771,8 +760,7 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -816,9 +804,7 @@ paths:
     post:
       tags:
       - salida
-      description: Realiza la aprobacion de una salida en caso de especificarse un
-        Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo
-        registro en api movimientos_arka_crud
+      description: Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
       operationId: SalidaController.Post transaccion salidas asociadas a una entrada
       parameters:
       - in: query
@@ -827,8 +813,7 @@ paths:
         type: string
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
@@ -862,10 +847,8 @@ paths:
     put:
       tags:
       - salida
-      description: genera los consecutivos de las nuevas salidas generadas y hace
-        el put en el api movimientos_arka_crud
-      operationId: SalidaController.Put transaccion salidas generadas a partir de
-        otra
+      description: genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
+      operationId: SalidaController.Put transaccion salidas generadas a partir de otra
       parameters:
       - in: path
         name: id
@@ -875,8 +858,7 @@ paths:
         format: int64
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
@@ -910,8 +892,7 @@ paths:
     get:
       tags:
       - traslados
-      description: Consulta todos los traslados, permitiendo filtrar por las que estan
-        pendientes de ser revisados
+      description: Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
       operationId: TrasladosController.Get All
       parameters:
       - in: query
@@ -935,8 +916,7 @@ paths:
       parameters:
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.Movimiento'
@@ -970,8 +950,7 @@ paths:
     put:
       tags:
       - traslados
-      description: Actualiza el estado del traslado y genera la transacción contable
-        correspondiente.
+      description: Actualiza el estado del traslado y genera la transacción contable correspondiente.
       operationId: TrasladosController.Put Aprobar traslado
       parameters:
       - in: path
@@ -1010,6 +989,45 @@ paths:
 definitions:
   '{}':
     title: '{}'
+    type: object
+  2117.0xc000a8b890.false:
+    title: "false"
+    type: object
+  2149.0xc000a8b8c0.false:
+    title: "false"
+    type: object
+  2181.0xc000a8b8f0.false:
+    title: "false"
+    type: object
+  2213.0xc000a8b920.false:
+    title: "false"
+    type: object
+  2245.0xc000a8b950.false:
+    title: "false"
+    type: object
+  2277.0xc000a8b980.false:
+    title: "false"
+    type: object
+  2309.0xc000a8b9b0.false:
+    title: "false"
+    type: object
+  2341.0xc000a8b9e0.false:
+    title: "false"
+    type: object
+  2373.0xc000a8ba10.false:
+    title: "false"
+    type: object
+  2405.0xc000a8ba40.false:
+    title: "false"
+    type: object
+  2437.0xc000a8ba70.false:
+    title: "false"
+    type: object
+  2469.0xc000a8baa0.false:
+    title: "false"
+    type: object
+  2501.0xc000a8bad0.false:
+    title: "false"
     type: object
   map[string]interface{}:
     title: map[string]interface{}
@@ -1706,6 +1724,36 @@ definitions:
       ValorUnitario:
         type: number
         format: double
+  models.ElementoBajaDetalle:
+    title: ElementoBajaDetalle
+    type: object
+    properties:
+      Dependencia:
+        $ref: '#/definitions/2469.0xc000a8baa0.false'
+      Entrada:
+        $ref: '#/definitions/2245.0xc000a8b950.false'
+      Funcionario:
+        $ref: '#/definitions/2405.0xc000a8ba40.false'
+      Id:
+        $ref: '#/definitions/2117.0xc000a8b890.false'
+      Marca:
+        $ref: '#/definitions/2341.0xc000a8b9e0.false'
+      Nombre:
+        $ref: '#/definitions/2181.0xc000a8b8f0.false'
+      Placa:
+        $ref: '#/definitions/2149.0xc000a8b8c0.false'
+      Salida:
+        $ref: '#/definitions/2277.0xc000a8b980.false'
+      Sede:
+        $ref: '#/definitions/2437.0xc000a8ba70.false'
+      Serie:
+        $ref: '#/definitions/2373.0xc000a8ba10.false'
+      SubgrupoCatalogoId:
+        $ref: '#/definitions/2309.0xc000a8b9b0.false'
+      TipoBienId:
+        $ref: '#/definitions/2213.0xc000a8b920.false'
+      Ubicacion:
+        $ref: '#/definitions/2501.0xc000a8bad0.false'
   models.ElementoCatalogo:
     title: ElementoCatalogo
     type: object
@@ -2117,9 +2165,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.PreMovAjuste'
-  models.Salida:
-    title: Salida
-    type: object
   models.SalidaGeneral:
     title: SalidaGeneral
     type: object

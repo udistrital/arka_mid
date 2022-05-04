@@ -8,10 +8,11 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
-func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError map[string]interface{}) {
+func TraerDatosElemento(id int) (Elemento models.ElementoBajaDetalle, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -47,27 +48,21 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 				var subgrupo_ map[string]interface{}
 				urlcrud_2 := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + fmt.Sprintf("%v", elemento_[0]["SubgrupoCatalogoId"])
 				if _, err := request.GetJsonTest(urlcrud_2, &subgrupo_); err == nil {
-					Elemento := map[string]interface{}{
-						"Id":                 elemento_[0]["Id"],
-						"Placa":              elemento_[0]["Placa"],
-						"Nombre":             elemento_[0]["Nombre"],
-						"TipoBienId":         elemento_[0]["TipoBienId"],
-						"Entrada":            v["MovimientoPadreId"],
-						"Salida":             movimiento_,
-						"SubgrupoCatalogoId": subgrupo_,
-						"Marca":              elemento_[0]["Marca"],
-						"Serie":              elemento_[0]["Serie"],
-						"Funcionario":        v["Funcionario"],
-						"Sede":               v["Sede"],
-						"Dependencia":        v["Dependencia"],
-						"Ubicacion":          v["Ubicacion"],
+					Elemento = models.ElementoBajaDetalle{
+						Id:                 elemento_[0]["Id"],
+						Placa:              elemento_[0]["Placa"],
+						Nombre:             elemento_[0]["Nombre"],
+						TipoBienId:         elemento_[0]["TipoBienId"],
+						Entrada:            v["MovimientoPadreId"],
+						Salida:             movimiento_,
+						SubgrupoCatalogoId: subgrupo_,
+						Marca:              elemento_[0]["Marca"],
+						Serie:              elemento_[0]["Serie"],
+						Funcionario:        v["Funcionario"],
+						Sede:               v["Sede"],
+						Dependencia:        v["Dependencia"],
+						Ubicacion:          v["Ubicacion"],
 					}
-
-					// elemento_[0]["SubgrupoCatalogoId"] = subgrupo_
-					// elemento_movimiento_[0]["ElementoActaId"] = elemento_[0]
-					// Elemento = elemento_movimiento_[0]
-					return Elemento, nil
-
 				} else {
 					logs.Error(err)
 					outputError = map[string]interface{}{
@@ -75,7 +70,6 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 						"err":     err,
 						"status":  "502",
 					}
-					return nil, outputError
 				}
 			} else {
 				logs.Error(err)
@@ -84,7 +78,6 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 					"err":     err,
 					"status":  "502",
 				}
-				return nil, outputError
 			}
 		} else {
 			logs.Error(err)
@@ -93,7 +86,6 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 				"err":     err,
 				"status":  "502",
 			}
-			return nil, outputError
 		}
 	} else {
 		logs.Error(err)
@@ -102,6 +94,6 @@ func TraerDatosElemento(id int) (Elemento map[string]interface{}, outputError ma
 			"err":     err,
 			"status":  "502",
 		}
-		return nil, outputError
 	}
+	return
 }

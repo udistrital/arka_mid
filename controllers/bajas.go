@@ -107,7 +107,7 @@ func (c *BajaController) Put() {
 // @Title Get User
 // @Description get Salida by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Salida
+// @Success 200 {object} models.ElementoBajaDetalle
 // @Failure 404 not found resource
 // @router /elemento_arka/:id [get]
 func (c *BajaController) GetElemento() {
