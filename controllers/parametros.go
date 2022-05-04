@@ -79,7 +79,7 @@ func (c *ParametrosController) PostAsignacionEspacioDependencia() {
 		if res, err := actaRecibido.GetAsignacionSedeDependencia(v); err == nil {
 			c.Ctx.Output.SetStatus(201)
 			if res == nil {
-				res = append(res, map[string]interface{}{})
+				res = []map[string]interface{}{}
 			}
 			c.Data["json"] = res
 		} else {
