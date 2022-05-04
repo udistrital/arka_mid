@@ -53,7 +53,7 @@ func (c *DepreciacionController) Post() {
 // @Title Get Info Depreciacion
 // @Description get Depreciacion by id
 // @Param	id	path	int	true	"movimientoId de la depreciacion en el api movimientos_arka_crud"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.MvtoArkaMasTransaccion
 // @Failure 404 not found resource
 // @router /:id [get]
 func (c *DepreciacionController) GetOne() {

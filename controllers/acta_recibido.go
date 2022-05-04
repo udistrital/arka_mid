@@ -31,7 +31,7 @@ func (c *ActaRecibidoController) URLMapping() {
 // @Title Create
 // @Description create Acta_recibido
 // @Param	archivo	formData  file	true	"body for Acta_recibido content"
-// @Success 201 {}
+// @Success 201 {object} models.CargaMasivaElementosActa
 // @Failure 403 body is empty
 // @router / [post]
 func (c *ActaRecibidoController) Post() {

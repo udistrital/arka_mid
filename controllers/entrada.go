@@ -107,7 +107,7 @@ func (c *EntradaController) Post() {
 // @Title GetOne
 // @Description get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.DetalleEntrada
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *EntradaController) GetOne() {

@@ -51,7 +51,10 @@
                 ],
                 "responses": {
                     "201": {
-                        "description": "{}"
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.CargaMasivaElementosActa"
+                        }
                     },
                     "403": {
                         "description": "body is empty"
@@ -219,7 +222,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Ajuste"
+                            "$ref": "#/definitions/models.PorDefinir"
                         }
                     },
                     "403": {
@@ -623,7 +626,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Bodega-Consumo"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ElementoAperturaKardex"
+                            }
                         }
                     },
                     "403": {
@@ -643,7 +649,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Bodega-Consumo"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ElementoSinAsignar"
+                            }
                         }
                     },
                     "403": {
@@ -663,7 +672,10 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Bodega-Consumo"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ExistenciasKardex"
+                            }
                         }
                     },
                     "403": {
@@ -855,7 +867,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/map[string]interface{}"
+                            "$ref": "#/definitions/models.MvtoArkaMasTransaccion"
                         }
                     },
                     "404": {
@@ -1031,7 +1043,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/map[string]interface{}"
+                            "$ref": "#/definitions/models.DetalleEntrada"
                         }
                     },
                     "403": {
@@ -1074,7 +1086,7 @@
                         "description": "body for content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/{}"
+                            "$ref": "#/definitions/models.GetSedeDependencia"
                         }
                     }
                 ],
@@ -1313,7 +1325,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Terceros"
+                            "$ref": "#/definitions/models.IdentificacionTercero"
                         }
                     },
                     "403": {
@@ -1461,7 +1473,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/map[string]interface{}"
+                            "$ref": "#/definitions/models.MvtoArkaMasTransaccion"
                         }
                     },
                     "403": {
@@ -1472,10 +1484,6 @@
         }
     },
     "definitions": {
-        "map[string]interface{}": {
-            "title": "map[string]interface{}",
-            "type": "object"
-        },
         "models.ActaRecibido": {
             "title": "ActaRecibido",
             "type": "object",
@@ -1499,10 +1507,6 @@
                     "$ref": "#/definitions/models.TipoActa"
                 }
             }
-        },
-        "models.Ajuste": {
-            "title": "Ajuste",
-            "type": "object"
         },
         "models.AreaTipo": {
             "title": "AreaTipo",
@@ -1561,10 +1565,6 @@
                 }
             }
         },
-        "models.Bodega-Consumo": {
-            "title": "Bodega-Consumo",
-            "type": "object"
-        },
         "models.BodegaConsumoSolicitud": {
             "title": "BodegaConsumoSolicitud",
             "type": "object",
@@ -1574,6 +1574,43 @@
                 },
                 "Solicitud": {
                     "$ref": "#/definitions/models.Movimiento"
+                }
+            }
+        },
+        "models.CargaMasivaElementosActa": {
+            "title": "CargaMasivaElementosActa",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ElementoActaCargado"
+                    }
+                }
+            }
+        },
+        "models.Catalogo": {
+            "title": "Catalogo",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaFin": {
+                    "type": "string"
+                },
+                "FechaInicio": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
                 }
             }
         },
@@ -2195,6 +2232,21 @@
                 }
             }
         },
+        "models.DetalleEntrada": {
+            "title": "DetalleEntrada",
+            "type": "object",
+            "properties": {
+                "contrato": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "movimiento": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "proveedor": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                }
+            }
+        },
         "models.DetalleFuncionario": {
             "title": "DetalleFuncionario",
             "type": "object",
@@ -2460,6 +2512,95 @@
                 }
             }
         },
+        "models.ElementoActaCargado": {
+            "title": "ElementoActaCargado",
+            "type": "object",
+            "properties": {
+                "Cantidad": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Descuento": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "PorcentajeIvaId": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SubgrupoCatalogoId": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "Subtotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "UnidadMedida": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorIva": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.ElementoAperturaKardex": {
+            "title": "ElementoAperturaKardex",
+            "type": "object",
+            "properties": {
+                "CantidadMaxima": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "CantidadMinima": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ElementoCatalogoId": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MetodoValoracion": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MovimientoPadreId": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "Observaciones": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ElementoCatalogo": {
             "title": "ElementoCatalogo",
             "type": "object",
@@ -2482,6 +2623,78 @@
                 },
                 "SubgrupoId": {
                     "$ref": "#/definitions/models.Subgrupo"
+                }
+            }
+        },
+        "models.ElementoSinAsignar": {
+            "title": "ElementoSinAsignar",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "ElementoActaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ElementoCatalogoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "SaldoCantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "SaldoValor": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SubgrupoCatalogoId": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "Unidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
                 }
             }
         },
@@ -2701,6 +2914,30 @@
                 }
             }
         },
+        "models.ExistenciasKardex": {
+            "title": "ExistenciasKardex",
+            "type": "object",
+            "properties": {
+                "ElementoCatalogoId": {
+                    "$ref": "#/definitions/models.ElementoCatalogo"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "SaldoCantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "SaldoValor": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "SubgrupoCatalogo": {
+                    "$ref": "#/definitions/models.SubgrupoCatalogo"
+                }
+            }
+        },
         "models.FormatoSolicitudBodega": {
             "title": "FormatoSolicitudBodega",
             "type": "object",
@@ -2758,6 +2995,18 @@
                 "NumeroOrden": {
                     "type": "number",
                     "format": "double"
+                }
+            }
+        },
+        "models.GetSedeDependencia": {
+            "title": "GetSedeDependencia",
+            "type": "object",
+            "properties": {
+                "Dependencia": {
+                    "$ref": "#/definitions/models.Dependencia"
+                },
+                "Sede": {
+                    "$ref": "#/definitions/models.EspacioFisico"
                 }
             }
         },
@@ -2960,6 +3209,18 @@
                 }
             }
         },
+        "models.MvtoArkaMasTransaccion": {
+            "title": "MvtoArkaMasTransaccion",
+            "type": "object",
+            "properties": {
+                "Movimiento": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                },
+                "TrContable": {
+                    "$ref": "#/definitions/models.PorDefinir"
+                }
+            }
+        },
         "models.OrdenadorGasto": {
             "title": "OrdenadorGasto",
             "type": "object",
@@ -3010,6 +3271,10 @@
                     "$ref": "#/definitions/models.TipoParametro"
                 }
             }
+        },
+        "models.PorDefinir": {
+            "title": "PorDefinir",
+            "type": "object"
         },
         "models.PreMovAjuste": {
             "title": "PreMovAjuste",
@@ -3115,6 +3380,25 @@
                 }
             }
         },
+        "models.SubgrupoCatalogo": {
+            "title": "SubgrupoCatalogo",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CatalogoId": {
+                    "$ref": "#/definitions/models.Catalogo"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "SubgrupoId": {
+                    "$ref": "#/definitions/models.Subgrupo"
+                }
+            }
+        },
         "models.Supervisor": {
             "title": "Supervisor",
             "type": "object",
@@ -3187,10 +3471,6 @@
                     "type": "string"
                 }
             }
-        },
-        "models.Terceros": {
-            "title": "Terceros",
-            "type": "object"
         },
         "models.TipoActa": {
             "title": "TipoActa",
@@ -3618,10 +3898,6 @@
                     "format": "int64"
                 }
             }
-        },
-        "{}": {
-            "title": "{}",
-            "type": "object"
         }
     },
     "tags": [

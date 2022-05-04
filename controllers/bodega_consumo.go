@@ -142,7 +142,7 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 // GetAll ...
 // @Title GetAll
 // @Description get Bodega-Consumo
-// @Success 200 {object} models.Bodega-Consumo
+// @Success 200 {object} []models.ElementoSinAsignar
 // @Failure 403
 // @router /elementos_sin_asignar/ [get]
 func (c *BodegaConsumoController) GetElementos() {
@@ -172,7 +172,7 @@ func (c *BodegaConsumoController) GetElementos() {
 // GetAperturasKardex ...
 // @Title GetAll
 // @Description get Bodega-Consumo
-// @Success 200 {object} models.Bodega-Consumo
+// @Success 200 {object} []models.ElementoAperturaKardex
 // @Failure 403
 // @router /aperturas_kardex/ [get]
 func (c *BodegaConsumoController) GetAperturasKardex() {
@@ -203,7 +203,7 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 // GetAll ...
 // @Title GetAll
 // @Description get Bodega-Consumo
-// @Success 200 {object} models.Bodega-Consumo
+// @Success 200 {object} []models.ExistenciasKardex
 // @Failure 403
 // @router /existencias_kardex/ [get]
 func (c *BodegaConsumoController) GetAllExistencias() {

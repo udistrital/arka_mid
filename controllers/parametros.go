@@ -53,7 +53,7 @@ func (c *ParametrosController) GetAll() {
 // PostAsignacionEspacioFisicoDependencia ...
 // @Title Post Soportes
 // @Description get Soportes by id
-// @Param	body		body 	{}	true		"body for content"
+// @Param	body		body 	models.GetSedeDependencia	true		"body for content"
 // @Success 201 {object} []models.AsignacionEspacioFisicoDependencia
 // @Failure 404 not found resource
 // @Failure 400 the request contains incorrect syntax
