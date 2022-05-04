@@ -507,35 +507,6 @@
                 }
             }
         },
-        "/bajas_elementos/elemento_arka/{id}": {
-            "get": {
-                "tags": [
-                    "bajas_elementos"
-                ],
-                "description": "get Salida by id",
-                "operationId": "BajaController.Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ElementoBajaDetalle"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/bajas_elementos/solicitud/": {
             "get": {
                 "tags": [
@@ -1501,58 +1472,6 @@
         }
     },
     "definitions": {
-        "2117.0xc000a8b890.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2149.0xc000a8b8c0.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2181.0xc000a8b8f0.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2213.0xc000a8b920.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2245.0xc000a8b950.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2277.0xc000a8b980.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2309.0xc000a8b9b0.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2341.0xc000a8b9e0.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2373.0xc000a8ba10.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2405.0xc000a8ba40.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2437.0xc000a8ba70.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2469.0xc000a8baa0.false": {
-            "title": "false",
-            "type": "object"
-        },
-        "2501.0xc000a8bad0.false": {
-            "title": "false",
-            "type": "object"
-        },
         "map[string]interface{}": {
             "title": "map[string]interface{}",
             "type": "object"
@@ -2538,51 +2457,6 @@
                 "ValorUnitario": {
                     "type": "number",
                     "format": "double"
-                }
-            }
-        },
-        "models.ElementoBajaDetalle": {
-            "title": "ElementoBajaDetalle",
-            "type": "object",
-            "properties": {
-                "Dependencia": {
-                    "$ref": "#/definitions/2469.0xc000a8baa0.false"
-                },
-                "Entrada": {
-                    "$ref": "#/definitions/2245.0xc000a8b950.false"
-                },
-                "Funcionario": {
-                    "$ref": "#/definitions/2405.0xc000a8ba40.false"
-                },
-                "Id": {
-                    "$ref": "#/definitions/2117.0xc000a8b890.false"
-                },
-                "Marca": {
-                    "$ref": "#/definitions/2341.0xc000a8b9e0.false"
-                },
-                "Nombre": {
-                    "$ref": "#/definitions/2181.0xc000a8b8f0.false"
-                },
-                "Placa": {
-                    "$ref": "#/definitions/2149.0xc000a8b8c0.false"
-                },
-                "Salida": {
-                    "$ref": "#/definitions/2277.0xc000a8b980.false"
-                },
-                "Sede": {
-                    "$ref": "#/definitions/2437.0xc000a8ba70.false"
-                },
-                "Serie": {
-                    "$ref": "#/definitions/2373.0xc000a8ba10.false"
-                },
-                "SubgrupoCatalogoId": {
-                    "$ref": "#/definitions/2309.0xc000a8b9b0.false"
-                },
-                "TipoBienId": {
-                    "$ref": "#/definitions/2213.0xc000a8b920.false"
-                },
-                "Ubicacion": {
-                    "$ref": "#/definitions/2501.0xc000a8bad0.false"
                 }
             }
         },
