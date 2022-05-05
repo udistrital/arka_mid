@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -130,13 +131,13 @@ func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]inte
 // PostMovimiento post controlador movimiento del api movimientos_arka_crud
 func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
-	funcion := "PostMovimiento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
+	funcion := "PostMovimiento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	// Crea registro en api movimientos_arka_crud
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
 	if err := request.SendJson(urlcrud, "POST", &movimiento, &movimiento); err != nil {
-		eval := ` - request.SendJson(urlcrud, "POST", &movimiento, &movimiento)`
+		logs.Error(err)
+		eval := `request.SendJson(urlcrud, "POST", &movimiento, &movimiento)`
 		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
@@ -144,18 +145,19 @@ func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]inter
 }
 
 // PostSoporteMovimiento post controlador soporte_movimiento del api movimientos_arka_crud
-func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (soporteR *models.SoporteMovimiento, outputError map[string]interface{}) {
+func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (outputError map[string]interface{}) {
 
-	funcion := "PostSoporteMovimiento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "PostSoporteMovimiento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento"
-	if err := request.SendJson(urlcrud, "POST", &soporteR, &soporte); err != nil {
-		eval := " - request.SendJson(urlcrud, \"POST\", &soporteR, &soporte)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+	if err := request.SendJson(urlcrud, "POST", &soporte, &soporte); err != nil {
+		logs.Error(err)
+		eval := `request.SendJson(urlcrud, "POST", &soporte, &soporte)`
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return soporteR, nil
+	return
 }
 
 // PutTrSalida put controlador tr_salida del api movimientos_arka_crud

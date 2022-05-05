@@ -1,14 +1,15 @@
 package entradaHelper
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
@@ -23,7 +24,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 	var (
 		urlcrud          string
 		res              map[string]interface{}
-		actaRecibido     models.TransaccionActaRecibido
+		acta             models.TransaccionActaRecibido
 		tipoMovimiento   int
 		estadoMovimiento int
 		consecutivo      models.Consecutivo
@@ -32,8 +33,8 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 	resultado := make(map[string]interface{})
 
 	detalleJSON := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
-		panic(err.Error())
+	if err := utilsHelper.Unmarshal(data.Detalle, &detalleJSON); err != nil {
+		return nil, err
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
@@ -45,21 +46,14 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 	detalleJSON["ConsecutivoId"] = consecutivo.Id
 	resultado["Consecutivo"] = detalleJSON["consecutivo"]
 
-	if jsonData, err := json.Marshal(detalleJSON); err != nil {
-		logs.Error(err)
-		eval := " - json.Marshal(detalleJSON)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		data.Detalle = string(jsonData[:])
+	if err := utilsHelper.Marshal(detalleJSON, &data.Detalle); err != nil {
+		return nil, err
 	}
 
 	// Consulta el acta
 	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
-	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId)) + "?elementos=false"
-	if err := request.GetJson(urlcrud, &actaRecibido); err != nil {
-		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &actaRecibido)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+	if err := actaRecibido.GetTransaccionActaRecibidoById(actaRecibidoId, &acta); err != nil {
+		return nil, err
 	}
 
 	// Crea registro en api movimientos_arka_crud
@@ -91,7 +85,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 			MovimientoId: &models.Movimiento{Id: movimiento.Id},
 		}
 
-		if _, err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {
+		if err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {
 			return nil, err
 		}
 
@@ -100,15 +94,15 @@ func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interf
 	if elementos, err := asignarPlacaActa(actaRecibidoId); err != nil {
 		return nil, outputError
 	} else {
-		actaRecibido.Elementos = elementos
+		acta.Elementos = elementos
 	}
 
 	// Actualiza el estado del acta
 	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
-	actaRecibido.UltimoEstado.EstadoActaId.Id = 6
-	actaRecibido.UltimoEstado.Id = 0
+	acta.UltimoEstado.EstadoActaId.Id = 6
+	acta.UltimoEstado.Id = 0
 
-	if err := request.SendJson(urlcrud, "PUT", &res, &actaRecibido); err != nil {
+	if err := request.SendJson(urlcrud, "PUT", &res, &acta); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "RegistrarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &actaRecibido)",

@@ -59,7 +59,7 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 
 	// Crea registro en table soporte_movimiento si es necesario
 	baja.Soporte.MovimientoId = baja.Movimiento
-	if _, err := movimientosArka.PostSoporteMovimiento(baja.Soporte); err != nil {
+	if err := movimientosArka.PostSoporteMovimiento(baja.Soporte); err != nil {
 		return nil, err
 	}
 

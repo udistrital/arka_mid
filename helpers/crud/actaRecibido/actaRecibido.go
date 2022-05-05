@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -80,6 +81,22 @@ func GetSoporteById(id int, soporte *models.SoporteActa) (outputError map[string
 	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "soporte_acta/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &soporte); err != nil {
 		eval := " - request.GetJson(urlcrud, &soporte)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
+// GetTransaccionActaRecibidoById consulta controlador transaccion_acta_recibido/{id} del api acta_recibido_crud
+func GetTransaccionActaRecibidoById(id int, transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
+
+	funcion := "GetTransaccionActaRecibidoById - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &transaccion); err != nil {
+		logs.Error(err)
+		eval := `request.GetJson(urlcrud, &transaccion)`
 		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
