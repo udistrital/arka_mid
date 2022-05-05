@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,6 +8,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -38,66 +38,43 @@ func (c *EntradaController) URLMapping() {
 // @router / [post]
 func (c *EntradaController) Post() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
 
-	var entradaId int = 0
+	var entradaId int
 
 	if v, err := c.GetInt("entradaId"); err == nil {
 		entradaId = v
 	}
+
 	if entradaId > 0 {
-		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err == nil && respuesta != nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = respuesta
-		} else {
+		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err != nil || respuesta == nil {
 			if err == nil {
 				panic(map[string]interface{}{
 					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId)",
-					"err":     err,
+					"err":     errors.New("no se obtuvo respuesta al aprobar la entrada."),
 					"status":  "400",
 				})
 			}
 			panic(err)
+		} else {
+			c.Data["json"] = respuesta
 		}
 	} else {
-		var v models.TransaccionEntrada
-		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := entradaHelper.RegistrarEntrada(&v); err == nil && respuesta != nil {
-				c.Ctx.Output.SetStatus(201)
-				c.Data["json"] = respuesta
-			} else if err != nil {
-				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
-					"err":     err,
-					"status":  "400",
-				})
-			} else {
-				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
-					"err":     errors.New("no se obtuvo respuesta al registrar la entrada"),
-					"status":  "404",
-				})
-			}
-		} else {
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-				"err":     err,
-				"status":  "400",
-			})
+
+		var (
+			v       models.TransaccionEntrada
+			entrada models.Movimiento
+		)
+
+		if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
+			panic(err)
 		}
+
+		if err := entradaHelper.RegistrarEntrada(&v, &entrada); err != nil {
+			panic(err)
+		}
+
+		c.Data["json"] = entrada
 	}
 
 	c.ServeJSON()

@@ -102,3 +102,19 @@ func GetTransaccionActaRecibidoById(id int, transaccion *models.TransaccionActaR
 
 	return
 }
+
+// PutTransaccionActaRecibido put controlador transaccion_acta_recibido/{id} del api acta_recibido_crud
+func PutTransaccionActaRecibido(id int, transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
+
+	funcion := "PutTransaccionActaRecibido - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(id)
+	if err := request.SendJson(urlcrud, "PUT", &transaccion, &transaccion); err != nil {
+		logs.Error(err)
+		eval := `request.SendJson(urlcrud, "PUT", &transaccion, &transaccion)`
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}

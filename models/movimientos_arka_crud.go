@@ -76,20 +76,29 @@ type NovedadElemento struct {
 type TransaccionEntrada struct {
 	Id                      int
 	Observacion             string
-	Detalle                 string
+	Detalle                 FormatoBaseEntrada
 	FormatoTipoMovimientoId string
 	SoporteMovimientoId     int
 }
 
 type FormatoBaseEntrada struct {
-	ActaRecibidoId   int `json:"acta_recibido_id"`
-	ConsecutivoId    int
-	Consecutivo      string `json:"consecutivo"`
-	Factura          int    `json:"factura"`
-	VigenciaContrato string `json:"vigencia_contrato"`
-	ContratoId       int    `json:"contrato_id"`
-	SupervisorId     int    `json:"supervisor"`
-	OrdenadorGastoId int    `json:"ordenador_gasto_id"`
+	ActaRecibidoId      int    `json:"acta_recibido_id"`
+	Consecutivo         string `json:"consecutivo"`
+	ConsecutivoId       int
+	ContratoId          int     `json:"contrato_id"`
+	Divisa              string  `json:"divisa"`
+	EncargadoId         int     `json:"encargado_id"`
+	Factura             int     `json:"factura"`
+	OrdenadorGastoId    int     `json:"ordenador_gasto_id"`
+	Placa               string  `json:"placa_id"`
+	RegistroImportacion string  `json:"num_reg_importacion"`
+	SupervisorId        int     `json:"supervisor"`
+	TipoContrato        string  `json:"tipo_contrato"`
+	TRM                 float64 `json:"TRM"`
+	Vigencia            string  `json:"vigencia"`
+	VigenciaContrato    string  `json:"vigencia_contrato"`
+	VigenciaOrdenador   string  `json:"vigencia_ordenador"`
+	VigenciaSolicitante string  `json:"vigencia_solicitante"`
 }
 
 type TrSoporteMovimiento struct {
