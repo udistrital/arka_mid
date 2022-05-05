@@ -198,7 +198,7 @@ func (c *TrasladosController) GetAll() {
 // @Title Put Aprobar traslado
 // @Description Actualiza el estado del traslado y genera la transacción contable correspondiente.
 // @Param	id		path 	int						true	"Id del traslado"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.MvtoArkaMasTransaccion
 // @Failure 403 body is empty
 // @router /:id [put]
 func (c *TrasladosController) Put() {

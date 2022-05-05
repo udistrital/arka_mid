@@ -37,7 +37,9 @@ paths:
         type: file
       responses:
         "201":
-          description: '{}'
+          description: ""
+          schema:
+            $ref: '#/definitions/models.CargaMasivaElementosActa'
         "403":
           description: body is empty
   /acta_recibido/elementosconsumo/:
@@ -62,13 +64,11 @@ paths:
       parameters:
       - in: query
         name: states
-        description: If specified, returns only acts with the specified state(s) from
-          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        description: If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
         type: string
       - in: query
         name: u
-        description: WSO2 User. When specified, acts will be filtered upon the available
-          roles for the specified user
+        description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
         type: string
       responses:
         "200":
@@ -116,44 +116,6 @@ paths:
         "502":
           description: Error with external API
   /ajustes/:
-    get:
-      tags:
-      - ajustes
-      description: get Ajuste
-      operationId: AjusteController.GetAll
-      parameters:
-      - in: query
-        name: query
-        description: Filter. e.g. col1:v1,col2:v2 ...
-        type: string
-      - in: query
-        name: fields
-        description: Fields returned. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: sortby
-        description: Sorted-by fields. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
-        type: string
-      - in: query
-        name: limit
-        description: Limit the size of result set. Must be an integer
-        type: string
-      - in: query
-        name: offset
-        description: Start position of result set. Must be an integer
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Ajuste'
-        "403":
-          description: ""
     post:
       tags:
       - ajustes
@@ -236,8 +198,7 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un ajuste y su transaccion
-        contable
+      description: Retorna la lista de elementos asociados a un ajuste y su transaccion contable
       operationId: AjusteController.GetOneAuto
       parameters:
       - in: path
@@ -256,8 +217,7 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un acta con su respectiva
-        vida útil y valor residual iniciales
+      description: Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
       operationId: AjusteController.GetElementos
       parameters:
       - in: path
@@ -361,37 +321,16 @@ paths:
             $ref: '#/definitions/models.DetalleElementoBaja'
         "404":
           description: not found resource
-  /bajas_elementos/elemento_arka/{id}:
-    get:
-      tags:
-      - bajas_elementos
-      description: get Salida by id
-      operationId: BajaController.Get User
-      parameters:
-      - in: path
-        name: id
-        description: The key for staticblock
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Salida'
-        "404":
-          description: not found resource
   /bajas_elementos/solicitud/:
     get:
       tags:
       - bajas_elementos
-      description: Consulta todas las bajas y permite filtrar por las que estan para
-        revision de almacen o comite
+      description: Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite
       operationId: BajaController.Get All
       parameters:
       - in: query
         name: revComite
-        description: Indica si se traen las bajas en espera de comite. Tiene prioridad
-          sobre la revision de almacen
+        description: Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen
         type: boolean
       - in: query
         name: revAlmacen
@@ -439,7 +378,9 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
+            type: array
+            items:
+              $ref: '#/definitions/models.ElementoAperturaKardex'
         "403":
           description: ""
   /bodega_consumo/elementos_sin_asignar/:
@@ -452,7 +393,9 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
+            type: array
+            items:
+              $ref: '#/definitions/models.ElementoSinAsignar'
         "403":
           description: ""
   /bodega_consumo/existencias_kardex/:
@@ -465,15 +408,16 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
+            type: array
+            items:
+              $ref: '#/definitions/models.ExistenciasKardex'
         "403":
           description: ""
   /bodega_consumo/solicitud:
     post:
       tags:
       - bodega_consumo
-      description: Genera el movimiento correspondiente a una solicitud de bodega
-        de consumo. Asigna el consecutivo correspondiente.
+      description: Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
       operationId: BodegaConsumoController.Post
       parameters:
       - in: body
@@ -537,8 +481,7 @@ paths:
     get:
       tags:
       - catalogo_elementos
-      description: Devuelve el detalle de la última cuenta de cada movimiento requerido
-        y subgrupo determinado
+      description: Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado
       operationId: CatalogoElementosController.GetCuentasSubgrupoById
       parameters:
       - in: path
@@ -558,8 +501,7 @@ paths:
     post:
       tags:
       - depreciacion
-      description: Actualiza el estado de las solicitudes una vez se registra la revision
-        del comite de almacen
+      description: Actualiza el estado de las solicitudes una vez se registra la revision del comite de almacen
       operationId: DepreciacionController.GetCorte
       parameters:
       - in: body
@@ -594,7 +536,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/map[string]interface{}'
+            $ref: '#/definitions/models.MvtoArkaMasTransaccion'
         "404":
           description: not found resource
     put:
@@ -644,8 +586,7 @@ paths:
     get:
       tags:
       - entrada
-      description: get Detalle de entrada por Id. Retorna la transaccion contable
-        si la entrada ya  fue aprobada
+      description: get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada
       operationId: EntradaController.GetOne
       parameters:
       - in: path
@@ -657,7 +598,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/map[string]interface{}'
+            $ref: '#/definitions/models.DetalleEntrada'
         "403":
           description: :id is empty
   /entrada/anular/{id}:
@@ -738,7 +679,7 @@ paths:
         description: body for content
         required: true
         schema:
-          $ref: '#/definitions/{}'
+          $ref: '#/definitions/models.GetSedeDependencia'
       responses:
         "201":
           description: ""
@@ -771,8 +712,7 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -816,9 +756,7 @@ paths:
     post:
       tags:
       - salida
-      description: Realiza la aprobacion de una salida en caso de especificarse un
-        Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo
-        registro en api movimientos_arka_crud
+      description: Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
       operationId: SalidaController.Post transaccion salidas asociadas a una entrada
       parameters:
       - in: query
@@ -827,8 +765,7 @@ paths:
         type: string
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
@@ -862,10 +799,8 @@ paths:
     put:
       tags:
       - salida
-      description: genera los consecutivos de las nuevas salidas generadas y hace
-        el put en el api movimientos_arka_crud
-      operationId: SalidaController.Put transaccion salidas generadas a partir de
-        otra
+      description: genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
+      operationId: SalidaController.Put transaccion salidas generadas a partir de otra
       parameters:
       - in: path
         name: id
@@ -875,8 +810,7 @@ paths:
         format: int64
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
@@ -903,15 +837,14 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Terceros'
+            $ref: '#/definitions/models.IdentificacionTercero'
         "403":
           description: :id is empty
   /traslados/:
     get:
       tags:
       - traslados
-      description: Consulta todos los traslados, permitiendo filtrar por las que estan
-        pendientes de ser revisados
+      description: Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
       operationId: TrasladosController.Get All
       parameters:
       - in: query
@@ -935,8 +868,7 @@ paths:
       parameters:
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.Movimiento'
@@ -970,8 +902,7 @@ paths:
     put:
       tags:
       - traslados
-      description: Actualiza el estado del traslado y genera la transacción contable
-        correspondiente.
+      description: Actualiza el estado del traslado y genera la transacción contable correspondiente.
       operationId: TrasladosController.Put Aprobar traslado
       parameters:
       - in: path
@@ -984,7 +915,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/map[string]interface{}'
+            $ref: '#/definitions/models.MvtoArkaMasTransaccion'
         "403":
           description: body is empty
   /traslados/funcionario/{funcionarioId}:
@@ -1008,12 +939,6 @@ paths:
         "404":
           description: not found resource
 definitions:
-  '{}':
-    title: '{}'
-    type: object
-  map[string]interface{}:
-    title: map[string]interface{}
-    type: object
   models.ActaRecibido:
     title: ActaRecibido
     type: object
@@ -1031,9 +956,6 @@ definitions:
         format: int64
       TipoActaId:
         $ref: '#/definitions/models.TipoActa'
-  models.Ajuste:
-    title: Ajuste
-    type: object
   models.AreaTipo:
     title: AreaTipo
     type: object
@@ -1074,9 +996,6 @@ definitions:
       Id:
         type: integer
         format: int64
-  models.Bodega-Consumo:
-    title: Bodega-Consumo
-    type: object
   models.BodegaConsumoSolicitud:
     title: BodegaConsumoSolicitud
     type: object
@@ -1085,6 +1004,31 @@ definitions:
         $ref: '#/definitions/models.ElementoSolicitud'
       Solicitud:
         $ref: '#/definitions/models.Movimiento'
+  models.CargaMasivaElementosActa:
+    title: CargaMasivaElementosActa
+    type: object
+    properties:
+      Elementos:
+        type: array
+        items:
+          $ref: '#/definitions/models.ElementoActaCargado'
+  models.Catalogo:
+    title: Catalogo
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      Descripcion:
+        type: string
+      FechaFin:
+        type: string
+      FechaInicio:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
   models.ConsultaEntrada:
     title: ConsultaEntrada
     type: object
@@ -1521,6 +1465,16 @@ definitions:
       Valor:
         type: number
         format: double
+  models.DetalleEntrada:
+    title: DetalleEntrada
+    type: object
+    properties:
+      contrato:
+        $ref: '#/definitions/models.PorDefinir'
+      movimiento:
+        $ref: '#/definitions/models.PorDefinir'
+      proveedor:
+        $ref: '#/definitions/models.PorDefinir'
   models.DetalleFuncionario:
     title: DetalleFuncionario
     type: object
@@ -1706,6 +1660,70 @@ definitions:
       ValorUnitario:
         type: number
         format: double
+  models.ElementoActaCargado:
+    title: ElementoActaCargado
+    type: object
+    properties:
+      Cantidad:
+        type: number
+        format: double
+      Descuento:
+        type: number
+        format: double
+      Id:
+        type: integer
+        format: int64
+      Marca:
+        type: string
+      Nombre:
+        type: string
+      PorcentajeIvaId:
+        type: number
+        format: double
+      Serie:
+        type: string
+      SubgrupoCatalogoId:
+        $ref: '#/definitions/models.PorDefinir'
+      Subtotal:
+        type: number
+        format: double
+      UnidadMedida:
+        type: integer
+        format: int64
+      ValorIva:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
+  models.ElementoAperturaKardex:
+    title: ElementoAperturaKardex
+    type: object
+    properties:
+      CantidadMaxima:
+        type: integer
+        format: int64
+      CantidadMinima:
+        type: integer
+        format: int64
+      ElementoCatalogoId:
+        $ref: '#/definitions/models.PorDefinir'
+      FechaCreacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      MetodoValoracion:
+        type: integer
+        format: int64
+      MovimientoPadreId:
+        $ref: '#/definitions/models.PorDefinir'
+      Observaciones:
+        type: string
   models.ElementoCatalogo:
     title: ElementoCatalogo
     type: object
@@ -1723,6 +1741,58 @@ definitions:
         type: string
       SubgrupoId:
         $ref: '#/definitions/models.Subgrupo'
+  models.ElementoSinAsignar:
+    title: ElementoSinAsignar
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      ElementoActaId:
+        type: integer
+        format: int64
+      ElementoCatalogoId:
+        type: integer
+        format: int64
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      Marca:
+        type: string
+      MovimientoId:
+        $ref: '#/definitions/models.PorDefinir'
+      Nombre:
+        type: string
+      SaldoCantidad:
+        type: integer
+        format: int64
+      SaldoValor:
+        type: number
+        format: double
+      Serie:
+        type: string
+      SubgrupoCatalogoId:
+        $ref: '#/definitions/models.PorDefinir'
+      Unidad:
+        type: integer
+        format: int64
+      ValorResidual:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
+      VidaUtil:
+        type: number
+        format: double
   models.ElementoSolicitud:
     title: ElementoSolicitud
     type: object
@@ -1877,6 +1947,23 @@ definitions:
         format: int64
       Nombre:
         type: string
+  models.ExistenciasKardex:
+    title: ExistenciasKardex
+    type: object
+    properties:
+      ElementoCatalogoId:
+        $ref: '#/definitions/models.ElementoCatalogo'
+      Id:
+        type: integer
+        format: int64
+      SaldoCantidad:
+        type: integer
+        format: int64
+      SaldoValor:
+        type: number
+        format: double
+      SubgrupoCatalogo:
+        $ref: '#/definitions/models.SubgrupoCatalogo'
   models.FormatoBaseEntrada:
     title: FormatoBaseEntrada
     type: object
@@ -1965,6 +2052,14 @@ definitions:
       NumeroOrden:
         type: number
         format: double
+  models.GetSedeDependencia:
+    title: GetSedeDependencia
+    type: object
+    properties:
+      Dependencia:
+        $ref: '#/definitions/models.Dependencia'
+      Sede:
+        $ref: '#/definitions/models.EspacioFisico'
   models.GrupoInfoComplementaria:
     title: GrupoInfoComplementaria
     type: object
@@ -2101,6 +2196,14 @@ definitions:
         $ref: '#/definitions/models.Movimiento'
       Observacion:
         type: string
+  models.MvtoArkaMasTransaccion:
+    title: MvtoArkaMasTransaccion
+    type: object
+    properties:
+      Movimiento:
+        $ref: '#/definitions/models.PorDefinir'
+      TrContable:
+        $ref: '#/definitions/models.PorDefinir'
   models.OrdenadorGasto:
     title: OrdenadorGasto
     type: object
@@ -2136,6 +2239,9 @@ definitions:
         $ref: '#/definitions/models.Parametro'
       TipoParametroId:
         $ref: '#/definitions/models.TipoParametro'
+  models.PorDefinir:
+    title: PorDefinir
+    type: object
   models.PreMovAjuste:
     title: PreMovAjuste
     type: object
@@ -2163,9 +2269,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.PreMovAjuste'
-  models.Salida:
-    title: Salida
-    type: object
   models.SalidaGeneral:
     title: SalidaGeneral
     type: object
@@ -2211,6 +2314,19 @@ definitions:
         type: string
       TipoNivelId:
         $ref: '#/definitions/models.TipoNivel'
+  models.SubgrupoCatalogo:
+    title: SubgrupoCatalogo
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CatalogoId:
+        $ref: '#/definitions/models.Catalogo'
+      Id:
+        type: integer
+        format: int64
+      SubgrupoId:
+        $ref: '#/definitions/models.Subgrupo'
   models.Supervisor:
     title: Supervisor
     type: object
@@ -2261,9 +2377,6 @@ definitions:
         $ref: '#/definitions/models.TipoContribuyente'
       UsuarioWSO2:
         type: string
-  models.Terceros:
-    title: Terceros
-    type: object
   models.TipoActa:
     title: TipoActa
     type: object
