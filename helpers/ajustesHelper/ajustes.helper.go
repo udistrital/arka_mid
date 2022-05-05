@@ -134,17 +134,16 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 	movs := make([]*models.DetalleMovimientoContable, 0)
 	for _, mov := range movimientos {
 		mov_ := new(models.DetalleMovimientoContable)
-		var cta *models.DetalleCuenta
 
-		if ctaCr_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
+		if cta, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
 			return nil, err
 		} else {
-			if err := formatdata.FillStruct(ctaCr_, &cta); err != nil {
-				logs.Error(err)
-				eval := " - formatdata.FillStruct(ctaCr_, &ctaCr)"
-				return nil, errorctrl.Error(funcion+eval, err, "500")
+			mov_.Cuenta = &models.DetalleCuenta{
+				Id:              cta.Id,
+				Codigo:          cta.Codigo,
+				Nombre:          cta.Nombre,
+				RequiereTercero: cta.RequiereTercero,
 			}
-			mov_.Cuenta = cta
 		}
 
 		if mov.TerceroId > 0 {

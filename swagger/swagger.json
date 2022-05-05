@@ -2882,6 +2882,71 @@
                 }
             }
         },
+        "models.FormatoBaseEntrada": {
+            "title": "FormatoBaseEntrada",
+            "type": "object",
+            "properties": {
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TRM": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "acta_recibido_id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "consecutivo": {
+                    "type": "string"
+                },
+                "contrato_id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "divisa": {
+                    "type": "string"
+                },
+                "encargado_id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "factura": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "num_reg_importacion": {
+                    "type": "string"
+                },
+                "ordenador_gasto_id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "placa_id": {
+                    "type": "string"
+                },
+                "supervisor": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "tipo_contrato": {
+                    "type": "string"
+                },
+                "vigencia": {
+                    "type": "string"
+                },
+                "vigencia_contrato": {
+                    "type": "string"
+                },
+                "vigencia_ordenador": {
+                    "type": "string"
+                },
+                "vigencia_solicitante": {
+                    "type": "string"
+                }
+            }
+        },
         "models.FormatoSolicitudBodega": {
             "title": "FormatoSolicitudBodega",
             "type": "object",
@@ -3825,7 +3890,7 @@
             "type": "object",
             "properties": {
                 "Detalle": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.FormatoBaseEntrada"
                 },
                 "FormatoTipoMovimientoId": {
                     "type": "string"

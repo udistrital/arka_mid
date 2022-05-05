@@ -165,7 +165,7 @@ func findElementoInArrayEM(elementos []*models.DetalleElemento, id int) (i int) 
 }
 
 func getTipoComprobanteAjustes() string {
-	return "N20"
+	return "N39"
 }
 
 func getDescripcionMovContable(tipoMovimiento, consecutivo string) string {

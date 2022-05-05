@@ -1,18 +1,15 @@
 package asientoContable
 
 import (
-	"github.com/astaxie/beego/logs"
-
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/formatdata"
 )
 
 // GetDetalleContable Consulta los detalles de una transacción contable para ser mostrada en el cliente
-func GetDetalleContable(movimientos []*models.MovimientoTransaccion) (movimientos_ []*models.DetalleMovimientoContable, outputError map[string]interface{}) {
+func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuentas map[string]models.CuentaContable) (movimientos_ []*models.DetalleMovimientoContable, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleContable"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -48,19 +45,31 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion) (movimiento
 		movs = append(movs, mov_)
 	}
 
+	if detalleCuentas == nil {
+		detalleCuentas = make(map[string]models.CuentaContable)
+	}
+
 	for _, mov := range movs {
 		mov_ := new(models.DetalleMovimientoContable)
-		var cta *models.DetalleCuenta
-
-		if ctaCr_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
-			return nil, err
-		} else {
-			if err := formatdata.FillStruct(ctaCr_, &cta); err != nil {
-				logs.Error(err)
-				eval := " - formatdata.FillStruct(ctaCr_, &ctaCr)"
-				return nil, errorctrl.Error(funcion+eval, err, "500")
+		if cta, ok := detalleCuentas[mov.Cuenta]; !ok {
+			if cta_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
+				return nil, err
+			} else {
+				detalleCuentas[mov.Cuenta] = *cta_
+				mov_.Cuenta = &models.DetalleCuenta{
+					Id:              cta_.Id,
+					Codigo:          cta_.Codigo,
+					Nombre:          cta_.Nombre,
+					RequiereTercero: cta_.RequiereTercero,
+				}
 			}
-			mov_.Cuenta = cta
+		} else {
+			mov_.Cuenta = &models.DetalleCuenta{
+				Id:              cta.Id,
+				Codigo:          cta.Codigo,
+				Nombre:          cta.Nombre,
+				RequiereTercero: cta.RequiereTercero,
+			}
 		}
 
 		if mov.TerceroId > 0 {
