@@ -628,37 +628,6 @@
                 }
             }
         },
-        "/bodega_consumo/solicitud": {
-            "post": {
-                "tags": [
-                    "bodega_consumo"
-                ],
-                "description": "Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.",
-                "operationId": "BodegaConsumoController.Post",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Detalle de la solicitud a la bodega de consumo",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.FormatoSolicitudBodega"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.Movimiento"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/bodega_consumo/solicitud/": {
             "get": {
                 "tags": [
@@ -683,6 +652,35 @@
                                 "$ref": "#/definitions/models.DetalleSolicitudBodega"
                             }
                         }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "bodega_consumo"
+                ],
+                "description": "Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.",
+                "operationId": "BodegaConsumoController.Post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Detalle de la solicitud a la bodega de consumo.",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.FormatoSolicitudBodega"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Movimiento"
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }

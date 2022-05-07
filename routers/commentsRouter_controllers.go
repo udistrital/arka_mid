@@ -190,7 +190,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"],
         beego.ControllerComments{
             Method: "Post",
-            Router: "/solicitud",
+            Router: "/solicitud/",
             AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,

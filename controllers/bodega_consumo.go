@@ -31,10 +31,10 @@ func (c *BodegaConsumoController) URLMapping() {
 // Post ...
 // @Title Post
 // @Description Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
-// @Param	body	body	models.FormatoSolicitudBodega	true	"Detalle de la solicitud a la bodega de consumo"
+// @Param	body		body 	models.FormatoSolicitudBodega	true		"Detalle de la solicitud a la bodega de consumo."
 // @Success 200 {object} models.Movimiento
 // @Failure 404 not found resource
-// @router /solicitud [post]
+// @router /solicitud/ [post]
 func (c *BodegaConsumoController) Post() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")

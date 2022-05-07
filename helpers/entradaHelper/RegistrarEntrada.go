@@ -23,6 +23,11 @@ func RegistrarEntrada(data *models.TransaccionEntrada, movimiento *models.Movimi
 		detalle          string
 	)
 
+	if data.Detalle.ActaRecibidoId <= 0 {
+		err := "Se debe indicar un acta de recibido válida."
+		return errorctrl.Error(funcion, err, "400")
+	}
+
 	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimiento, "Entrada En Trámite"); err != nil {
 		return err
 	}

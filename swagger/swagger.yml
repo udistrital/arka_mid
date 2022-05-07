@@ -64,11 +64,13 @@ paths:
       parameters:
       - in: query
         name: states
-        description: If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
+        description: If specified, returns only acts with the specified state(s) from
+          ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas
         type: string
       - in: query
         name: u
-        description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
+        description: WSO2 User. When specified, acts will be filtered upon the available
+          roles for the specified user
         type: string
       responses:
         "200":
@@ -198,7 +200,8 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un ajuste y su transaccion contable
+      description: Retorna la lista de elementos asociados a un ajuste y su transaccion
+        contable
       operationId: AjusteController.GetOneAuto
       parameters:
       - in: path
@@ -217,7 +220,8 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
+      description: Retorna la lista de elementos asociados a un acta con su respectiva
+        vida útil y valor residual iniciales
       operationId: AjusteController.GetElementos
       parameters:
       - in: path
@@ -325,12 +329,14 @@ paths:
     get:
       tags:
       - bajas_elementos
-      description: Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite
+      description: Consulta todas las bajas y permite filtrar por las que estan para
+        revision de almacen o comite
       operationId: BajaController.Get All
       parameters:
       - in: query
         name: revComite
-        description: Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen
+        description: Indica si se traen las bajas en espera de comite. Tiene prioridad
+          sobre la revision de almacen
         type: boolean
       - in: query
         name: revAlmacen
@@ -413,26 +419,6 @@ paths:
               $ref: '#/definitions/models.ExistenciasKardex'
         "403":
           description: ""
-  /bodega_consumo/solicitud:
-    post:
-      tags:
-      - bodega_consumo
-      description: Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
-      operationId: BodegaConsumoController.Post
-      parameters:
-      - in: body
-        name: body
-        description: Detalle de la solicitud a la bodega de consumo
-        required: true
-        schema:
-          $ref: '#/definitions/models.FormatoSolicitudBodega'
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Movimiento'
-        "404":
-          description: not found resource
   /bodega_consumo/solicitud/:
     get:
       tags:
@@ -451,6 +437,26 @@ paths:
             type: array
             items:
               $ref: '#/definitions/models.DetalleSolicitudBodega'
+    post:
+      tags:
+      - bodega_consumo
+      description: Genera el movimiento correspondiente a una solicitud de bodega
+        de consumo. Asigna el consecutivo correspondiente.
+      operationId: BodegaConsumoController.Post
+      parameters:
+      - in: body
+        name: body
+        description: Detalle de la solicitud a la bodega de consumo.
+        required: true
+        schema:
+          $ref: '#/definitions/models.FormatoSolicitudBodega'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Movimiento'
+        "404":
+          description: not found resource
   /bodega_consumo/solicitud/{id}:
     get:
       tags:
@@ -481,7 +487,8 @@ paths:
     get:
       tags:
       - catalogo_elementos
-      description: Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado
+      description: Devuelve el detalle de la última cuenta de cada movimiento requerido
+        y subgrupo determinado
       operationId: CatalogoElementosController.GetCuentasSubgrupoById
       parameters:
       - in: path
@@ -501,7 +508,8 @@ paths:
     post:
       tags:
       - depreciacion
-      description: Actualiza el estado de las solicitudes una vez se registra la revision del comite de almacen
+      description: Actualiza el estado de las solicitudes una vez se registra la revision
+        del comite de almacen
       operationId: DepreciacionController.GetCorte
       parameters:
       - in: body
@@ -586,7 +594,8 @@ paths:
     get:
       tags:
       - entrada
-      description: get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada
+      description: get Detalle de entrada por Id. Retorna la transaccion contable
+        si la entrada ya  fue aprobada
       operationId: EntradaController.GetOne
       parameters:
       - in: path
@@ -712,7 +721,8 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -756,7 +766,9 @@ paths:
     post:
       tags:
       - salida
-      description: Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
+      description: Realiza la aprobacion de una salida en caso de especificarse un
+        Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo
+        registro en api movimientos_arka_crud
       operationId: SalidaController.Post transaccion salidas asociadas a una entrada
       parameters:
       - in: query
@@ -765,7 +777,8 @@ paths:
         type: string
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
@@ -799,8 +812,10 @@ paths:
     put:
       tags:
       - salida
-      description: genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
-      operationId: SalidaController.Put transaccion salidas generadas a partir de otra
+      description: genera los consecutivos de las nuevas salidas generadas y hace
+        el put en el api movimientos_arka_crud
+      operationId: SalidaController.Put transaccion salidas generadas a partir de
+        otra
       parameters:
       - in: path
         name: id
@@ -810,7 +825,8 @@ paths:
         format: int64
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
@@ -844,7 +860,8 @@ paths:
     get:
       tags:
       - traslados
-      description: Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
+      description: Consulta todos los traslados, permitiendo filtrar por las que estan
+        pendientes de ser revisados
       operationId: TrasladosController.Get All
       parameters:
       - in: query
@@ -868,7 +885,8 @@ paths:
       parameters:
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.Movimiento'
@@ -902,7 +920,8 @@ paths:
     put:
       tags:
       - traslados
-      description: Actualiza el estado del traslado y genera la transacción contable correspondiente.
+      description: Actualiza el estado del traslado y genera la transacción contable
+        correspondiente.
       operationId: TrasladosController.Put Aprobar traslado
       parameters:
       - in: path
