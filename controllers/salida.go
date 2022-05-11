@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strconv"
 
-	// "github.com/udistrital/utils_oas/formatdata"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
@@ -31,7 +29,7 @@ func (c *SalidaController) URLMapping() {
 // @Title Post transaccion salidas asociadas a una entrada
 // @Description Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
 // @Param	salidaId	query 	string					false		"Id del movimiento que se desea aprobar"
-// @Param	body		body 	models.SalidaGeneral	true		"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
+// @Param	body		body 	models.SalidaGeneral	true		"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0"
 // @Success 200 {object} models.SalidaGeneral
 // @Failure 403 body is empty
 // @router / [post]

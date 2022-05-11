@@ -369,7 +369,7 @@
                         "name": "body",
                         "description": "Informacion de la baja",
                         "schema": {
-                            "$ref": "#/definitions/models.Movimiento"
+                            "$ref": "#/definitions/models.TrSoporteMovimiento"
                         }
                     }
                 ],
@@ -377,7 +377,7 @@
                     "201": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.TrSoporteMovimiento"
+                            "$ref": "#/definitions/models.Movimiento"
                         }
                     },
                     "400": {

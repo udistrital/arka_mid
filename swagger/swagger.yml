@@ -250,12 +250,12 @@ paths:
         name: body
         description: Informacion de la baja
         schema:
-          $ref: '#/definitions/models.Movimiento'
+          $ref: '#/definitions/models.TrSoporteMovimiento'
       responses:
         "201":
           description: ""
           schema:
-            $ref: '#/definitions/models.TrSoporteMovimiento'
+            $ref: '#/definitions/models.Movimiento'
         "400":
           description: the request contains incorrect syntax
         "403":

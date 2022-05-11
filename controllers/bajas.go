@@ -32,8 +32,8 @@ func (c *BajaController) URLMapping() {
 // Post ...
 // @Title Post
 // @Description Registrar Baja. Crea el registro del soporte y crea el consecutivo
-// @Param	body			 body 	models.Movimiento	false	"Informacion de la baja"
-// @Success 201 {object} models.TrSoporteMovimiento
+// @Param	body	body 	models.TrSoporteMovimiento	false	"Informacion de la baja"
+// @Success 201	{object}	models.Movimiento
 // @Failure 403 body is empty
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
