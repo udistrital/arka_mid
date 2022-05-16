@@ -36,10 +36,8 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuen
 
 		if mov.TipoMovimientoId == crId {
 			mov_.Credito = mov.Valor
-			mov_.Debito = 0
 		} else if mov.TipoMovimientoId == dbId {
 			mov_.Debito = mov.Valor
-			mov_.Credito = 0
 		}
 
 		movs = append(movs, mov_)
