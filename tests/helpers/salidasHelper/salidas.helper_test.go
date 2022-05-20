@@ -14,7 +14,7 @@ var parameters struct {
 	ACTA_RECIBIDO_CRUD         string
 	CATALOGO_ELEMENTOS_SERVICE string
 	TERCEROS_SERVICE           string
-	OIKOS2_CRUD                string
+	OIKOS_CRUD                 string
 }
 
 func TestMain(m *testing.M) {
@@ -34,8 +34,8 @@ func TestMain(m *testing.M) {
 	if err := beego.AppConfig.Set("tercerosService", parameters.TERCEROS_SERVICE); err != nil {
 		panic(err)
 	}
-	parameters.OIKOS2_CRUD = os.Getenv("OIKOS2_CRUD")
-	if err := beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD); err != nil {
+	parameters.OIKOS_CRUD = os.Getenv("OIKOS_CRUD")
+	if err := beego.AppConfig.Set("oikosService", parameters.OIKOS_CRUD); err != nil {
 		panic(err)
 	}
 	flag.Parse()
@@ -75,6 +75,6 @@ func TestEndPointGetOikosService(t *testing.T) {
 	t.Log(parameters.CATALOGO_ELEMENTOS_SERVICE)
 	t.Log("Testing EndPoint TERCEROS_SERVICE")
 	t.Log(parameters.TERCEROS_SERVICE)
-	t.Log("Testing EndPoint OIKOS2_CRUD")
-	t.Log(parameters.OIKOS2_CRUD)
+	t.Log("Testing EndPoint OIKOS_CRUD")
+	t.Log(parameters.OIKOS_CRUD)
 }

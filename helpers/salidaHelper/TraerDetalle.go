@@ -41,7 +41,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 			var data2 map[string]interface{}
 			if err := json.Unmarshal([]byte(str), &data2); err == nil {
 
-				urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia"
+				urlcrud3 := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia"
 				urlcrud3 += "?query=Id:" + fmt.Sprintf("%v", data2["ubicacion"])
 
 				var tercero []map[string]interface{}
@@ -57,7 +57,7 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 								rgxp := regexp.MustCompile("[0-9]")
 								str2 = rgxp.ReplaceAllString(str2, "")
 
-								urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + str2
+								urlcrud4 := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=CodigoAbreviacion:" + str2
 								if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
 									logs.Error(err)
 									outputError = map[string]interface{}{

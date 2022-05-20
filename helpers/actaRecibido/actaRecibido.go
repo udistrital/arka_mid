@@ -167,7 +167,7 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 	var Ubicaciones interface{}
 	parametros := make([]map[string]interface{}, 0)
 
-	urlOikosDependencia := "http://" + beego.AppConfig.String("oikos2Service") + "dependencia?limit=-1"
+	urlOikosDependencia := "http://" + beego.AppConfig.String("oikosService") + "dependencia?limit=-1"
 	if _, err := request.GetJsonTest(urlOikosDependencia, &Dependencias); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -178,7 +178,7 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		return nil, outputError
 	}
 
-	urlOikosAsignacion := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?limit=-1"
+	urlOikosAsignacion := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?limit=-1"
 	if _, err := request.GetJsonTest(urlOikosAsignacion, &Ubicaciones); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -189,7 +189,7 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		return nil, outputError
 	}
 
-	urlOikosEspFis := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=TipoEspacioFisicoId.Id:1&limit=-1"
+	urlOikosEspFis := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=TipoEspacioFisicoId.Id:1&limit=-1"
 	if _, err := request.GetJsonTest(urlOikosEspFis, &Sedes); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -239,7 +239,7 @@ func GetAsignacionSedeDependencia(Datos models.GetSedeDependencia) (Parametros [
 	// logs.Debug("Datos:")
 	// formatdata.JsonPrint(Datos)
 	// fmt.Println("")
-	oikosUrl := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?limit=-1"
+	oikosUrl := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?limit=-1"
 	oikosUrl += "&query=DependenciaId.Id:" + strconv.Itoa(Datos.Dependencia.Id)
 	// logs.Debug("oikosUrl:", oikosUrl)
 	if resp, err := request.GetJsonTest(oikosUrl, &Ubicaciones); err == nil && resp.StatusCode == 200 { // (2) error servicio caido

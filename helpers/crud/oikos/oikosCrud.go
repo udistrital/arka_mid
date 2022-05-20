@@ -22,7 +22,7 @@ func GetAllAsignacion(query string) (asignacion []*models.AsignacionEspacioFisic
 
 	var ubicacion []*models.AsignacionEspacioFisicoDependencia
 
-	urlcrud := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia" + query
+	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia" + query
 	if _, err := request.GetJsonTest(urlcrud, &ubicacion); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -50,7 +50,7 @@ func GetAllEspacioFisico(query string) (espacio []*models.EspacioFisico, outputE
 
 	var espacioFisico []*models.EspacioFisico
 
-	urlcrud := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico" + query
+	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico" + query
 	if _, err := request.GetJsonTest(urlcrud, &espacioFisico); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{

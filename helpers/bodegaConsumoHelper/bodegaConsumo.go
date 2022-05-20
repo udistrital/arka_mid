@@ -38,7 +38,7 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 		return nil, outputError
 	}
 
-	urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + strconv.Itoa(idStr)
+	urlcrud3 := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?query=Id:" + strconv.Itoa(idStr)
 	// logs.Debug("urlcrud3:", urlcrud3)
 
 	var ubicacion []map[string]interface{}
@@ -52,7 +52,7 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 		z := strings.Split(fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"]), "")
 
-		urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
+		urlcrud4 := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
 
 		if res, err := request.GetJsonTest(urlcrud4, &sede); err != nil || res.StatusCode != 200 {
 			if err == nil {
