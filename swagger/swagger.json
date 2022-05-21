@@ -1286,8 +1286,21 @@
                 "parameters": [
                     {
                         "in": "query",
-                        "name": "tramiteOnly",
-                        "description": "Indica si se requieren los traslados en estado en tramite",
+                        "name": "user",
+                        "description": "Tercero que consulta los traslados",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "confirmar",
+                        "description": "Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta.",
+                        "type": "boolean"
+                    },
+                    {
+                        "in": "query",
+                        "name": "aprobar",
+                        "description": "Consulta los traslados que están pendientes por ser aprobados por almacén.",
                         "type": "boolean"
                     }
                 ],

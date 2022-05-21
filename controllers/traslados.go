@@ -167,7 +167,9 @@ func (c *TrasladosController) GetElementosFuncionario() {
 // GetAll ...
 // @Title Get All
 // @Description Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
-// @Param	tramiteOnly	query 	bool	false	"Indica si se requieren los traslados en estado en tramite"
+// @Param	user	query	int	false	"Tercero que consulta los traslados"
+// @Param	confirmar	query	bool	false	"Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta."
+// @Param	aprobar	query	bool	false	"Consulta los traslados que están pendientes por ser aprobados por almacén."
 // @Success 200 {object} []models.DetalleTrasladoLista
 // @Failure 404 not found resource
 // @router / [get]
@@ -175,22 +177,41 @@ func (c *TrasladosController) GetAll() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
 
-	var tramiteOnly bool
-	if v, err := c.GetBool("tramiteOnly", false); err != nil {
-		panic(errorctrl.Error("GetAll - c.GetBool(\"tramiteOnly\", false)", err, "400"))
+	var (
+		terceroId string
+		confirmar bool
+		aprobar   bool
+		traslados []*models.DetalleTrasladoLista
+	)
+
+	if v := c.GetString("user", ""); v == "" {
+		panic(errorctrl.Error(`GetAll - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
 	} else {
-		tramiteOnly = v
+		terceroId = v
 	}
 
-	if v, err := trasladoshelper.GetAllTraslados(tramiteOnly); err == nil {
-		if v != nil {
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = []interface{}{}
-		}
+	if v, err := c.GetBool("confirmar", false); err != nil {
+		panic(errorctrl.Error(`GetAll - c.GetBool("confirmar", false)`, err, "400"))
 	} else {
+		confirmar = v
+	}
+
+	if v, err := c.GetBool("aprobar", false); err != nil {
+		panic(errorctrl.Error(`GetAll - c.GetBool("aprobar", false)`, err, "400"))
+	} else {
+		aprobar = v
+	}
+
+	if err := trasladoshelper.GetAllTraslados(terceroId, confirmar, aprobar, &traslados); err != nil {
 		panic(err)
 	}
+
+	if traslados != nil {
+		c.Data["json"] = traslados
+	} else {
+		c.Data["json"] = []interface{}{}
+	}
+
 	c.ServeJSON()
 }
 
