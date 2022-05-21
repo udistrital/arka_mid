@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/plugins/cors"
 
 	_ "github.com/udistrital/arka_mid/routers"
@@ -13,9 +14,11 @@ import (
 
 func main() {
 	// beego.BConfig.RecoverFunc = responseformat.GlobalResponseHandler
+	logs.SetLevel(logs.LevelInformational)
 	if beego.BConfig.RunMode == "dev" {
 		beego.BConfig.WebConfig.DirectoryIndex = true
 		beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
+		logs.SetLevel(logs.LevelDebug)
 	}
 	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
 		AllowOrigins: []string{"*"},
