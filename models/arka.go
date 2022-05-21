@@ -7,6 +7,19 @@ import "time"
 
 type PorDefinir struct{}
 
+type ActaResumen struct {
+	Estado            string
+	EstadoActaId      *EstadoActa
+	FechaCreacion     time.Time
+	FechaModificacion time.Time
+	FechaVistoBueno   time.Time
+	Id                int
+	Observaciones     string
+	PersonaAsignada   string
+	RevisorId         string
+	UbicacionId       string
+}
+
 type ElementoActaCargado struct {
 	Id                 int
 	Nombre             string

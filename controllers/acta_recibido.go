@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 
 	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	e "github.com/udistrital/utils_oas/errorctrl"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -189,7 +191,9 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Param u query string false "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
-// @Success 200 {object} []models.ActaRecibido
+// @Param	limit  query	int	false	"Desired results. Default: -1 (All)"
+// @Param	offset query	int	false	"Skip first N results. Default: 0 (none)"
+// @Success 200 {object} []models.ActaResumen
 // @Failure 400 "Wrong IDs"
 // @Failure 404 "not found resource"
 // @Failure 500 "Unknown API Error"
@@ -197,19 +201,18 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	const funcion = "GetAllActas - "
+	defer e.ErrorControlController(c.Controller, "ActaRecibidoController")
+
+	limit, err := c.GetInt("limit", -1)
+	if err != nil {
+		panic(e.Error(funcion+`c.GetInt("limit", -1)`, err, fmt.Sprint(http.StatusBadRequest)))
+	}
+
+	offset, err := c.GetInt("offset", 0)
+	if err != nil {
+		panic(e.Error(funcion+`c.GetInt("offset", 0)`, err, fmt.Sprint(http.StatusBadRequest)))
+	}
 
 	var reqStates []string
 	var WSO2user string
@@ -228,11 +231,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		if !valido {
 			err := errors.New("bad syntax. States MUST be comma separated")
 			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "GetAllActas - c.GetString(\"states\")",
-				"err":     err,
-				"status":  "400",
-			})
+			panic(e.Error(funcion+`c.GetString("states")`, err, fmt.Sprint(http.StatusBadRequest)))
 		}
 	}
 	// fmt.Print("ESTADOS SOLICITADOS: ")
@@ -248,17 +247,14 @@ func (c *ActaRecibidoController) GetAllActas() {
 		if !valido {
 			err := errors.New("user not specified in parameter value")
 			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "GetAllActas - c.GetString(\"u\")",
-				"err":     err,
-				"status":  "400",
-			})
+			panic(e.Error(funcion+`c.GetString("u")`, err, fmt.Sprint(http.StatusBadRequest)))
 		}
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
-		// fmt.Print("DATA FINAL: ")
-		// fmt.Println(l)
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
+		if len(l) == 0 {
+			l = []map[string]interface{}{}
+		}
 		c.Data["json"] = l
 	} else {
 		panic(err)
