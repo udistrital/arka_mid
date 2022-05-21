@@ -259,6 +259,9 @@ func (c *ActaRecibidoController) GetAllActas() {
 	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
 		// fmt.Print("DATA FINAL: ")
 		// fmt.Println(l)
+		if l == nil {
+			l = []map[string]interface{}{}
+		}
 		c.Data["json"] = l
 	} else {
 		panic(err)
