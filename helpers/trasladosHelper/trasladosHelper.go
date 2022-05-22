@@ -72,7 +72,7 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 		Traslado.Elementos = elementos
 	}
 
-	if movimiento.EstadoMovimientoId.Nombre == "Traslado Confirmado" {
+	if movimiento.EstadoMovimientoId.Nombre == "Traslado Aprobado" {
 		if detalle.ConsecutivoId > 0 {
 			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 				return nil, err

@@ -40,7 +40,6 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		parCredito          int
 		transaccion         models.TransaccionMovimientos
 		tipoMovimientoId    int
-		estadoMovimientoId  int
 	)
 
 	resultado = make(map[string]interface{})
@@ -122,7 +121,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		return nil, err
 	}
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Traslado Confirmado"); err != nil {
+	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&movimiento.EstadoMovimientoId.Id, "Traslado Aprobado"); err != nil {
 		return nil, err
 	}
 
@@ -177,12 +176,6 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 			Fecha:       transaccion.FechaTransaccion,
 		}
 		resultado["trContable"] = trContable
-	}
-
-	if em, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Traslado Confirmado")); err != nil {
-		return nil, err
-	} else {
-		movimiento.EstadoMovimientoId = em[0]
 	}
 
 	if movimiento_, err := movimientosArka.PutMovimiento(&movimiento, movimiento.Id); err != nil {
