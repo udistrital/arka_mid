@@ -145,6 +145,11 @@ type DetalleTrasladoLista struct {
 	EstadoMovimientoId int
 }
 
+type InventarioTercero struct {
+	Elementos []DetalleElementoPlaca
+	Tercero   DetalleFuncionario
+}
+
 type DetalleElementoPlaca struct {
 	Id             int
 	ElementoActaId int

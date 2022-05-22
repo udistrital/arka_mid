@@ -134,30 +134,32 @@ func (c *TrasladosController) GetTraslado() {
 // GetElementosFuncionario ...
 // @Title Get Elementos
 // @Description get Elementos by Tercero Origen
-// @Param	funcionarioId	path	int	true	"tercero_id del funcionario"
-// @Success 200 {object} models.DetalleElementoPlaca
+// @Param	tercero_id	path	int	true	"tercero_id del funcionario"
+// @Success 200 {object} models.InventarioTercero
 // @Failure 404 not found resource
-// @router /funcionario/:funcionarioId [get]
+// @router /funcionario/:tercero_id [get]
 func (c *TrasladosController) GetElementosFuncionario() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController - Unhandled Error!")
-	var id int
-	if v, err := c.GetInt(":funcionarioId"); err != nil || v <= 0 {
+
+	var (
+		id         int
+		inventario models.InventarioTercero
+	)
+
+	if v, err := c.GetInt(":tercero_id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar un tercero válido")
 		}
-		panic(errorctrl.Error("GetElementosFuncionario - c.GetInt(\":funcionarioId\")", err, "400"))
+		panic(errorctrl.Error("GetElementosFuncionario - c.GetInt(\":tercero_id\")", err, "400"))
 	} else {
 		id = v
 	}
 
-	if respuesta, err := trasladoshelper.GetElementosFuncionario(id); err == nil || respuesta != nil {
-		c.Data["json"] = respuesta
-	} else {
-		if err != nil {
-			panic(err)
-		}
+	if err := trasladoshelper.GetElementosFuncionario(id, &inventario); err != nil {
 		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosFuncionario(id)", err, "404"))
+	} else {
+		c.Data["json"] = inventario
 	}
 
 	c.ServeJSON()

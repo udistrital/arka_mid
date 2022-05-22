@@ -182,10 +182,10 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 
 }
 
-func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
+func GetElementosFuncionario(terceroId int, inventario *models.InventarioTercero) (outputError map[string]interface{}) {
 
-	funcion := "GetElementosFuncionario"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "GetElementosFuncionario - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
 		elementosF    []int
@@ -193,11 +193,17 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 		elementosActa []*models.Elemento
 	)
 
-	Elementos = make([]*models.DetalleElementoPlaca, 0)
+	inventario.Elementos = make([]models.DetalleElementoPlaca, 0)
 
-	// Consulta lista de elementos asignados al funcionario
-	if elemento_, err := movimientosArka.GetElementosFuncionario(id); err != nil {
-		return nil, err
+	if tercero, err := terceros.GetDetalleFuncionario(terceroId); err != nil {
+		return err
+	} else {
+		inventario.Tercero = *tercero
+	}
+
+	// Consulta lista de elementos asignados al tercero
+	if elemento_, err := movimientosArka.GetElementosFuncionario(terceroId); err != nil {
+		return err
 	} else {
 		elementosF = elemento_
 	}
@@ -207,12 +213,12 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
 		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
 		if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
-			return nil, err
+			return err
 		} else {
 			elementosM = elementoMovimiento_
 		}
 	} else {
-		return Elementos, nil
+		return
 	}
 
 	ids := []int{}
@@ -224,7 +230,7 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud
 	query := "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 	if elemento_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
-		return nil, err
+		return err
 	} else {
 		elementosActa = elemento_
 	}
@@ -232,21 +238,23 @@ func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, 
 	if len(elementosActa) == len(elementosM) {
 		for i := 0; i < len(elementosActa); i++ {
 			if elementosActa[i].Placa != "" {
-				elemento := new(models.DetalleElementoPlaca)
 
-				elemento.Id = elementosM[i].Id
-				elemento.Nombre = elementosActa[i].Nombre
-				elemento.Placa = elementosActa[i].Placa
-				elemento.Marca = elementosActa[i].Marca
-				elemento.Serie = elementosActa[i].Serie
-				elemento.Valor = elementosActa[i].ValorTotal
+				var elemento = models.DetalleElementoPlaca{
+					Id:             elementosM[i].Id,
+					ElementoActaId: elementosActa[i].Id,
+					Placa:          elementosActa[i].Placa,
+					Nombre:         elementosActa[i].Nombre,
+					Marca:          elementosActa[i].Marca,
+					Serie:          elementosActa[i].Serie,
+					Valor:          elementosActa[i].ValorTotal,
+				}
 
-				Elementos = append(Elementos, elemento)
+				inventario.Elementos = append(inventario.Elementos, elemento)
 			}
 		}
 	}
 
-	return Elementos, nil
+	return
 }
 
 func getTipoComprobanteTraslados() string {

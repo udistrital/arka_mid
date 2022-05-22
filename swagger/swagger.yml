@@ -948,7 +948,7 @@ paths:
             $ref: '#/definitions/models.MvtoArkaMasTransaccion'
         "403":
           description: body is empty
-  /traslados/funcionario/{funcionarioId}:
+  /traslados/funcionario/{tercero_id}:
     get:
       tags:
       - traslados
@@ -956,7 +956,7 @@ paths:
       operationId: TrasladosController.Get Elementos
       parameters:
       - in: path
-        name: funcionarioId
+        name: tercero_id
         description: tercero_id del funcionario
         required: true
         type: integer
@@ -965,7 +965,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.DetalleElementoPlaca'
+            $ref: '#/definitions/models.InventarioTercero'
         "404":
           description: not found resource
 definitions:
@@ -2201,6 +2201,16 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.DetalleMovimientoContable'
+  models.InventarioTercero:
+    title: InventarioTercero
+    type: object
+    properties:
+      Elementos:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleElementoPlaca'
+      Tercero:
+        $ref: '#/definitions/models.DetalleFuncionario'
   models.Movimiento:
     title: Movimiento
     type: object
