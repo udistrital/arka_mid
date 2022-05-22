@@ -151,13 +151,13 @@ func (c *TrasladosController) GetElementosFuncionario() {
 		if err == nil {
 			err = errors.New("se debe especificar un tercero válido")
 		}
-		panic(errorctrl.Error("GetElementosFuncionario - c.GetInt(\":tercero_id\")", err, "400"))
+		panic(errorctrl.Error(`GetElementosFuncionario - c.GetInt(":tercero_id")`, err, "400"))
 	} else {
 		id = v
 	}
 
-	if err := trasladoshelper.GetElementosFuncionario(id, &inventario); err != nil {
-		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosFuncionario(id)", err, "404"))
+	if err := trasladoshelper.GetElementosTercero(id, &inventario); err != nil {
+		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosTercero(id, &inventario)", err, "404"))
 	} else {
 		c.Data["json"] = inventario
 	}
