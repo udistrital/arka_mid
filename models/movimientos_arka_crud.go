@@ -138,8 +138,8 @@ type DetalleTraslado struct {
 type DetalleTrasladoLista struct {
 	Id                 int
 	Consecutivo        string
-	FuncionarioOrigen  string
-	FuncionarioDestino string
+	FuncionarioOrigen  Tercero
+	FuncionarioDestino Tercero
 	FechaCreacion      string
 	Ubicacion          string
 	EstadoMovimientoId int

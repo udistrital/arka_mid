@@ -1625,9 +1625,9 @@ definitions:
       FechaCreacion:
         type: string
       FuncionarioDestino:
-        type: string
+        $ref: '#/definitions/models.Tercero'
       FuncionarioOrigen:
-        type: string
+        $ref: '#/definitions/models.Tercero'
       Id:
         type: integer
         format: int64

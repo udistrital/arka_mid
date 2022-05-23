@@ -36,8 +36,8 @@ func GetAllTraslados(user string, confirmar, aprobar bool, traslados_ *[]*models
 
 		var (
 			detalle    *models.FormatoTraslado
-			Tercero_   string
-			Revisor_   string
+			origen     models.Tercero
+			destino    models.Tercero
 			Ubicacion_ string
 		)
 
@@ -65,13 +65,13 @@ func GetAllTraslados(user string, confirmar, aprobar bool, traslados_ *[]*models
 
 		if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioDestino, tercerosBuffer, requestTercero(detalle.FuncionarioDestino), nil, nil); err == nil {
 			if v2, ok := v.(*models.Tercero); ok {
-				Tercero_ = v2.NombreCompleto
+				destino = *v2
 			}
 		}
 
 		if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioOrigen, tercerosBuffer, requestTercero(detalle.FuncionarioOrigen), nil, nil); err == nil {
 			if v2, ok := v.(*models.Tercero); ok {
-				Revisor_ = v2.NombreCompleto
+				origen = *v2
 			}
 		}
 
@@ -85,8 +85,8 @@ func GetAllTraslados(user string, confirmar, aprobar bool, traslados_ *[]*models
 			Id:                 solicitud.Id,
 			Consecutivo:        detalle.Consecutivo,
 			FechaCreacion:      solicitud.FechaCreacion.String(),
-			FuncionarioOrigen:  Tercero_,
-			FuncionarioDestino: Revisor_,
+			FuncionarioOrigen:  origen,
+			FuncionarioDestino: destino,
 			Ubicacion:          Ubicacion_,
 			EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
 		}
