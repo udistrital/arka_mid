@@ -134,7 +134,7 @@ func (c *BajaController) GetSolicitud() {
 		id = v
 	}
 
-	if err := bajasHelper.TraerDetalle(id, &baja); err == nil {
+	if err := bajasHelper.GetBajaByID(id, &baja); err == nil {
 		c.Data["json"] = baja
 	} else {
 		panic(err)
