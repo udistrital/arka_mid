@@ -187,34 +187,33 @@ func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.Det
 }
 
 // TraerDetalle Consulta el detalle de la baja: elementos, revisor, solicitante, soporte, tipo
-func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface{}) {
+func TraerDetalle(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	funcion := "TraerDetalle"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		movimiento *models.Movimiento
-		detalle    models.FormatoBaja
+		movimiento  *models.Movimiento
+		detalle     models.FormatoBaja
+		dependencia models.Dependencia
 	)
-	Baja = new(models.TrBaja)
 
 	// Se consulta el movimiento
 	query := "query=Id:" + strconv.Itoa(id)
 	if movimientoA, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return nil, err
+		return err
 	} else if len(movimientoA) > 0 {
 		movimiento = movimientoA[0]
 	}
 
-	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
+		return err
 	}
 
 	// Se consulta el detalle del funcionario solicitante
 	if detalle.Funcionario > 0 {
 		if funcionario, err := midTerceros.GetInfoTerceroById(detalle.Funcionario); err != nil {
-			return nil, err
+			return err
 		} else {
 			Baja.Funcionario = funcionario
 		}
@@ -223,7 +222,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	// Se consulta el detalle del revisor si lo hay
 	if detalle.Revisor > 0 {
 		if revisor, err := midTerceros.GetInfoTerceroById(detalle.Revisor); err != nil {
-			return nil, err
+			return err
 		} else {
 			Baja.Revisor = revisor
 		}
@@ -232,7 +231,7 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	if len(detalle.Elementos) > 0 {
 		if elementos, err := GetDetalleElementos(detalle.Elementos); err != nil {
-			return nil, err
+			return err
 		} else {
 			Baja.Elementos = elementos
 		}
@@ -241,18 +240,24 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	query = "query=MovimientoId__Id:" + strconv.Itoa(id)
 	if soportes, err := movimientosArka.GetAllSoporteMovimiento(query); err != nil {
-		return nil, err
+		return err
 	} else if len(soportes) > 0 {
 		Baja.Soporte = soportes[0].DocumentoId
+	}
+
+	if detalle.DependenciaId > 0 {
+		if err := oikos.GetDependenciaById(detalle.DependenciaId, &dependencia); err != nil {
+			return err
+		}
 	}
 
 	if movimiento.EstadoMovimientoId.Nombre == "Baja Aprobada" {
 		if detalle.ConsecutivoId > 0 {
 			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-				return nil, err
+				return err
 			} else if len(tr.Movimientos) > 0 {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return nil, err
+					return err
 				} else {
 					trContable := models.InfoTransaccionContable{
 						Movimientos: detalleContable,
@@ -272,8 +277,9 @@ func TraerDetalle(id int) (Baja *models.TrBaja, outputError map[string]interface
 	Baja.RazonRechazo = detalle.RazonRechazo
 	Baja.Resolucion = detalle.Resolucion
 	Baja.FechaRevisionC = detalle.FechaRevisionC
+	Baja.DependenciaId = dependencia.Nombre
 
-	return Baja, nil
+	return
 
 }
 

@@ -180,6 +180,7 @@ type FormatoBaja struct {
 	Revisor        int
 	RazonRechazo   string
 	Resolucion     string
+	DependenciaId  int
 }
 
 type DetalleBaja struct {
@@ -207,6 +208,7 @@ type TrBaja struct {
 	Soporte        int
 	TipoBaja       *FormatoTipoMovimiento
 	TrContable     *InfoTransaccionContable
+	DependenciaId  string
 }
 
 type DetalleElementoBaja struct {
@@ -227,6 +229,7 @@ type TrRevisionBaja struct {
 	RazonRechazo   string
 	FechaRevisionC string
 	Resolucion     string
+	DependenciaId  int
 }
 
 type Historial struct {

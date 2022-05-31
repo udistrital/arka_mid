@@ -3786,6 +3786,9 @@
             "title": "TrBaja",
             "type": "object",
             "properties": {
+                "DependenciaId": {
+                    "type": "string"
+                },
                 "Elementos": {
                     "type": "array",
                     "items": {
@@ -3842,6 +3845,10 @@
                         "type": "integer",
                         "format": "int64"
                     }
+                },
+                "DependenciaId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "FechaRevisionC": {
                     "type": "string"
