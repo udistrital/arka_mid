@@ -576,6 +576,10 @@ paths:
         name: entradaId
         description: Id del movimiento que se desea aprobar
         type: string
+      - in: query
+        name: etl
+        description: Indica si la entrada se registra a partir del ETL
+        type: boolean
       - in: body
         name: body
         description: Detalles de la entrada. Se valida solo si el id es 0
