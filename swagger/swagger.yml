@@ -779,6 +779,10 @@ paths:
         name: salidaId
         description: Id del movimiento que se desea aprobar
         type: string
+      - in: query
+        name: etl
+        description: Indica si la salida se registra a partir del ETL
+        type: boolean
       - in: body
         name: body
         description: Informacion de las salidas y elementos asociados a cada una de

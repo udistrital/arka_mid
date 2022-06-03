@@ -22,7 +22,7 @@ import (
 )
 
 // PostTrSalidas Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
-func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, outputError map[string]interface{}) {
+func PostTrSalidas(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "PostTrSalidas"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -41,24 +41,26 @@ func PostTrSalidas(m *models.SalidaGeneral) (resultado map[string]interface{}, o
 	ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
 	for _, salida := range m.Salidas {
 
-		var (
-			consecutivo models.Consecutivo
-			detalle     map[string]interface{}
-		)
+		if !etl {
+			var (
+				consecutivo models.Consecutivo
+				detalle     map[string]interface{}
+			)
 
-		if err := utilsHelper.Unmarshal(salida.Salida.Detalle, &detalle); err != nil {
-			return nil, err
-		}
+			if err := utilsHelper.Unmarshal(salida.Salida.Detalle, &detalle); err != nil {
+				return nil, err
+			}
 
-		if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
-			return nil, err
-		}
+			if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
+				return nil, err
+			}
 
-		detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
-		detalle["ConsecutivoId"] = consecutivo.Id
+			detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
+			detalle["ConsecutivoId"] = consecutivo.Id
 
-		if err := utilsHelper.Marshal(detalle, &salida.Salida.Detalle); err != nil {
-			return nil, err
+			if err := utilsHelper.Marshal(detalle, &salida.Salida.Detalle); err != nil {
+				return nil, err
+			}
 		}
 
 		salida.Salida.EstadoMovimientoId.Id = estadoMovimientoId
