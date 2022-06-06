@@ -57,15 +57,35 @@ func GetAllDatosIdentificacion(query string) (datosId []*models.DatosIdentificac
 
 // DocumentosValidos recibe un arreglo de documentos activos
 // y retorna true solo si son únicos en su tipo (si solo hay 1 CC, 1 NIT, 1...)
-func DocumentosValidos(documentos []models.DatosIdentificacion) bool {
+//
+// si los documentos incluyen Activo=true/false, se pueden filtrar con soloActivos = true
+//
+// si los documentos incluyen el tercero, se puede validar que correspondan
+// al mismo con validaTercero = true
+func DocumentosValidos(documentos []models.DatosIdentificacion,
+	soloActivos, validaTercero bool) bool {
 	dicc := make(map[int]bool)
+	tercero := -1
 	for _, documento := range documentos {
+		if soloActivos {
+			if !documento.Activo {
+				continue
+			}
+		}
 		if _, ok := dicc[documento.TipoDocumentoId.Id]; ok {
 			return false
 		}
-		// if documento.Activo {
 		dicc[documento.TipoDocumentoId.Id] = true
-		// }
+		if validaTercero { // Que estén asociados al mismo tercero
+			terceroActual := documento.TerceroId.Id
+			if tercero >= 0 {
+				if terceroActual != tercero {
+					return false
+				}
+			} else {
+				tercero = terceroActual
+			}
+		}
 	}
 	return true
 }

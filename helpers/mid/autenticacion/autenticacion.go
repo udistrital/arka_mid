@@ -18,6 +18,7 @@ func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, o
 
 	url := basePath + "token/userRol"
 	req := models.UsuarioDataRequest{User: usuarioWSO2}
+	// logs.Debug("url:", url, "- req:", req)
 	if err := request.SendJson(url, "POST", &dataUsuario, &req); err == nil {
 		return dataUsuario, nil
 	} else {
