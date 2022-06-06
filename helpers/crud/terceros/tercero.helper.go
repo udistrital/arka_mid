@@ -125,13 +125,13 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 			panic(outputError)
 		}
 	}()
-	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=Activo:true,"
+	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion?query=Activo:true,"
 	urltercero += "Numero:" + doc
-	var terceros []*models.DatosIdentificacion
-
+	var terceros []models.DatosIdentificacion
+	logs.Debug("urltercero:", urltercero)
 	if resp, err := request.GetJsonTest(urltercero, &terceros); err == nil && resp.StatusCode == 200 {
 		if len(terceros) == 1 {
-			return terceros[0], nil
+			return &terceros[0], nil
 		} else if len(terceros) == 0 {
 			err := fmt.Errorf("el documento '%s' aún no está asignado a un registro en Terceros", doc)
 			outputError = map[string]interface{}{
@@ -142,6 +142,9 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 			return nil, outputError
 		} else { // len(terceros) > 1
 			q := len(terceros)
+			if q > 1 && DocumentosValidos(terceros) {
+				return &terceros[0], nil
+			}
 			s := ""
 			if q >= 10 {
 				s = " - o más"

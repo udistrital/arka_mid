@@ -55,6 +55,21 @@ func GetAllDatosIdentificacion(query string) (datosId []*models.DatosIdentificac
 	return datosId, nil
 }
 
+// DocumentosValidos recibe un arreglo de documentos activos
+// y retorna true solo si son únicos en su tipo (si solo hay 1 CC, 1 NIT, 1...)
+func DocumentosValidos(documentos []models.DatosIdentificacion) bool {
+	dicc := make(map[int]bool)
+	for _, documento := range documentos {
+		if _, ok := dicc[documento.TipoDocumentoId.Id]; ok {
+			return false
+		}
+		// if documento.Activo {
+		dicc[documento.TipoDocumentoId.Id] = true
+		// }
+	}
+	return true
+}
+
 // GetTerceroById get controlador tercero/{id} del api terceros_crud
 func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
 
