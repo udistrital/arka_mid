@@ -252,7 +252,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 	}
 
 	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
-		if len(l) == 0 {
+		if l == nil {
 			l = []map[string]interface{}{}
 		}
 		c.Data["json"] = l

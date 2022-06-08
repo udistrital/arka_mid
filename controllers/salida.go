@@ -28,8 +28,9 @@ func (c *SalidaController) URLMapping() {
 // Post ...
 // @Title Post transaccion salidas asociadas a una entrada
 // @Description Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
-// @Param	salidaId	query 	string					false		"Id del movimiento que se desea aprobar"
-// @Param	body		body 	models.SalidaGeneral	true		"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0"
+// @Param	salidaId	query	string					false	"Id del movimiento que se desea aprobar"
+// @Param	etl			query	bool					false	"Indica si la salida se registra a partir del ETL"
+// @Param	body		body	models.SalidaGeneral	true	"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0"
 // @Success 200 {object} models.SalidaGeneral
 // @Failure 403 body is empty
 // @router / [post]
@@ -48,11 +49,20 @@ func (c *SalidaController) Post() {
 			}
 		}
 	}()
-	var salidaId int = 0
+
+	var (
+		salidaId int
+		etl      bool
+	)
 
 	if v, err := c.GetInt("salidaId"); err == nil {
 		salidaId = v
 	}
+
+	if v, err := c.GetBool("etl", false); err == nil {
+		etl = v
+	}
+
 	if salidaId > 0 {
 		if respuesta, err := salidaHelper.AprobarSalida(salidaId); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
@@ -70,7 +80,7 @@ func (c *SalidaController) Post() {
 	} else {
 		var v models.SalidaGeneral
 		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := salidaHelper.PostTrSalidas(&v); err == nil && respuesta != nil {
+			if respuesta, err := salidaHelper.PostTrSalidas(&v, etl); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
 			} else {

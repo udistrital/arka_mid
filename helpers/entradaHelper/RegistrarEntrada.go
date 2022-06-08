@@ -11,7 +11,7 @@ import (
 )
 
 // RegistrarEntrada Crea registro de entrada en estado en trámite
-func RegistrarEntrada(data *models.TransaccionEntrada, movimiento *models.Movimiento) (outputError map[string]interface{}) {
+func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "RegistrarEntrada - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -40,14 +40,16 @@ func RegistrarEntrada(data *models.TransaccionEntrada, movimiento *models.Movimi
 		return err
 	}
 
-	if err := crearDetalleEntrada(&data.Detalle, &detalle); err != nil {
+	if err := crearDetalleEntrada(&data.Detalle, etl, &detalle); err != nil {
 		return err
 	}
 
-	if elementos, err := asignarPlacaActa(data.Detalle.ActaRecibidoId); err != nil {
-		return outputError
-	} else {
-		acta.Elementos = elementos
+	if !etl {
+		if elementos, err := asignarPlacaActa(data.Detalle.ActaRecibidoId); err != nil {
+			return outputError
+		} else {
+			acta.Elementos = elementos
+		}
 	}
 
 	*movimiento = models.Movimiento{
@@ -76,11 +78,13 @@ func RegistrarEntrada(data *models.TransaccionEntrada, movimiento *models.Movimi
 
 	}
 
-	acta.UltimoEstado.EstadoActaId.Id = 6
-	acta.UltimoEstado.Id = 0
+	if !etl {
+		acta.UltimoEstado.EstadoActaId.Id = 6
+		acta.UltimoEstado.Id = 0
 
-	if err := actaRecibido.PutTransaccionActaRecibido(data.Detalle.ActaRecibidoId, &acta); err != nil {
-		return err
+		if err := actaRecibido.PutTransaccionActaRecibido(data.Detalle.ActaRecibidoId, &acta); err != nil {
+			return err
+		}
 	}
 
 	return
@@ -88,7 +92,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, movimiento *models.Movimi
 }
 
 // creaDetalleEntrada construye la data que será almacenada en la columna detalle según se requiera.
-func crearDetalleEntrada(completo *models.FormatoBaseEntrada, necesario *string) (outputError map[string]interface{}) {
+func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, necesario *string) (outputError map[string]interface{}) {
 
 	funcion := "crearDetalleEntrada - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -158,13 +162,15 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, necesario *string)
 		delete(detalle, "vigencia_solicitante")
 	}
 
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-	if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
-		return err
-	}
+	if !etl {
+		ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
+		if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
+			return err
+		}
 
-	detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
-	detalle["ConsecutivoId"] = consecutivo.Id
+		detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
+		detalle["ConsecutivoId"] = consecutivo.Id
+	}
 
 	if err := utilsHelper.Marshal(detalle, necesario); err != nil {
 		return err

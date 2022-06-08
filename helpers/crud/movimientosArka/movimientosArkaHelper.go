@@ -11,6 +11,8 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+var basePath = "http://" + beego.AppConfig.String("movimientosArkaService")
+
 // GetAllEstadoMovimiento query controlador estado_movimiento del api movimientos_arka_crud
 func GetAllEstadoMovimiento(query string) (estados []*models.EstadoMovimiento, outputError map[string]interface{}) {
 
@@ -327,4 +329,21 @@ func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputE
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 	return entrada, nil
+}
+
+// GetTrasladosByTerceroId consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
+func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetTrasladosByTerceroId - "
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := basePath + "movimiento/traslado/" + strconv.Itoa(terceroId)
+	if confirmar {
+		urlcrud += "?confirmar=true"
+	}
+	if err := request.GetJson(urlcrud, &traslados); err != nil {
+		eval := "request.GetJson(urlcrud, &traslados)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+	return
 }

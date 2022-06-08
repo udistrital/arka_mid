@@ -30,8 +30,9 @@ func (c *EntradaController) URLMapping() {
 // Post ...
 // @Title Post
 // @Description Transaccion entrada. Estado de registro o aprobacion
-// @Param	entradaId		 query 	string			false		"Id del movimiento que se desea aprobar"
-// @Param	body			 body 	models.TransaccionEntrada	false		"Detalles de la entrada. Se valida solo si el id es 0"
+// @Param	entradaId	query	string						false	"Id del movimiento que se desea aprobar"
+// @Param	etl			query	bool						false	"Indica si la entrada se registra a partir del ETL"
+// @Param	body		body	models.TransaccionEntrada	false	"Detalles de la entrada. Se valida solo si el id es 0"
 // @Success 201 {object} models.Movimiento
 // @Failure 403 body is empty
 // @Failure 400 the request contains incorrect syntax
@@ -40,10 +41,17 @@ func (c *EntradaController) Post() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
 
-	var entradaId int
+	var (
+		entradaId int
+		etl       bool
+	)
 
 	if v, err := c.GetInt("entradaId"); err == nil {
 		entradaId = v
+	}
+
+	if v, err := c.GetBool("etl", false); err == nil {
+		etl = v
 	}
 
 	if entradaId > 0 {
@@ -70,7 +78,7 @@ func (c *EntradaController) Post() {
 			panic(err)
 		}
 
-		if err := entradaHelper.RegistrarEntrada(&v, &entrada); err != nil {
+		if err := entradaHelper.RegistrarEntrada(&v, etl, &entrada); err != nil {
 			panic(err)
 		}
 

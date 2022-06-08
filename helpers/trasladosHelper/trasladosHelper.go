@@ -11,9 +11,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
-	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
-	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -46,14 +45,14 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 	}
 
 	// Se consulta el detalle del funcionario origen
-	if origen, err := midTerceros.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
+	if origen, err := terceros.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioOrigen = origen
 	}
 
 	// Se consulta el detalle del funcionario destino
-	if destino, err := midTerceros.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
+	if destino, err := terceros.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
 		return nil, err
 	} else {
 		Traslado.FuncionarioDestino = destino
@@ -73,7 +72,7 @@ func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[st
 		Traslado.Elementos = elementos
 	}
 
-	if movimiento.EstadoMovimientoId.Nombre == "Traslado Confirmado" {
+	if movimiento.EstadoMovimientoId.Nombre == "Traslado Aprobado" {
 		if detalle.ConsecutivoId > 0 {
 			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 				return nil, err
@@ -181,161 +180,6 @@ func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outp
 
 	return data, nil
 
-}
-
-func GetElementosFuncionario(id int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
-
-	funcion := "GetElementosFuncionario"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	var (
-		elementosF    []int
-		elementosM    []*models.ElementosMovimiento
-		elementosActa []*models.Elemento
-	)
-
-	Elementos = make([]*models.DetalleElementoPlaca, 0)
-
-	// Consulta lista de elementos asignados al funcionario
-	if elemento_, err := movimientosArka.GetElementosFuncionario(id); err != nil {
-		return nil, err
-	} else {
-		elementosF = elemento_
-	}
-
-	// Consulta id del elemento en el api acta_recibido_crud
-	if len(elementosF) > 0 {
-		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
-		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
-		if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
-			return nil, err
-		} else {
-			elementosM = elementoMovimiento_
-		}
-	} else {
-		return Elementos, nil
-	}
-
-	ids := []int{}
-	elementosM = removeDuplicateInt(elementosM)
-	for _, el := range elementosM {
-		ids = append(ids, el.ElementoActaId)
-	}
-
-	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud
-	query := "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elemento_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
-		return nil, err
-	} else {
-		elementosActa = elemento_
-	}
-
-	if len(elementosActa) == len(elementosM) {
-		for i := 0; i < len(elementosActa); i++ {
-			if elementosActa[i].Placa != "" {
-				elemento := new(models.DetalleElementoPlaca)
-
-				elemento.Id = elementosM[i].Id
-				elemento.Nombre = elementosActa[i].Nombre
-				elemento.Placa = elementosActa[i].Placa
-				elemento.Marca = elementosActa[i].Marca
-				elemento.Serie = elementosActa[i].Serie
-				elemento.Valor = elementosActa[i].ValorTotal
-
-				Elementos = append(Elementos, elemento)
-			}
-		}
-	}
-
-	return Elementos, nil
-}
-
-// GetAllTraslados Consulta información general de todos los traslados filtrando por las que están pendientes por revisar
-func GetAllTraslados(tramiteOnly bool) (listBajas []*models.DetalleTrasladoLista, outputError map[string]interface{}) {
-
-	funcion := "GetAllTraslados"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	urlcrud := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre"
-
-	if tramiteOnly {
-		urlcrud += url.QueryEscape(":Traslado En Trámite")
-	} else {
-		urlcrud += "__startswith:Traslado"
-	}
-
-	if Solicitudes, err := movimientosArka.GetAllMovimiento(urlcrud); err != nil {
-		return nil, err
-	} else {
-		if len(Solicitudes) == 0 {
-			return nil, nil
-		}
-
-		tercerosBuffer := make(map[int]interface{})
-
-		for _, solicitud := range Solicitudes {
-
-			var (
-				detalle    *models.FormatoTraslado
-				Tercero_   string
-				Revisor_   string
-				Ubicacion_ string
-			)
-
-			if err := utilsHelper.Unmarshal(solicitud.Detalle, &detalle); err != nil {
-				return nil, err
-			}
-
-			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
-				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
-						return Tercero, nil
-					}
-					return nil, nil
-				}
-			}
-
-			requestUbicacion := func(id int) func() (interface{}, map[string]interface{}) {
-				return func() (interface{}, map[string]interface{}) {
-					if Ubicacion, err := oikos.GetSedeDependenciaUbicacion(id); err == nil {
-						return Ubicacion, nil
-					}
-					return nil, nil
-				}
-			}
-
-			if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioDestino, tercerosBuffer, requestTercero(detalle.FuncionarioDestino), nil, nil); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					Tercero_ = v2.NombreCompleto
-				}
-			}
-
-			if v, err := utilsHelper.BufferGeneric(detalle.FuncionarioOrigen, tercerosBuffer, requestTercero(detalle.FuncionarioOrigen), nil, nil); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					Revisor_ = v2.NombreCompleto
-				}
-			}
-
-			if v, err := utilsHelper.BufferGeneric(detalle.Ubicacion, tercerosBuffer, requestUbicacion(detalle.Ubicacion), nil, nil); err == nil {
-				if v2, ok := v.(*models.DetalleSedeDependencia); ok {
-					Ubicacion_ = v2.Ubicacion.EspacioFisicoId.Nombre
-				}
-			}
-
-			baja := models.DetalleTrasladoLista{
-				Id:                 solicitud.Id,
-				Consecutivo:        detalle.Consecutivo,
-				FechaCreacion:      solicitud.FechaCreacion.String(),
-				FuncionarioOrigen:  Tercero_,
-				FuncionarioDestino: Revisor_,
-				Ubicacion:          Ubicacion_,
-				EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
-			}
-			listBajas = append(listBajas, &baja)
-		}
-		return listBajas, nil
-
-	}
 }
 
 func getTipoComprobanteTraslados() string {

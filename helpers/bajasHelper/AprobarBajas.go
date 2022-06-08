@@ -1,11 +1,8 @@
 package bajasHelper
 
 import (
-	"encoding/json"
 	"net/url"
 	"time"
-
-	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
@@ -90,10 +87,8 @@ func AprobarBajas(data *models.TrRevisionBaja) (ids []int, outputError map[strin
 		for _, baja := range bajas_ {
 
 			var detalle models.FormatoBaja
-			if err := json.Unmarshal([]byte(baja.Detalle), &detalle); err != nil {
-				logs.Error(err)
-				eval := " - json.Unmarshal([]byte(mov.Detalle), &detalle)"
-				return nil, errorctrl.Error(funcion+eval, err, "500")
+			if err := utilsHelper.Unmarshal(baja.Detalle, &detalle); err != nil {
+				return nil, err
 			}
 
 			bajas[baja.Id] = *baja

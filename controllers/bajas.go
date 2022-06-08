@@ -115,7 +115,11 @@ func (c *BajaController) GetSolicitud() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
 
-	var id int
+	var (
+		id   int
+		baja models.TrBaja
+	)
+
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar una baja válida")
@@ -130,8 +134,8 @@ func (c *BajaController) GetSolicitud() {
 		id = v
 	}
 
-	if v, err := bajasHelper.TraerDetalle(id); err == nil {
-		c.Data["json"] = v
+	if err := bajasHelper.GetBajaByID(id, &baja); err == nil {
+		c.Data["json"] = baja
 	} else {
 		panic(err)
 	}

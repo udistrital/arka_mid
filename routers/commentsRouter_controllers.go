@@ -406,7 +406,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"],
         beego.ControllerComments{
             Method: "GetElementosFuncionario",
-            Router: "/funcionario/:funcionarioId",
+            Router: "/funcionario/:tercero_id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,

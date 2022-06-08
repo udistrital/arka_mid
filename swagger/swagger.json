@@ -874,6 +874,12 @@
                         "type": "string"
                     },
                     {
+                        "in": "query",
+                        "name": "etl",
+                        "description": "Indica si la entrada se registra a partir del ETL",
+                        "type": "boolean"
+                    },
+                    {
                         "in": "body",
                         "name": "body",
                         "description": "Detalles de la entrada. Se valida solo si el id es 0",
@@ -1172,6 +1178,12 @@
                         "type": "string"
                     },
                     {
+                        "in": "query",
+                        "name": "etl",
+                        "description": "Indica si la salida se registra a partir del ETL",
+                        "type": "boolean"
+                    },
+                    {
                         "in": "body",
                         "name": "body",
                         "description": "Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0",
@@ -1300,8 +1312,21 @@
                 "parameters": [
                     {
                         "in": "query",
-                        "name": "tramiteOnly",
-                        "description": "Indica si se requieren los traslados en estado en tramite",
+                        "name": "user",
+                        "description": "Tercero que consulta los traslados",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "confirmar",
+                        "description": "Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta.",
+                        "type": "boolean"
+                    },
+                    {
+                        "in": "query",
+                        "name": "aprobar",
+                        "description": "Consulta los traslados que están pendientes por ser aprobados por almacén.",
                         "type": "boolean"
                     }
                 ],
@@ -1350,7 +1375,7 @@
                 }
             }
         },
-        "/traslados/funcionario/{funcionarioId}": {
+        "/traslados/funcionario/{tercero_id}": {
             "get": {
                 "tags": [
                     "traslados"
@@ -1360,7 +1385,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "funcionarioId",
+                        "name": "tercero_id",
                         "description": "tercero_id del funcionario",
                         "required": true,
                         "type": "integer",
@@ -1371,7 +1396,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.DetalleElementoPlaca"
+                            "$ref": "#/definitions/models.InventarioTercero"
                         }
                     },
                     "404": {
@@ -2415,10 +2440,10 @@
                     "type": "string"
                 },
                 "FuncionarioDestino": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.Tercero"
                 },
                 "FuncionarioOrigen": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.Tercero"
                 },
                 "Id": {
                     "type": "integer",
@@ -3268,6 +3293,21 @@
                 }
             }
         },
+        "models.InventarioTercero": {
+            "title": "InventarioTercero",
+            "type": "object",
+            "properties": {
+                "Elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DetalleElementoPlaca"
+                    }
+                },
+                "Tercero": {
+                    "$ref": "#/definitions/models.DetalleFuncionario"
+                }
+            }
+        },
         "models.Movimiento": {
             "title": "Movimiento",
             "type": "object",
@@ -3846,6 +3886,9 @@
             "title": "TrBaja",
             "type": "object",
             "properties": {
+                "DependenciaId": {
+                    "type": "string"
+                },
                 "Elementos": {
                     "type": "array",
                     "items": {
@@ -3902,6 +3945,10 @@
                         "type": "integer",
                         "format": "int64"
                     }
+                },
+                "DependenciaId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "FechaRevisionC": {
                     "type": "string"
