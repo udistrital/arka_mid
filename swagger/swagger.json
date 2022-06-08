@@ -104,6 +104,12 @@
                     },
                     {
                         "in": "query",
+                        "name": "query",
+                        "description": "Query, in the form key1:value1,key2:value2,...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
                         "name": "limit",
                         "description": "Desired results. Default: -1 (All)",
                         "type": "integer",

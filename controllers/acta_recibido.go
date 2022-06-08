@@ -12,6 +12,7 @@ import (
 
 	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	e "github.com/udistrital/utils_oas/errorctrl"
 )
 
@@ -191,6 +192,7 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Param u query string false "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
+// @Param	query  query	string	false	"Query, in the form key1:value1,key2:value2,..."
 // @Param	limit  query	int	false	"Desired results. Default: -1 (All)"
 // @Param	offset query	int	false	"Skip first N results. Default: 0 (none)"
 // @Success 200 {object} []models.ActaResumen
@@ -200,7 +202,6 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Failure 502 "External API Error"
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
-
 	const funcion = "GetAllActas - "
 	defer e.ErrorControlController(c.Controller, "ActaRecibidoController")
 
@@ -212,6 +213,17 @@ func (c *ActaRecibidoController) GetAllActas() {
 	offset, err := c.GetInt("offset", 0)
 	if err != nil {
 		panic(e.Error(funcion+`c.GetInt("offset", 0)`, err, fmt.Sprint(http.StatusBadRequest)))
+	}
+
+	// query: k:v,k:v
+	query := make(map[string]string)
+	if v := c.GetString("query"); v != "" {
+		if err := utilsHelper.QuerySplit(v, query); err != nil {
+			logs.Debug(err)
+			panic(e.Error(funcion+"utilsHelper.QuerySplit(v,query)",
+				err, fmt.Sprint(http.StatusBadRequest)))
+		}
+		logs.Debug("query:", query)
 	}
 
 	var reqStates []string

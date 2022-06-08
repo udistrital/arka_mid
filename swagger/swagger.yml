@@ -71,6 +71,10 @@ paths:
         description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
         type: string
       - in: query
+        name: query
+        description: Query, in the form key1:value1,key2:value2,...
+        type: string
+      - in: query
         name: limit
         description: 'Desired results. Default: -1 (All)'
         type: integer
@@ -871,13 +875,11 @@ paths:
         format: int64
       - in: query
         name: confirmar
-        description: Consulta los traslados que están pendientes por ser confirmados
-          por el tercero que consulta.
+        description: Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta.
         type: boolean
       - in: query
         name: aprobar
-        description: Consulta los traslados que están pendientes por ser aprobados
-          por almacén.
+        description: Consulta los traslados que están pendientes por ser aprobados por almacén.
         type: boolean
       responses:
         "200":
