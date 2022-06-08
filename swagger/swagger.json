@@ -866,6 +866,12 @@
                         "type": "boolean"
                     },
                     {
+                        "in": "query",
+                        "name": "aprobar",
+                        "description": "Indica si la entrada se debe aprobar",
+                        "type": "boolean"
+                    },
+                    {
                         "in": "body",
                         "name": "body",
                         "description": "Detalles de la entrada. Se valida solo si el id es 0",
@@ -2952,9 +2958,6 @@
                 "supervisor": {
                     "type": "integer",
                     "format": "int64"
-                },
-                "tipo_contrato": {
-                    "type": "string"
                 },
                 "vigencia": {
                     "type": "string"

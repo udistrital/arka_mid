@@ -93,7 +93,6 @@ type FormatoBaseEntrada struct {
 	Placa               string  `json:"placa_id"`
 	RegistroImportacion string  `json:"num_reg_importacion"`
 	SupervisorId        int     `json:"supervisor"`
-	TipoContrato        string  `json:"tipo_contrato"`
 	TRM                 float64 `json:"TRM"`
 	Vigencia            string  `json:"vigencia"`
 	VigenciaContrato    string  `json:"vigencia_contrato"`
@@ -280,4 +279,9 @@ type FormatoAjusteAutomatico struct {
 	Consecutivo   string
 	ConsecutivoId int
 	Elementos     []int
+}
+
+type ConsecutivoMovimiento struct {
+	Consecutivo   string
+	ConsecutivoId int
 }

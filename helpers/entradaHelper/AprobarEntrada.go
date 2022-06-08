@@ -119,7 +119,7 @@ func descripcionMovimientoContable(detalle map[string]interface{}, detalle_ *str
 			}
 
 			*detalle_ += "Factura: " + sop.Consecutivo + ", "
-		} else if k != "consecutivo" && k != "ConsecutivoId" && k != "tipo_contrato" {
+		} else if k != "consecutivo" && k != "ConsecutivoId" {
 			k = strings.TrimSuffix(k, "_id")
 			k = strings.ReplaceAll(k, "_", " ")
 			k = strings.Title(k)

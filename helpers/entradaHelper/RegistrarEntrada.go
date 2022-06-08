@@ -40,7 +40,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *mod
 		return err
 	}
 
-	if err := crearDetalleEntrada(&data.Detalle, etl, &detalle); err != nil {
+	if err := crearDetalleEntrada(&data.Detalle, etl, nil, &detalle); err != nil {
 		return err
 	}
 
@@ -92,7 +92,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *mod
 }
 
 // creaDetalleEntrada construye la data que será almacenada en la columna detalle según se requiera.
-func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, necesario *string) (outputError map[string]interface{}) {
+func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecutivo_ *models.ConsecutivoMovimiento, necesario *string) (outputError map[string]interface{}) {
 
 	funcion := "crearDetalleEntrada - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -138,10 +138,6 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, necesari
 		delete(detalle, "supervisor")
 	}
 
-	if completo.TipoContrato == "" {
-		delete(detalle, "tipo_contrato")
-	}
-
 	if completo.TRM == 0 {
 		delete(detalle, "TRM")
 	}
@@ -162,7 +158,7 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, necesari
 		delete(detalle, "vigencia_solicitante")
 	}
 
-	if !etl {
+	if !etl && consecutivo_ == nil {
 		ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
 		if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
 			return err
@@ -170,6 +166,9 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, necesari
 
 		detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
 		detalle["ConsecutivoId"] = consecutivo.Id
+	} else if consecutivo_ != nil {
+		detalle["consecutivo"] = consecutivo_.Consecutivo
+		detalle["ConsecutivoId"] = consecutivo_.ConsecutivoId
 	}
 
 	if err := utilsHelper.Marshal(detalle, necesario); err != nil {

@@ -32,6 +32,7 @@ func (c *EntradaController) URLMapping() {
 // @Description Transaccion entrada. Estado de registro o aprobacion
 // @Param	entradaId	query	string						false	"Id del movimiento que se desea aprobar"
 // @Param	etl			query	bool						false	"Indica si la entrada se registra a partir del ETL"
+// @Param	aprobar		query	bool						false	"Indica si la entrada se debe aprobar"
 // @Param	body		body	models.TransaccionEntrada	false	"Detalles de la entrada. Se valida solo si el id es 0"
 // @Success 201 {object} models.Movimiento
 // @Failure 403 body is empty
@@ -44,9 +45,10 @@ func (c *EntradaController) Post() {
 	var (
 		entradaId int
 		etl       bool
+		aprobar   bool
 	)
 
-	if v, err := c.GetInt("entradaId"); err == nil {
+	if v, err := c.GetInt("entradaId", 0); err == nil {
 		entradaId = v
 	}
 
@@ -54,7 +56,11 @@ func (c *EntradaController) Post() {
 		etl = v
 	}
 
-	if entradaId > 0 {
+	if v, err := c.GetBool("aprobar", false); err == nil {
+		aprobar = v
+	}
+
+	if aprobar && entradaId > 0 {
 		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err != nil || respuesta == nil {
 			if err == nil {
 				panic(map[string]interface{}{
@@ -67,7 +73,7 @@ func (c *EntradaController) Post() {
 		} else {
 			c.Data["json"] = respuesta
 		}
-	} else {
+	} else if !aprobar {
 
 		var (
 			v       models.TransaccionEntrada
@@ -78,8 +84,14 @@ func (c *EntradaController) Post() {
 			panic(err)
 		}
 
-		if err := entradaHelper.RegistrarEntrada(&v, etl, &entrada); err != nil {
-			panic(err)
+		if entradaId > 0 {
+			if err := entradaHelper.UpdateEntrada(&v, entradaId, &entrada); err != nil {
+				panic(err)
+			}
+		} else if entradaId == 0 {
+			if err := entradaHelper.RegistrarEntrada(&v, etl, &entrada); err != nil {
+				panic(err)
+			}
 		}
 
 		c.Data["json"] = entrada
