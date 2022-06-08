@@ -1002,7 +1002,6 @@ definitions:
         format: datetime
       FechaVistoBueno:
         type: string
-        format: datetime
       Id:
         type: integer
         format: int64

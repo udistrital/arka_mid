@@ -12,7 +12,7 @@ type ActaResumen struct {
 	EstadoActaId      *EstadoActa
 	FechaCreacion     time.Time
 	FechaModificacion time.Time
-	FechaVistoBueno   time.Time
+	FechaVistoBueno   string // time.Time
 	Id                int
 	Observaciones     string
 	PersonaAsignada   string

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
 	// "github.com/udistrital/utils_oas/formatdata"
+	modelsActas "github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
@@ -21,14 +22,32 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+const (
+	FormatoFecha = time.RFC3339
+	FechaCero    = "0001-01-01T00:00:00Z"
+)
+
+var (
+	zero time.Time
+)
+
+func init() {
+	var err error
+	zero, err = time.Parse(FormatoFecha, FechaCero)
+	if err != nil {
+		logs.Critical(err)
+	}
+	logs.Debug("time.Parse de fecha zero:", zero)
+}
+
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset int) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset int) (historicoActa []models.ActaResumen, outputError map[string]interface{}) {
 
 	const funcion = "GetAllActasRecibidoActivas - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
 	// PARTE "0": Buffers, para evitar repetir consultas...
-	var hists []map[string]interface{}
+	var hists []modelsActas.HistoricoActa
 	Terceros := make(map[int]interface{})
 	Ubicaciones := make(map[int]interface{})
 
@@ -127,10 +146,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 			}
 		}
 	}
-	logs.Info("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
-
-	// fmt.Print("Estados Solicitados: ")
-	// fmt.Println(states)
+	logs.Debug("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
+	logs.Debug("Estados Solicitados:", states)
 
 	// Si se pasaron estados
 	if len(states) > 0 {
@@ -149,7 +166,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 			}
 			algunosEstados = estFinales
 		}
-		logs.Info("t:", verTodasLasActas, "- e:", algunosEstados)
+		logs.Debug("t:", verTodasLasActas, "- e:", algunosEstados)
 	}
 
 	// PARTE 2: Traer los tipos de actas identificados
@@ -171,7 +188,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 		urlTodas := base + params.Encode()
 		logs.Debug("urlTodas:", urlTodas)
 		if resp, err := request.GetJsonTest(urlTodas, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || len(hists[0]) == 0 {
+			if len(hists) == 0 || hists[0].Id == 0 {
 				return nil, nil
 			}
 		} else {
@@ -189,7 +206,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 		urlEstados := base + params.Encode()
 		logs.Debug("urlEstados:", urlEstados)
 		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || len(hists[0]) == 0 {
+			if len(hists) == 0 || hists[0].Id == 0 {
 				return nil, nil
 			}
 		} else {
@@ -215,7 +232,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 		urlContProv := base + params.Encode()
 		logs.Debug("urlContProv:", urlContProv)
 		if resp, err := request.GetJsonTest(urlContProv, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || len(hists[0]) == 0 {
+			if len(hists) == 0 || hists[0].Id == 0 {
 				return nil, nil
 			}
 		} else {
@@ -234,8 +251,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 		for _, historicos := range hists {
 
-			var acta map[string]interface{}
-			var estado map[string]interface{}
 			var ubicacionData map[string]interface{}
 			var editor *models.Tercero
 			var preUbicacion map[string]interface{}
@@ -243,44 +258,29 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 			preUbicacion = nil
 
-			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
-				acta = data
-			} else {
-				return nil, err
-			}
-
-			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
-				estado = data
-			} else {
-				return nil, err
-			}
-
 			reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
 				return func() (interface{}, map[string]interface{}) {
 					return crudTerceros.GetTerceroById(id)
 				}
 			}
-
-			idRev := int(historicos["RevisorId"].(float64))
+			idRev := historicos.RevisorId
 			if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRev), &consultasTerceros, &evTerceros); err == nil {
 				if v2, ok := v.(*models.Tercero); ok {
 					editor = v2
 				}
 			}
 
-			idUbStr := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
+			idUb := historicos.UbicacionId
 			reqUbicacion := func() (interface{}, map[string]interface{}) {
-				return oikos.GetAsignacionSedeDependencia(idUbStr)
+				return oikos.GetAsignacionSedeDependencia(fmt.Sprint(idUb))
 			}
-			if idUb, err := strconv.Atoi(idUbStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						preUbicacion = v2
-					}
+			if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
+				if v2, ok := v.(map[string]interface{}); ok {
+					preUbicacion = v2
 				}
 			}
 
-			idAsignado := int(historicos["PersonaAsignadaId"].(float64))
+			idAsignado := historicos.PersonaAsignadaId
 			if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignado), &consultasTerceros, &evTerceros); err == nil {
 				if v2, ok := v.(*models.Tercero); ok {
 					asignado = v2
@@ -291,7 +291,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 				if err := formatdata.FillStruct(v, &ubicacionData); err != nil {
 					logs.Error(err)
 					outputError = e.Error(funcion+"error al obtener información del espacio fisico", err, fmt.Sprint(http.StatusBadGateway))
-					return nil, outputError
+					return
 				}
 			} else {
 				ubicacionData = map[string]interface{}{
@@ -299,22 +299,22 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 				}
 			}
 
-			fVistoBueno := historicos["FechaVistoBueno"].(string)
-			if fVistoBueno == "0001-01-01T00:00:00Z" {
-				fVistoBueno = ""
+			fVistoBueno := ""
+			if historicos.FechaVistoBueno.After(zero) {
+				fVistoBueno = historicos.FechaVistoBueno.Format(FormatoFecha)
 			}
 
-			Acta := map[string]interface{}{
-				"Id":                acta["Id"],
-				"UbicacionId":       ubicacionData["Nombre"],
-				"FechaCreacion":     acta["FechaCreacion"],
-				"FechaVistoBueno":   fVistoBueno,
-				"FechaModificacion": historicos["FechaModificacion"],
-				"Observaciones":     historicos["Observaciones"],
-				"RevisorId":         editor.NombreCompleto,
-				"PersonaAsignada":   asignado.NombreCompleto,
-				"Estado":            estado["Nombre"],
-				"EstadoActaId":      estado,
+			Acta := models.ActaResumen{
+				Id:                historicos.ActaRecibidoId.Id,
+				UbicacionId:       ubicacionData["Nombre"].(string),
+				FechaCreacion:     historicos.ActaRecibidoId.FechaCreacion,
+				FechaVistoBueno:   fVistoBueno,
+				FechaModificacion: historicos.FechaModificacion,
+				Observaciones:     historicos.Observaciones,
+				RevisorId:         editor.NombreCompleto,
+				PersonaAsignada:   asignado.NombreCompleto,
+				Estado:            historicos.EstadoActaId.Nombre,
+				EstadoActaId:      (*models.EstadoActa)(historicos.EstadoActaId),
 			}
 
 			historicoActa = append(historicoActa, Acta)
@@ -328,9 +328,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 			"evProveedores":        evProveedores,
 			"actas":                len(historicoActa),
 		})
-		return historicoActa, nil
-
-	} else {
-		return nil, nil
 	}
+	return
 }

@@ -10,9 +10,9 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/utils_oas/errorctrl"
 )
 
@@ -265,7 +265,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 
 	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
 		if l == nil {
-			l = []map[string]interface{}{}
+			l = []models.ActaResumen{}
 		}
 		c.Data["json"] = l
 	} else {

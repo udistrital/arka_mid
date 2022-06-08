@@ -1514,8 +1514,7 @@
                     "format": "datetime"
                 },
                 "FechaVistoBueno": {
-                    "type": "string",
-                    "format": "datetime"
+                    "type": "string"
                 },
                 "Id": {
                     "type": "integer",
