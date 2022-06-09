@@ -247,87 +247,84 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 	}
 
 	// PARTE 3: Completar data faltante
-	if len(hists) > 0 {
+	for _, historicos := range hists {
 
-		for _, historicos := range hists {
+		var ubicacionData map[string]interface{}
+		var editor *models.Tercero
+		var preUbicacion map[string]interface{}
+		var asignado *models.Tercero
 
-			var ubicacionData map[string]interface{}
-			var editor *models.Tercero
-			var preUbicacion map[string]interface{}
-			var asignado *models.Tercero
+		preUbicacion = nil
 
-			preUbicacion = nil
-
-			reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
-				return func() (interface{}, map[string]interface{}) {
-					return crudTerceros.GetTerceroById(id)
-				}
+		reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
+			return func() (interface{}, map[string]interface{}) {
+				return crudTerceros.GetTerceroById(id)
 			}
-			idRev := historicos.RevisorId
-			if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRev), &consultasTerceros, &evTerceros); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					editor = v2
-				}
-			}
-
-			idUb := historicos.UbicacionId
-			reqUbicacion := func() (interface{}, map[string]interface{}) {
-				return oikos.GetAsignacionSedeDependencia(fmt.Sprint(idUb))
-			}
-			if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
-				if v2, ok := v.(map[string]interface{}); ok {
-					preUbicacion = v2
-				}
-			}
-
-			idAsignado := historicos.PersonaAsignadaId
-			if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignado), &consultasTerceros, &evTerceros); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					asignado = v2
-				}
-			}
-
-			if v, ok := preUbicacion["EspacioFisicoId"]; ok {
-				if err := formatdata.FillStruct(v, &ubicacionData); err != nil {
-					logs.Error(err)
-					outputError = e.Error(funcion+"error al obtener información del espacio fisico", err, fmt.Sprint(http.StatusBadGateway))
-					return
-				}
-			} else {
-				ubicacionData = map[string]interface{}{
-					"Nombre": "",
-				}
-			}
-
-			fVistoBueno := ""
-			if historicos.FechaVistoBueno.After(zero) {
-				fVistoBueno = historicos.FechaVistoBueno.Format(FormatoFecha)
-			}
-
-			Acta := models.ActaResumen{
-				Id:                historicos.ActaRecibidoId.Id,
-				UbicacionId:       ubicacionData["Nombre"].(string),
-				FechaCreacion:     historicos.ActaRecibidoId.FechaCreacion,
-				FechaVistoBueno:   fVistoBueno,
-				FechaModificacion: historicos.FechaModificacion,
-				Observaciones:     historicos.Observaciones,
-				RevisorId:         editor.NombreCompleto,
-				PersonaAsignada:   asignado.NombreCompleto,
-				Estado:            historicos.EstadoActaId.Nombre,
-				EstadoActaId:      (*models.EstadoActa)(historicos.EstadoActaId),
-			}
-
-			historicoActa = append(historicoActa, Acta)
 		}
-		logs.Debug(map[string]interface{}{
-			"consultasTerceros":    consultasTerceros,
-			"evTerceros":           evTerceros,
-			"consultasUbicaciones": consultasUbicaciones,
-			"evUbicaciones":        evUbicaciones,
-			"consultasProveedores": consultasProveedores,
-			"evProveedores":        evProveedores,
-			"actas":                len(historicoActa),
-		})
+		idRev := historicos.RevisorId
+		if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRev), &consultasTerceros, &evTerceros); err == nil {
+			if v2, ok := v.(*models.Tercero); ok {
+				editor = v2
+			}
+		}
+
+		idUb := historicos.UbicacionId
+		reqUbicacion := func() (interface{}, map[string]interface{}) {
+			return oikos.GetAsignacionSedeDependencia(fmt.Sprint(idUb))
+		}
+		if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
+			if v2, ok := v.(map[string]interface{}); ok {
+				preUbicacion = v2
+			}
+		}
+
+		idAsignado := historicos.PersonaAsignadaId
+		if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignado), &consultasTerceros, &evTerceros); err == nil {
+			if v2, ok := v.(*models.Tercero); ok {
+				asignado = v2
+			}
+		}
+
+		if v, ok := preUbicacion["EspacioFisicoId"]; ok {
+			if err := formatdata.FillStruct(v, &ubicacionData); err != nil {
+				logs.Error(err)
+				outputError = e.Error(funcion+"error al obtener información del espacio fisico", err, fmt.Sprint(http.StatusBadGateway))
+				return
+			}
+		} else {
+			ubicacionData = map[string]interface{}{
+				"Nombre": "",
+			}
+		}
+
+		fVistoBueno := ""
+		if historicos.FechaVistoBueno.After(zero) {
+			fVistoBueno = historicos.FechaVistoBueno.Format(FormatoFecha)
+		}
+
+		Acta := models.ActaResumen{
+			Id:                historicos.ActaRecibidoId.Id,
+			UbicacionId:       ubicacionData["Nombre"].(string),
+			FechaCreacion:     historicos.ActaRecibidoId.FechaCreacion,
+			FechaVistoBueno:   fVistoBueno,
+			FechaModificacion: historicos.FechaModificacion,
+			Observaciones:     historicos.Observaciones,
+			RevisorId:         editor.NombreCompleto,
+			PersonaAsignada:   asignado.NombreCompleto,
+			Estado:            historicos.EstadoActaId.Nombre,
+			EstadoActaId:      (*models.EstadoActa)(historicos.EstadoActaId),
+		}
+
+		historicoActa = append(historicoActa, Acta)
 	}
+	logs.Debug(map[string]interface{}{
+		"consultasTerceros":    consultasTerceros,
+		"evTerceros":           evTerceros,
+		"consultasUbicaciones": consultasUbicaciones,
+		"evUbicaciones":        evUbicaciones,
+		"consultasProveedores": consultasProveedores,
+		"evProveedores":        evProveedores,
+		"actas":                len(historicoActa),
+	})
 	return
 }
