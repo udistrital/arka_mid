@@ -3,15 +3,12 @@ package actaRecibido
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	// "github.com/udistrital/utils_oas/formatdata"
-	modelsActas "github.com/udistrital/acta_recibido_crud/models"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
@@ -19,7 +16,6 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/formatdata"
-	"github.com/udistrital/utils_oas/request"
 )
 
 const (
@@ -47,7 +43,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
 	// PARTE "0": Buffers, para evitar repetir consultas...
-	var hists []modelsActas.HistoricoActa
+	var hists []*models.HistoricoActa
 	Terceros := make(map[int]interface{})
 	Ubicaciones := make(map[int]interface{})
 
@@ -171,53 +167,16 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 	// PARTE 2: Traer los tipos de actas identificados
 	// (con base a la estrategia definida anteriormente)
-
-	// TODO: Por rendimiento, TODO lo relacionado a ...
-	// - buscar el historico_acta mas reciente
-	// - Filtrar por estados
-	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
-	base := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?"
-	params := url.Values{}
-	params.Add("limit", fmt.Sprint(limit))
-	params.Add("offset", fmt.Sprint(offset))
-	params.Add("sortby", "ActaRecibidoId__Id")
-	params.Add("order", "desc")
+	limitStr := fmt.Sprint(limit)
+	offsetStr := fmt.Sprint(offset)
+	const (
+		sortby = "ActaRecibidoId__Id"
+		order  = "desc"
+	)
 	query := "Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
 	if verTodasLasActas {
-		params.Add("query", query)
-		urlTodas := base + params.Encode()
-		logs.Debug("urlTodas:", urlTodas)
-		if resp, err := request.GetJsonTest(urlTodas, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || hists[0].Id == 0 {
-				return nil, nil
-			}
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-			}
-			logs.Error(err)
-			outputError = e.Error(funcion+"request.GetJsonTest(urlTodas, &hists)", err, fmt.Sprint(http.StatusBadGateway))
-			return nil, outputError
-		}
-
 	} else if len(algunosEstados) > 0 {
 		query += ",EstadoActaId__Nombre__in:" + strings.Join(algunosEstados, "|")
-		params.Add("query", query)
-		urlEstados := base + params.Encode()
-		logs.Debug("urlEstados:", urlEstados)
-		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || hists[0].Id == 0 {
-				return nil, nil
-			}
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-			}
-			logs.Error(err)
-			outputError = e.Error(funcion+"request.GetJsonTest(urlEstados, &hists)", err, fmt.Sprint(http.StatusBadGateway))
-			return nil, outputError
-		}
-
 	} else if contratista || proveedor {
 		query += ",EstadoActaId__Nombre"
 		if contratista {
@@ -227,23 +186,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 			query += ":En Elaboracion"
 			query += ",ProveedorId:" + fmt.Sprint(idTercero)
 		}
-		params.Add("query", query)
-
-		urlContProv := base + params.Encode()
-		logs.Debug("urlContProv:", urlContProv)
-		if resp, err := request.GetJsonTest(urlContProv, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || hists[0].Id == 0 {
-				return nil, nil
-			}
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-			}
-			logs.Error(err)
-			outputError = e.Error(funcion+"request.GetJsonTest(urlContProv, &hists)", err, fmt.Sprint(http.StatusBadGateway))
-			return nil, outputError
-		}
-
+	}
+	if hists, outputError = actaRecibido.GetAllHistoricoActa(query, "", sortby, order, offsetStr, limitStr); outputError != nil {
+		return
 	}
 
 	// PARTE 3: Completar data faltante
