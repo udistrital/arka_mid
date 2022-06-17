@@ -75,3 +75,17 @@ type DetalleElemento__ struct {
 	VidaUtil      float64
 	ValorResidual float64
 }
+
+type DetalleElementoSalida struct {
+	Cantidad           int
+	ElementoActaId     int
+	Id                 int
+	Marca              string
+	Nombre             string
+	Placa              string
+	Serie              string
+	SubgrupoCatalogoId *DetalleSubgrupo
+	ValorResidual      float64
+	ValorTotal         float64
+	VidaUtil           float64
+}

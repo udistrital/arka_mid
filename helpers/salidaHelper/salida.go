@@ -200,11 +200,10 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		trSalida           *models.TrSalida
-		detalle            map[string]interface{}
-		ids                []int
-		elementosActa      []*models.DetalleElemento
-		elementosCompletos []*models.DetalleElemento__
+		trSalida      *models.TrSalida
+		detalle       map[string]interface{}
+		ids           []int
+		elementosActa []*models.DetalleElemento
 	)
 
 	if tr_, err := movimientosArka.GetTrSalida(id); err != nil {
@@ -223,24 +222,28 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 		}
 	}
 
+	var elementosCompletos = make([]models.DetalleElementoSalida, 0)
 	for _, el := range elementosActa {
-		var idx int
-		var elemento_ *models.DetalleElemento__
-		detalle := new(models.ElementosMovimiento)
 
-		if idx = utilsHelper.FindElementoInArrayElementosMovimiento(trSalida.Elementos, el.Id); idx > -1 {
-			detalle = trSalida.Elementos[idx]
-			detalle.ValorResidual = (detalle.ValorResidual * 10000) / (detalle.ValorTotal * 100)
-		} else {
-			detalle.ValorResidual = 0
-			detalle.VidaUtil = 0
+		if idx := utilsHelper.FindElementoInArrayElementosMovimiento(trSalida.Elementos, el.Id); idx > -1 {
+
+			detalle := models.DetalleElementoSalida{
+				Cantidad:           el.Cantidad,
+				ElementoActaId:     id,
+				Id:                 trSalida.Elementos[idx].Id,
+				Marca:              el.Marca,
+				Nombre:             el.Nombre,
+				Placa:              el.Placa,
+				Serie:              el.Serie,
+				SubgrupoCatalogoId: el.SubgrupoCatalogoId,
+				ValorResidual:      (trSalida.Elementos[idx].ValorResidual * 10000) / (trSalida.Elementos[idx].ValorTotal * 100),
+				ValorTotal:         trSalida.Elementos[idx].ValorTotal,
+				VidaUtil:           trSalida.Elementos[idx].VidaUtil,
+			}
+
+			elementosCompletos = append(elementosCompletos, detalle)
 		}
 
-		if elemento_, outputError = utilsHelper.FillElemento(el, detalle); outputError != nil {
-			return nil, outputError
-		}
-
-		elementosCompletos = append(elementosCompletos, elemento_)
 	}
 
 	if salida__, err := TraerDetalle(trSalida.Salida); err != nil {
