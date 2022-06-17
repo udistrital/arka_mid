@@ -1,167 +1,84 @@
 package salidaHelper
 
 import (
-	"encoding/json"
-	"fmt"
 	"regexp"
+	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
-
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "TraerDetalle - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
+	funcion := "TraerDetalle - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	var (
+		data      models.Movimiento
+		data2     models.FormatoSalida
+		ubicacion models.AsignacionEspacioFisicoDependencia
+		sede      models.EspacioFisico
+		query     string
+	)
+
+	if err := utilsHelper.FillStruct(salida, &data); err != nil {
+		return nil, err
+	}
+
+	if err := utilsHelper.Unmarshal(data.Detalle, &data2); err != nil {
+		return nil, err
+	}
+
+	if data2.Ubicacion > 0 {
+
+		query = "?query=Id:" + strconv.Itoa(data2.Ubicacion)
+		if asignacion_, err := oikos.GetAllAsignacion(query); err != nil {
+			return nil, err
+		} else if len(asignacion_) > 0 {
+			ubicacion = *asignacion_[0]
+			ubicacion.EspacioFisicoId.Id = ubicacion.Id
 		}
-	}()
-
-	sedeVacia := map[string]interface{}{
-		"Id": 0,
-	}
-	ubicacionVacia := map[string]interface{}{
-		"DependenciaId":   0,
-		"EspacioFisicoId": 0,
 	}
 
-	if jsonString, err := json.Marshal(salida); err == nil {
+	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
+		rgxp := regexp.MustCompile("[0-9]")
+		str := rgxp.ReplaceAllString(ubicacion.EspacioFisicoId.CodigoAbreviacion, "")
 
-		var data map[string]interface{}
-		if err := json.Unmarshal(jsonString, &data); err == nil {
-			str := fmt.Sprintf("%v", data["Detalle"])
+		query = "?query=CodigoAbreviacion:" + str
+		if sede_, err := oikos.GetAllEspacioFisico(query); err != nil {
+			return nil, err
+		} else if len(sede_) > 0 {
+			sede = *sede_[0]
+		}
+	}
 
-			var data2 map[string]interface{}
-			if err := json.Unmarshal([]byte(str), &data2); err == nil {
+	Salida2 := map[string]interface{}{
+		"Id":                      data.Id,
+		"Observacion":             data.Observacion,
+		"Sede":                    sede,
+		"Dependencia":             ubicacion.DependenciaId,
+		"Ubicacion":               ubicacion.EspacioFisicoId,
+		"FechaCreacion":           data.FechaCreacion,
+		"FechaModificacion":       data.FechaModificacion,
+		"Activo":                  data.Activo,
+		"MovimientoPadreId":       data.MovimientoPadreId,
+		"FormatoTipoMovimientoId": data.FormatoTipoMovimientoId,
+		"EstadoMovimientoId":      data.EstadoMovimientoId.Id,
+		"Consecutivo":             data2.Consecutivo,
+		"ConsecutivoId":           data2.ConsecutivoId,
+	}
 
-				urlcrud3 := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia"
-				urlcrud3 += "?query=Id:" + fmt.Sprintf("%v", data2["ubicacion"])
-
-				var tercero []map[string]interface{}
-				var ubicacion []map[string]interface{}
-				var sede []map[string]interface{}
-				if data2["ubicacion"] != nil {
-					if _, err := request.GetJsonTest(urlcrud3, &ubicacion); err == nil {
-
-						var ubicacion2 map[string]interface{}
-						if jsonString3, err := json.Marshal(ubicacion[0]["EspacioFisicoId"]); err == nil {
-							if err2 := json.Unmarshal(jsonString3, &ubicacion2); err2 == nil {
-								str2 := fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"])
-								rgxp := regexp.MustCompile("[0-9]")
-								str2 = rgxp.ReplaceAllString(str2, "")
-
-								urlcrud4 := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=CodigoAbreviacion:" + str2
-								if _, err := request.GetJsonTest(urlcrud4, &sede); err != nil {
-									logs.Error(err)
-									outputError = map[string]interface{}{
-										"funcion": "TraerDetalle - request.GetJsonTest(urlcrud4, &sede)",
-										"err":     err,
-										"status":  "502",
-									}
-									return nil, outputError
-								}
-
-							} else {
-								logs.Error(err2)
-								outputError = map[string]interface{}{
-									"funcion": "TraerDetalle - json.Unmarshal(jsonString3, &ubicacion2)",
-									"err":     err2,
-									"status":  "500",
-								}
-								return nil, outputError
-							}
-						} else {
-							logs.Error(err)
-							outputError = map[string]interface{}{
-								"funcion": "TraerDetalle - json.Marshal(ubicacion[0][\"EspacioFisicoId\"])",
-								"err":     err,
-								"status":  "500",
-							}
-							return nil, outputError
-						}
-
-					} else {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-				} else {
-					sede = append(sede, sedeVacia)
-					ubicacion = append(ubicacion, ubicacionVacia)
-				}
-
-				Salida2 := map[string]interface{}{
-					"Id":                      data["Id"],
-					"Observacion":             data["Observacion"],
-					"Sede":                    sede[0],
-					"Dependencia":             ubicacion[0]["DependenciaId"],
-					"Ubicacion":               ubicacion[0]["EspacioFisicoId"],
-					"FechaCreacion":           data["FechaCreacion"],
-					"FechaModificacion":       data["FechaModificacion"],
-					"Activo":                  data["Activo"],
-					"MovimientoPadreId":       data["MovimientoPadreId"],
-					"FormatoTipoMovimientoId": data["FormatoTipoMovimientoId"],
-					"EstadoMovimientoId":      data["EstadoMovimientoId"].(map[string]interface{})["Id"],
-					"Consecutivo":             data2["consecutivo"],
-					"ConsecutivoId":           data2["ConsecutivoId"],
-				}
-
-				if data2["funcionario"] != nil {
-
-					urlcrud2 := "http://" + beego.AppConfig.String("tercerosService") + "tercero/?query=Id:" + fmt.Sprintf("%v", data2["funcionario"]) + "&fields=Id,NombreCompleto"
-					if _, err := request.GetJsonTest(urlcrud2, &tercero); err != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "TraerDetalle - request.GetJsonTest(urlcrud3, &ubicacion)",
-							"err":     err,
-							"status":  "502",
-						}
-						return nil, outputError
-					}
-
-					Salida2["Funcionario"] = tercero[0]
-
-				}
-
-				return Salida2, nil
-
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "TraerDetalle - json.Unmarshal([]byte(str), &data2)",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
-			}
-
+	if data2.Funcionario > 0 {
+		if funcionario_, err := terceros.GetTerceroById(data2.Funcionario); err != nil {
+			return nil, err
 		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "TraerDetalle - json.Unmarshal(jsonString, &data)",
-				"err":     err,
-				"status":  "500",
-			}
-			return nil, outputError
+			Salida2["Funcionario"] = funcionario_
 		}
-	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "TraerDetalle - json.Marshal(salida)",
-			"err":     err,
-			"status":  "400",
-		}
-		return nil, outputError
 	}
+
+	return Salida2, nil
+
 }

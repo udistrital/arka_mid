@@ -229,7 +229,7 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 
 			detalle := models.DetalleElementoSalida{
 				Cantidad:           el.Cantidad,
-				ElementoActaId:     id,
+				ElementoActaId:     el.Id,
 				Id:                 trSalida.Elementos[idx].Id,
 				Marca:              el.Marca,
 				Nombre:             el.Nombre,
