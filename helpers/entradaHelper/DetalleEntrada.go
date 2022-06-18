@@ -113,6 +113,14 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 	}
 
+	if detalle.Placa != "" {
+		if encargado, err := GetEncargadoElemento(detalle.Placa); err != nil {
+			return nil, err
+		} else if encargado != nil {
+			resultado["encargado"] = encargado
+		}
+	}
+
 	resultado["movimiento"] = movimiento
 
 	return resultado, nil
