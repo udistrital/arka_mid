@@ -27,14 +27,18 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		estadoMovimientoId int
 		consecutivoId      int
 		detalleContable    string
+		query              string
 	)
 
 	resultado := make(map[string]interface{})
 
-	if mov, err := movimientosArka.GetMovimientoById(entradaId); err != nil {
+	query = "query=Id:" + strconv.Itoa(entradaId)
+	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
 		return nil, err
+	} else if len(mov) == 1 && mov[0].EstadoMovimientoId.Nombre == "Entrada En Trámite" {
+		movimiento = mov[0]
 	} else {
-		movimiento = mov
+		return
 	}
 
 	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalleMovimiento); err != nil {
@@ -45,7 +49,7 @@ func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, err
 	}
 
-	query := "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
+	query = "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
 	if ha, err := actasCrud.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
