@@ -45,6 +45,15 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			if contrato, err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato); err != nil {
 				return nil, err
 			} else {
+				if val, ok := contrato["contrato"].(map[string]interface{})["tipo_contrato"].(string); ok {
+					if num, err := strconv.Atoi(val); num > 0 && err == nil {
+						var tipoContrato interface{}
+						if err := administrativa.GetTipoContratoById(num, &tipoContrato); err != nil {
+							return nil, err
+						}
+						contrato["contrato"].(map[string]interface{})["tipo_contrato"] = tipoContrato
+					}
+				}
 				resultado["contrato"] = contrato["contrato"]
 			}
 		}
