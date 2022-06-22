@@ -53,7 +53,12 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuen
 			if cta_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
 				return nil, err
 			} else {
-				detalleCuentas[mov.Cuenta] = *cta_
+				if cta_ != nil {
+					detalleCuentas[mov.Cuenta] = *cta_
+				} else {
+					cta_ = new(models.CuentaContable)
+					detalleCuentas[mov.Cuenta] = *cta_
+				}
 				mov_.Cuenta = &models.DetalleCuenta{
 					Id:              cta_.Id,
 					Codigo:          cta_.Codigo,
