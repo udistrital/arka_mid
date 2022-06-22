@@ -263,7 +263,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		}
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset, query); err == nil {
 		if l == nil {
 			l = []models.ActaResumen{}
 		}

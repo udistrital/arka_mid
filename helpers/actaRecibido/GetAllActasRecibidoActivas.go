@@ -37,8 +37,8 @@ func init() {
 }
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset int) (historicoActa []models.ActaResumen, outputError map[string]interface{}) {
-
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset int,
+	customQuery map[string]string) (historicoActa []models.ActaResumen, outputError map[string]interface{}) {
 	const funcion = "GetAllActasRecibidoActivas - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
