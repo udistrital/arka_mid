@@ -258,8 +258,8 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 	}
 
 	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" {
-		if val, ok := detalle["ConsecutivoId"]; ok && val != nil {
-			if tr, err := movimientosContables.GetTransaccion(int(val.(float64)), "consecutivo", true); err != nil {
+		if val, ok := detalle["ConsecutivoId"].(int); ok && val > 0 {
+			if tr, err := movimientosContables.GetTransaccion(val, "consecutivo", true); err != nil {
 				return nil, err
 			} else if len(tr.Movimientos) > 0 {
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
