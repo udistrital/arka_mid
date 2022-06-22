@@ -127,6 +127,13 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 	}()
 	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
 	urltercero += "?query=Activo:true,TerceroId__Activo:true,Numero:" + doc
+	// TODO: Alternativamente, se podría usar una de las siguientes:
+	// urltercero += "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero)
+	// urltercero += "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,Numero:" + doc
+	// PERO
+	// Depende de que en terceros_crud se agregue a la tabla datos_identificacion un CONSTRAINT UNIQUE
+	// entre tipo_documento_id y numero. Una vez agregado dicho constraint, quizás las validaciones
+	// a continuación se podrían prescindir
 	var terceros []models.DatosIdentificacion
 	// logs.Debug("urltercero:", urltercero)
 	if resp, err := request.GetJsonTest(urltercero, &terceros); err == nil && resp.StatusCode == 200 {
