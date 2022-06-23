@@ -105,8 +105,10 @@ func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map
 
 	if tr_, err := movimientosArka.GetTrSalida(salidaId); err != nil {
 		return nil, err
-	} else {
+	} else if tr_.Salida.EstadoMovimientoId.Nombre == "Salida En Trámite" {
 		trSalida = tr_
+	} else {
+		return
 	}
 
 	var idsElementos []int
