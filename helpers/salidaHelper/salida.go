@@ -12,7 +12,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -38,27 +37,10 @@ func PostTrSalidas(m *models.SalidaGeneral, etl bool) (resultado map[string]inte
 		return nil, err
 	}
 
-	ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
 	for _, salida := range m.Salidas {
 
 		if !etl {
-			var (
-				consecutivo models.Consecutivo
-				detalle     map[string]interface{}
-			)
-
-			if err := utilsHelper.Unmarshal(salida.Salida.Detalle, &detalle); err != nil {
-				return nil, err
-			}
-
-			if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo); err != nil {
-				return nil, err
-			}
-
-			detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo)
-			detalle["ConsecutivoId"] = consecutivo.Id
-
-			if err := utilsHelper.Marshal(detalle, &salida.Salida.Detalle); err != nil {
+			if err := setDetalleSalida("", 0, &salida.Salida.Detalle); err != nil {
 				return nil, err
 			}
 		}
