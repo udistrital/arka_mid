@@ -831,15 +831,18 @@ paths:
       parameters:
       - in: path
         name: id
-        description: Id de la salida original
+        description: Id de la salida que se debe actualizar
         required: true
         type: integer
         format: int64
+      - in: query
+        name: rechazar
+        description: Indica si la salida se debe rechazar
+        type: boolean
       - in: body
         name: body
         description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
-        required: true
+          ellas. Se valida solo si no se debe rechazar
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
       responses:
