@@ -118,9 +118,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 		// traerán las asignadas como contratista o proveedor
 		if len(algunosEstados) == 0 {
 			for _, rol := range usr.Role {
-				if proveedor && contratista {
-					break
-				}
+				// La siguiente validación es innecesaria...
+				// if proveedor && contratista {
+				// 	break
+				// }
 				if rol == models.RolesArka["Proveedor"] {
 					proveedor = true
 				} else if rol == models.RolesArka["Contratista"] {
