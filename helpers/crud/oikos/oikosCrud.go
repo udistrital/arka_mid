@@ -1,12 +1,16 @@
 package oikos
 
 import (
+	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	e "github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -72,13 +76,27 @@ func GetAllEspacioFisico(query string) (espacio []*models.EspacioFisico, outputE
 func GetDependenciaById(id int, dependencia *models.Dependencia) (outputError map[string]interface{}) {
 
 	funcion := "GetDependenciaById - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer e.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "dependencia/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &dependencia); err != nil {
 		eval := "request.GetJson(urlcrud, &dependencia)"
-		return errorctrl.Error(funcion+eval, err, "502")
+		return e.Error(funcion+eval, err, "502")
 	}
 
 	return nil
+}
+
+func GetDependencia(query, fields, sortby, order string, limit, offset int, dependencias interface{}) (outputError interface{}) {
+	const funcion = "GetDependencias - "
+	defer e.ErrorControlFunction(funcion+"unhandled error!", fmt.Sprint(http.StatusInternalServerError))
+
+	urlOikosDependencia := "http://" + beego.AppConfig.String("oikosService") + "dependencia?"
+	urlOikosDependencia += utilsHelper.EncodeUrl(query, fields, sortby, order, fmt.Sprint(offset), fmt.Sprint(limit))
+	logs.Debug("urlOikosDependencia:", urlOikosDependencia)
+	if _, err := request.GetJsonTest(urlOikosDependencia, &dependencias); err != nil {
+		logs.Error(err)
+		outputError = e.Error(funcion+"request.GetJsonTest(urlOikosDependencia, &dependencias)", err, fmt.Sprint(http.StatusBadGateway))
+	}
+	return
 }

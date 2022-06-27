@@ -1212,8 +1212,16 @@ definitions:
     title: Dependencia
     type: object
     properties:
+      Activo:
+        type: boolean
       CorreoElectronico:
         type: string
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64

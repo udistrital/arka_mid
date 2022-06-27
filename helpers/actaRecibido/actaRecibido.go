@@ -11,8 +11,8 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	// "github.com/udistrital/utils_oas/formatdata"
-
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -162,42 +162,23 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		}
 	}()
 
-	var Dependencias interface{}
-	var Sedes interface{}
-	var Ubicaciones interface{}
+	var (
+		Dependencias []models.Dependencia
+		Sedes        interface{}
+		Ubicaciones  interface{}
+	)
 	parametros := make([]map[string]interface{}, 0)
 
-	urlOikosDependencia := "http://" + beego.AppConfig.String("oikosService") + "dependencia?limit=-1"
-	if _, err := request.GetJsonTest(urlOikosDependencia, &Dependencias); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosDependencia, &Dependencias)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if err := oikos.GetDependencia("", "", "", "", -1, 0, &Dependencias); err != nil {
+		logs.Warning(err)
 	}
 
-	urlOikosAsignacion := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?limit=-1"
-	if _, err := request.GetJsonTest(urlOikosAsignacion, &Ubicaciones); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosAsignacion, &Ubicaciones)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if Ubicaciones, outputError = oikos.GetAllAsignacion("?limit=-1"); outputError != nil {
+		return
 	}
 
-	urlOikosEspFis := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=TipoEspacioFisicoId.Id:1&limit=-1"
-	if _, err := request.GetJsonTest(urlOikosEspFis, &Sedes); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosEspFis, &Sedes)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if Sedes, outputError = oikos.GetAllEspacioFisico("?query=TipoEspacioFisicoId.Id:1&limit=-1"); outputError != nil {
+		return
 	}
 
 	parametros = append(parametros, map[string]interface{}{
