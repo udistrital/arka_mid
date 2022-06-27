@@ -1,67 +1,32 @@
 package oikos
 
 import (
+	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
-
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/request"
+	e "github.com/udistrital/utils_oas/errorctrl"
 )
 
-func GetAsignacionSedeDependencia(Id string) (Relacion map[string]interface{}, outputError map[string]interface{}) {
+func GetAsignacionSedeDependencia(Id int) (Relacion models.AsignacionEspacioFisicoDependencia, outputError map[string]interface{}) {
+	const funcion = "GetAsignacionSedeDependencia - "
+	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAsignacionSedeDependencia - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	var ubicacion []map[string]interface{}
-	relacion := make(map[string]interface{})
-
-	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?query=Id:" + Id
-
-	if _, err := request.GetJsonTest(urlcrud, &ubicacion); err == nil { // (2) error servicio caido
-
-		if keys := len(ubicacion[0]); keys != 0 {
-
-			return ubicacion[0], nil
-
-		} else {
-			return relacion, nil
-		}
+	var res []*models.AsignacionEspacioFisicoDependencia
+	if res, outputError = GetAllAsignacion(fmt.Sprintf("?query=Id:%d", Id)); outputError != nil {
+		return
 	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAsignacionSedeDependencia",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		return *res[0], nil
 	}
 }
 
 func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.DetalleSedeDependencia, outputError map[string]interface{}) {
+	const funcion = "GetSedeDependenciaUbicacion - "
+	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetSedeDependenciaUbicacion - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
 	var (
 		urlcrud   string
 		ubicacion []*models.AsignacionEspacioFisicoDependencia
@@ -69,10 +34,8 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 	resultado := new(models.DetalleSedeDependencia)
 
 	urlcrud = "?query=Id:" + strconv.Itoa(ubicacionId)
-	if ubicacion_, err := GetAllAsignacion(urlcrud); err != nil {
-		return nil, err
-	} else {
-		ubicacion = ubicacion_
+	if ubicacion, outputError = GetAllAsignacion(urlcrud); outputError != nil {
+		return
 	}
 
 	resultado.Dependencia = ubicacion[0].DependenciaId

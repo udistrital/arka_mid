@@ -15,7 +15,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/formatdata"
+	// "github.com/udistrital/utils_oas/formatdata"
 )
 
 const (
@@ -192,15 +192,15 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 		return
 	}
 
+	asignacionEspFisDepVacía := models.AsignacionEspacioFisicoDependencia{
+		EspacioFisicoId: &models.EspacioFisico{},
+		DependenciaId:   &models.Dependencia{},
+	}
 	// PARTE 3: Completar data faltante
 	for _, historicos := range hists {
-
-		var ubicacionData map[string]interface{}
+		asignacion := &asignacionEspFisDepVacía
 		var editor *models.Tercero
-		var preUbicacion map[string]interface{}
 		var asignado *models.Tercero
-
-		preUbicacion = nil
 
 		reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
 			return func() (interface{}, map[string]interface{}) {
@@ -216,11 +216,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 		idUb := historicos.UbicacionId
 		reqUbicacion := func() (interface{}, map[string]interface{}) {
-			return oikos.GetAsignacionSedeDependencia(fmt.Sprint(idUb))
+			return oikos.GetAsignacionSedeDependencia(idUb)
 		}
 		if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
-			if v2, ok := v.(map[string]interface{}); ok {
-				preUbicacion = v2
+			if preUbicacion, ok := v.(models.AsignacionEspacioFisicoDependencia); ok && preUbicacion.EspacioFisicoId != nil {
+				asignacion = &preUbicacion
 			}
 		}
 
@@ -231,18 +231,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 			}
 		}
 
-		if v, ok := preUbicacion["EspacioFisicoId"]; ok {
-			if err := formatdata.FillStruct(v, &ubicacionData); err != nil {
-				logs.Error(err)
-				outputError = e.Error(funcion+"error al obtener información del espacio fisico", err, fmt.Sprint(http.StatusBadGateway))
-				return
-			}
-		} else {
-			ubicacionData = map[string]interface{}{
-				"Nombre": "",
-			}
-		}
-
 		fVistoBueno := ""
 		if historicos.FechaVistoBueno.After(zero) {
 			fVistoBueno = historicos.FechaVistoBueno.Format(FormatoFecha)
@@ -250,7 +238,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 		Acta := models.ActaResumen{
 			Id:                historicos.ActaRecibidoId.Id,
-			UbicacionId:       ubicacionData["Nombre"].(string),
+			UbicacionId:       asignacion.DependenciaId.Nombre,
 			FechaCreacion:     historicos.ActaRecibidoId.FechaCreacion,
 			FechaVistoBueno:   fVistoBueno,
 			FechaModificacion: historicos.FechaModificacion,
