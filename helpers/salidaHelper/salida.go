@@ -1,7 +1,6 @@
 package salidaHelper
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -277,7 +276,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		}
 	}()
 
-	query := "limit=-1&sortby=Id&order=desc&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS,EstadoMovimientoId__Nombre"
+	query := "limit=20&sortby=Id&order=desc&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS,EstadoMovimientoId__Nombre"
 	if tramiteOnly {
 		query += url.QueryEscape(":Salida En Trámite")
 	} else {
@@ -311,19 +310,14 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 // GetInfoSalida Retorna el funcionario y el consecutivo de una salida a partir del detalle del movimiento
 func GetInfoSalida(detalle string) (funcionarioId int, consecutivo string, outputError map[string]interface{}) {
 
-	funcion := "GetInfoSalida"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
 
-	var detalle_ map[string]interface{}
-
-	if err := json.Unmarshal([]byte(detalle), &detalle_); err != nil {
-		logs.Error(err)
-		eval := " - json.Unmarshal([]byte(detalle), &detalle_)"
-		return 0, "", errorctrl.Error(funcion+eval, err, "500")
+	var detalle_ models.FormatoSalida
+	if err := utilsHelper.Unmarshal(detalle, &detalle_); err != nil {
+		return 0, "", err
 	}
 
-	return int(detalle_["funcionario"].(float64)), detalle_["consecutivo"].(string), nil
-
+	return detalle_.Funcionario, detalle_.Consecutivo, nil
 }
 
 func getTipoComprobanteSalidas() string {

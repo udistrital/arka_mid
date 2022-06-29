@@ -114,7 +114,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 				if err != nil {
 					return nil, err
 				} else {
-					res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Nombre
+					res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre
 					return res, nil
 				}
 			} else {
@@ -128,7 +128,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 				if err != nil {
 					return nil, err
 				} else {
-					res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Nombre
+					res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre
 					return res, nil
 				}
 			} else {
@@ -145,7 +145,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 			if err != nil {
 				return nil, err
 			} else {
-				res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Nombre
+				res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre
 				return res, nil
 			}
 		}
