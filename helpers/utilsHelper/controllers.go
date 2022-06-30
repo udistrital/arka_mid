@@ -26,7 +26,7 @@ const (
 // Despues de lo anterior, si se serializara en JSON se obtendría:
 // {"t1":"v1","t2":"v2"}
 func CustomQuerySplit(raw, termSeparator, keySeparator string,
-	query map[string]string) error {
+	query *map[string]string) error {
 	if termSeparator == "" {
 		termSeparator = DefaultQueryTermSeparator
 	}
@@ -43,11 +43,11 @@ func CustomQuerySplit(raw, termSeparator, keySeparator string,
 			return errors.New("invalid query key/value pair")
 		}
 		k, v := kv[0], kv[1]
-		query[k] = v
+		(*query)[k] = v
 	}
 	return nil
 }
 
-func QuerySplit(raw string, query map[string]string) error {
+func QuerySplit(raw string, query *map[string]string) error {
 	return CustomQuerySplit(raw, "", "", query)
 }

@@ -125,7 +125,7 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 			panic(outputError)
 		}
 	}()
-	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=Activo:true,"
+	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion?query=Activo:true,"
 	urltercero += "Numero:" + doc
 	var terceros []*models.DatosIdentificacion
 

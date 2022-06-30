@@ -11,6 +11,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/actaRecibido/constantes"
 	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/utils_oas/errorctrl"
 )
@@ -214,18 +215,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		panic(e.Error(funcion+`c.GetInt("offset", 0)`, err, fmt.Sprint(http.StatusBadRequest)))
 	}
 
-	// query: k:v,k:v
-	query := make(map[string]string)
-	if v := c.GetString("query"); v != "" {
-		if err := actaRecibido.ProcesaQueryListaActas(v, query); err != nil {
-			panic(err)
-		}
-		logs.Debug("query:", query)
-	}
-
 	var reqStates []string
-	var WSO2user string
-
 	if v := c.GetString("states"); v != "" {
 		valido := false
 		states := strings.Split(v, ",")
@@ -242,13 +232,11 @@ func (c *ActaRecibidoController) GetAllActas() {
 			logs.Error(err)
 			panic(e.Error(funcion+`c.GetString("states")`, err, fmt.Sprint(http.StatusBadRequest)))
 		}
-
-		// TODO:
-		// Mover reqStates al query
 	}
 	// fmt.Print("ESTADOS SOLICITADOS: ")
 	// fmt.Println(reqStates)
 
+	var WSO2user string
 	if v := c.GetString("u"); v != "" {
 		valido := false
 		user := strings.TrimSpace(v)
@@ -263,7 +251,20 @@ func (c *ActaRecibidoController) GetAllActas() {
 		}
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset, query); err == nil {
+	// query: k:v,k:v
+	query := make(map[string]interface{})
+	if v := c.GetString("query"); v != "" || len(reqStates) > 0 {
+		if err := actaRecibido.ProcesaQueryListaActas(v, query); v != "" && err != nil {
+			panic(err)
+		}
+		if len(reqStates) > 0 {
+			// Mover reqStates al query (sobreescribe si también se especificó en el query)
+			query[constantes.EstadoActa] = reqStates
+		}
+		// logs.Debug("query:", query)
+	}
+
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, limit, offset, query); err == nil {
 		if l == nil {
 			l = []models.ActaResumen{}
 		}

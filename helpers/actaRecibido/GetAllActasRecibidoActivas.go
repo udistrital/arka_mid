@@ -8,6 +8,7 @@ import (
 
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/actaRecibido/constantes"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
@@ -18,18 +19,13 @@ import (
 	// "github.com/udistrital/utils_oas/formatdata"
 )
 
-const (
-	FormatoFecha = time.RFC3339
-	FechaCero    = "0001-01-01T00:00:00Z"
-)
-
 var (
 	zero time.Time
 )
 
 func init() {
 	var err error
-	zero, err = time.Parse(FormatoFecha, FechaCero)
+	zero, err = time.Parse(constantes.FormatoFecha, constantes.FechaCero)
 	if err != nil {
 		logs.Critical(err)
 	}
@@ -37,10 +33,15 @@ func init() {
 }
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset int,
-	customQuery map[string]string) (historicoActa []models.ActaResumen, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(usrWSO2 string, limit, offset int,
+	queryParams map[string]interface{}) (historicoActa []models.ActaResumen, outputError map[string]interface{}) {
 	const funcion = "GetAllActasRecibidoActivas - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
+
+	var states []string
+	if v, ok := queryParams[constantes.EstadoActa]; ok {
+		states = v.([]string)
+	}
 
 	// PARTE "0": Buffers, para evitar repetir consultas...
 	var hists []*models.HistoricoActa
@@ -49,10 +50,10 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 	consultasTerceros := 0
 	consultasUbicaciones := 0
-	consultasProveedores := 0
+	// consultasProveedores := 0
 	evTerceros := 0
 	evUbicaciones := 0
-	evProveedores := 0
+	// evProveedores := 0
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
 	// (y así definir la estrategia para traer las actas)
@@ -143,8 +144,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 			}
 		}
 	}
-	logs.Debug("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
-	logs.Debug("Estados Solicitados:", states)
+	// logs.Debug("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
+	// logs.Debug("Estados Solicitados:", states)
 
 	// Si se pasaron estados
 	if len(states) > 0 {
@@ -163,7 +164,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 			}
 			algunosEstados = estFinales
 		}
-		logs.Debug("t:", verTodasLasActas, "- e:", algunosEstados)
+		// logs.Debug("t:", verTodasLasActas, "- e:", algunosEstados)
 	}
 
 	// PARTE 2: Traer los tipos de actas identificados
@@ -233,7 +234,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 		fVistoBueno := ""
 		if historicos.FechaVistoBueno.After(zero) {
-			fVistoBueno = historicos.FechaVistoBueno.Format(FormatoFecha)
+			fVistoBueno = historicos.FechaVistoBueno.Format(constantes.FormatoFecha)
 		}
 
 		Acta := models.ActaResumen{
@@ -251,14 +252,14 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit, offset i
 
 		historicoActa = append(historicoActa, Acta)
 	}
-	logs.Debug(map[string]interface{}{
-		"consultasTerceros":    consultasTerceros,
-		"evTerceros":           evTerceros,
-		"consultasUbicaciones": consultasUbicaciones,
-		"evUbicaciones":        evUbicaciones,
-		"consultasProveedores": consultasProveedores,
-		"evProveedores":        evProveedores,
-		"actas":                len(historicoActa),
-	})
+	// logs.Debug(map[string]interface{}{
+	// 	"consultasTerceros":    consultasTerceros,
+	// 	"evTerceros":           evTerceros,
+	// 	"consultasUbicaciones": consultasUbicaciones,
+	// 	"evUbicaciones":        evUbicaciones,
+	// 	"consultasProveedores": consultasProveedores,
+	// 	"evProveedores":        evProveedores,
+	// 	"actas":                len(historicoActa),
+	// })
 	return
 }
