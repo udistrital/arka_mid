@@ -11,7 +11,6 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/utils_oas/errorctrl"
 )
@@ -218,10 +217,8 @@ func (c *ActaRecibidoController) GetAllActas() {
 	// query: k:v,k:v
 	query := make(map[string]string)
 	if v := c.GetString("query"); v != "" {
-		if err := utilsHelper.QuerySplit(v, query); err != nil {
-			logs.Debug(err)
-			panic(e.Error(funcion+"utilsHelper.QuerySplit(v,query)",
-				err, fmt.Sprint(http.StatusBadRequest)))
+		if err := actaRecibido.ProcesaQueryListaActas(v, query); err != nil {
+			panic(err)
 		}
 		logs.Debug("query:", query)
 	}
@@ -245,6 +242,9 @@ func (c *ActaRecibidoController) GetAllActas() {
 			logs.Error(err)
 			panic(e.Error(funcion+`c.GetString("states")`, err, fmt.Sprint(http.StatusBadRequest)))
 		}
+
+		// TODO:
+		// Mover reqStates al query
 	}
 	// fmt.Print("ESTADOS SOLICITADOS: ")
 	// fmt.Println(reqStates)
