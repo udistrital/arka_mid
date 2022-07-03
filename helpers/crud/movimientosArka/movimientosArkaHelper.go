@@ -288,33 +288,35 @@ func GetHistorialElemento(elementoId int, final bool) (historial *models.Histori
 }
 
 // GetCorteDepreciacion query controlador depreciacion/?fechaCorte={fechaCorte} del api movimientos_arka_crud
-func GetCorteDepreciacion(fechaCorte string) (corte []*models.DetalleCorteDepreciacion, outputError map[string]interface{}) {
+func GetCorteDepreciacion(fechaCorte string, corte *[]models.DepreciacionElemento) (outputError map[string]interface{}) {
 
-	funcion := "GetCorteDepreciacion"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "GetCorteDepreciacion - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
-	urlcrud += "?fechaCorte=" + fechaCorte
+	urlcrud := basePath + "depreciacion/?fechaCorte=" + fechaCorte
 	if err := request.GetJson(urlcrud, &corte); err != nil {
-		eval := " - request.GetJson(urlcrud, &corte)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		logs.Error(err, urlcrud)
+		eval := "request.GetJson(urlcrud, &corte)"
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
-	return corte, nil
+
+	return
 }
 
-// PostTrNovedadElemento post controlador depreciacion del api movimientos_arka_crud
-func PostTrNovedadElemento(novedad *models.NovedadElemento) (novedadR *models.NovedadElemento, outputError map[string]interface{}) {
+// AprobarCierre post controlador depreciacion del api movimientos_arka_crud
+func AprobarCierre(data *models.TransaccionCierre, cierre *models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "PostMovimiento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
-	if err := request.SendJson(urlcrud, "POST", &novedadR, &novedad); err != nil {
-		eval := ` - request.SendJson(urlcrud, "POST", &novedadR, &novedad)`
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+	urlcrud := basePath + "depreciacion/"
+	if err := request.SendJson(urlcrud, "POST", &cierre, &data); err != nil {
+		logs.Error(err, urlcrud)
+		eval := ` - request.SendJson(urlcrud, "POST", &cierre, &data)`
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return novedadR, nil
+	return
 }
 
 // GetEntradaByActa consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud

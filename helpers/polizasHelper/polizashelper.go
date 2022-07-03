@@ -112,7 +112,7 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 	}
 
 	//Remueve los Ids replicados
-	IdsActasEntradas = utilsHelper.RemoveDuplicateIds(ActasIdsEntradas)
+	IdsActasEntradas = utilsHelper.RemoveDuplicateInt(ActasIdsEntradas)
 
 	return
 }
@@ -164,7 +164,7 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 	}
 
 	// Remueve los subgrupos replicados
-	IdSubgruposPoliza = utilsHelper.RemoveDuplicateIds(IdDetalleSubgrupo)
+	IdSubgruposPoliza = utilsHelper.RemoveDuplicateInt(IdDetalleSubgrupo)
 
 	return
 }

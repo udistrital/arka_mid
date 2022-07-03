@@ -521,10 +521,7 @@ paths:
         "200":
           description: ""
           schema:
-            type: array
-            items:
-              format: int64
-              type: integer
+            $ref: '#/definitions/models.ResultadoMovimiento'
         "404":
           description: not found resource
   /depreciacion/{id}:
@@ -544,7 +541,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.MvtoArkaMasTransaccion'
+            $ref: '#/definitions/models.ResultadoMovimiento'
         "404":
           description: not found resource
     put:
@@ -562,7 +559,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.ElementosMovimiento'
+            $ref: '#/definitions/models.ResultadoMovimiento'
         "400":
           description: the request contains incorrect syntax
   /entrada/:
@@ -2191,8 +2188,6 @@ definitions:
         type: string
       RazonRechazo:
         type: string
-      Tipo:
-        type: string
   models.InfoTercero:
     title: InfoTercero
     type: object
@@ -2322,6 +2317,16 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.PreMovAjuste'
+  models.ResultadoMovimiento:
+    title: ResultadoMovimiento
+    type: object
+    properties:
+      Error:
+        type: string
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
+      TransaccionContable:
+        $ref: '#/definitions/models.InfoTransaccionContable'
   models.SalidaGeneral:
     title: SalidaGeneral
     type: object

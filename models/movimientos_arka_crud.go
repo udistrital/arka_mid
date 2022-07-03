@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Movimiento struct {
 	Id                      int
@@ -111,6 +113,12 @@ type TrSalida struct {
 }
 type SalidaGeneral struct {
 	Salidas []*TrSalida
+}
+
+type ResultadoMovimiento struct {
+	Error               string
+	Movimiento          Movimiento
+	TransaccionContable InfoTransaccionContable
 }
 
 type FormatoTraslado struct {
@@ -242,7 +250,6 @@ type FormatoDepreciacion struct {
 	ConsecutivoId int
 	Consecutivo   string
 	FechaCorte    string
-	Totales       map[int]float64
 	RazonRechazo  string
 }
 
@@ -255,12 +262,23 @@ type DetalleCorteDepreciacion struct {
 	NovedadElementoId    int
 	FechaRef             time.Time
 }
+
+type DepreciacionElemento struct {
+	DeltaValor           float64
+	ElementoMovimientoId int
+	ElementoActaId       int
+}
+
+type TransaccionCierre struct {
+	MovimientoId         int
+	ElementoMovimientoId []int
+}
+
 type InfoDepreciacion struct {
 	Id            int
 	RazonRechazo  string
 	FechaCorte    time.Time
 	Observaciones string
-	Tipo          string
 }
 
 type DetalleAjusteAutomatico struct {

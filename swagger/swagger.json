@@ -775,11 +775,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "format": "int64",
-                                "type": "integer"
-                            }
+                            "$ref": "#/definitions/models.ResultadoMovimiento"
                         }
                     },
                     "404": {
@@ -809,7 +805,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.MvtoArkaMasTransaccion"
+                            "$ref": "#/definitions/models.ResultadoMovimiento"
                         }
                     },
                     "404": {
@@ -836,7 +832,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.ElementosMovimiento"
+                            "$ref": "#/definitions/models.ResultadoMovimiento"
                         }
                     },
                     "400": {
@@ -3176,9 +3172,6 @@
                 },
                 "RazonRechazo": {
                     "type": "string"
-                },
-                "Tipo": {
-                    "type": "string"
                 }
             }
         },
@@ -3367,6 +3360,21 @@
                     "items": {
                         "$ref": "#/definitions/models.PreMovAjuste"
                     }
+                }
+            }
+        },
+        "models.ResultadoMovimiento": {
+            "title": "ResultadoMovimiento",
+            "type": "object",
+            "properties": {
+                "Error": {
+                    "type": "string"
+                },
+                "Movimiento": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "TransaccionContable": {
+                    "$ref": "#/definitions/models.InfoTransaccionContable"
                 }
             }
         },
