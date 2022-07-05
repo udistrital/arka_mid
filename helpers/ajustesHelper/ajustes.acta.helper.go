@@ -37,13 +37,13 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 			return false, false, false, errorctrl.Error(funcion+eval, err, "500")
 		} else {
 			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa == "" {
+				var consecutivo models.Consecutivo
 				ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
-				if placa_, _, err := consecutivos.Get("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+				if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
 					return false, false, false, err
-				} else {
-					year, month, day := time.Now().Date()
-					nvo.Placa = consecutivos.Format(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
 				}
+				year, month, day := time.Now().Date()
+				nvo.Placa = fmt.Sprintf("%04d%02d%02d%05d", year, month, day, consecutivo.Consecutivo)
 			} else if !detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa != "" {
 				nvo.Placa = ""
 			}

@@ -187,7 +187,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 	} else {
 		resultado.Movimiento = rs
 		if tr != nil && tr.Movimientos != nil && len(tr.Movimientos) > 0 {
-			if tr_, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+			if tr_, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
 				return nil, err
 			} else {
 				resultado.TrContable = tr_
@@ -266,11 +266,11 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 
 	}
 
-	if detalle.TrContable > 0 {
-		if tr, err := movimientosContables.GetTransaccion(detalle.TrContable, "consecutivo", true); err != nil {
+	if detalle.ConsecutivoId > 0 {
+		if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 			return nil, err
-		} else {
-			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+		} else if len(tr.Movimientos) > 0 {
+			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
 				return nil, err
 			} else {
 				ajuste.TrContable = detalleContable

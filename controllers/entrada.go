@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,6 +8,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -30,74 +30,71 @@ func (c *EntradaController) URLMapping() {
 // Post ...
 // @Title Post
 // @Description Transaccion entrada. Estado de registro o aprobacion
-// @Param	entradaId		 query 	string			false		"Id del movimiento que se desea aprobar"
-// @Param	body			 body 	models.TransaccionEntrada	false		"Detalles de la entrada. Se valida solo si el id es 0"
+// @Param	entradaId	query	string						false	"Id del movimiento que se desea aprobar"
+// @Param	etl			query	bool						false	"Indica si la entrada se registra a partir del ETL"
+// @Param	aprobar		query	bool						false	"Indica si la entrada se debe aprobar"
+// @Param	body		body	models.TransaccionEntrada	false	"Detalles de la entrada. Se valida solo si el id es 0"
 // @Success 201 {object} models.Movimiento
 // @Failure 403 body is empty
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
 
-	var entradaId int = 0
+	var (
+		entradaId int
+		etl       bool
+		aprobar   bool
+	)
 
-	if v, err := c.GetInt("entradaId"); err == nil {
+	if v, err := c.GetInt("entradaId", 0); err == nil {
 		entradaId = v
 	}
-	if entradaId > 0 {
-		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err == nil && respuesta != nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = respuesta
-		} else {
+
+	if v, err := c.GetBool("etl", false); err == nil {
+		etl = v
+	}
+
+	if v, err := c.GetBool("aprobar", false); err == nil {
+		aprobar = v
+	}
+
+	if aprobar && entradaId > 0 {
+		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err != nil || respuesta == nil {
 			if err == nil {
 				panic(map[string]interface{}{
 					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId)",
-					"err":     err,
+					"err":     errors.New("no se obtuvo respuesta al aprobar la entrada."),
 					"status":  "400",
 				})
 			}
 			panic(err)
-		}
-	} else {
-		var v models.TransaccionEntrada
-		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := entradaHelper.RegistrarEntrada(&v); err == nil && respuesta != nil {
-				c.Ctx.Output.SetStatus(201)
-				c.Data["json"] = respuesta
-			} else if err != nil {
-				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
-					"err":     err,
-					"status":  "400",
-				})
-			} else {
-				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.RegistrarEntrada(v)",
-					"err":     errors.New("no se obtuvo respuesta al registrar la entrada"),
-					"status":  "404",
-				})
-			}
 		} else {
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
-				"err":     err,
-				"status":  "400",
-			})
+			c.Data["json"] = respuesta
 		}
+	} else if !aprobar {
+
+		var (
+			v       models.TransaccionEntrada
+			entrada models.Movimiento
+		)
+
+		if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
+			panic(err)
+		}
+
+		if entradaId > 0 {
+			if err := entradaHelper.UpdateEntrada(&v, entradaId, &entrada); err != nil {
+				panic(err)
+			}
+		} else if entradaId == 0 {
+			if err := entradaHelper.RegistrarEntrada(&v, etl, &entrada); err != nil {
+				panic(err)
+			}
+		}
+
+		c.Data["json"] = entrada
 	}
 
 	c.ServeJSON()
@@ -107,7 +104,7 @@ func (c *EntradaController) Post() {
 // @Title GetOne
 // @Description get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.DetalleEntrada
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *EntradaController) GetOne() {

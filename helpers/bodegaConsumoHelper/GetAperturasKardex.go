@@ -26,13 +26,13 @@ func GetAperturasKardex() (Elementos []map[string]interface{}, outputError map[s
 
 	var Elementos___ []map[string]interface{}
 	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento?limit=-1"
-	url += "&query=MovimientoId.FormatoTipoMovimientoId.CodigoAbreviacion:AP_KDX"
+	url += "&query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion:AP_KDX"
 	// logs.Debug("url:", url)
 	if res, err := request.GetJsonTest(url, &Elementos___); err == nil && res.StatusCode == 200 {
 		// fmt.Println("Elementos___", Elementos___)
 
 		if len(Elementos___) == 0 {
-			return nil, nil
+			return Elementos___, nil
 		}
 
 		if keys := len(Elementos___[0]); keys != 0 {

@@ -125,15 +125,23 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 			panic(outputError)
 		}
 	}()
-	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion/?query=Activo:true,"
-	urltercero += "Numero:" + doc
-	var terceros []*models.DatosIdentificacion
-
+	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
+	urltercero += "?query=Activo:true,TerceroId__Activo:true,Numero:" + doc
+	// TODO: Alternativamente, se podría usar una de las siguientes:
+	// urltercero += "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero)
+	// urltercero += "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,Numero:" + doc
+	// PERO
+	// Depende de que en terceros_crud se agregue a la tabla datos_identificacion un CONSTRAINT UNIQUE
+	// entre tipo_documento_id y numero. Una vez agregado dicho constraint, quizás las validaciones
+	// a continuación se podrían prescindir
+	var terceros []models.DatosIdentificacion
+	// logs.Debug("urltercero:", urltercero)
 	if resp, err := request.GetJsonTest(urltercero, &terceros); err == nil && resp.StatusCode == 200 {
 		if len(terceros) == 1 {
-			return terceros[0], nil
+			return &terceros[0], nil
 		} else if len(terceros) == 0 {
 			err := fmt.Errorf("el documento '%s' aún no está asignado a un registro en Terceros", doc)
+			logs.Notice(err)
 			outputError = map[string]interface{}{
 				"funcion": "GetTerceroByDoc - len(datosTerceros) == 1 ",
 				"err":     err,
@@ -142,12 +150,15 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 			return nil, outputError
 		} else { // len(terceros) > 1
 			q := len(terceros)
+			if q > 1 && DocumentosValidos(terceros, false, true) {
+				return &terceros[0], nil
+			}
 			s := ""
 			if q >= 10 {
 				s = " - o más"
 			}
-			err := fmt.Errorf("el Documento '%s' tiene más de un registro en Terceros (%d registros%s)", doc, q, s)
-			logs.Warn(err)
+			err := fmt.Errorf("el Documento '%s' tiene más de un registro activo en Terceros (%d registros%s)", doc, q, s)
+			logs.Notice(err)
 			outputError = map[string]interface{}{
 				"funcion": "GetTerceroByDoc - len(datosTerceros) == 1 && datosTerceros[0].TerceroId != nil",
 				"err":     err,

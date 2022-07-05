@@ -14,10 +14,10 @@ type PreTrAjuste struct {
 }
 
 type FormatoAjuste struct {
-	PreTrAjuste  *PreTrAjuste
-	Consecutivo  string
-	RazonRechazo string
-	TrContableId int
+	PreTrAjuste   *PreTrAjuste
+	ConsecutivoId int
+	Consecutivo   string
+	RazonRechazo  string
 }
 
 type DetalleAjuste struct {

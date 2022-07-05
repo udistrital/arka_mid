@@ -4,11 +4,14 @@ import (
 	"strconv"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
+
+var basePath = "http://" + beego.AppConfig.String("movimientosArkaService")
 
 // GetAllEstadoMovimiento query controlador estado_movimiento del api movimientos_arka_crud
 func GetAllEstadoMovimiento(query string) (estados []*models.EstadoMovimiento, outputError map[string]interface{}) {
@@ -128,38 +131,35 @@ func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]inte
 }
 
 // PostMovimiento post controlador movimiento del api movimientos_arka_crud
-func PostMovimiento(movimiento *models.Movimiento) (movimientoR *models.Movimiento, outputError map[string]interface{}) {
+func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
-	funcion := "PostMovimiento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
+	funcion := "PostMovimiento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	var (
-		res *models.Movimiento
-	)
-
-	// Crea registro en api movimientos_arka_crud
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento"
-	if err := request.SendJson(urlcrud, "POST", &res, &movimiento); err != nil {
-		eval := " - request.SendJson(urlcrud, \"POST\", &res, &movimiento)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+	if err := request.SendJson(urlcrud, "POST", &movimiento, &movimiento); err != nil {
+		logs.Error(err)
+		eval := `request.SendJson(urlcrud, "POST", &movimiento, &movimiento)`
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return res, nil
+	return
 }
 
 // PostSoporteMovimiento post controlador soporte_movimiento del api movimientos_arka_crud
-func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (soporteR *models.SoporteMovimiento, outputError map[string]interface{}) {
+func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (outputError map[string]interface{}) {
 
-	funcion := "PostSoporteMovimiento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "PostSoporteMovimiento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento"
-	if err := request.SendJson(urlcrud, "POST", &soporteR, &soporte); err != nil {
-		eval := " - request.SendJson(urlcrud, \"POST\", &soporteR, &soporte)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+	if err := request.SendJson(urlcrud, "POST", &soporte, &soporte); err != nil {
+		logs.Error(err)
+		eval := `request.SendJson(urlcrud, "POST", &soporte, &soporte)`
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return soporteR, nil
+	return
 }
 
 // PutTrSalida put controlador tr_salida del api movimientos_arka_crud
@@ -288,33 +288,35 @@ func GetHistorialElemento(elementoId int, final bool) (historial *models.Histori
 }
 
 // GetCorteDepreciacion query controlador depreciacion/?fechaCorte={fechaCorte} del api movimientos_arka_crud
-func GetCorteDepreciacion(fechaCorte string) (corte []*models.DetalleCorteDepreciacion, outputError map[string]interface{}) {
+func GetCorteDepreciacion(fechaCorte string, corte *[]models.DepreciacionElemento) (outputError map[string]interface{}) {
 
-	funcion := "GetCorteDepreciacion"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "GetCorteDepreciacion - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
-	urlcrud += "?fechaCorte=" + fechaCorte
+	urlcrud := basePath + "depreciacion/?fechaCorte=" + fechaCorte
 	if err := request.GetJson(urlcrud, &corte); err != nil {
-		eval := " - request.GetJson(urlcrud, &corte)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		logs.Error(err, urlcrud)
+		eval := "request.GetJson(urlcrud, &corte)"
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
-	return corte, nil
+
+	return
 }
 
-// PostTrNovedadElemento post controlador depreciacion del api movimientos_arka_crud
-func PostTrNovedadElemento(novedad *models.NovedadElemento) (novedadR *models.NovedadElemento, outputError map[string]interface{}) {
+// AprobarCierre post controlador depreciacion del api movimientos_arka_crud
+func AprobarCierre(data *models.TransaccionCierre, cierre *models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "PostMovimiento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "depreciacion/"
-	if err := request.SendJson(urlcrud, "POST", &novedadR, &novedad); err != nil {
-		eval := ` - request.SendJson(urlcrud, "POST", &novedadR, &novedad)`
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+	urlcrud := basePath + "depreciacion/"
+	if err := request.SendJson(urlcrud, "POST", &cierre, &data); err != nil {
+		logs.Error(err, urlcrud)
+		eval := ` - request.SendJson(urlcrud, "POST", &cierre, &data)`
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return novedadR, nil
+	return
 }
 
 // GetEntradaByActa consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
@@ -329,4 +331,21 @@ func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputE
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 	return entrada, nil
+}
+
+// GetTrasladosByTerceroId consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
+func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetTrasladosByTerceroId - "
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := basePath + "movimiento/traslado/" + strconv.Itoa(terceroId)
+	if confirmar {
+		urlcrud += "?confirmar=true"
+	}
+	if err := request.GetJson(urlcrud, &traslados); err != nil {
+		eval := "request.GetJson(urlcrud, &traslados)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+	return
 }

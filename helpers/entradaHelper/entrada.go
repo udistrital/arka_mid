@@ -3,7 +3,6 @@ package entradaHelper
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -11,10 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	actasCrud "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
-	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -22,101 +18,6 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
-
-// AprobarEntrada Actualiza una entrada a estado aprobada y hace los respectivos registros en kronos y transacciones contables
-func AprobarEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
-
-	funcion := "AprobarEntrada"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	var (
-		detalleMovimiento map[string]interface{}
-		historico         *models.HistoricoActa
-		movimiento        *models.Movimiento
-		elementos         []*models.Elemento
-		consecutivoId     int
-	)
-
-	resultado := make(map[string]interface{})
-
-	if mov, err := crudMovimientosArka.GetMovimientoById(entradaId); err != nil {
-		return nil, err
-	} else {
-		movimiento = mov
-	}
-
-	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalleMovimiento); err != nil {
-		logs.Error(err)
-		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalleMovimiento)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	if sm, err := crudMovimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Entrada Aprobada")); err != nil {
-		return nil, err
-	} else {
-		movimiento.EstadoMovimientoId = sm[0]
-	}
-
-	query := "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-	if ha, err := actasCrud.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
-		return nil, err
-	} else {
-		historico = ha[0]
-	}
-
-	if el_, err := actasCrud.GetAllElemento(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
-		return nil, err
-	} else {
-		elementos = el_
-	}
-
-	detalle := ""
-	for k, v := range detalleMovimiento {
-		if k != "consecutivo" && k != "ConsecutivoId" {
-			detalle = detalle + k + ": " + fmt.Sprintf("%v", v) + " "
-		}
-	}
-
-	var groups = make(map[int]float64)
-	for _, elemento := range elementos {
-		x := float64(0)
-		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
-			x = val + elemento.ValorTotal
-		} else {
-			x = elemento.ValorTotal
-		}
-		groups[elemento.SubgrupoCatalogoId] = x
-	}
-
-	if val, ok := detalleMovimiento["ConsecutivoId"]; ok && val != nil {
-		consecutivoId = int(val.(float64))
-	}
-
-	var trContable map[string]interface{}
-	if len(groups) > 0 && historico.ProveedorId > 0 {
-		if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteEntradas(), strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), detalle, "Entrada de almacen", historico.ProveedorId, consecutivoId, true); tr_ == nil || err != nil {
-			return nil, err
-		} else {
-			trContable = tr_
-			if tr_["errorTransaccion"].(string) != "" {
-				return tr_, nil
-			}
-		}
-	}
-
-	if movimiento_, err := crudMovimientosArka.PutMovimiento(movimiento, movimiento.Id); err != nil {
-		return nil, err
-	} else {
-		movimiento = movimiento_
-	}
-
-	resultado["movimientoArka"] = movimiento
-	resultado["transaccionContable"] = trContable["resultadoTransaccion"]
-	resultado["tercero"] = trContable["tercero"]
-	resultado["errorTransaccion"] = ""
-
-	return resultado, nil
-}
 
 func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputError map[string]interface{}) {
 
@@ -138,12 +39,12 @@ func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputE
 		for _, elemento := range detalleElementos {
 			placa := ""
 			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca {
-				if placa_, _, err := consecutivos.Get("%05.0f", ctxPlaca, "Registro Placa Arka"); err != nil {
+				var consecutivo models.Consecutivo
+				if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
 					return nil, err
-				} else {
-					year, month, day := time.Now().Date()
-					placa = consecutivos.Format(fmt.Sprintf("%04d%02d%02d", year, month, day), placa_, "")
 				}
+				year, month, day := time.Now().Date()
+				placa = fmt.Sprintf("%04d%02d%02d%05d", year, month, day, consecutivo.Consecutivo)
 			}
 			elemento_ := models.Elemento{
 				Id:                 elemento.Id,

@@ -23,7 +23,6 @@ type BajaController struct {
 func (c *BajaController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("Put", c.Put)
-	c.Mapping("GetElemento", c.GetElemento)
 	c.Mapping("GetSolicitud", c.GetSolicitud)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("GetDetalleElemento", c.GetDetalleElemento)
@@ -33,8 +32,8 @@ func (c *BajaController) URLMapping() {
 // Post ...
 // @Title Post
 // @Description Registrar Baja. Crea el registro del soporte y crea el consecutivo
-// @Param	body			 body 	models.Movimiento	false	"Informacion de la baja"
-// @Success 201 {object} models.TrSoporteMovimiento
+// @Param	body	body 	models.TrSoporteMovimiento	false	"Informacion de la baja"
+// @Success 201	{object}	models.Movimiento
 // @Failure 403 body is empty
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
@@ -103,40 +102,6 @@ func (c *BajaController) Put() {
 
 }
 
-// GetElemento ...
-// @Title Get User
-// @Description get Salida by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Salida
-// @Failure 404 not found resource
-// @router /elemento_arka/:id [get]
-func (c *BajaController) GetElemento() {
-
-	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
-
-	var id int
-	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
-		if err == nil {
-			err = errors.New("se debe especificar un elemento válido")
-		}
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetElemento - GetInt(\":id\")",
-			"err":     err,
-			"status":  "400",
-		})
-	} else {
-		id = v
-	}
-
-	if v, err := bajasHelper.TraerDatosElemento(id); err == nil {
-		c.Data["json"] = v
-	} else {
-		panic(err)
-	}
-	c.ServeJSON()
-}
-
 // Getsolicitud...
 // @Title Get User
 // @Description consulta detalle de Baja
@@ -150,7 +115,11 @@ func (c *BajaController) GetSolicitud() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
 
-	var id int
+	var (
+		id   int
+		baja models.TrBaja
+	)
+
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar una baja válida")
@@ -165,8 +134,8 @@ func (c *BajaController) GetSolicitud() {
 		id = v
 	}
 
-	if v, err := bajasHelper.TraerDetalle(id); err == nil {
-		c.Data["json"] = v
+	if err := bajasHelper.GetBajaByID(id, &baja); err == nil {
+		c.Data["json"] = baja
 	} else {
 		panic(err)
 	}

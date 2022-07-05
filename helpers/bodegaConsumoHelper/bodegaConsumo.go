@@ -38,7 +38,7 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 		return nil, outputError
 	}
 
-	urlcrud3 := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + strconv.Itoa(idStr)
+	urlcrud3 := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?query=Id:" + strconv.Itoa(idStr)
 	// logs.Debug("urlcrud3:", urlcrud3)
 
 	var ubicacion []map[string]interface{}
@@ -52,7 +52,7 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 		z := strings.Split(fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"]), "")
 
-		urlcrud4 := "http://" + beego.AppConfig.String("oikos2Service") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
+		urlcrud4 := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
 
 		if res, err := request.GetJsonTest(urlcrud4, &sede); err != nil || res.StatusCode != 200 {
 			if err == nil {
@@ -68,12 +68,12 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 		}
 
 		var idElemento int
-		if id, err := strconv.Atoi(fmt.Sprintf("%v", Elemento["ElementoActa"])); err == nil {
+		if id, err := strconv.Atoi(fmt.Sprintf("%v", Elemento["ElementoCatalogoId"])); err == nil {
 			idElemento = id
 		} else {
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "TraerElementoSolicitud - strconv.Atoi(fmt.Sprintf(\"%v\", Elemento[\"ElementoActa\"]))",
+				"funcion": "TraerElementoSolicitud - strconv.Atoi(fmt.Sprintf(\"%v\", Elemento[\"ElementoCatalogoId\"]))",
 				"err":     err,
 				"status":  "400",
 			}
@@ -220,7 +220,7 @@ func UltimoMovimientoKardex(id_catalogo int) (Elemento_Movimiento map[string]int
 
 			Elemento := ultimo_movimiento_kardex[0]
 			Elemento["ElementoCatalogoId"] = elemento_catalogo[0]
-			Elemento["Nombre"] = elemento_catalogo[0]["Nombre"]
+			Elemento["SubgrupoCatalogoId"] = elemento_catalogo[0]["SubgrupoId"]
 
 			return Elemento, nil
 

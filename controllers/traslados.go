@@ -134,30 +134,32 @@ func (c *TrasladosController) GetTraslado() {
 // GetElementosFuncionario ...
 // @Title Get Elementos
 // @Description get Elementos by Tercero Origen
-// @Param	funcionarioId	path	int	true	"tercero_id del funcionario"
-// @Success 200 {object} models.DetalleElementoPlaca
+// @Param	tercero_id	path	int	true	"tercero_id del funcionario"
+// @Success 200 {object} models.InventarioTercero
 // @Failure 404 not found resource
-// @router /funcionario/:funcionarioId [get]
+// @router /funcionario/:tercero_id [get]
 func (c *TrasladosController) GetElementosFuncionario() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController - Unhandled Error!")
-	var id int
-	if v, err := c.GetInt(":funcionarioId"); err != nil || v <= 0 {
+
+	var (
+		id         int
+		inventario models.InventarioTercero
+	)
+
+	if v, err := c.GetInt(":tercero_id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar un tercero válido")
 		}
-		panic(errorctrl.Error("GetElementosFuncionario - c.GetInt(\":funcionarioId\")", err, "400"))
+		panic(errorctrl.Error(`GetElementosFuncionario - c.GetInt(":tercero_id")`, err, "400"))
 	} else {
 		id = v
 	}
 
-	if respuesta, err := trasladoshelper.GetElementosFuncionario(id); err == nil || respuesta != nil {
-		c.Data["json"] = respuesta
+	if err := trasladoshelper.GetElementosTercero(id, &inventario); err != nil {
+		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosTercero(id, &inventario)", err, "404"))
 	} else {
-		if err != nil {
-			panic(err)
-		}
-		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosFuncionario(id)", err, "404"))
+		c.Data["json"] = inventario
 	}
 
 	c.ServeJSON()
@@ -167,7 +169,9 @@ func (c *TrasladosController) GetElementosFuncionario() {
 // GetAll ...
 // @Title Get All
 // @Description Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
-// @Param	tramiteOnly	query 	bool	false	"Indica si se requieren los traslados en estado en tramite"
+// @Param	user	query	int	false	"Tercero que consulta los traslados"
+// @Param	confirmar	query	bool	false	"Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta."
+// @Param	aprobar	query	bool	false	"Consulta los traslados que están pendientes por ser aprobados por almacén."
 // @Success 200 {object} []models.DetalleTrasladoLista
 // @Failure 404 not found resource
 // @router / [get]
@@ -175,22 +179,41 @@ func (c *TrasladosController) GetAll() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
 
-	var tramiteOnly bool
-	if v, err := c.GetBool("tramiteOnly", false); err != nil {
-		panic(errorctrl.Error("GetAll - c.GetBool(\"tramiteOnly\", false)", err, "400"))
+	var (
+		terceroId string
+		confirmar bool
+		aprobar   bool
+		traslados []*models.DetalleTrasladoLista
+	)
+
+	if v := c.GetString("user", ""); v == "" {
+		panic(errorctrl.Error(`GetAll - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
 	} else {
-		tramiteOnly = v
+		terceroId = v
 	}
 
-	if v, err := trasladoshelper.GetAllTraslados(tramiteOnly); err == nil {
-		if v != nil {
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = []interface{}{}
-		}
+	if v, err := c.GetBool("confirmar", false); err != nil {
+		panic(errorctrl.Error(`GetAll - c.GetBool("confirmar", false)`, err, "400"))
 	} else {
+		confirmar = v
+	}
+
+	if v, err := c.GetBool("aprobar", false); err != nil {
+		panic(errorctrl.Error(`GetAll - c.GetBool("aprobar", false)`, err, "400"))
+	} else {
+		aprobar = v
+	}
+
+	if err := trasladoshelper.GetAllTraslados(terceroId, confirmar, aprobar, &traslados); err != nil {
 		panic(err)
 	}
+
+	if traslados != nil {
+		c.Data["json"] = traslados
+	} else {
+		c.Data["json"] = []interface{}{}
+	}
+
 	c.ServeJSON()
 }
 
@@ -198,7 +221,7 @@ func (c *TrasladosController) GetAll() {
 // @Title Put Aprobar traslado
 // @Description Actualiza el estado del traslado y genera la transacción contable correspondiente.
 // @Param	id		path 	int						true	"Id del traslado"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.MvtoArkaMasTransaccion
 // @Failure 403 body is empty
 // @router /:id [put]
 func (c *TrasladosController) Put() {

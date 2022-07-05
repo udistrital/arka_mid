@@ -5,13 +5,12 @@ import (
 	"errors"
 	"strconv"
 
-	// "github.com/udistrital/utils_oas/formatdata"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // SalidaController operations for Salida
@@ -30,8 +29,9 @@ func (c *SalidaController) URLMapping() {
 // Post ...
 // @Title Post transaccion salidas asociadas a una entrada
 // @Description Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
-// @Param	salidaId	query 	string					false		"Id del movimiento que se desea aprobar"
-// @Param	body		body 	models.SalidaGeneral	true		"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
+// @Param	salidaId	query	string					false	"Id del movimiento que se desea aprobar"
+// @Param	etl			query	bool					false	"Indica si la salida se registra a partir del ETL"
+// @Param	body		body	models.SalidaGeneral	true	"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0"
 // @Success 200 {object} models.SalidaGeneral
 // @Failure 403 body is empty
 // @router / [post]
@@ -50,11 +50,20 @@ func (c *SalidaController) Post() {
 			}
 		}
 	}()
-	var salidaId int = 0
+
+	var (
+		salidaId int
+		etl      bool
+	)
 
 	if v, err := c.GetInt("salidaId"); err == nil {
 		salidaId = v
 	}
+
+	if v, err := c.GetBool("etl", false); err == nil {
+		etl = v
+	}
+
 	if salidaId > 0 {
 		if respuesta, err := salidaHelper.AprobarSalida(salidaId); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
@@ -72,7 +81,7 @@ func (c *SalidaController) Post() {
 	} else {
 		var v models.SalidaGeneral
 		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := salidaHelper.PostTrSalidas(&v); err == nil && respuesta != nil {
+			if respuesta, err := salidaHelper.PostTrSalidas(&v, etl); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
 			} else {
@@ -190,8 +199,9 @@ func (c *SalidaController) GetSalidas() {
 // Put ...
 // @Title Put transaccion salidas generadas a partir de otra
 // @Description genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
-// @Param	id		path 	int						true	"Id de la salida original"
-// @Param	body	body 	models.SalidaGeneral	true	"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0""
+// @Param	id			path	int						true	"Id de la salida que se debe actualizar"
+// @Param	rechazar	query	bool					false	"Indica si la salida se debe rechazar"
+// @Param	body		body	models.SalidaGeneral	false	"Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si no se debe rechazar"
 // @Success 200 {object} models.SalidaGeneral
 // @Failure 403 body is empty
 // @router /:id [put]
@@ -211,19 +221,26 @@ func (c *SalidaController) Put() {
 		}
 	}()
 
-	var id int
+	var (
+		id       int
+		rechazar bool
+	)
+
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar una salida válida")
 		}
 		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "Put - GetInt(\":id\")",
-			"err":     err,
-			"status":  "400",
-		})
+		panic(errorctrl.Error(`Put - c.GetInt(":id")`, err, "400"))
 	} else {
 		id = v
+	}
+
+	if v, err := c.GetBool("rechazar", false); err != nil {
+		logs.Error(err)
+		panic(errorctrl.Error(`Put - c.GetBool("rechazar", false)`, err, "400"))
+	} else {
+		rechazar = v
 	}
 
 	var v models.SalidaGeneral
@@ -236,19 +253,29 @@ func (c *SalidaController) Put() {
 		})
 	}
 
-	if respuesta, err := salidaHelper.PutTrSalidas(&v, id); err == nil && respuesta != nil {
-		c.Ctx.Output.SetStatus(201)
-		c.Data["json"] = respuesta
-	} else {
-		if err != nil {
-			panic(err)
-		}
+	if !rechazar && v.Salidas != nil {
+		if respuesta, err := salidaHelper.PutTrSalidas(&v, id); err == nil && respuesta != nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = respuesta
+		} else {
+			if err != nil {
+				panic(err)
+			}
 
-		panic(map[string]interface{}{
-			"funcion": "Put - salidaHelper.PutTrSalidas(&v, id)",
-			"err":     errors.New("no se obtuvo respuesta al actualizar la salida"),
-			"status":  "404",
-		})
+			panic(map[string]interface{}{
+				"funcion": "Put - salidaHelper.PutTrSalidas(&v, id)",
+				"err":     errors.New("no se obtuvo respuesta al actualizar la salida"),
+				"status":  "404",
+			})
+		}
+	} else if rechazar {
+		var salida = models.Movimiento{Id: id}
+
+		if err := salidaHelper.RechazarSalida(&salida); err != nil {
+			panic(err)
+		} else {
+			c.Data["json"] = salida
+		}
 	}
 
 	c.ServeJSON()

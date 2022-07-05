@@ -53,7 +53,7 @@ func (c *ParametrosController) GetAll() {
 // PostAsignacionEspacioFisicoDependencia ...
 // @Title Post Soportes
 // @Description get Soportes by id
-// @Param	body		body 	{}	true		"body for content"
+// @Param	body		body 	models.GetSedeDependencia	true		"body for content"
 // @Success 201 {object} []models.AsignacionEspacioFisicoDependencia
 // @Failure 404 not found resource
 // @Failure 400 the request contains incorrect syntax
@@ -79,7 +79,7 @@ func (c *ParametrosController) PostAsignacionEspacioDependencia() {
 		if res, err := actaRecibido.GetAsignacionSedeDependencia(v); err == nil {
 			c.Ctx.Output.SetStatus(201)
 			if res == nil {
-				res = append(res, map[string]interface{}{})
+				res = []map[string]interface{}{}
 			}
 			c.Data["json"] = res
 		} else {
