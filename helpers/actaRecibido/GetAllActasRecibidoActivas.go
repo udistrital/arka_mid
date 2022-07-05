@@ -126,7 +126,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				// fmt.Println(usr.Documento)
 				if data, err := crudTerceros.GetTerceroByDoc(usr.Documento); err == nil {
 					// fmt.Println(data.TerceroId.Id)
-					idTercero = data.TerceroId.Id
+					if data.TerceroId != nil {
+						idTercero = data.TerceroId.Id
+					} else {
+						return nil, err
+					}
 				} else {
 					return nil, err
 				}

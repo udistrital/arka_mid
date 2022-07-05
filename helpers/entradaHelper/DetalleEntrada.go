@@ -45,6 +45,15 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			if contrato, err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato); err != nil {
 				return nil, err
 			} else {
+				if val, ok := contrato["contrato"].(map[string]interface{})["tipo_contrato"].(string); ok {
+					if num, err := strconv.Atoi(val); num > 0 && err == nil {
+						var tipoContrato interface{}
+						if err := administrativa.GetTipoContratoById(num, &tipoContrato); err != nil {
+							return nil, err
+						}
+						contrato["contrato"].(map[string]interface{})["tipo_contrato"] = tipoContrato
+					}
+				}
 				resultado["contrato"] = contrato["contrato"]
 			}
 		}
@@ -55,7 +64,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 				return nil, err
 			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos); err != nil {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
 					return nil, err
 				} else {
 					trContable := map[string]interface{}{
@@ -110,6 +119,14 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			return nil, err
 		} else if len(ordenadores) > 0 {
 			resultado["ordenador"] = ordenadores[0]
+		}
+	}
+
+	if detalle.Placa != "" {
+		if encargado, err := GetEncargadoElemento(detalle.Placa); err != nil {
+			return nil, err
+		} else if encargado != nil {
+			resultado["encargado"] = encargado
 		}
 	}
 

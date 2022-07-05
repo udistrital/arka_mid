@@ -27,7 +27,7 @@ func (c *DepreciacionController) URLMapping() {
 // @Title GetCorte
 // @Description Actualiza el estado de las solicitudes una vez se registra la revision del comite de almacen
 // @Param	body			 body 	models.InfoDepreciacion	false	"Informacion de la liquidacion de depreciacion"
-// @Success 200 {object} []int
+// @Success 200 {object} models.ResultadoMovimiento
 // @Failure 404 not found resource
 // @router / [post]
 func (c *DepreciacionController) Post() {
@@ -38,12 +38,13 @@ func (c *DepreciacionController) Post() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
-		if v, err := depreciacionHelper.GenerarTrDepreciacion(v); err != nil {
+		var resultado models.ResultadoMovimiento
+		if err := depreciacionHelper.GenerarCierre(v, &resultado); err != nil {
 			logs.Error(err)
 			c.Data["system"] = err
 			c.Abort("404")
 		} else {
-			c.Data["json"] = v
+			c.Data["json"] = resultado
 		}
 	}
 	c.ServeJSON()
@@ -53,7 +54,7 @@ func (c *DepreciacionController) Post() {
 // @Title Get Info Depreciacion
 // @Description get Depreciacion by id
 // @Param	id	path	int	true	"movimientoId de la depreciacion en el api movimientos_arka_crud"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.ResultadoMovimiento
 // @Failure 404 not found resource
 // @router /:id [get]
 func (c *DepreciacionController) GetOne() {
@@ -75,18 +76,13 @@ func (c *DepreciacionController) GetOne() {
 		id = v
 	}
 
-	if respuesta, err := depreciacionHelper.GetDepreciacion(id); err == nil || respuesta != nil {
-		c.Data["json"] = respuesta
+	var detalle models.ResultadoMovimiento
+	if err := depreciacionHelper.GetCierre(id, &detalle); err != nil {
+		logs.Error(err)
+		c.Data["system"] = err
+		c.Abort("404")
 	} else {
-		if err != nil {
-			panic(err)
-		}
-
-		panic(map[string]interface{}{
-			"funcion": "GetOne - depreciacionHelper.GetDepreciacion(id)",
-			"err":     errors.New("no se obtuvo respuesta al consultar la depreciación"),
-			"status":  "404",
-		})
+		c.Data["json"] = detalle
 	}
 
 	c.ServeJSON()
@@ -97,7 +93,7 @@ func (c *DepreciacionController) GetOne() {
 // @Title Put
 // @Description update the ElementosMovimiento
 // @Param	id		path 	string	true		"The id you want to update"
-// @Success 200 {object} models.ElementosMovimiento
+// @Success 200 {object} models.ResultadoMovimiento
 // @Failure 400 the request contains incorrect syntax
 // @router /:id [put]
 func (c *DepreciacionController) Put() {
@@ -118,8 +114,9 @@ func (c *DepreciacionController) Put() {
 		id = v
 	}
 
-	if respuesta, err := depreciacionHelper.AprobarDepreciacion(id); err == nil || respuesta != nil {
-		c.Data["json"] = respuesta
+	var detalle models.ResultadoMovimiento
+	if err := depreciacionHelper.AprobarDepreciacion(id, &detalle); err == nil {
+		c.Data["json"] = detalle
 	} else {
 		if err != nil {
 			panic(err)

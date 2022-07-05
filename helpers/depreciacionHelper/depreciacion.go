@@ -2,65 +2,12 @@ package depreciacionHelper
 
 import (
 	"encoding/json"
-	"strconv"
 	"time"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	crudMovimientosArka "github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
-
-	// "github.com/udistrital/arka_mid/helpers/asientoContable"
-	// "github.com/udistrital/arka_mid/helpers/movimientosArkaHelper"
-	// "github.com/udistrital/arka_mid/helpers/tercerosHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
-
-func GetDepreciacion(id int) (detalleD map[string]interface{}, outputError map[string]interface{}) {
-
-	funcion := "GetDepreciacion"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	var (
-		detalle    *models.FormatoDepreciacion
-		movimiento *models.Movimiento
-		terceroUD  int
-	)
-	detalleD = make(map[string]interface{})
-
-	if mov_, err := crudMovimientosArka.GetMovimientoById(id); err != nil {
-		return nil, err
-	} else {
-		movimiento = mov_
-	}
-
-	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-		logs.Error(err)
-		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	query := "query=TipoDocumentoId__Nombre:NIT,Numero:" + crudTerceros.GetDocUD()
-	if terceroUD_, err := crudTerceros.GetAllDatosIdentificacion(query); err != nil {
-		return nil, err
-	} else {
-		terceroUD = terceroUD_[0].TerceroId.Id
-	}
-
-	if trSimulada, err := asientoContable.AsientoContable(detalle.Totales, "",
-		strconv.Itoa(movimiento.FormatoTipoMovimientoId.Id), getDescripcionMovmientoCierre(), descAsiento(), terceroUD, 0, false); err != nil {
-		return nil, outputError
-	} else {
-		detalleD["TrContable"] = trSimulada
-		if trSimulada["errorTransaccion"].(string) != "" {
-			return detalleD, nil
-		}
-	}
-
-	detalleD["Movimiento"] = movimiento
-	return detalleD, nil
-}
 
 // GetDeltaTiempo retorna el tiempo en años entre dos fechas
 func GetDeltaTiempo(ref, fin time.Time) (prct float64) {

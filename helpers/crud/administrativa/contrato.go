@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/utils_oas/errorctrl"
 	e "github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -33,4 +35,20 @@ func GetContrato(contratoId int, vigencia string) (contrato map[string]interface
 		logs.Error(err)
 		return nil, e.Error(funcion+context, err, fmt.Sprint(http.StatusBadRequest))
 	}
+}
+
+// GetTipoContratoById Consulta endpoint tipo_contrato/:id del api administrativa_amazon_api
+func GetTipoContratoById(tipoContratoId int, tipoContrato interface{}) (outputError map[string]interface{}) {
+
+	const funcion = "GetTipoContratoById - "
+	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
+
+	urlcrud := "http://" + beego.AppConfig.String("administrativaService") + "tipo_contrato/" + strconv.Itoa(tipoContratoId)
+	if err := request.GetJson(urlcrud, &tipoContrato); err != nil {
+		logs.Error(err, urlcrud)
+		eval := "request.GetJson(urlcrud, &tipoContrato)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
 }

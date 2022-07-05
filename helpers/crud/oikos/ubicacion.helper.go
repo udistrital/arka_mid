@@ -28,7 +28,7 @@ func GetAsignacionSedeDependencia(Id string) (Relacion map[string]interface{}, o
 	var ubicacion []map[string]interface{}
 	relacion := make(map[string]interface{})
 
-	urlcrud := "http://" + beego.AppConfig.String("oikos2Service") + "asignacion_espacio_fisico_dependencia?query=Id:" + Id
+	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?query=Id:" + Id
 
 	if _, err := request.GetJsonTest(urlcrud, &ubicacion); err == nil { // (2) error servicio caido
 

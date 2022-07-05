@@ -31,7 +31,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 	// logs.Debug("url:", url)
 	if res, err := request.GetJsonTest(url, &Elementos); err == nil && res.StatusCode == 200 {
 
-		if keys := len(Elementos[0]); keys != 0 {
+		if len(Elementos) > 0 {
 
 			elementosActaBuffer := make(map[int]interface{})
 			subgruposCatalogoBuffer := make(map[int]interface{})

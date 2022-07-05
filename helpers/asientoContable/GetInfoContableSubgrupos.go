@@ -18,6 +18,9 @@ func GetInfoContableSubgrupos(tipoMovimiento int, subgrupos []int, cuentasSubgru
 		idsCuentas = append(idsCuentas, cta.CuentaCreditoId)
 		idsCuentas = append(idsCuentas, cta.CuentaDebitoId)
 	}
+	if len(idsCuentas) == 0 {
+		return
+	}
 
 	if err := cuentasContables.GetDetalleCuentasContables(idsCuentas, detalleCuentas); err != nil {
 		return err

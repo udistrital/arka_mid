@@ -9,8 +9,8 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
-	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
-	cuentasContablesHelper "github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
@@ -38,8 +38,8 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		idsCuentas          []string
 		parDebito           int
 		parCredito          int
-		tipoMovimiento      int
 		transaccion         models.TransaccionMovimientos
+		tipoMovimientoId    int
 	)
 
 	resultado = make(map[string]interface{})
@@ -89,7 +89,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 
 	fields := "Id,SubgrupoCatalogoId"
 	query = "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elementos_, err := crudActas.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
+	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		elementosActa = make(map[int]models.Elemento)
@@ -117,11 +117,12 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 
 	}
 
-	query = "query=CodigoAbreviacion:SAL"
-	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimientoId, "SAL"); err != nil {
 		return nil, err
-	} else {
-		tipoMovimiento = fm[0].Id
+	}
+
+	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&movimiento.EstadoMovimientoId.Id, "Traslado Aprobado"); err != nil {
+		return nil, err
 	}
 
 	ids = []int{}
@@ -130,7 +131,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 	}
 
 	cuentasSubgrupo = make(map[int]models.CuentaSubgrupo)
-	if err := catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(tipoMovimiento, ids, cuentasSubgrupo); err != nil {
+	if err := catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(tipoMovimientoId, ids, cuentasSubgrupo); err != nil {
 		return nil, err
 	}
 
@@ -140,7 +141,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 	}
 
 	detalleCuentas = make(map[string]models.CuentaContable)
-	if err := cuentasContablesHelper.GetDetalleCuentasContables(idsCuentas, detalleCuentas); err != nil {
+	if err := cuentasContables.GetDetalleCuentasContables(idsCuentas, detalleCuentas); err != nil {
 		return nil, err
 	}
 
@@ -152,8 +153,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 	}
 
 	transaccion = *new(models.TransaccionMovimientos)
-	asientoContable.GenerarMovimientosContables(totales, detalleCuentas, cuentasSubgrupo, parDebito, parCredito, detalle.FuncionarioOrigen, descMovOrigen(), true, &transaccion.Movimientos)
-	asientoContable.GenerarMovimientosContables(totales, detalleCuentas, cuentasSubgrupo, parDebito, parCredito, detalle.FuncionarioDestino, descMovDestino(), false, &transaccion.Movimientos)
+	asientoContable.GenerarMovimientosContables(totales, detalleCuentas, cuentasSubgrupo, parDebito, parCredito, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, descMovDestino(), false, &transaccion.Movimientos)
 
 	if len(transaccion.Movimientos) > 0 {
 		transaccion.Activo = true
@@ -167,7 +167,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 		}
 	}
 
-	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos); err != nil {
+	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, detalleCuentas); err != nil {
 		return nil, err
 	} else if len(transaccion.Movimientos) > 0 {
 		trContable := models.InfoTransaccionContable{
@@ -176,12 +176,6 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 			Fecha:       transaccion.FechaTransaccion,
 		}
 		resultado["trContable"] = trContable
-	}
-
-	if em, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Traslado Confirmado")); err != nil {
-		return nil, err
-	} else {
-		movimiento.EstadoMovimientoId = em[0]
 	}
 
 	if movimiento_, err := movimientosArka.PutMovimiento(&movimiento, movimiento.Id); err != nil {
@@ -194,7 +188,7 @@ func AprobarTraslado(id int) (resultado map[string]interface{}, outputError map[
 }
 
 func descMovDestino() string {
-	return "Movimiento tercero destino de traslado"
+	return "Traslado de elementos"
 }
 
 func descMovOrigen() string {

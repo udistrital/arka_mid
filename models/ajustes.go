@@ -18,7 +18,6 @@ type FormatoAjuste struct {
 	ConsecutivoId int
 	Consecutivo   string
 	RazonRechazo  string
-	TrContableId  int
 }
 
 type DetalleAjuste struct {

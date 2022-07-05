@@ -24,7 +24,7 @@ func (c *TercerosController) URLMapping() {
 // @Title GetOne
 // @Description get Terceros by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Terceros
+// @Success 200 {object} models.IdentificacionTercero
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *TercerosController) GetOne() {

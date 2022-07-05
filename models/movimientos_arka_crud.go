@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Movimiento struct {
 	Id                      int
@@ -76,20 +78,28 @@ type NovedadElemento struct {
 type TransaccionEntrada struct {
 	Id                      int
 	Observacion             string
-	Detalle                 string
+	Detalle                 FormatoBaseEntrada
 	FormatoTipoMovimientoId string
 	SoporteMovimientoId     int
 }
 
 type FormatoBaseEntrada struct {
-	ActaRecibidoId   int `json:"acta_recibido_id"`
-	ConsecutivoId    int
-	Consecutivo      string `json:"consecutivo"`
-	Factura          int    `json:"factura"`
-	VigenciaContrato string `json:"vigencia_contrato"`
-	ContratoId       int    `json:"contrato_id"`
-	SupervisorId     int    `json:"supervisor"`
-	OrdenadorGastoId int    `json:"ordenador_gasto_id"`
+	ActaRecibidoId      int    `json:"acta_recibido_id"`
+	Consecutivo         string `json:"consecutivo"`
+	ConsecutivoId       int
+	ContratoId          int     `json:"contrato_id"`
+	Divisa              string  `json:"divisa"`
+	EncargadoId         int     `json:"encargado_id"`
+	Factura             int     `json:"factura"`
+	OrdenadorGastoId    int     `json:"ordenador_gasto_id"`
+	Placa               string  `json:"placa_id"`
+	RegistroImportacion string  `json:"num_reg_importacion"`
+	SupervisorId        int     `json:"supervisor"`
+	TRM                 float64 `json:"TRM"`
+	Vigencia            string  `json:"vigencia"`
+	VigenciaContrato    string  `json:"vigencia_contrato"`
+	VigenciaOrdenador   string  `json:"vigencia_ordenador"`
+	VigenciaSolicitante string  `json:"vigencia_solicitante"`
 }
 
 type TrSoporteMovimiento struct {
@@ -103,6 +113,12 @@ type TrSalida struct {
 }
 type SalidaGeneral struct {
 	Salidas []*TrSalida
+}
+
+type ResultadoMovimiento struct {
+	Error               string
+	Movimiento          Movimiento
+	TransaccionContable InfoTransaccionContable
 }
 
 type FormatoTraslado struct {
@@ -129,11 +145,16 @@ type DetalleTraslado struct {
 type DetalleTrasladoLista struct {
 	Id                 int
 	Consecutivo        string
-	FuncionarioOrigen  string
-	FuncionarioDestino string
+	FuncionarioOrigen  Tercero
+	FuncionarioDestino Tercero
 	FechaCreacion      string
 	Ubicacion          string
 	EstadoMovimientoId int
+}
+
+type InventarioTercero struct {
+	Elementos []DetalleElementoPlaca
+	Tercero   DetalleFuncionario
 }
 
 type DetalleElementoPlaca struct {
@@ -166,6 +187,7 @@ type FormatoBaja struct {
 	Revisor        int
 	RazonRechazo   string
 	Resolucion     string
+	DependenciaId  int
 }
 
 type DetalleBaja struct {
@@ -193,6 +215,7 @@ type TrBaja struct {
 	Soporte        int
 	TipoBaja       *FormatoTipoMovimiento
 	TrContable     *InfoTransaccionContable
+	DependenciaId  string
 }
 
 type DetalleElementoBaja struct {
@@ -213,6 +236,7 @@ type TrRevisionBaja struct {
 	RazonRechazo   string
 	FechaRevisionC string
 	Resolucion     string
+	DependenciaId  int
 }
 
 type Historial struct {
@@ -226,7 +250,6 @@ type FormatoDepreciacion struct {
 	ConsecutivoId int
 	Consecutivo   string
 	FechaCorte    string
-	Totales       map[int]float64
 	RazonRechazo  string
 }
 
@@ -239,12 +262,23 @@ type DetalleCorteDepreciacion struct {
 	NovedadElementoId    int
 	FechaRef             time.Time
 }
+
+type DepreciacionElemento struct {
+	DeltaValor           float64
+	ElementoMovimientoId int
+	ElementoActaId       int
+}
+
+type TransaccionCierre struct {
+	MovimientoId         int
+	ElementoMovimientoId []int
+}
+
 type InfoDepreciacion struct {
 	Id            int
 	RazonRechazo  string
 	FechaCorte    time.Time
 	Observaciones string
-	Tipo          string
 }
 
 type DetalleAjusteAutomatico struct {
@@ -263,4 +297,16 @@ type FormatoAjusteAutomatico struct {
 	Consecutivo   string
 	ConsecutivoId int
 	Elementos     []int
+}
+
+type ConsecutivoMovimiento struct {
+	Consecutivo   string
+	ConsecutivoId int
+}
+
+type FormatoSalida struct {
+	Consecutivo   string `json:"consecutivo"`
+	ConsecutivoId int
+	Funcionario   int `json:"funcionario"`
+	Ubicacion     int `json:"ubicacion"`
 }

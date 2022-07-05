@@ -176,17 +176,30 @@ func FillElemento(elActa *models.DetalleElemento, elMov *models.ElementosMovimie
 
 }
 
-// removeDuplicateIds Remueve de un vector los enteros duplicados
-func RemoveDuplicateIds(addrs []int) []int {
-	result := make([]int, 0, len(addrs))
-	temp := map[int]struct{}{}
-	for _, item := range addrs {
-		if _, ok := temp[item]; !ok {
-			temp[item] = struct{}{}
-			result = append(result, item)
+// RemoveDuplicateInt Remueve de un slice los int duplicados
+func RemoveDuplicateInt(intSlice []int) []int {
+	allKeys := make(map[int]bool)
+	list := []int{}
+	for _, item := range intSlice {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
 		}
 	}
-	return result
+	return list
+}
+
+// RemoveDuplicateStr Remueve de un slice los string duplicados
+func RemoveDuplicateStr(strSlice []string) []string {
+	allKeys := make(map[string]bool)
+	list := []string{}
+	for _, item := range strSlice {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
+	}
+	return list
 }
 
 func EncodeUrl(query string, fields string, sortby string, order string, offset string, limit string) string {

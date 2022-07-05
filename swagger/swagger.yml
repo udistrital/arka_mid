@@ -37,7 +37,9 @@ paths:
         type: file
       responses:
         "201":
-          description: '{}'
+          description: ""
+          schema:
+            $ref: '#/definitions/models.CargaMasivaElementosActa'
         "403":
           description: body is empty
   /acta_recibido/elementosconsumo/:
@@ -116,44 +118,6 @@ paths:
         "502":
           description: Error with external API
   /ajustes/:
-    get:
-      tags:
-      - ajustes
-      description: get Ajuste
-      operationId: AjusteController.GetAll
-      parameters:
-      - in: query
-        name: query
-        description: Filter. e.g. col1:v1,col2:v2 ...
-        type: string
-      - in: query
-        name: fields
-        description: Fields returned. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: sortby
-        description: Sorted-by fields. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
-        type: string
-      - in: query
-        name: limit
-        description: Limit the size of result set. Must be an integer
-        type: string
-      - in: query
-        name: offset
-        description: Start position of result set. Must be an integer
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Ajuste'
-        "403":
-          description: ""
     post:
       tags:
       - ajustes
@@ -286,12 +250,12 @@ paths:
         name: body
         description: Informacion de la baja
         schema:
-          $ref: '#/definitions/models.Movimiento'
+          $ref: '#/definitions/models.TrSoporteMovimiento'
       responses:
         "201":
           description: ""
           schema:
-            $ref: '#/definitions/models.TrSoporteMovimiento'
+            $ref: '#/definitions/models.Movimiento'
         "400":
           description: the request contains incorrect syntax
         "403":
@@ -361,25 +325,6 @@ paths:
             $ref: '#/definitions/models.DetalleElementoBaja'
         "404":
           description: not found resource
-  /bajas_elementos/elemento_arka/{id}:
-    get:
-      tags:
-      - bajas_elementos
-      description: get Salida by id
-      operationId: BajaController.Get User
-      parameters:
-      - in: path
-        name: id
-        description: The key for staticblock
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Salida'
-        "404":
-          description: not found resource
   /bajas_elementos/solicitud/:
     get:
       tags:
@@ -439,7 +384,9 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
+            type: array
+            items:
+              $ref: '#/definitions/models.ElementoAperturaKardex'
         "403":
           description: ""
   /bodega_consumo/elementos_sin_asignar/:
@@ -452,7 +399,9 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
+            type: array
+            items:
+              $ref: '#/definitions/models.ElementoSinAsignar'
         "403":
           description: ""
   /bodega_consumo/existencias_kardex/:
@@ -465,30 +414,11 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Bodega-Consumo'
+            type: array
+            items:
+              $ref: '#/definitions/models.ExistenciasKardex'
         "403":
           description: ""
-  /bodega_consumo/solicitud:
-    post:
-      tags:
-      - bodega_consumo
-      description: Genera el movimiento correspondiente a una solicitud de bodega
-        de consumo. Asigna el consecutivo correspondiente.
-      operationId: BodegaConsumoController.Post
-      parameters:
-      - in: body
-        name: body
-        description: Detalle de la solicitud a la bodega de consumo
-        required: true
-        schema:
-          $ref: '#/definitions/models.FormatoSolicitudBodega'
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Movimiento'
-        "404":
-          description: not found resource
   /bodega_consumo/solicitud/:
     get:
       tags:
@@ -507,6 +437,26 @@ paths:
             type: array
             items:
               $ref: '#/definitions/models.DetalleSolicitudBodega'
+    post:
+      tags:
+      - bodega_consumo
+      description: Genera el movimiento correspondiente a una solicitud de bodega
+        de consumo. Asigna el consecutivo correspondiente.
+      operationId: BodegaConsumoController.Post
+      parameters:
+      - in: body
+        name: body
+        description: Detalle de la solicitud a la bodega de consumo.
+        required: true
+        schema:
+          $ref: '#/definitions/models.FormatoSolicitudBodega'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Movimiento'
+        "404":
+          description: not found resource
   /bodega_consumo/solicitud/{id}:
     get:
       tags:
@@ -571,10 +521,7 @@ paths:
         "200":
           description: ""
           schema:
-            type: array
-            items:
-              format: int64
-              type: integer
+            $ref: '#/definitions/models.ResultadoMovimiento'
         "404":
           description: not found resource
   /depreciacion/{id}:
@@ -594,7 +541,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/map[string]interface{}'
+            $ref: '#/definitions/models.ResultadoMovimiento'
         "404":
           description: not found resource
     put:
@@ -612,7 +559,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.ElementosMovimiento'
+            $ref: '#/definitions/models.ResultadoMovimiento'
         "400":
           description: the request contains incorrect syntax
   /entrada/:
@@ -626,6 +573,14 @@ paths:
         name: entradaId
         description: Id del movimiento que se desea aprobar
         type: string
+      - in: query
+        name: etl
+        description: Indica si la entrada se registra a partir del ETL
+        type: boolean
+      - in: query
+        name: aprobar
+        description: Indica si la entrada se debe aprobar
+        type: boolean
       - in: body
         name: body
         description: Detalles de la entrada. Se valida solo si el id es 0
@@ -657,7 +612,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/map[string]interface{}'
+            $ref: '#/definitions/models.DetalleEntrada'
         "403":
           description: :id is empty
   /entrada/anular/{id}:
@@ -738,7 +693,7 @@ paths:
         description: body for content
         required: true
         schema:
-          $ref: '#/definitions/{}'
+          $ref: '#/definitions/models.GetSedeDependencia'
       responses:
         "201":
           description: ""
@@ -825,6 +780,10 @@ paths:
         name: salidaId
         description: Id del movimiento que se desea aprobar
         type: string
+      - in: query
+        name: etl
+        description: Indica si la salida se registra a partir del ETL
+        type: boolean
       - in: body
         name: body
         description: Informacion de las salidas y elementos asociados a cada una de
@@ -869,15 +828,18 @@ paths:
       parameters:
       - in: path
         name: id
-        description: Id de la salida original
+        description: Id de la salida que se debe actualizar
         required: true
         type: integer
         format: int64
+      - in: query
+        name: rechazar
+        description: Indica si la salida se debe rechazar
+        type: boolean
       - in: body
         name: body
         description: Informacion de las salidas y elementos asociados a cada una de
-          ellas. Se valida solo si el id es 0
-        required: true
+          ellas. Se valida solo si no se debe rechazar
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
       responses:
@@ -903,7 +865,7 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Terceros'
+            $ref: '#/definitions/models.IdentificacionTercero'
         "403":
           description: :id is empty
   /traslados/:
@@ -915,8 +877,19 @@ paths:
       operationId: TrasladosController.Get All
       parameters:
       - in: query
-        name: tramiteOnly
-        description: Indica si se requieren los traslados en estado en tramite
+        name: user
+        description: Tercero que consulta los traslados
+        type: integer
+        format: int64
+      - in: query
+        name: confirmar
+        description: Consulta los traslados que están pendientes por ser confirmados
+          por el tercero que consulta.
+        type: boolean
+      - in: query
+        name: aprobar
+        description: Consulta los traslados que están pendientes por ser aprobados
+          por almacén.
         type: boolean
       responses:
         "200":
@@ -984,10 +957,10 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/map[string]interface{}'
+            $ref: '#/definitions/models.MvtoArkaMasTransaccion'
         "403":
           description: body is empty
-  /traslados/funcionario/{funcionarioId}:
+  /traslados/funcionario/{tercero_id}:
     get:
       tags:
       - traslados
@@ -995,7 +968,7 @@ paths:
       operationId: TrasladosController.Get Elementos
       parameters:
       - in: path
-        name: funcionarioId
+        name: tercero_id
         description: tercero_id del funcionario
         required: true
         type: integer
@@ -1004,16 +977,10 @@ paths:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.DetalleElementoPlaca'
+            $ref: '#/definitions/models.InventarioTercero'
         "404":
           description: not found resource
 definitions:
-  '{}':
-    title: '{}'
-    type: object
-  map[string]interface{}:
-    title: map[string]interface{}
-    type: object
   models.ActaRecibido:
     title: ActaRecibido
     type: object
@@ -1031,9 +998,6 @@ definitions:
         format: int64
       TipoActaId:
         $ref: '#/definitions/models.TipoActa'
-  models.Ajuste:
-    title: Ajuste
-    type: object
   models.AreaTipo:
     title: AreaTipo
     type: object
@@ -1074,9 +1038,6 @@ definitions:
       Id:
         type: integer
         format: int64
-  models.Bodega-Consumo:
-    title: Bodega-Consumo
-    type: object
   models.BodegaConsumoSolicitud:
     title: BodegaConsumoSolicitud
     type: object
@@ -1085,6 +1046,31 @@ definitions:
         $ref: '#/definitions/models.ElementoSolicitud'
       Solicitud:
         $ref: '#/definitions/models.Movimiento'
+  models.CargaMasivaElementosActa:
+    title: CargaMasivaElementosActa
+    type: object
+    properties:
+      Elementos:
+        type: array
+        items:
+          $ref: '#/definitions/models.ElementoActaCargado'
+  models.Catalogo:
+    title: Catalogo
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      Descripcion:
+        type: string
+      FechaFin:
+        type: string
+      FechaInicio:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      Nombre:
+        type: string
   models.ConsultaEntrada:
     title: ConsultaEntrada
     type: object
@@ -1521,6 +1507,16 @@ definitions:
       Valor:
         type: number
         format: double
+  models.DetalleEntrada:
+    title: DetalleEntrada
+    type: object
+    properties:
+      contrato:
+        $ref: '#/definitions/models.PorDefinir'
+      movimiento:
+        $ref: '#/definitions/models.PorDefinir'
+      proveedor:
+        $ref: '#/definitions/models.PorDefinir'
   models.DetalleFuncionario:
     title: DetalleFuncionario
     type: object
@@ -1641,9 +1637,9 @@ definitions:
       FechaCreacion:
         type: string
       FuncionarioDestino:
-        type: string
+        $ref: '#/definitions/models.Tercero'
       FuncionarioOrigen:
-        type: string
+        $ref: '#/definitions/models.Tercero'
       Id:
         type: integer
         format: int64
@@ -1706,6 +1702,70 @@ definitions:
       ValorUnitario:
         type: number
         format: double
+  models.ElementoActaCargado:
+    title: ElementoActaCargado
+    type: object
+    properties:
+      Cantidad:
+        type: number
+        format: double
+      Descuento:
+        type: number
+        format: double
+      Id:
+        type: integer
+        format: int64
+      Marca:
+        type: string
+      Nombre:
+        type: string
+      PorcentajeIvaId:
+        type: number
+        format: double
+      Serie:
+        type: string
+      SubgrupoCatalogoId:
+        $ref: '#/definitions/models.PorDefinir'
+      Subtotal:
+        type: number
+        format: double
+      UnidadMedida:
+        type: integer
+        format: int64
+      ValorIva:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
+  models.ElementoAperturaKardex:
+    title: ElementoAperturaKardex
+    type: object
+    properties:
+      CantidadMaxima:
+        type: integer
+        format: int64
+      CantidadMinima:
+        type: integer
+        format: int64
+      ElementoCatalogoId:
+        $ref: '#/definitions/models.PorDefinir'
+      FechaCreacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      MetodoValoracion:
+        type: integer
+        format: int64
+      MovimientoPadreId:
+        $ref: '#/definitions/models.PorDefinir'
+      Observaciones:
+        type: string
   models.ElementoCatalogo:
     title: ElementoCatalogo
     type: object
@@ -1723,6 +1783,58 @@ definitions:
         type: string
       SubgrupoId:
         $ref: '#/definitions/models.Subgrupo'
+  models.ElementoSinAsignar:
+    title: ElementoSinAsignar
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      ElementoActaId:
+        type: integer
+        format: int64
+      ElementoCatalogoId:
+        type: integer
+        format: int64
+      FechaCreacion:
+        type: string
+        format: datetime
+      FechaModificacion:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      Marca:
+        type: string
+      MovimientoId:
+        $ref: '#/definitions/models.PorDefinir'
+      Nombre:
+        type: string
+      SaldoCantidad:
+        type: integer
+        format: int64
+      SaldoValor:
+        type: number
+        format: double
+      Serie:
+        type: string
+      SubgrupoCatalogoId:
+        $ref: '#/definitions/models.PorDefinir'
+      Unidad:
+        type: integer
+        format: int64
+      ValorResidual:
+        type: number
+        format: double
+      ValorTotal:
+        type: number
+        format: double
+      ValorUnitario:
+        type: number
+        format: double
+      VidaUtil:
+        type: number
+        format: double
   models.ElementoSolicitud:
     title: ElementoSolicitud
     type: object
@@ -1877,6 +1989,67 @@ definitions:
         format: int64
       Nombre:
         type: string
+  models.ExistenciasKardex:
+    title: ExistenciasKardex
+    type: object
+    properties:
+      ElementoCatalogoId:
+        $ref: '#/definitions/models.ElementoCatalogo'
+      Id:
+        type: integer
+        format: int64
+      SaldoCantidad:
+        type: integer
+        format: int64
+      SaldoValor:
+        type: number
+        format: double
+      SubgrupoCatalogo:
+        $ref: '#/definitions/models.SubgrupoCatalogo'
+  models.FormatoBaseEntrada:
+    title: FormatoBaseEntrada
+    type: object
+    properties:
+      ConsecutivoId:
+        type: integer
+        format: int64
+      TRM:
+        type: number
+        format: double
+      acta_recibido_id:
+        type: integer
+        format: int64
+      consecutivo:
+        type: string
+      contrato_id:
+        type: integer
+        format: int64
+      divisa:
+        type: string
+      encargado_id:
+        type: integer
+        format: int64
+      factura:
+        type: integer
+        format: int64
+      num_reg_importacion:
+        type: string
+      ordenador_gasto_id:
+        type: integer
+        format: int64
+      placa_id:
+        type: string
+      supervisor:
+        type: integer
+        format: int64
+      vigencia:
+        type: string
+      vigencia_contrato:
+        type: string
+      vigencia_ordenador:
+        type: string
+      vigencia_solicitante:
+        type: string
   models.FormatoSolicitudBodega:
     title: FormatoSolicitudBodega
     type: object
@@ -1919,6 +2092,14 @@ definitions:
       NumeroOrden:
         type: number
         format: double
+  models.GetSedeDependencia:
+    title: GetSedeDependencia
+    type: object
+    properties:
+      Dependencia:
+        $ref: '#/definitions/models.Dependencia'
+      Sede:
+        $ref: '#/definitions/models.EspacioFisico'
   models.GrupoInfoComplementaria:
     title: GrupoInfoComplementaria
     type: object
@@ -2007,8 +2188,6 @@ definitions:
         type: string
       RazonRechazo:
         type: string
-      Tipo:
-        type: string
   models.InfoTercero:
     title: InfoTercero
     type: object
@@ -2030,6 +2209,16 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.DetalleMovimientoContable'
+  models.InventarioTercero:
+    title: InventarioTercero
+    type: object
+    properties:
+      Elementos:
+        type: array
+        items:
+          $ref: '#/definitions/models.DetalleElementoPlaca'
+      Tercero:
+        $ref: '#/definitions/models.DetalleFuncionario'
   models.Movimiento:
     title: Movimiento
     type: object
@@ -2055,6 +2244,14 @@ definitions:
         $ref: '#/definitions/models.Movimiento'
       Observacion:
         type: string
+  models.MvtoArkaMasTransaccion:
+    title: MvtoArkaMasTransaccion
+    type: object
+    properties:
+      Movimiento:
+        $ref: '#/definitions/models.PorDefinir'
+      TrContable:
+        $ref: '#/definitions/models.PorDefinir'
   models.OrdenadorGasto:
     title: OrdenadorGasto
     type: object
@@ -2090,6 +2287,9 @@ definitions:
         $ref: '#/definitions/models.Parametro'
       TipoParametroId:
         $ref: '#/definitions/models.TipoParametro'
+  models.PorDefinir:
+    title: PorDefinir
+    type: object
   models.PreMovAjuste:
     title: PreMovAjuste
     type: object
@@ -2117,9 +2317,16 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.PreMovAjuste'
-  models.Salida:
-    title: Salida
+  models.ResultadoMovimiento:
+    title: ResultadoMovimiento
     type: object
+    properties:
+      Error:
+        type: string
+      Movimiento:
+        $ref: '#/definitions/models.Movimiento'
+      TransaccionContable:
+        $ref: '#/definitions/models.InfoTransaccionContable'
   models.SalidaGeneral:
     title: SalidaGeneral
     type: object
@@ -2165,6 +2372,19 @@ definitions:
         type: string
       TipoNivelId:
         $ref: '#/definitions/models.TipoNivel'
+  models.SubgrupoCatalogo:
+    title: SubgrupoCatalogo
+    type: object
+    properties:
+      Activo:
+        type: boolean
+      CatalogoId:
+        $ref: '#/definitions/models.Catalogo'
+      Id:
+        type: integer
+        format: int64
+      SubgrupoId:
+        $ref: '#/definitions/models.Subgrupo'
   models.Supervisor:
     title: Supervisor
     type: object
@@ -2215,9 +2435,6 @@ definitions:
         $ref: '#/definitions/models.TipoContribuyente'
       UsuarioWSO2:
         type: string
-  models.Terceros:
-    title: Terceros
-    type: object
   models.TipoActa:
     title: TipoActa
     type: object
@@ -2412,6 +2629,8 @@ definitions:
     title: TrBaja
     type: object
     properties:
+      DependenciaId:
+        type: string
       Elementos:
         type: array
         items:
@@ -2451,6 +2670,9 @@ definitions:
         items:
           type: integer
           format: int64
+      DependenciaId:
+        type: integer
+        format: int64
       FechaRevisionC:
         type: string
       RazonRechazo:
@@ -2500,7 +2722,7 @@ definitions:
     type: object
     properties:
       Detalle:
-        type: string
+        $ref: '#/definitions/models.FormatoBaseEntrada'
       FormatoTipoMovimientoId:
         type: string
       Id:

@@ -63,15 +63,6 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"],
         beego.ControllerComments{
-            Method: "GetAll",
-            Router: "/",
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"],
-        beego.ControllerComments{
             Method: "GetOneManual",
             Router: "/:id",
             AllowHTTPMethods: []string{"get"},
@@ -153,15 +144,6 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
         beego.ControllerComments{
-            Method: "GetElemento",
-            Router: "/elemento_arka/:id",
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BajaController"],
-        beego.ControllerComments{
             Method: "GetAll",
             Router: "/solicitud/",
             AllowHTTPMethods: []string{"get"},
@@ -208,7 +190,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:BodegaConsumoController"],
         beego.ControllerComments{
             Method: "Post",
-            Router: "/solicitud",
+            Router: "/solicitud/",
             AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -424,7 +406,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:TrasladosController"],
         beego.ControllerComments{
             Method: "GetElementosFuncionario",
-            Router: "/funcionario/:funcionarioId",
+            Router: "/funcionario/:tercero_id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,

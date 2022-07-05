@@ -109,12 +109,28 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 
 			if ctaCr_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
+			} else if ctaCr_ == nil {
+				subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+				if err != nil {
+					return nil, err
+				} else {
+					res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre
+					return res, nil
+				}
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId] = ctaCr_
 			}
 
 			if ctaDb_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
+			} else if ctaDb_ == nil {
+				subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+				if err != nil {
+					return nil, err
+				} else {
+					res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre
+					return res, nil
+				}
 			} else {
 				infoCuentas[cuentasSubgrupo[idx].CuentaDebitoId] = ctaDb_
 			}
@@ -129,7 +145,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 			if err != nil {
 				return nil, err
 			} else {
-				res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Nombre
+				res["errorTransaccion"] = "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre
 				return res, nil
 			}
 		}

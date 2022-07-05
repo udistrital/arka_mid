@@ -31,10 +31,10 @@ func (c *BodegaConsumoController) URLMapping() {
 // Post ...
 // @Title Post
 // @Description Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
-// @Param	body	body	models.FormatoSolicitudBodega	true	"Detalle de la solicitud a la bodega de consumo"
+// @Param	body		body 	models.FormatoSolicitudBodega	true		"Detalle de la solicitud a la bodega de consumo."
 // @Success 200 {object} models.Movimiento
 // @Failure 404 not found resource
-// @router /solicitud [post]
+// @router /solicitud/ [post]
 func (c *BodegaConsumoController) Post() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
@@ -142,7 +142,7 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 // GetAll ...
 // @Title GetAll
 // @Description get Bodega-Consumo
-// @Success 200 {object} models.Bodega-Consumo
+// @Success 200 {object} []models.ElementoSinAsignar
 // @Failure 403
 // @router /elementos_sin_asignar/ [get]
 func (c *BodegaConsumoController) GetElementos() {
@@ -172,7 +172,7 @@ func (c *BodegaConsumoController) GetElementos() {
 // GetAperturasKardex ...
 // @Title GetAll
 // @Description get Bodega-Consumo
-// @Success 200 {object} models.Bodega-Consumo
+// @Success 200 {object} []models.ElementoAperturaKardex
 // @Failure 403
 // @router /aperturas_kardex/ [get]
 func (c *BodegaConsumoController) GetAperturasKardex() {
@@ -203,7 +203,7 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 // GetAll ...
 // @Title GetAll
 // @Description get Bodega-Consumo
-// @Success 200 {object} models.Bodega-Consumo
+// @Success 200 {object} []models.ExistenciasKardex
 // @Failure 403
 // @router /existencias_kardex/ [get]
 func (c *BodegaConsumoController) GetAllExistencias() {

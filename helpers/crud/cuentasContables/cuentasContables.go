@@ -35,16 +35,16 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable *models.CuentaCo
 	}
 }
 
-// GetTipoComprobante Consulta controlador nodo_cuenta_contable/{UUID}
+// GetTipoComprobante Consulta controlador tipo_comprobante/{UUID}
 func GetTipoComprobante(tipoDocumento string) (tipoComprobante *models.TipoComprobante, outputError map[string]interface{}) {
 
-	funcion := "GetCuentaContable"
+	funcion := "GetTipoComprobante"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var data models.RespuestaAPI2arr
 	urlcrud := "http://" + beego.AppConfig.String("cuentasContablesService") + "tipo_comprobante"
 	if err := request.GetJson(urlcrud, &data); err != nil || data.Code != 200 {
-		eval := " - request.GetJson(urlcrud, &response)"
+		eval := " - request.GetJson(urlcrud, &data)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
 

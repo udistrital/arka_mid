@@ -1,122 +1,180 @@
 package entradaHelper
 
 import (
-	"encoding/json"
-	"strconv"
-
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
-
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
 )
 
 // RegistrarEntrada Crea registro de entrada en estado en trámite
-func RegistrarEntrada(data *models.TransaccionEntrada) (result map[string]interface{}, outputError map[string]interface{}) {
+func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
-	funcion := "RegistrarEntrada"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "RegistrarEntrada - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
-		urlcrud          string
-		res              map[string]interface{}
-		actaRecibido     models.TransaccionActaRecibido
+		acta             models.TransaccionActaRecibido
 		tipoMovimiento   int
 		estadoMovimiento int
-		consecutivo      models.Consecutivo
+		detalle          string
 	)
 
-	resultado := make(map[string]interface{})
-
-	detalleJSON := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(data.Detalle), &detalleJSON); err != nil {
-		panic(err.Error())
+	if data.Detalle.ActaRecibidoId <= 0 {
+		err := "Se debe indicar un acta de recibido válida."
+		return errorctrl.Error(funcion, err, "400")
 	}
 
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-	if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
-		return nil, err
-	}
-
-	detalleJSON["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
-	detalleJSON["ConsecutivoId"] = consecutivo.Id
-	resultado["Consecutivo"] = detalleJSON["consecutivo"]
-
-	if jsonData, err := json.Marshal(detalleJSON); err != nil {
-		logs.Error(err)
-		eval := " - json.Marshal(detalleJSON)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		data.Detalle = string(jsonData[:])
-	}
-
-	// Consulta el acta
-	actaRecibidoId := int(detalleJSON["acta_recibido_id"].(float64))
-	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId)) + "?elementos=false"
-	if err := request.GetJson(urlcrud, &actaRecibido); err != nil {
-		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &actaRecibido)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	// Crea registro en api movimientos_arka_crud
 	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimiento, "Entrada En Trámite"); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, data.FormatoTipoMovimientoId); err != nil {
-		return nil, err
+		return err
 	}
 
-	movimiento := models.Movimiento{
+	if err := actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, &acta); err != nil {
+		return err
+	}
+
+	if err := crearDetalleEntrada(&data.Detalle, etl, nil, &detalle); err != nil {
+		return err
+	}
+
+	if !etl {
+		if elementos, err := asignarPlacaActa(data.Detalle.ActaRecibidoId); err != nil {
+			return outputError
+		} else {
+			acta.Elementos = elementos
+		}
+	}
+
+	*movimiento = models.Movimiento{
 		Observacion:             data.Observacion,
-		Detalle:                 data.Detalle,
+		Detalle:                 detalle,
 		Activo:                  true,
 		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{Id: tipoMovimiento},
 		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoMovimiento},
 	}
 
-	if err := movimientosArka.PostMovimiento(&movimiento); err != nil {
-		return nil, err
+	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
+		return err
 	}
 
 	// Crea registro en table soporte_movimiento si es necesario
-	if data.SoporteMovimientoId != 0 {
+	if data.SoporteMovimientoId > 0 {
 		soporte := models.SoporteMovimiento{
 			DocumentoId:  data.SoporteMovimientoId,
 			Activo:       true,
 			MovimientoId: &models.Movimiento{Id: movimiento.Id},
 		}
 
-		if _, err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {
-			return nil, err
+		if err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {
+			return err
 		}
 
 	}
 
-	if elementos, err := asignarPlacaActa(actaRecibidoId); err != nil {
-		return nil, outputError
-	} else {
-		actaRecibido.Elementos = elementos
-	}
+	if !etl {
+		acta.UltimoEstado.EstadoActaId.Id = 6
+		acta.UltimoEstado.Id = 0
 
-	// Actualiza el estado del acta
-	urlcrud = "http://" + beego.AppConfig.String("actaRecibidoService") + "transaccion_acta_recibido/" + strconv.Itoa(int(actaRecibidoId))
-	actaRecibido.UltimoEstado.EstadoActaId.Id = 6
-	actaRecibido.UltimoEstado.Id = 0
-
-	if err := request.SendJson(urlcrud, "PUT", &res, &actaRecibido); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "RegistrarEntrada - request.SendJson(urlcrud, \"PUT\", &res, &actaRecibido)",
-			"err":     err,
-			"status":  "502",
+		if err := actaRecibido.PutTransaccionActaRecibido(data.Detalle.ActaRecibidoId, &acta); err != nil {
+			return err
 		}
-		return nil, outputError
 	}
-	return resultado, nil
+
+	return
+
+}
+
+// creaDetalleEntrada construye la data que será almacenada en la columna detalle según se requiera.
+func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecutivo_ *models.ConsecutivoMovimiento, necesario *string) (outputError map[string]interface{}) {
+
+	funcion := "crearDetalleEntrada - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	var (
+		detalle     map[string]interface{}
+		consecutivo models.Consecutivo
+	)
+
+	if err := utilsHelper.FillStruct(completo, &detalle); err != nil {
+		return err
+	}
+
+	if completo.ContratoId == 0 {
+		delete(detalle, "contrato_id")
+	}
+
+	if completo.Divisa == "" {
+		delete(detalle, "divisa")
+	}
+
+	if completo.EncargadoId == 0 {
+		delete(detalle, "encargado_id")
+	}
+
+	if completo.Factura == 0 {
+		delete(detalle, "factura")
+	}
+
+	if completo.OrdenadorGastoId == 0 {
+		delete(detalle, "ordenador_gasto_id")
+	}
+
+	if completo.Placa == "" {
+		delete(detalle, "placa_id")
+	}
+
+	if completo.RegistroImportacion == "" {
+		delete(detalle, "num_reg_importacion")
+	}
+
+	if completo.SupervisorId == 0 {
+		delete(detalle, "supervisor")
+	}
+
+	if completo.TRM == 0 {
+		delete(detalle, "TRM")
+	}
+
+	if completo.Vigencia == "" {
+		delete(detalle, "vigencia")
+	}
+
+	if completo.VigenciaContrato == "" {
+		delete(detalle, "vigencia_contrato")
+	}
+
+	if completo.VigenciaOrdenador == "" {
+		delete(detalle, "vigencia_ordenador")
+	}
+
+	if completo.VigenciaSolicitante == "" {
+		delete(detalle, "vigencia_solicitante")
+	}
+
+	if !etl && consecutivo_ == nil {
+		ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
+		if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
+			return err
+		}
+
+		detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
+		detalle["ConsecutivoId"] = consecutivo.Id
+	} else if consecutivo_ != nil {
+		detalle["consecutivo"] = consecutivo_.Consecutivo
+		detalle["ConsecutivoId"] = consecutivo_.ConsecutivoId
+	}
+
+	if err := utilsHelper.Marshal(detalle, necesario); err != nil {
+		return err
+	}
+
+	return
 
 }

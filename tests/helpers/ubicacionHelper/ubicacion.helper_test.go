@@ -10,12 +10,12 @@ import (
 )
 
 var parameters struct {
-	OIKOS2_CRUD string
+	OIKOS_CRUD string
 }
 
 func TestMain(m *testing.M) {
-	parameters.OIKOS2_CRUD = os.Getenv("OIKOS2_CRUD")
-	if err := beego.AppConfig.Set("oikos2Service", parameters.OIKOS2_CRUD); err != nil {
+	parameters.OIKOS_CRUD = os.Getenv("OIKOS_CRUD")
+	if err := beego.AppConfig.Set("oikosService", parameters.OIKOS_CRUD); err != nil {
 		panic(err)
 	}
 	flag.Parse()
@@ -48,5 +48,5 @@ func TestGetSedeDependenciaUbicacion(t *testing.T) {
 
 func TestEndPointGetOikosService(t *testing.T) {
 	t.Log("Testing EndPoint OIKOS_CRUD")
-	t.Log(parameters.OIKOS2_CRUD)
+	t.Log(parameters.OIKOS_CRUD)
 }
