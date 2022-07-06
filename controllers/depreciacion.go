@@ -39,12 +39,22 @@ func (c *DepreciacionController) Post() {
 		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		var resultado models.ResultadoMovimiento
-		if err := depreciacionHelper.GenerarCierre(v, &resultado); err != nil {
-			logs.Error(err)
-			c.Data["system"] = err
-			c.Abort("404")
+		if !v.Rechazar {
+			if err := depreciacionHelper.GenerarCierre(v, &resultado); err != nil {
+				logs.Error(err)
+				c.Data["system"] = err
+				c.Abort("404")
+			} else {
+				c.Data["json"] = resultado
+			}
 		} else {
-			c.Data["json"] = resultado
+			if err := depreciacionHelper.RechazarCierre(v, &resultado); err != nil {
+				logs.Error(err)
+				c.Data["system"] = err
+				c.Abort("404")
+			} else {
+				c.Data["json"] = resultado
+			}
 		}
 	}
 	c.ServeJSON()
