@@ -306,13 +306,13 @@ func GetCorteDepreciacion(fechaCorte string, corte *[]models.DepreciacionElement
 // AprobarCierre post controlador depreciacion del api movimientos_arka_crud
 func AprobarCierre(data *models.TransaccionCierre, cierre *models.Movimiento) (outputError map[string]interface{}) {
 
-	funcion := "PostMovimiento"
+	funcion := "AprobarCierre - "
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	urlcrud := basePath + "depreciacion/"
 	if err := request.SendJson(urlcrud, "POST", &cierre, &data); err != nil {
 		logs.Error(err, urlcrud)
-		eval := ` - request.SendJson(urlcrud, "POST", &cierre, &data)`
+		eval := `request.SendJson(urlcrud, "POST", &cierre, &data)`
 		return errorctrl.Error(funcion+eval, err, "502")
 	}
 

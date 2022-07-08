@@ -3,6 +3,7 @@ package depreciacionHelper
 import (
 	"github.com/astaxie/beego"
 
+	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -18,15 +19,36 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 	var (
 		movimiento       models.Movimiento
 		detalle          models.FormatoDepreciacion
+		parametros       []models.ParametroConfiguracion
 		formatoCierre    int
 		estadoMovimiento int
 	)
+
+	if err := configuracion.GetAllParametro("Nombre__in:modificandoCuentas|cierreEnCurso&sortby=Nombre&order=desc&limit=2", &parametros); err != nil {
+		return err
+	} else if len(parametros) != 2 {
+		return
+	}
+
+	if parametros[0].Valor == "true" {
+		resultado.Error = "Cuentas en modificación. No se puede iniciar el proceso de cierre. Intente más tarde."
+		return
+	}
+
+	parametros[1].Valor = "true"
+	if err := configuracion.PutParametro(parametros[1].Id, &parametros[1]); err != nil {
+		return err
+	}
 
 	if err := calcularCierre(info.FechaCorte.Format("2006-01-02"), nil, nil, resultado); err != nil {
 		return err
 	}
 
 	if resultado.Error != "" || len(resultado.TransaccionContable.Movimientos) == 0 {
+		parametros[1].Valor = "false"
+		if err := configuracion.PutParametro(parametros[1].Id, &parametros[1]); err != nil {
+			return err
+		}
 		return
 	}
 
@@ -45,7 +67,7 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 		var consecutivo_ models.Consecutivo
 		ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
 		if err := consecutivos.Get(ctxt, "Registro cierre Arka", &consecutivo_); err != nil {
-			return outputError
+			return err
 		}
 
 		detalle.ConsecutivoId = consecutivo_.Id

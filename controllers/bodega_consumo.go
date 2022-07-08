@@ -225,11 +225,11 @@ func (c *BodegaConsumoController) GetAllExistencias() {
 	if v, err := bodegaConsumoHelper.GetExistenciasKardex(); err != nil {
 		panic(err)
 	} else {
-		if len(v) == 0 || v == nil {
-			c.Data["json"] = []interface{}{}
-		} else {
-			c.Data["json"] = v
-			c.ServeJSON()
+		if v == nil {
+			v = []map[string]interface{}{}
 		}
+
+		c.Data["json"] = v
+		c.ServeJSON()
 	}
 }

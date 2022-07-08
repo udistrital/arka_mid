@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -21,7 +22,14 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		detalle           *models.FormatoDepreciacion
 		elementos         []int
 		transaccionCierre models.TransaccionCierre
+		parametros        []models.ParametroConfiguracion
 	)
+
+	if err := configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros); err != nil {
+		return err
+	} else if len(parametros) != 1 || parametros[0].Valor != "true" {
+		return
+	}
 
 	if mov_, err := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(id)); err != nil {
 		return err
@@ -55,7 +63,13 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		MovimientoId:         id,
 		ElementoMovimientoId: elementos,
 	}
+
 	if err := movimientosArka.AprobarCierre(&transaccionCierre, &resultado.Movimiento); err != nil {
+		return err
+	}
+
+	parametros[0].Valor = "false"
+	if err := configuracion.PutParametro(parametros[0].Id, &parametros[0]); err != nil {
 		return err
 	}
 

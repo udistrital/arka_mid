@@ -2188,6 +2188,8 @@ definitions:
         type: string
       RazonRechazo:
         type: string
+      Rechazar:
+        type: boolean
   models.InfoTercero:
     title: InfoTercero
     type: object

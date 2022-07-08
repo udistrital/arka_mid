@@ -279,6 +279,7 @@ type InfoDepreciacion struct {
 	RazonRechazo  string
 	FechaCorte    time.Time
 	Observaciones string
+	Rechazar      bool
 }
 
 type DetalleAjusteAutomatico struct {
