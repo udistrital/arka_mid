@@ -15,3 +15,10 @@ type Aplicacion struct {
 	Alias       string
 	EstiloIcono string
 }
+
+type ParametroConfiguracion struct {
+	Id         int
+	Nombre     string
+	Valor      string
+	Aplicacion *Aplicacion
+}

@@ -126,7 +126,7 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 	if res, err := request.GetJsonTest(url, &Elementos___); err == nil && res.StatusCode == 200 {
 		// fmt.Println("Elementos", Elementos___[0])
 
-		if keys := len(Elementos___[0]); keys != 0 {
+		if len(Elementos___) == 0 {
 
 			for _, elemento := range Elementos___ {
 
@@ -149,7 +149,6 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 
 			return Elementos, nil
 		} else {
-
 			return Elementos___, nil
 		}
 
