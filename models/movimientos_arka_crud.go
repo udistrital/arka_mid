@@ -17,19 +17,20 @@ type Movimiento struct {
 }
 
 type ElementosMovimiento struct {
-	Id                int
-	ElementoActaId    int
-	Unidad            float64
-	ValorUnitario     float64
-	ValorTotal        float64
-	SaldoCantidad     float64
-	SaldoValor        float64
-	VidaUtil          float64
-	ValorResidual     float64
-	Activo            bool
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
-	MovimientoId      *Movimiento
+	Id                 int
+	ElementoActaId     int
+	ElementoCatalogoId int
+	Unidad             float64
+	ValorUnitario      float64
+	ValorTotal         float64
+	SaldoCantidad      float64
+	SaldoValor         float64
+	VidaUtil           float64
+	ValorResidual      float64
+	Activo             bool
+	FechaCreacion      time.Time
+	FechaModificacion  time.Time
+	MovimientoId       *Movimiento
 }
 
 type FormatoTipoMovimiento struct {

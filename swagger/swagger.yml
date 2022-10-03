@@ -1889,6 +1889,9 @@ definitions:
       ElementoActaId:
         type: integer
         format: int64
+      ElementoCatalogoId:
+        type: integer
+        format: int64
       FechaCreacion:
         type: string
         format: datetime
