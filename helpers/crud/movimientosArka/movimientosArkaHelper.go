@@ -114,6 +114,22 @@ func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[s
 	return movimiento, nil
 }
 
+// GetElementosMovimientoById consulta controlador elementos_movimiento/{id} del api movimientos_arka_crud
+func GetElementosMovimientoById(id int, elemento *models.ElementosMovimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetElementosMovimientoById - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+
+	urlcrud := basePath + "elementos_movimiento/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &elemento); err != nil {
+		logs.Error(err, urlcrud)
+		eval := "request.GetJson(urlcrud, &elemento)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
 // GetTrSalida consulta controlador tr_salida/{id} del api movimientos_arka_crud
 func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]interface{}) {
 

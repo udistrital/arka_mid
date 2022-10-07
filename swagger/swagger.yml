@@ -879,8 +879,7 @@ paths:
       - in: query
         name: user
         description: Tercero que consulta los traslados
-        type: integer
-        format: int64
+        type: string
       - in: query
         name: confirmar
         description: Consulta los traslados que están pendientes por ser confirmados

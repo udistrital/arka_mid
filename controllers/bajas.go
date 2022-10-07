@@ -11,7 +11,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
-	// "github.com/udistrital/arka_mid/models"
 )
 
 // BajaController
@@ -219,12 +218,13 @@ func (c *BajaController) GetDetalleElemento() {
 		id = v
 	}
 
-	l, err := bajasHelper.GetDetalleElemento(id)
+	var elemento models.DetalleElementoBaja
+	err := bajasHelper.GetDetalleElemento(id, &elemento)
 	if err != nil {
 		panic(err)
-	} else {
-		c.Data["json"] = l
 	}
+
+	c.Data["json"] = elemento
 	c.ServeJSON()
 }
 
