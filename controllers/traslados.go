@@ -169,7 +169,7 @@ func (c *TrasladosController) GetElementosFuncionario() {
 // GetAll ...
 // @Title Get All
 // @Description Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
-// @Param	user	query	int	false	"Tercero que consulta los traslados"
+// @Param	user	query	string	false	"Tercero que consulta los traslados"
 // @Param	confirmar	query	bool	false	"Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta."
 // @Param	aprobar	query	bool	false	"Consulta los traslados que están pendientes por ser aprobados por almacén."
 // @Success 200 {object} []models.DetalleTrasladoLista
