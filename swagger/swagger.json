@@ -1887,6 +1887,9 @@
                 },
                 "SubtipoMovimientoId": {
                     "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
                 }
             }
         },
@@ -3578,13 +3581,21 @@
                 "Activo": {
                     "type": "boolean"
                 },
-                "CodigoAbreviacion": {
-                    "type": "string"
+                "BodegaConsumo": {
+                    "type": "boolean"
                 },
                 "Descripcion": {
                     "type": "string"
                 },
                 "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "LimiteInferior": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "LimiteSuperior": {
                     "type": "integer",
                     "format": "int64"
                 },
@@ -3597,14 +3608,10 @@
                 "Nombre": {
                     "type": "string"
                 },
-                "Orden": {
-                    "type": "number",
-                    "format": "double"
-                },
                 "Reglas": {
                     "type": "string"
                 },
-                "Tipo_bien_padre": {
+                "TipoBienPadreId": {
                     "$ref": "#/definitions/models.TipoBien"
                 }
             }

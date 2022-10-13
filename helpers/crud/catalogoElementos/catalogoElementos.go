@@ -10,6 +10,8 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+var basePath = "http://" + beego.AppConfig.String("catalogoElementosService")
+
 // GetAllCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
 func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, outputError map[string]interface{}) {
 
@@ -27,19 +29,19 @@ func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, ou
 }
 
 // GetTrCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
-func GetTrCuentasSubgrupo(id int) (cuentas []*models.CuentasSubgrupo, outputError map[string]interface{}) {
+func GetTrCuentasSubgrupo(id int, cuentas *[]models.CuentasSubgrupo) (outputError map[string]interface{}) {
 
-	funcion := "GetTrCuentasSubgrupo"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "GetTrCuentasSubgrupo - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "tr_cuentas_subgrupo/" + strconv.Itoa(id)
+	urlcrud := basePath + "tr_cuentas_subgrupo/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &cuentas); err != nil {
-		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &cuentas)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+		logs.Error(urlcrud, err)
+		eval := "request.GetJson(urlcrud, &cuentas)"
+		return errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	return cuentas, nil
+	return
 }
 
 // GetAllDetalleSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
@@ -56,6 +58,22 @@ func GetAllDetalleSubgrupo(query string) (detalle []*models.DetalleSubgrupo, out
 	}
 
 	return detalle, nil
+}
+
+// GetAllTipoBien query controlador tipo_bien del api catalogo_elementos_crud
+func GetAllTipoBien(query string, tiposBien *[]models.TipoBien) (outputError map[string]interface{}) {
+
+	funcion := "GetAllTipoBien - "
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := basePath + "tipo_bien?" + query
+	if err := request.GetJson(urlcrud, &tiposBien); err != nil {
+		logs.Error(urlcrud, err)
+		eval := "request.GetJson(urlcrud, &detalle)"
+		return errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return
 }
 
 // GetSubgrupoById Consulta controlador subgrupo/{id} del api catalogo_elementos_crud
