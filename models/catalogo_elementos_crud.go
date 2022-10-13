@@ -15,6 +15,7 @@ type CuentasSubgrupo struct {
 	CuentaDebitoId      string
 	SubtipoMovimientoId int
 	SubgrupoId          *Subgrupo
+	TipoBienId          *TipoBien
 	Activo              bool
 }
 
@@ -70,16 +71,17 @@ type Subgrupo struct {
 }
 
 type TipoBien struct {
-	Id                int
-	Nombre            string
-	Descripcion       string
-	CodigoAbreviacion string
-	Orden             float64
-	NecesitaPlaca     bool
-	NecesitaPoliza    bool
-	Reglas            string
-	Activo            bool
-	Tipo_bien_padre   *TipoBien
+	Id              int
+	Nombre          string
+	Descripcion     string
+	Activo          bool
+	Reglas          string
+	LimiteInferior  int
+	LimiteSuperior  int
+	NecesitaPlaca   bool
+	NecesitaPoliza  bool
+	BodegaConsumo   bool
+	TipoBienPadreId *TipoBien
 }
 
 type TipoNivel struct {
@@ -96,5 +98,6 @@ type DetalleCuentasSubgrupo struct {
 	CuentaCreditoId     *DetalleCuenta
 	CuentaDebitoId      *DetalleCuenta
 	SubtipoMovimientoId *FormatoTipoMovimiento
+	TipoBienId          TipoBien
 	SubgrupoId          int
 }

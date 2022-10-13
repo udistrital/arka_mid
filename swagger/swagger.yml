@@ -1281,6 +1281,8 @@ definitions:
         format: int64
       SubtipoMovimientoId:
         $ref: '#/definitions/models.FormatoTipoMovimiento'
+      TipoBienId:
+        $ref: '#/definitions/models.TipoBien'
   models.DetalleElemento:
     title: DetalleElemento
     type: object
@@ -2466,11 +2468,17 @@ definitions:
     properties:
       Activo:
         type: boolean
-      CodigoAbreviacion:
-        type: string
+      BodegaConsumo:
+        type: boolean
       Descripcion:
         type: string
       Id:
+        type: integer
+        format: int64
+      LimiteInferior:
+        type: integer
+        format: int64
+      LimiteSuperior:
         type: integer
         format: int64
       NecesitaPlaca:
@@ -2479,12 +2487,9 @@ definitions:
         type: boolean
       Nombre:
         type: string
-      Orden:
-        type: number
-        format: double
       Reglas:
         type: string
-      Tipo_bien_padre:
+      TipoBienPadreId:
         $ref: '#/definitions/models.TipoBien'
   models.TipoContribuyente:
     title: TipoContribuyente
