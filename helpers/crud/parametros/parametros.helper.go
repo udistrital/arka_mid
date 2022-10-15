@@ -12,14 +12,14 @@ func GetParametrosDebitoCredito() (dbId, crId int, outputError map[string]interf
 
 	var query string
 
-	query = "query=CodigoAbreviacion:MCD&sortby=Id&order=desc"
+	query = "query=CodigoAbreviacion:MCD,Activo:true"
 	if par_, err := GetAllParametro(query); err != nil {
 		return 0, 0, err
 	} else {
 		dbId = par_[0].Id
 	}
 
-	query = "query=CodigoAbreviacion:MCC&sortby=Id&order=desc"
+	query = "query=CodigoAbreviacion:MCC,Activo:true"
 	if par_, err := GetAllParametro(query); err != nil {
 		return 0, 0, err
 	} else {
