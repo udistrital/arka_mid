@@ -41,7 +41,7 @@ func GetCuentasContablesSubgrupo(subgrupoId int, cuentas *[]models.DetalleCuenta
 		return
 	}
 
-	query = "limit=-1&sortby=LimiteSuperior&order=asc&query=TipoBienPadreId__Id:" + strconv.Itoa(detalle.TipoBienId.Id)
+	query = "limit=-1&sortby=LimiteSuperior&order=asc&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(detalle.TipoBienId.Id)
 	query += "&fields=Id,Nombre"
 	if err := catalogoElementos.GetAllTipoBien(query, &tiposBien); err != nil {
 		return err
