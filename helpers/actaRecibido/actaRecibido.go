@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	// "github.com/udistrital/utils_oas/formatdata"
-
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -21,44 +22,18 @@ func RemoveIndex(s []byte, index int) []byte {
 	return append(s[:index], s[index+1:]...)
 }
 
-// GetAllParametrosActa ...
-func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
+// GetAllParametrosActa Consulta diferentes valores paramétricos
+func GetAllParametrosActa() (parametros_ []map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllParametrosActa - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetAllParametrosActa - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
 		Unidades       interface{}
-		TipoBien       interface{}
 		EstadoActa     interface{}
 		EstadoElemento interface{}
-		ss             map[string]interface{}
-		Parametro      []interface{}
-		Valor          []interface{}
-		IvaTest        []Imp
-		Ivas           []Imp
+		Ivas           []models.Iva
 	)
-
-	parametros := make([]map[string]interface{}, 0)
-
-	urlActasTipoBien := "http://" + beego.AppConfig.String("actaRecibidoService") + "tipo_bien?limit=-1"
-	if _, err := request.GetJsonTest(urlActasTipoBien, &TipoBien); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlActasTipoBien, &TipoBien)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
 
 	urlActasEstadoActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_acta?limit=-1"
 	if _, err := request.GetJsonTest(urlActasEstadoActa, &EstadoActa); err != nil {
@@ -82,70 +57,22 @@ func GetAllParametrosActa() (Parametros []map[string]interface{}, outputError ma
 		return nil, outputError
 	}
 
-	urlParametros := "http://" + beego.AppConfig.String("parametrosService") + "parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12"
-	if _, err := request.GetJsonTest(urlParametros, &ss); err == nil {
-
-		var data []map[string]interface{}
-		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
-			if err := json.Unmarshal(jsonString, &data); err == nil {
-				for _, valores := range data {
-					Parametro = append(Parametro, valores["ParametroId"])
-					v := []byte(fmt.Sprintf("%v", valores["Valor"]))
-					var valorUnm interface{}
-					if err := json.Unmarshal(v, &valorUnm); err == nil {
-						Valor = append(Valor, valorUnm)
-					}
-				}
-			}
-		}
-
-		if jsonbody1, err := json.Marshal(Parametro); err == nil {
-			if err := json.Unmarshal(jsonbody1, &Ivas); err != nil {
-				fmt.Println(err)
-				return
-			}
-		}
-
-		if jsonbody1, err := json.Marshal(Valor); err == nil {
-			if err := json.Unmarshal(jsonbody1, &IvaTest); err != nil {
-				fmt.Println(err)
-				return
-			}
-		}
-
-		for i, valores := range IvaTest {
-			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
-		}
-		for i, valores := range Ivas {
-			IvaTest[i].BasePesos = valores.BasePesos
-			IvaTest[i].BaseUvt = valores.BaseUvt
-			IvaTest[i].PorcentajeAplicacion = valores.PorcentajeAplicacion
-			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
-		}
-
-	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlParametros, &ss)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if err := parametros.GetAllIVAByPeriodo(strconv.Itoa(time.Now().Year()-1), &Ivas); err != nil {
+		return nil, err
 	}
 
 	if outputError = administrativa.GetUnidades(&Unidades); outputError != nil {
 		return
 	}
 
-	parametros = append(parametros, map[string]interface{}{
+	parametros_ = append(parametros_, map[string]interface{}{
 		"Unidades":       Unidades,
-		"TipoBien":       TipoBien,
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
-		"IVA":            IvaTest,
+		"IVA":            Ivas,
 	})
 
-	return parametros, nil
+	return parametros_, nil
 }
 
 // GetAllParametrosSoporte ...

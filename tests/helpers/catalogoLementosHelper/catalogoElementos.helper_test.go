@@ -7,6 +7,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	"github.com/udistrital/arka_mid/models"
 )
 
 var parameters struct {
@@ -24,8 +25,9 @@ func TestMain(m *testing.M) {
 
 // GetCuentasContablesGrupo ...
 func TestGetCuentasContablesSubgrupo(t *testing.T) {
-	valor, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(1)
-	if err != nil || valor == nil {
+	var ctas []models.DetalleCuentasSubgrupo
+	err := catalogoElementosHelper.GetCuentasContablesSubgrupo(1, &ctas)
+	if err != nil || len(ctas) == 0 {
 		if err != nil {
 			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)
 		} else {

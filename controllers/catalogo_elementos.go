@@ -40,13 +40,11 @@ func (c *CatalogoElementosController) GetOne() {
 		id = v
 	}
 
-	if v, err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id); err != nil {
+	var cuentas = make([]models.DetalleCuentasSubgrupo, 0)
+	if err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id, &cuentas); err != nil {
 		panic(err)
 	} else {
-		if v == nil {
-			v = []*models.DetalleCuentasSubgrupo{}
-		}
-		c.Data["json"] = v
+		c.Data["json"] = cuentas
 	}
 	c.ServeJSON()
 }

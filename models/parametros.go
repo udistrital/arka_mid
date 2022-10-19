@@ -54,3 +54,12 @@ type Periodo struct {
 	InicioVigencia    time.Time
 	FinVigencia       time.Time
 }
+
+type Iva struct {
+	Id                   int
+	CodigoAbreviacion    string
+	BasePesos            int
+	BaseUvt              int
+	PorcentajeAplicacion int
+	Tarifa               int
+}
