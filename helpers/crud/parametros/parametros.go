@@ -30,3 +30,25 @@ func GetAllParametro(query string) (parametros []*models.Parametro, outputError 
 	}
 	return parametros, nil
 }
+
+// GetAllParametro query controlador parametro del api parametros_crud
+func GetAllParametroPeriodo(payload string, parametros *[]models.ParametroPeriodo) (outputError map[string]interface{}) {
+
+	funcion := "GetAllParametroPeriodo - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("parametrosService") + "parametro_periodo?" + payload
+	response := new(models.RespuestaAPI1Arr)
+	if err := request.GetJson(urlcrud, &response); err != nil {
+		eval := "request.GetJson(urlcrud, &response)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	} else {
+		if err := formatdata.FillStruct(response.Data, &parametros); err != nil {
+			logs.Error(err)
+			eval := "formatdata.FillStruct(response.Data, &parametros)"
+			return errorctrl.Error(funcion+eval, err, "500")
+		}
+	}
+
+	return
+}

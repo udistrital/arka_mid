@@ -76,6 +76,22 @@ func GetAllTipoBien(query string, tiposBien *[]models.TipoBien) (outputError map
 	return
 }
 
+// GetTipoBienById query controlador tipo_bien/{id} del api catalogo_elementos_crud
+func GetTipoBienById(id int, tipoBien *models.TipoBien) (outputError map[string]interface{}) {
+
+	funcion := "GetTipoBienById - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "tipo_bien/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &tipoBien); err != nil {
+		logs.Error(err)
+		eval := "request.GetJson(urlcrud, &tipoBien)"
+		return errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return
+}
+
 // GetSubgrupoById Consulta controlador subgrupo/{id} del api catalogo_elementos_crud
 func GetSubgrupoById(id int) (subgrupo *models.Subgrupo, outputError map[string]interface{}) {
 

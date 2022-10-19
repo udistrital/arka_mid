@@ -1949,6 +1949,9 @@
                     "type": "number",
                     "format": "double"
                 },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
+                },
                 "UnidadMedida": {
                     "type": "integer",
                     "format": "int64"
@@ -2092,6 +2095,10 @@
                     "type": "number",
                     "format": "double"
                 },
+                "TipoBienId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "UnidadMedida": {
                     "type": "integer",
                     "format": "int64"
@@ -2177,6 +2184,9 @@
                 "Subtotal": {
                     "type": "number",
                     "format": "double"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
                 },
                 "UnidadMedida": {
                     "type": "integer",
@@ -2465,6 +2475,10 @@
                 "Subtotal": {
                     "type": "number",
                     "format": "double"
+                },
+                "TipoBienId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "UnidadMedida": {
                     "type": "integer",

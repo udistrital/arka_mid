@@ -1324,6 +1324,8 @@ definitions:
       Subtotal:
         type: number
         format: double
+      TipoBienId:
+        $ref: '#/definitions/models.TipoBien'
       UnidadMedida:
         type: integer
         format: int64
@@ -1381,6 +1383,9 @@ definitions:
       Subtotal:
         type: number
         format: double
+      TipoBienId:
+        type: integer
+        format: int64
       UnidadMedida:
         type: integer
         format: int64
@@ -1443,6 +1448,8 @@ definitions:
       Subtotal:
         type: number
         format: double
+      TipoBienId:
+        $ref: '#/definitions/models.TipoBien'
       UnidadMedida:
         type: integer
         format: int64
@@ -1688,6 +1695,9 @@ definitions:
       Subtotal:
         type: number
         format: double
+      TipoBienId:
+        type: integer
+        format: int64
       UnidadMedida:
         type: integer
         format: int64
