@@ -8,8 +8,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	tercerosCRUD "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
-	tercerosMID "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -35,7 +35,6 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	} else if len(mov) > 0 {
 		movimiento = *mov[0]
 	}
-
 	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
 		return nil, err
 	}
@@ -105,20 +104,20 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if detalle.SupervisorId > 0 {
-		supervisor := make([]map[string]interface{}, 0)
-		if err := tercerosMID.GetTercerosByTipo("funcionarioPlanta", detalle.SupervisorId, &supervisor); err != nil {
+		supervisor := make(map[string]interface{}, 0)
+		if err := administrativaAMAZON.GetSupervisor(detalle.SupervisorId, &supervisor); err != nil {
 			return nil, err
 		} else if len(supervisor) > 0 {
-			resultado["supervisor"] = supervisor[0]
+			resultado["supervisor"] = supervisor
 		}
 	}
 
 	if detalle.OrdenadorGastoId > 0 {
-		ordenadores := make([]map[string]interface{}, 0)
-		if err := tercerosMID.GetTercerosByTipo("ordenadoresGasto", detalle.OrdenadorGastoId, &ordenadores); err != nil {
+		ordenadores := make(map[string]interface{}, 0)
+		if err := administrativaAMAZON.GetOrdenadores(detalle.OrdenadorGastoId, &ordenadores); err != nil {
 			return nil, err
 		} else if len(ordenadores) > 0 {
-			resultado["ordenador"] = ordenadores[0]
+			resultado["ordenador"] = ordenadores
 		}
 	}
 
