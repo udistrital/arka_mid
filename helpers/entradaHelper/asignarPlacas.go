@@ -14,23 +14,23 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func asignarPlacas(actaRecibidoId int) (elementos []*models.Elemento, outputError map[string]interface{}) {
+func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
 
 	funcion := "asignarPlacas - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var detalle_ []*models.DetalleElemento
 	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
-		return nil, err
+		return "", err
 	} else {
 		detalle_ = detalleElementos
 	}
 
 	var uvt float64
 	if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
-		return nil, err
+		return "", err
 	} else if uvt_ == 0 {
-		return
+		return "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.", nil
 	} else {
 		uvt = uvt_
 	}
@@ -43,15 +43,15 @@ func asignarPlacas(actaRecibidoId int) (elementos []*models.Elemento, outputErro
 			bufferTiposBien[el.TipoBienId.Id] = el.TipoBienId
 			if el.TipoBienId.NecesitaPlaca {
 				if err := generarPlaca(&placa); err != nil {
-					return nil, err
+					return "", err
 				}
 			}
 		} else {
-			if placa_, _, err := checkPlacaElemento(el.SubgrupoCatalogoId.TipoBienId.Id, int(el.ValorUnitario/uvt), bufferTiposBien); err != nil {
-				return nil, err
+			if placa_, msj, err := checkPlacaElemento(el.SubgrupoCatalogoId.TipoBienId.Id, int(el.ValorUnitario/uvt), bufferTiposBien); err != nil || msj != "" {
+				return msj, err
 			} else if placa_ {
 				if err := generarPlaca(&placa); err != nil {
-					return nil, err
+					return "", err
 				}
 			}
 		}
@@ -76,20 +76,20 @@ func asignarPlacas(actaRecibidoId int) (elementos []*models.Elemento, outputErro
 			ActaRecibidoId:     &models.ActaRecibido{Id: el.ActaRecibidoId.Id},
 			Activo:             true,
 		}
-		elementos = append(elementos, &elemento_)
+		*elementos = append(*elementos, &elemento_)
 	}
 
-	return elementos, nil
+	return
 
 }
 
-func checkPlacaElemento(tbPadreId int, normalizado int, bufferTiposBien map[int]*models.TipoBien) (placa bool, err_ string, outputError map[string]interface{}) {
+func checkPlacaElemento(tbPadreId int, normalizado int, bufferTiposBien map[int]*models.TipoBien) (placa bool, errMsg string, outputError map[string]interface{}) {
 
 	funcion := "checkPlacaElemento - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if tbPadreId <= 0 {
-		err_ = "La asignación de la clase a los elementos no es correcta."
+		errMsg = "La asignación de la clase a los elementos no es correcta."
 		return
 	}
 
@@ -105,7 +105,7 @@ func checkPlacaElemento(tbPadreId int, normalizado int, bufferTiposBien map[int]
 	if err := catalogoElementos.GetAllTipoBien(payload, &tb__); err != nil {
 		return false, "", err
 	} else if len(tb__) != 1 {
-		err_ = "La asignación de la clase a los elementos no es correcta."
+		errMsg = "La asignación de la clase a los elementos no es correcta."
 		return
 	}
 

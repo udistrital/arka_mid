@@ -77,7 +77,7 @@ func (c *EntradaController) Post() {
 
 		var (
 			v       models.TransaccionEntrada
-			entrada models.Movimiento
+			entrada models.ResultadoMovimiento
 		)
 
 		if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
