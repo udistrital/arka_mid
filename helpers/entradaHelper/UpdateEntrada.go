@@ -10,7 +10,7 @@ import (
 )
 
 // UpdateEntrada Consulta el tipo de movimiento y completa el detalle de una entrada que se quiere actualizar
-func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, movimiento *models.Movimiento) (outputError map[string]interface{}) {
+func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	funcion := "UpdateEntrada - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -32,7 +32,7 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, movimiento
 	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
 		return err
 	} else if len(mov) == 1 && mov[0].EstadoMovimientoId.Nombre == "Entrada Rechazada" {
-		*movimiento = *mov[0]
+		*&resultado.Movimiento = *mov[0]
 	} else {
 		return
 	}
@@ -45,7 +45,7 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, movimiento
 		return err
 	}
 
-	if err := utilsHelper.Unmarshal(movimiento.Detalle, &consecutivo); err != nil {
+	if err := utilsHelper.Unmarshal(resultado.Movimiento.Detalle, &consecutivo); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, movimiento
 		return err
 	}
 
-	*movimiento = models.Movimiento{
+	resultado.Movimiento = models.Movimiento{
 		Id:                      movimientoId,
 		Observacion:             data.Observacion,
 		Detalle:                 detalle,
@@ -62,7 +62,7 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, movimiento
 		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoMovimiento},
 	}
 
-	if _, err := movimientosArka.PutMovimiento(movimiento, movimientoId); err != nil {
+	if _, err := movimientosArka.PutMovimiento(&resultado.Movimiento, movimientoId); err != nil {
 		return err
 	}
 
@@ -71,7 +71,7 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, movimiento
 		soporte := models.SoporteMovimiento{
 			DocumentoId:  data.SoporteMovimientoId,
 			Activo:       true,
-			MovimientoId: &models.Movimiento{Id: movimiento.Id},
+			MovimientoId: &models.Movimiento{Id: resultado.Movimiento.Id},
 		}
 
 		if err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {

@@ -95,12 +95,12 @@ func GetSoporteById(id int, soporte *models.SoporteActa) (outputError map[string
 }
 
 // GetTransaccionActaRecibidoById consulta controlador transaccion_acta_recibido/{id} del api acta_recibido_crud
-func GetTransaccionActaRecibidoById(id int, transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
+func GetTransaccionActaRecibidoById(id int, elementos bool, transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
 
 	funcion := "GetTransaccionActaRecibidoById - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "transaccion_acta_recibido/" + strconv.Itoa(id)
+	urlcrud := path + "transaccion_acta_recibido/" + strconv.Itoa(id) + "?elementos=" + strconv.FormatBool(elementos)
 	if err := request.GetJson(urlcrud, &transaccion); err != nil {
 		logs.Error(err)
 		eval := `request.GetJson(urlcrud, &transaccion)`
