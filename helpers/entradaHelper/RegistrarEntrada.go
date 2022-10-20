@@ -45,10 +45,12 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *mod
 	}
 
 	if !etl {
-		if elementos, err := asignarPlacaActa(data.Detalle.ActaRecibidoId); err != nil {
+		if elementos, err := asignarPlacas(data.Detalle.ActaRecibidoId); err != nil {
 			return outputError
-		} else {
+		} else if len(elementos) > 0 {
 			acta.Elementos = elementos
+		} else {
+			return
 		}
 	}
 
