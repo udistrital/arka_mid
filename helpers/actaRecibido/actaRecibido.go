@@ -116,7 +116,7 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		return nil, outputError
 	}
 
-	urlOikosEspFis := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=TipoEspacioFisicoId.Id:1&limit=-1"
+	urlOikosEspFis := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=TipoEspacioFisicoId__Nombre:SEDE&limit=-1"
 	if _, err := request.GetJsonTest(urlOikosEspFis, &Sedes); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
