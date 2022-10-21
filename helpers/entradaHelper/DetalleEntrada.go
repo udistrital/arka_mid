@@ -66,12 +66,12 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
 					return nil, err
 				} else {
-					trContable := map[string]interface{}{
-						"movimientos": detalleContable,
-						"concepto":    tr.Descripcion,
-						"fecha":       tr.FechaTransaccion,
+					trContable := models.InfoTransaccionContable{
+						Movimientos: detalleContable,
+						Concepto:    tr.Descripcion,
+						Fecha:       tr.FechaTransaccion,
 					}
-					resultado["trContable"] = trContable
+					resultado["TransaccionContable"] = trContable
 				}
 			}
 		}
