@@ -61,7 +61,9 @@ func (c *EntradaController) Post() {
 	}
 
 	if aprobar && entradaId > 0 {
-		if respuesta, err := entradaHelper.AprobarEntrada(entradaId); err != nil || respuesta == nil {
+
+		var res models.ResultadoMovimiento
+		if err := entradaHelper.AprobarEntrada(entradaId, &res); err != nil {
 			if err == nil {
 				panic(map[string]interface{}{
 					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId)",
@@ -71,7 +73,7 @@ func (c *EntradaController) Post() {
 			}
 			panic(err)
 		} else {
-			c.Data["json"] = respuesta
+			c.Data["json"] = res
 		}
 	} else if !aprobar {
 

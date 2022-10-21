@@ -45,6 +45,7 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 			logs.Error(resp["Data"])
 			tr_, outputError = PostTrContable(tr)
 		} else {
+			logs.Info(resp["Data"])
 			eval := ` - request.SendJson(urlcrud, "POST", &resp, &tr)`
 			return nil, errorctrl.Error(funcion+eval, resp["Data"].(map[string]interface{})["err"], "502")
 		}
