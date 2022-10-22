@@ -65,9 +65,10 @@ func (c *SalidaController) Post() {
 	}
 
 	if salidaId > 0 {
-		if respuesta, err := salidaHelper.AprobarSalida(salidaId); err == nil && respuesta != nil {
+		var res models.ResultadoMovimiento
+		if err := salidaHelper.AprobarSalida(salidaId, &res); err == nil {
 			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = respuesta
+			c.Data["json"] = res
 		} else {
 			if err == nil {
 				panic(map[string]interface{}{

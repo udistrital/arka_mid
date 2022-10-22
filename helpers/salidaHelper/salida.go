@@ -1,16 +1,13 @@
 package salidaHelper
 
 import (
-	"fmt"
 	"net/url"
-	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
-	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -65,118 +62,6 @@ func PostTrSalidas(m *models.SalidaGeneral, etl bool) (resultado map[string]inte
 	return resultado, nil
 }
 
-// AprobarSalida Aprobacion de una salida
-func AprobarSalida(salidaId int) (result map[string]interface{}, outputError map[string]interface{}) {
-
-	funcion := "AprobarSalida"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	var (
-		detalleMovimiento map[string]interface{}
-		detallePrincipal  map[string]interface{}
-		trSalida          *models.TrSalida
-		elementosActa     []*models.Elemento
-		funcionarioId     int
-		tipoMovimiento    int
-		estadoMovimiento  int
-		consecutivoId     int
-	)
-
-	resultado := make(map[string]interface{})
-
-	if tr_, err := movimientosArka.GetTrSalida(salidaId); err != nil {
-		return nil, err
-	} else if tr_.Salida.EstadoMovimientoId.Nombre == "Salida En Trámite" {
-		trSalida = tr_
-	} else {
-		return
-	}
-
-	var idsElementos []int
-	for _, el := range trSalida.Elementos {
-		idsElementos = append(idsElementos, el.ElementoActaId)
-	}
-
-	fields := "SubgrupoCatalogoId,ValorTotal"
-	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
-	if elementos_, err := crudActas.GetAllElemento(query, fields, "", "", "", "-1"); err != nil {
-		return nil, err
-	} else {
-		if len(elementos_) == 0 {
-			return resultado, nil
-		}
-		elementosActa = elementos_
-	}
-
-	if err := utilsHelper.Unmarshal(trSalida.Salida.MovimientoPadreId.Detalle, &detalleMovimiento); err != nil {
-		return nil, err
-	}
-
-	if err := utilsHelper.Unmarshal(trSalida.Salida.Detalle, &detallePrincipal); err != nil {
-		return nil, err
-	}
-
-	if val, ok := detallePrincipal["funcionario"]; ok && val != nil {
-		funcionarioId = int(val.(float64))
-	}
-
-	detalle := ""
-	for k, v := range detalleMovimiento {
-		if k == "consecutivo" {
-			detalle = "Entrada: " + fmt.Sprintf("%v", v) + " "
-		}
-	}
-
-	var groups = make(map[int]float64)
-	for _, elemento := range elementosActa {
-		x := float64(0)
-		if val, ok := groups[elemento.SubgrupoCatalogoId]; ok {
-			x = val + elemento.ValorTotal
-		} else {
-			x = elemento.ValorTotal
-		}
-		groups[elemento.SubgrupoCatalogoId] = x
-	}
-
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, "SAL"); err != nil {
-		return nil, err
-	}
-
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimiento, "Salida Aprobada"); err != nil {
-		return nil, err
-	}
-
-	if val, ok := detallePrincipal["ConsecutivoId"]; ok && val != nil {
-		consecutivoId = int(val.(float64))
-	}
-
-	var trContable map[string]interface{}
-	if len(groups) > 0 && funcionarioId > 0 {
-		if tr_, err := asientoContable.AsientoContable(groups, getTipoComprobanteSalidas(), strconv.Itoa(tipoMovimiento), detalle, "Salida de almacén", funcionarioId, consecutivoId, true); err != nil {
-			return nil, err
-		} else {
-			trContable = tr_
-			if tr_["errorTransaccion"].(string) != "" {
-				return tr_, nil
-			}
-		}
-	}
-
-	trSalida.Salida.EstadoMovimientoId.Id = estadoMovimiento
-	if movimiento_, err := movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id); err != nil {
-		return nil, err
-	} else {
-		trSalida.Salida = movimiento_
-	}
-
-	resultado["movimientoArka"] = trSalida.Salida
-	resultado["transaccionContable"] = trContable["resultadoTransaccion"]
-	resultado["tercero"] = trContable["tercero"]
-	resultado["errorTransaccion"] = ""
-
-	return resultado, nil
-}
-
 func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "GetSalida"
@@ -191,8 +76,11 @@ func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]in
 
 	if tr_, err := movimientosArka.GetTrSalida(id); err != nil {
 		return nil, err
-	} else {
+	} else if tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL" ||
+		tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL_BOD" {
 		trSalida = tr_
+	} else {
+		return
 	}
 
 	for _, el := range trSalida.Elementos {
