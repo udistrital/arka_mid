@@ -87,6 +87,8 @@ type DetalleElementoSalida struct {
 	Placa              string
 	Serie              string
 	SubgrupoCatalogoId *DetalleSubgrupo
+	TipoBienId         *TipoBien
+	ValorUnitario      float64
 	ValorResidual      float64
 	ValorTotal         float64
 	VidaUtil           float64

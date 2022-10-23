@@ -6,10 +6,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -62,107 +59,14 @@ func PostTrSalidas(m *models.SalidaGeneral, etl bool) (resultado map[string]inte
 	return resultado, nil
 }
 
-func GetSalida(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
-
-	funcion := "GetSalida"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	var (
-		trSalida      *models.TrSalida
-		detalle       map[string]interface{}
-		ids           []int
-		elementosActa []*models.DetalleElemento
-	)
-
-	if tr_, err := movimientosArka.GetTrSalida(id); err != nil {
-		return nil, err
-	} else if tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL" ||
-		tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL_BOD" {
-		trSalida = tr_
-	} else {
-		return
-	}
-
-	for _, el := range trSalida.Elementos {
-		ids = append(ids, el.ElementoActaId)
-	}
-
-	if len(ids) > 0 {
-		if elementosActa, outputError = actaRecibido.GetElementos(0, ids); outputError != nil {
-			return nil, outputError
-		}
-	}
-
-	var elementosCompletos = make([]models.DetalleElementoSalida, 0)
-	for _, el := range elementosActa {
-
-		if idx := utilsHelper.FindElementoInArrayElementosMovimiento(trSalida.Elementos, el.Id); idx > -1 {
-
-			detalle := models.DetalleElementoSalida{
-				Cantidad:           el.Cantidad,
-				ElementoActaId:     el.Id,
-				Id:                 trSalida.Elementos[idx].Id,
-				Marca:              el.Marca,
-				Nombre:             el.Nombre,
-				Placa:              el.Placa,
-				Serie:              el.Serie,
-				SubgrupoCatalogoId: el.SubgrupoCatalogoId,
-				ValorResidual:      (trSalida.Elementos[idx].ValorResidual * 10000) / (trSalida.Elementos[idx].ValorTotal * 100),
-				ValorTotal:         trSalida.Elementos[idx].ValorTotal,
-				VidaUtil:           trSalida.Elementos[idx].VidaUtil,
-			}
-
-			elementosCompletos = append(elementosCompletos, detalle)
-		}
-
-	}
-
-	if salida__, err := TraerDetalle(trSalida.Salida); err != nil {
-		return nil, err
-	} else {
-		detalle = salida__
-	}
-
-	Salida_final := map[string]interface{}{
-		"Elementos": elementosCompletos,
-		"Salida":    detalle,
-	}
-
-	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" {
-		if val, ok := detalle["ConsecutivoId"].(int); ok && val > 0 {
-			if tr, err := movimientosContables.GetTransaccion(val, "consecutivo", true); err != nil {
-				return nil, err
-			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return nil, err
-				} else {
-					trContable := map[string]interface{}{
-						"movimientos": detalleContable,
-						"concepto":    tr.Descripcion,
-						"fecha":       tr.FechaTransaccion,
-					}
-					Salida_final["trContable"] = trContable
-				}
-			}
-		}
-	}
-
-	return Salida_final, nil
-
-}
-
 func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetSalidas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetSalidas - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	asignaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
+	sedes := make(map[string]models.EspacioFisico)
+	funcionarios := make(map[int]models.Tercero)
 
 	query := "limit=20&sortby=Id&order=desc&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS,EstadoMovimientoId__Nombre"
 	if tramiteOnly {
@@ -179,19 +83,22 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		}
 
 		for _, salida := range salidas_ {
-			if salida__, err := TraerDetalle(salida); err == nil {
-				Salidas = append(Salidas, salida__)
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetSalidas - TraerDetalle(salida)",
-					"err":     err,
-					"status":  "502",
-				}
+
+			var formato models.FormatoSalida
+
+			if err := utilsHelper.Unmarshal(salida.Detalle, &formato); err != nil {
 				return nil, err
 			}
+
+			if salida__, err := TraerDetalle(salida, formato, asignaciones, sedes, funcionarios); err != nil {
+				return nil, err
+			} else {
+				Salidas = append(Salidas, salida__)
+			}
+
 		}
 	}
+
 	return Salidas, nil
 }
 

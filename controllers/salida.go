@@ -149,7 +149,7 @@ func (c *SalidaController) GetSalida() {
 			"status":  "400",
 		})
 	}
-	if v, err := salidaHelper.GetSalida(id); err != nil {
+	if v, err := salidaHelper.GetSalidaById(id); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v

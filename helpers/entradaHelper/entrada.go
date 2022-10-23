@@ -113,8 +113,8 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 
 					if salidas[0]["Id"] != nil {
 
-						for i, salida := range salidas {
-							if salidaCompleta, err := salidaHelper.TraerDetalle(salida); err == nil {
+						for i := range salidas {
+							if salidaCompleta, err := salidaHelper.TraerDetalle(nil, models.FormatoSalida{}, nil, nil, nil); err == nil {
 								salidas[i] = salidaCompleta
 							} else {
 								return nil, err
