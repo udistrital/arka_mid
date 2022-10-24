@@ -11,7 +11,7 @@ import (
 )
 
 // CalcularMovimientosContables Calcula los movimientos contables dados los valores y parametrización correspondiente de cada elemento.
-func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movId, terceroId int, cuentas map[string]models.CuentaContable, movimientos *[]*models.MovimientoTransaccion) (
+func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movId, terceroCr, terceroDb int, cuentas map[string]models.CuentaContable, movimientos *[]*models.MovimientoTransaccion) (
 	errMsg string, outputError map[string]interface{}) {
 
 	subgrupos := make(map[int]models.DetalleSubgrupo)
@@ -111,13 +111,13 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 
 	for cta, val := range totalesCr {
 		var movimiento models.MovimientoTransaccion
-		fillMovimiento(val, dsc, terceroId, parCr, cuentas[cta], &movimiento)
+		fillMovimiento(val, dsc, terceroCr, parCr, cuentas[cta], &movimiento)
 		*movimientos = append(*movimientos, &movimiento)
 	}
 
 	for cta, val := range totalesDb {
 		var movimiento models.MovimientoTransaccion
-		fillMovimiento(val, dsc, terceroId, parDb, cuentas[cta], &movimiento)
+		fillMovimiento(val, dsc, terceroDb, parDb, cuentas[cta], &movimiento)
 		*movimientos = append(*movimientos, &movimiento)
 	}
 
