@@ -238,13 +238,11 @@ func (c *TrasladosController) Put() {
 		id = v
 	}
 
-	if respuesta, err := trasladoshelper.AprobarTraslado(id); err == nil && respuesta != nil {
+	var res models.ResultadoMovimiento
+	if err := trasladoshelper.AprobarTraslado(id, &res); err == nil {
 		c.Ctx.Output.SetStatus(201)
-		c.Data["json"] = respuesta
+		c.Data["json"] = res
 	} else {
-		if err != nil {
-			panic(err)
-		}
 		panic(errorctrl.Error("Put - trasladoshelper.AprobarTraslado(id)", err, "404"))
 
 	}
