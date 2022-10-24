@@ -1194,6 +1194,47 @@
                 }
             }
         },
+        "/salida/elementos": {
+            "get": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "Get elementos para asignar en salida segun la entrada o la salida",
+                "operationId": "SalidaController.GetElementos",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "entrada_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "salida_id",
+                        "description": "Id de la salida que se debe actualizar",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DetalleElementoSalida"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            }
+        },
         "/salida/{id}": {
             "get": {
                 "tags": [
@@ -2033,6 +2074,58 @@
                     "type": "string"
                 },
                 "Valor": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.DetalleElementoSalida": {
+            "title": "DetalleElementoSalida",
+            "type": "object",
+            "properties": {
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ElementoActaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Placa": {
+                    "type": "string"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SubgrupoCatalogoId": {
+                    "$ref": "#/definitions/models.DetalleSubgrupo"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
                     "type": "number",
                     "format": "double"
                 }

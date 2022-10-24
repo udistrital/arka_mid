@@ -22,6 +22,7 @@ func GetTransaccion(id int, criteria string, detail bool) (transaccion *models.T
 		urlcrud += "?detailed=true"
 	}
 	if err := request.GetJson(urlcrud, &transaccion); err != nil {
+		logs.Error(err, urlcrud)
 		eval := " - request.GetJson(urlcrud, &response)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}

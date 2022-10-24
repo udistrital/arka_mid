@@ -6,40 +6,49 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputError map[string]interface{}) {
+func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
+	asignaciones map[int]models.AsignacionEspacioFisicoDependencia,
+	sedes map[string]models.EspacioFisico,
+	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "TraerDetalle - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
-		data      models.Movimiento
-		data2     models.FormatoSalida
-		ubicacion models.AsignacionEspacioFisicoDependencia
-		sede      models.EspacioFisico
-		query     string
+		query       string
+		sede        models.EspacioFisico
+		ubicacion   models.AsignacionEspacioFisicoDependencia
+		funcionario models.Tercero
 	)
 
-	if err := utilsHelper.FillStruct(salida, &data); err != nil {
-		return nil, err
+	if asignaciones == nil {
+		asignaciones = make(map[int]models.AsignacionEspacioFisicoDependencia)
 	}
 
-	if err := utilsHelper.Unmarshal(data.Detalle, &data2); err != nil {
-		return nil, err
+	if sedes == nil {
+		sedes = make(map[string]models.EspacioFisico)
 	}
 
-	if data2.Ubicacion > 0 {
+	if funcionarios == nil {
+		funcionarios = make(map[int]models.Tercero)
+	}
 
-		query = "?query=Id:" + strconv.Itoa(data2.Ubicacion)
-		if asignacion_, err := oikos.GetAllAsignacion(query); err != nil {
-			return nil, err
-		} else if len(asignacion_) > 0 {
-			ubicacion = *asignacion_[0]
-			ubicacion.EspacioFisicoId.Id = ubicacion.Id
+	if salida.Ubicacion > 0 {
+		if val, ok := asignaciones[salida.Ubicacion]; !ok {
+			query = "?query=Id:" + strconv.Itoa(salida.Ubicacion)
+			if asignacion_, err := oikos.GetAllAsignacion(query); err != nil {
+				return nil, err
+			} else if len(asignacion_) > 0 {
+				ubicacion = *asignacion_[0]
+				ubicacion.EspacioFisicoId.Id = ubicacion.Id
+				asignaciones[salida.Ubicacion] = ubicacion
+			}
+		} else {
+			ubicacion = val
 		}
 	}
 
@@ -47,36 +56,48 @@ func TraerDetalle(salida interface{}) (salida_ map[string]interface{}, outputErr
 		rgxp := regexp.MustCompile("[0-9]")
 		str := rgxp.ReplaceAllString(ubicacion.EspacioFisicoId.CodigoAbreviacion, "")
 
-		query = "?query=CodigoAbreviacion:" + str
-		if sede_, err := oikos.GetAllEspacioFisico(query); err != nil {
-			return nil, err
-		} else if len(sede_) > 0 {
-			sede = *sede_[0]
+		if val, ok := sedes[str]; !ok {
+			query = "?query=CodigoAbreviacion:" + str
+			if sede_, err := oikos.GetAllEspacioFisico(query); err != nil {
+				return nil, err
+			} else if len(sede_) > 0 {
+				sede = *sede_[0]
+				sedes[str] = sede
+			}
+		} else {
+			sede = val
+		}
+	}
+
+	if salida.Funcionario > 0 {
+
+		if val, ok := funcionarios[salida.Funcionario]; !ok {
+			if funcionario_, err := terceros.GetTerceroById(salida.Funcionario); err != nil {
+				return nil, err
+			} else {
+				funcionario = *funcionario_
+				funcionarios[salida.Funcionario] = *funcionario_
+			}
+		} else {
+			funcionario = val
 		}
 	}
 
 	Salida2 := map[string]interface{}{
-		"Id":                      data.Id,
-		"Observacion":             data.Observacion,
+		"Id":                      movimiento.Id,
+		"Observacion":             movimiento.Observacion,
 		"Sede":                    sede,
 		"Dependencia":             ubicacion.DependenciaId,
 		"Ubicacion":               ubicacion.EspacioFisicoId,
-		"FechaCreacion":           data.FechaCreacion,
-		"FechaModificacion":       data.FechaModificacion,
-		"Activo":                  data.Activo,
-		"MovimientoPadreId":       data.MovimientoPadreId,
-		"FormatoTipoMovimientoId": data.FormatoTipoMovimientoId,
-		"EstadoMovimientoId":      data.EstadoMovimientoId.Id,
-		"Consecutivo":             data2.Consecutivo,
-		"ConsecutivoId":           data2.ConsecutivoId,
-	}
-
-	if data2.Funcionario > 0 {
-		if funcionario_, err := terceros.GetTerceroById(data2.Funcionario); err != nil {
-			return nil, err
-		} else {
-			Salida2["Funcionario"] = funcionario_
-		}
+		"FechaCreacion":           movimiento.FechaCreacion,
+		"FechaModificacion":       movimiento.FechaModificacion,
+		"Activo":                  movimiento.Activo,
+		"MovimientoPadreId":       movimiento.MovimientoPadreId,
+		"FormatoTipoMovimientoId": movimiento.FormatoTipoMovimientoId,
+		"EstadoMovimientoId":      movimiento.EstadoMovimientoId.Id,
+		"Consecutivo":             salida.Consecutivo,
+		"ConsecutivoId":           salida.ConsecutivoId,
+		"Funcionario":             funcionario,
 	}
 
 	return Salida2, nil
