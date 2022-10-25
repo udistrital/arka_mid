@@ -26,7 +26,7 @@ func GetSalidaById(id int) (Salida map[string]interface{}, outputError map[strin
 	if tr_, err := movimientosArka.GetTrSalida(id); err != nil {
 		return nil, err
 	} else if tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL" ||
-		tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL_BOD" {
+		tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL_CONS" {
 		trSalida = tr_
 	} else {
 		return
