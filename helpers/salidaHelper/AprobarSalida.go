@@ -70,7 +70,8 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	dsc := "Entrada: " + entrada.Consecutivo
 
 	bufferCuentas := make(map[string]models.CuentaContable)
-	if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, dsc, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas, &transaccion.Movimientos); err != nil || msg != "" {
+	if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, dsc, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas,
+		nil, &transaccion.Movimientos); err != nil || msg != "" {
 		res.Error = msg
 		return err
 	}
