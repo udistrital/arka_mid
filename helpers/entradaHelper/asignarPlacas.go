@@ -39,7 +39,9 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 	for _, el := range detalle_ {
 
 		placa := ""
+		tipoBien := 0
 		if el.TipoBienId != nil {
+			tipoBien = el.TipoBienId.Id
 			bufferTiposBien[el.TipoBienId.Id] = el.TipoBienId
 			if el.TipoBienId.NecesitaPlaca {
 				if err := generarPlaca(&placa); err != nil {
@@ -72,6 +74,7 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 			ValorFinal:         el.ValorFinal,
 			Placa:              placa,
 			SubgrupoCatalogoId: el.SubgrupoCatalogoId.SubgrupoId.Id,
+			TipoBienId:         tipoBien,
 			EstadoElementoId:   &models.EstadoElemento{Id: el.EstadoElementoId.Id},
 			ActaRecibidoId:     &models.ActaRecibido{Id: el.ActaRecibidoId.Id},
 			Activo:             true,
