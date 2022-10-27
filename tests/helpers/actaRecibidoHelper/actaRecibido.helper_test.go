@@ -8,7 +8,6 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/models"
 )
 
 var parameters struct {
@@ -79,20 +78,6 @@ func TestGetAllParametrosSoporte(t *testing.T) {
 	} else {
 		t.Log(valor)
 		t.Log("TestGetAllParametrosSoporte Finalizado Correctamente (OK)")
-	}
-}
-
-// TestGetAsignacionSedeDependencia ...
-func TestGetAsignacionSedeDependencia(t *testing.T) {
-	var data models.GetSedeDependencia
-
-	valor, err := actaRecibido.GetAsignacionSedeDependencia(data)
-	if err != nil {
-		t.Error("No se pudo traer la informacion de sede y dependencia - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetAsignacionSedeDependencia Finalizado Correctamente (OK)")
 	}
 }
 

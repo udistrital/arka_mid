@@ -304,15 +304,6 @@ func init() {
             Filters: nil,
             Params: nil})
 
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ParametrosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ParametrosController"],
-        beego.ControllerComments{
-            Method: "PostAsignacionEspacioDependencia",
-            Router: "/post_asignacion_espacio_fisico_dependencia/",
-            AllowHTTPMethods: []string{"post"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:PolizasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:PolizasController"],
         beego.ControllerComments{
             Method: "GetAllElementosPoliza",

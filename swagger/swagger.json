@@ -1022,43 +1022,6 @@
                 }
             }
         },
-        "/parametros_soporte/post_asignacion_espacio_fisico_dependencia/": {
-            "post": {
-                "tags": [
-                    "parametros_soporte"
-                ],
-                "description": "get Soportes by id",
-                "operationId": "ParametrosController.Post Soportes",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.GetSedeDependencia"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "the request contains incorrect syntax"
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/polizas/AllElementosPoliza": {
             "get": {
                 "tags": [
@@ -3144,18 +3107,6 @@
                 "NumeroOrden": {
                     "type": "number",
                     "format": "double"
-                }
-            }
-        },
-        "models.GetSedeDependencia": {
-            "title": "GetSedeDependencia",
-            "type": "object",
-            "properties": {
-                "Dependencia": {
-                    "$ref": "#/definitions/models.Dependencia"
-                },
-                "Sede": {
-                    "$ref": "#/definitions/models.EspacioFisico"
                 }
             }
         },
