@@ -17,7 +17,9 @@ func GetCierre(id int, detalle_ *models.ResultadoMovimiento) (outputError map[st
 	defer errorctrl.ErrorControlFunction("GetCierre - Unhandled Error!", "500")
 
 	var (
-		detalle models.FormatoDepreciacion
+		detalle     models.FormatoDepreciacion
+		transaccion models.TransaccionMovimientos
+		cuentas     map[string]models.CuentaContable
 	)
 
 	if mov_, err := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(id)); err != nil {
@@ -31,24 +33,26 @@ func GetCierre(id int, detalle_ *models.ResultadoMovimiento) (outputError map[st
 	}
 
 	if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre En Curso" || detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Rechazado" {
-		if err := calcularCierre(detalle.FechaCorte, nil, nil, detalle_); err != nil {
+		if err := calcularCierre(detalle.FechaCorte, nil, nil, &transaccion, detalle_); err != nil {
 			return err
 		}
 	} else if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Aprobado" && detalle.ConsecutivoId > 0 {
 		if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
 			return err
-		} else if len(tr.Movimientos) > 0 {
-			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-				return err
-			} else {
-				trContable := models.InfoTransaccionContable{
-					Movimientos: detalleContable,
-					Concepto:    descAsiento(),
-					Fecha:       tr.FechaTransaccion,
-				}
-				detalle_.TransaccionContable = trContable
-			}
+		} else {
+			transaccion = *tr
 		}
+	}
+
+	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas); err != nil {
+		return err
+	} else if len(detalleContable) > 0 {
+		trContable := models.InfoTransaccionContable{
+			Movimientos: detalleContable,
+			Concepto:    dscTransaccionCierre(),
+			Fecha:       transaccion.FechaTransaccion,
+		}
+		detalle_.TransaccionContable = trContable
 	}
 
 	return

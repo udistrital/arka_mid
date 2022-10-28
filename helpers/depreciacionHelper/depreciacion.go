@@ -1,10 +1,9 @@
 package depreciacionHelper
 
 import (
-	"encoding/json"
 	"time"
 
-	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -46,18 +45,15 @@ func CalculaDp(presente, residual, vUtil float64, ref, fCorte time.Time) (dp, de
 // GetDetalleDepreciacion Consulta el detalle de una medición determinada
 func GetDetalleDepreciacion(detalle string) (detalle_ *models.FormatoDepreciacion, outputError map[string]interface{}) {
 
-	funcion := "GetDetalleDepreciacion"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetDetalleDepreciacion - Unhandled Error!", "500")
 
-	if err := json.Unmarshal([]byte(detalle), &detalle_); err != nil {
-		logs.Error(err)
-		eval := " - json.Unmarshal([]byte(detalle), &detalle_)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+	if err := utilsHelper.Unmarshal(detalle, &detalle_); err != nil {
+		return nil, err
 	}
 
 	return detalle_, nil
 }
 
-func descAsiento() string {
+func dscTransaccionCierre() string {
 	return "Mediciones posteriores almacén"
 }
