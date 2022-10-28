@@ -2,8 +2,8 @@ package bodegaConsumoHelper
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -52,10 +52,10 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 		ubicacion2 := ubicacion[0]["EspacioFisicoId"].(map[string]interface{})
 
-		z := strings.Split(fmt.Sprintf("%v", ubicacion2["CodigoAbreviacion"]), "")
+		rgxp := regexp.MustCompile("\\d+$")
+		str := rgxp.ReplaceAllString(ubicacion2["CodigoAbreviacion"].(string), "")
 
-		urlcrud4 := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=CodigoAbreviacion:" + z[0] + z[1] + z[2] + z[3]
-
+		urlcrud4 := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=CodigoAbreviacion:" + str
 		if res, err := request.GetJsonTest(urlcrud4, &sede); err != nil || res.StatusCode != 200 {
 			if err == nil {
 				err = fmt.Errorf("undesired Status Code: %d", res.StatusCode)
