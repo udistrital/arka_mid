@@ -73,6 +73,28 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 			} else {
 				el.TipoBienId = tb
 			}
+		} else {
+			if _, ok := subgrupos[el.SubgrupoCatalogoId]; !ok {
+				if sg, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(el.SubgrupoCatalogoId)); err != nil {
+					return "", err
+				} else if len(sg) == 1 {
+					subgrupos[el.SubgrupoCatalogoId] = *sg[0]
+				} else {
+					return "No se pudo consultar la parametrización de las clases. Contacte soporte.", nil
+				}
+			}
+
+			if _, ok := tiposBien[el.TipoBienId]; !ok {
+				var tipoBien models.TipoBien
+				if err := catalogoElementos.GetTipoBienById(el.TipoBienId, &tipoBien); err != nil {
+					return "", err
+				}
+				tiposBien[el.TipoBienId] = tipoBien
+			}
+
+			if tiposBien[el.TipoBienId].TipoBienPadreId.Id != subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id {
+				return "El tipo bien asignado manualmente no corresponde a la clase correspondiente", nil
+			}
 		}
 
 		if _, ok := cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId]; !ok {
