@@ -7,8 +7,8 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -52,24 +52,17 @@ func GetAsignacionSedeDependencia(Id string) (Relacion map[string]interface{}, o
 
 func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.DetalleSedeDependencia, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetSedeDependenciaUbicacion - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	defer errorctrl.ErrorControlFunction("GetSedeDependenciaUbicacion - Unhandled Error!", "500")
+
 	var (
-		urlcrud   string
+		payload   string
 		ubicacion []*models.AsignacionEspacioFisicoDependencia
 	)
+
 	resultado := new(models.DetalleSedeDependencia)
 
-	urlcrud = "?query=Id:" + strconv.Itoa(ubicacionId)
-	if ubicacion_, err := GetAllAsignacion(urlcrud); err != nil {
+	payload = "?query=Id:" + strconv.Itoa(ubicacionId)
+	if ubicacion_, err := GetAllAsignacion(payload); err != nil {
 		return nil, err
 	} else {
 		ubicacion = ubicacion_
@@ -78,16 +71,12 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 	resultado.Dependencia = ubicacion[0].DependenciaId
 	resultado.Ubicacion = ubicacion[0]
 
-	if espFisico, err := utilsHelper.ConvertirInterfaceMap(ubicacion[0].EspacioFisicoId); err != nil {
-		return nil, err
-	} else {
-		rgxp := regexp.MustCompile("[0-9]")
-		strSede := espFisico["CodigoAbreviacion"].(string)
-		strSede = rgxp.ReplaceAllString(strSede, "")
-		urlcrud = "?query=CodigoAbreviacion:" + strSede
-	}
+	rgxp := regexp.MustCompile("\\d+$")
+	strSede := ubicacion[0].EspacioFisicoId.CodigoAbreviacion
+	strSede = rgxp.ReplaceAllString(strSede, "")
 
-	if sede_, err := GetAllEspacioFisico(urlcrud); err != nil {
+	payload = "?query=CodigoAbreviacion:" + strSede
+	if sede_, err := GetAllEspacioFisico(payload); err != nil {
 		return nil, err
 	} else {
 		resultado.Sede = sede_[0]

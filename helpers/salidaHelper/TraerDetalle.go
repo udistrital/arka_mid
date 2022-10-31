@@ -15,8 +15,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 	sedes map[string]models.EspacioFisico,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
-	funcion := "TraerDetalle - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
 
 	var (
 		query       string
@@ -44,7 +43,6 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 				return nil, err
 			} else if len(asignacion_) > 0 {
 				ubicacion = *asignacion_[0]
-				ubicacion.EspacioFisicoId.Id = ubicacion.Id
 				asignaciones[salida.Ubicacion] = ubicacion
 			}
 		} else {
@@ -53,7 +51,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 	}
 
 	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
-		rgxp := regexp.MustCompile("[0-9]")
+		rgxp := regexp.MustCompile("\\d+$")
 		str := rgxp.ReplaceAllString(ubicacion.EspacioFisicoId.CodigoAbreviacion, "")
 
 		if val, ok := sedes[str]; !ok {
@@ -88,7 +86,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		"Observacion":             movimiento.Observacion,
 		"Sede":                    sede,
 		"Dependencia":             ubicacion.DependenciaId,
-		"Ubicacion":               ubicacion.EspacioFisicoId,
+		"Ubicacion":               ubicacion,
 		"FechaCreacion":           movimiento.FechaCreacion,
 		"FechaModificacion":       movimiento.FechaModificacion,
 		"Activo":                  movimiento.Activo,
