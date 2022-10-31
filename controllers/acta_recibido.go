@@ -189,6 +189,8 @@ func (c *ActaRecibidoController) GetAllElementosConsumo() {
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Param u query string false "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
+// @Param 	limit	query	string	false	"Limit the size of result set. Must be an integer"
+// @Param	offset	query	string	false	"Start position of result set. Must be an integer"
 // @Success 200 {object} []models.ActaRecibido
 // @Failure 400 "Wrong IDs"
 // @Failure 404 "not found resource"
@@ -213,6 +215,8 @@ func (c *ActaRecibidoController) GetAllActas() {
 
 	var reqStates []string
 	var WSO2user string
+	var limit int64 = 10
+	var offset int64
 
 	if v := c.GetString("states"); v != "" {
 		valido := false
@@ -256,7 +260,16 @@ func (c *ActaRecibidoController) GetAllActas() {
 		}
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
+	// limit: 10 (default is 10)
+	if v, err := c.GetInt64("limit"); err == nil {
+		limit = v
+	}
+	// offset: 0 (default is 0)
+	if v, err := c.GetInt64("offset"); err == nil {
+		offset = v
+	}
+
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
 		// fmt.Print("DATA FINAL: ")
 		// fmt.Println(l)
 		if l == nil {
