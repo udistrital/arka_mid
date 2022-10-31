@@ -68,7 +68,7 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 	sedes := make(map[string]models.EspacioFisico)
 	funcionarios := make(map[int]models.Tercero)
 
-	query := "limit=20&sortby=Id&order=desc&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS,EstadoMovimientoId__Nombre"
+	query := "limit=-1&sortby=Id&order=desc&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS,EstadoMovimientoId__Nombre"
 	if tramiteOnly {
 		query += url.QueryEscape(":Salida En Trámite")
 	} else {

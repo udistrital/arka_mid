@@ -251,10 +251,11 @@ func (c *BajaController) PutRevision() {
 			c.Data["json"] = ids
 		}
 	} else {
-		if v, err := bajasHelper.AprobarBajas(trBaja); err != nil {
+		var response models.ResultadoMovimiento
+		if err := bajasHelper.AprobarBajas(trBaja, &response); err != nil {
 			panic(errorctrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
 		} else {
-			c.Data["json"] = v
+			c.Data["json"] = response
 		}
 	}
 

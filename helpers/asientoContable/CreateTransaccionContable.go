@@ -12,8 +12,7 @@ import (
 // CreateTransaccionContable Consulta el tipo de comprobante y completa otros datos de la transacción contable
 func CreateTransaccionContable(tipoComprobante, dsc string, transaccion *models.TransaccionMovimientos) (msg string, outputError map[string]interface{}) {
 
-	funcion := "CreateTransaccionContable - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("CreateTransaccionContable - Unhandled Error!", "500")
 
 	var comprobanteID string
 
