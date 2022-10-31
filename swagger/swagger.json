@@ -1519,6 +1519,10 @@
                 },
                 "TipoActaId": {
                     "$ref": "#/definitions/models.TipoActa"
+                },
+                "UnidadEjecutoraId": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },

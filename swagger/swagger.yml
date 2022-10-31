@@ -1025,6 +1025,9 @@ definitions:
         format: int64
       TipoActaId:
         $ref: '#/definitions/models.TipoActa'
+      UnidadEjecutoraId:
+        type: integer
+        format: int64
   models.AreaTipo:
     title: AreaTipo
     type: object
