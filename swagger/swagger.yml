@@ -72,6 +72,14 @@ paths:
         description: WSO2 User. When specified, acts will be filtered upon the available
           roles for the specified user
         type: string
+      - in: query
+        name: limit
+        description: Limit the size of result set. Must be an integer
+        type: string
+      - in: query
+        name: offset
+        description: Start position of result set. Must be an integer
+        type: string
       responses:
         "200":
           description: ""
