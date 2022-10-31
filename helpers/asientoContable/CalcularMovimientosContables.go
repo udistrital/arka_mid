@@ -11,19 +11,19 @@ import (
 )
 
 // CalcularMovimientosContables Calcula los movimientos contables dados los valores y parametrización correspondiente de cada elemento.
-func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movId, terceroCr, terceroDb int, cuentas map[string]models.CuentaContable, movimientos *[]*models.MovimientoTransaccion) (
+func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movId, terceroCr, terceroDb int,
+	cuentas map[string]models.CuentaContable, subgrupos map[int]models.DetalleSubgrupo, movimientos *[]*models.MovimientoTransaccion) (
 	errMsg string, outputError map[string]interface{}) {
 
-	subgrupos := make(map[int]models.DetalleSubgrupo)
-	tiposBien := make(map[int]models.TipoBien)
-	cuentasSgTb := make(map[int]map[int]models.CuentaSubgrupo)
-	totalesCr := make(map[string]float64)
-	totalesDb := make(map[string]float64)
+	if subgrupos == nil {
+		subgrupos = make(map[int]models.DetalleSubgrupo)
+	}
 
 	var parCr int
 	var parDb int
 	var uvt float64
-	var payload = "limit=1&fields=TipoBienId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
+
+	var payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 
 	if cuentas == nil {
 		cuentas = make(map[string]models.CuentaContable)
@@ -43,6 +43,11 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 		parCr = cr_
 		parDb = db_
 	}
+
+	tiposBien := make(map[int]models.TipoBien)
+	cuentasSgTb := make(map[int]map[int]models.CuentaSubgrupo)
+	totalesCr := make(map[string]float64)
+	totalesDb := make(map[string]float64)
 
 	for _, el := range elementos {
 
@@ -67,6 +72,28 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 				return "No se pudo establecer el tipo de bien de los elementos. Contacte soporte.", nil
 			} else {
 				el.TipoBienId = tb
+			}
+		} else {
+			if _, ok := subgrupos[el.SubgrupoCatalogoId]; !ok {
+				if sg, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(el.SubgrupoCatalogoId)); err != nil {
+					return "", err
+				} else if len(sg) == 1 {
+					subgrupos[el.SubgrupoCatalogoId] = *sg[0]
+				} else {
+					return "No se pudo consultar la parametrización de las clases. Contacte soporte.", nil
+				}
+			}
+
+			if _, ok := tiposBien[el.TipoBienId]; !ok {
+				var tipoBien models.TipoBien
+				if err := catalogoElementos.GetTipoBienById(el.TipoBienId, &tipoBien); err != nil {
+					return "", err
+				}
+				tiposBien[el.TipoBienId] = tipoBien
+			}
+
+			if tiposBien[el.TipoBienId].TipoBienPadreId.Id != subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id {
+				return "El tipo bien asignado manualmente no corresponde a la clase correspondiente", nil
 			}
 		}
 

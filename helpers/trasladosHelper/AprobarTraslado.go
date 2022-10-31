@@ -88,7 +88,8 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 	}
 
 	bufferCuentas := make(map[string]models.CuentaContable)
-	if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, descMovDestino(), tipoMovimientoId, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas, &transaccion.Movimientos); err != nil || msg != "" {
+	if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, descMovDestino(), tipoMovimientoId, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas,
+		nil, &transaccion.Movimientos); err != nil || msg != "" {
 		response.Error = msg
 		return err
 	}

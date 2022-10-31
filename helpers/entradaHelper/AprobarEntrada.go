@@ -71,7 +71,8 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 	}
 
 	bufferCuentas = make(map[string]models.CuentaContable)
-	if msg, err := asientoContable.CalcularMovimientosContables(elementos, detalleContable, resultado_.Movimiento.FormatoTipoMovimientoId.Id, historico.ProveedorId, historico.ProveedorId, bufferCuentas, &transaccion.Movimientos); err != nil || msg != "" {
+	if msg, err := asientoContable.CalcularMovimientosContables(elementos, detalleContable, resultado_.Movimiento.FormatoTipoMovimientoId.Id, historico.ProveedorId, historico.ProveedorId, bufferCuentas,
+		nil, &transaccion.Movimientos); err != nil || msg != "" {
 		resultado_.Error = msg
 		return err
 	}

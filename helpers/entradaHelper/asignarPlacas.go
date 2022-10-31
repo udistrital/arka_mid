@@ -16,8 +16,7 @@ import (
 
 func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
 
-	funcion := "asignarPlacas - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("asignarPlacas - Unhandled Error!", "500")
 
 	var detalle_ []*models.DetalleElemento
 	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
@@ -41,6 +40,9 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 		placa := ""
 		tipoBien := 0
 		if el.TipoBienId != nil {
+			if el.TipoBienId.TipoBienPadreId.Id != el.SubgrupoCatalogoId.TipoBienId.Id {
+				return "El tipo bien asignado manualmente no corresponde a la clase correspondiente.", nil
+			}
 			tipoBien = el.TipoBienId.Id
 			bufferTiposBien[el.TipoBienId.Id] = el.TipoBienId
 			if el.TipoBienId.NecesitaPlaca {

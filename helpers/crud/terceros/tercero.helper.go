@@ -181,3 +181,17 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 	}
 
 }
+
+func GetTerceroUD() (int, map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("GetTerceroUD - Unhandled Error!", "500")
+
+	payload := "query=TipoDocumentoId__Nombre:NIT,Numero:" + GetDocUD()
+	if tercero, err := GetAllDatosIdentificacion(payload); err != nil {
+		return 0, err
+	} else if len(tercero) > 0 && tercero[0].TerceroId.Id > 0 {
+		return tercero[0].TerceroId.Id, nil
+	} else {
+		return 0, nil
+	}
+}
