@@ -109,7 +109,7 @@ func (c *BajaController) Put() {
 // @Failure 404 "not found resource"
 // @Failure 500 "Unknown API Error"
 // @Failure 502 "External API Error"
-// @router /solicitud/:id [get]
+// @router /:id [get]
 func (c *BajaController) GetSolicitud() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
@@ -145,38 +145,47 @@ func (c *BajaController) GetSolicitud() {
 // GetAll ...
 // @Title Get All
 // @Description Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite
+// @Param	user	query	string	true	"Tercero que consulta las bajas"
 // @Param	revComite	query 	bool	false	"Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen"
 // @Param	revAlmacen	query 	bool	false	"Indica si se traen las bajas pendientes por revisar"
 // @Success 200 {object} []models.DetalleBaja
 // @Failure 404 not found resource
-// @router /solicitud/ [get]
+// @router / [get]
 func (c *BajaController) GetAll() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
 
-	var revComite bool
-	var revAlmacen bool
-	if v, err := c.GetBool("revComite", false); err != nil {
-		panic(errorctrl.Error("GetAll - c.GetBool(\"revComite\", false)", err, "400"))
+	var (
+		revComite  bool
+		revAlmacen bool
+		terceroId  string
+	)
+
+	if v := c.GetString("user", ""); v == "" {
+		panic(errorctrl.Error(`GetAll - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
+	} else {
+		terceroId = v
+	}
+
+	if v, err := c.GetBool("revComite"); err != nil {
+		panic(errorctrl.Error(`GetAll - c.GetBool("revComite")`, err, "400"))
 	} else {
 		revComite = v
 	}
 
 	if v, err := c.GetBool("revAlmacen"); err != nil {
-		panic(errorctrl.Error("GetAll - c.GetBool(\"revAlmacen\", false)", err, "400"))
+		panic(errorctrl.Error(`GetAll - c.GetBool("revAlmacen")`, err, "400"))
 	} else {
 		revAlmacen = v
 	}
 
-	if v, err := bajasHelper.GetAllSolicitudes(revComite, revAlmacen); err == nil {
-		if v != nil {
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = []interface{}{}
-		}
-	} else {
+	var bajas = make([]models.DetalleBaja, 0)
+	if err := bajasHelper.GetAll(terceroId, revComite, revAlmacen, &bajas); err != nil {
 		panic(err)
+	} else {
+		c.Data["json"] = bajas
 	}
+
 	c.ServeJSON()
 }
 

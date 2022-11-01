@@ -369,6 +369,48 @@
             }
         },
         "/bajas_elementos/": {
+            "get": {
+                "tags": [
+                    "bajas_elementos"
+                ],
+                "description": "Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite",
+                "operationId": "BajaController.Get All",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "user",
+                        "description": "Tercero que consulta las bajas",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "revComite",
+                        "description": "Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen",
+                        "type": "boolean"
+                    },
+                    {
+                        "in": "query",
+                        "name": "revAlmacen",
+                        "description": "Indica si se traen las bajas pendientes por revisar",
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DetalleBaja"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "bajas_elementos"
@@ -466,44 +508,7 @@
                 }
             }
         },
-        "/bajas_elementos/solicitud/": {
-            "get": {
-                "tags": [
-                    "bajas_elementos"
-                ],
-                "description": "Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite",
-                "operationId": "BajaController.Get All",
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "revComite",
-                        "description": "Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen",
-                        "type": "boolean"
-                    },
-                    {
-                        "in": "query",
-                        "name": "revAlmacen",
-                        "description": "Indica si se traen las bajas pendientes por revisar",
-                        "type": "boolean"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.DetalleBaja"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
-        "/bajas_elementos/solicitud/{id}": {
+        "/bajas_elementos/{id}": {
             "get": {
                 "tags": [
                     "bajas_elementos"
@@ -536,9 +541,7 @@
                         "description": "\"External API Error\""
                     }
                 }
-            }
-        },
-        "/bajas_elementos/{id}": {
+            },
             "put": {
                 "tags": [
                     "bajas_elementos"
