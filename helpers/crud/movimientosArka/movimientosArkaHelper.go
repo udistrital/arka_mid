@@ -349,7 +349,7 @@ func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputE
 	return entrada, nil
 }
 
-// GetTrasladosByTerceroId consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
+// GetTrasladosByTerceroId consulta controlador movimiento/traslado/{tercero_id} del api movimientos_arka_crud
 func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "GetTrasladosByTerceroId - "
@@ -363,5 +363,20 @@ func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models
 		eval := "request.GetJson(urlcrud, &traslados)"
 		return errorctrl.Error(funcion+eval, err, "502")
 	}
+	return
+}
+
+// GetBajasByTerceroId consulta controlador movimiento/baja/{tercero_id} del api movimientos_arka_crud
+func GetBajasByTerceroId(terceroId int, bajas *[]*models.Movimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetBajasByTerceroId - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "movimiento/baja/" + strconv.Itoa(terceroId)
+	if err := request.GetJson(urlcrud, &bajas); err != nil {
+		eval := "request.GetJson(urlcrud, &bajas)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
 	return
 }
