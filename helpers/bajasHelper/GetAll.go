@@ -93,7 +93,7 @@ func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimie
 		if solicitudes_, err := movimientosArka.GetAllMovimiento(payload); err != nil {
 			return err
 		} else {
-			bajas = &solicitudes_
+			*bajas = solicitudes_
 		}
 
 		return
