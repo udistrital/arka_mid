@@ -1,6 +1,8 @@
 package parametros
 
 import (
+	"strconv"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
@@ -9,6 +11,8 @@ import (
 	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
+
+var basePath = "http://" + beego.AppConfig.String("parametrosService")
 
 // GetAllParametro query controlador parametro del api parametros_crud
 func GetAllParametro(query string) (parametros []*models.Parametro, outputError map[string]interface{}) {
@@ -29,6 +33,27 @@ func GetAllParametro(query string) (parametros []*models.Parametro, outputError 
 		}
 	}
 	return parametros, nil
+}
+
+// GetParametroById query controlador parametro/{id} del api parametros_crud
+func GetParametroById(id int, parametro interface{}) (outputError map[string]interface{}) {
+
+	funcion := "GetAllParametro - "
+	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := basePath + "parametro/" + strconv.Itoa(id)
+	response := new(models.RespuestaAPI1Interface)
+	if err := request.GetJson(urlcrud, &response); err != nil {
+		eval := "request.GetJson(urlcrud, &response)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	} else {
+		if err := formatdata.FillStruct(response.Data, &parametro); err != nil {
+			logs.Error(err)
+			eval := "formatdata.FillStruct(response.Data, &parametro)"
+			return errorctrl.Error(funcion+eval, err, "500")
+		}
+	}
+	return
 }
 
 // GetAllParametro query controlador parametro del api parametros_crud
