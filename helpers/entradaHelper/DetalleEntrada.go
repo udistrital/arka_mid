@@ -18,8 +18,7 @@ import (
 // DetalleEntrada Consulta el detalle de una entrada incluyendo la transaccion contable (si aplica)
 func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
-	funcion := "DetalleEntrada"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
 	var (
 		detalle    models.FormatoBaseEntrada
@@ -35,6 +34,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	} else if len(mov) > 0 {
 		movimiento = *mov[0]
 	}
+
 	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if detalle.SupervisorId > 0 {
-		supervisor := make(map[string]interface{}, 0)
+		supervisor := make(map[string]interface{})
 		if err := administrativaAMAZON.GetSupervisor(detalle.SupervisorId, &supervisor); err != nil {
 			return nil, err
 		} else if len(supervisor) > 0 {
@@ -113,7 +113,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if detalle.OrdenadorGastoId > 0 {
-		ordenadores := make(map[string]interface{}, 0)
+		ordenadores := make(map[string]interface{})
 		if err := administrativaAMAZON.GetOrdenadores(detalle.OrdenadorGastoId, &ordenadores); err != nil {
 			return nil, err
 		} else if len(ordenadores) > 0 {

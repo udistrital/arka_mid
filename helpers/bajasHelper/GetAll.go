@@ -16,7 +16,7 @@ import (
 // GetAll Consulta información general de todas las bajas filtrando por usuario o las que están pendientes por revisar.
 func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetAllSolicitudes - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
 
 	var solicitudes []*models.Movimiento
 
@@ -75,6 +75,8 @@ func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja
 // loadBajas Consulta lista de bajas asociadas a un usuario de acuerdo a las revisiones y permisos del usuario
 func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimiento) (outputError map[string]interface{}) {
 
+	defer errorctrl.ErrorControlFunction("loadBajas - Unhandled Error!", "500")
+
 	var (
 		terceroId int
 		roles     []string
@@ -83,17 +85,17 @@ func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimie
 
 	if revAlmacen || revComite {
 
-		payload := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
+		payload := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre:"
 		if revComite {
-			payload += url.QueryEscape(":Baja En Comité")
+			payload += url.QueryEscape("Baja En Comité")
 		} else if revAlmacen {
-			payload += url.QueryEscape(":Baja En Trámite")
+			payload += url.QueryEscape("Baja En Trámite")
 		}
 
 		if solicitudes_, err := movimientosArka.GetAllMovimiento(payload); err != nil {
 			return err
 		} else {
-			bajas = &solicitudes_
+			*bajas = solicitudes_
 		}
 
 		return
