@@ -46,6 +46,9 @@ func GetParametroById(id int, parametro interface{}) (outputError map[string]int
 	if err := request.GetJson(urlcrud, &response); err != nil {
 		eval := "request.GetJson(urlcrud, &response)"
 		return errorctrl.Error(funcion+eval, err, "502")
+	} else if !response.Success {
+		eval := "request.GetJson(urlcrud, &response)"
+		return errorctrl.Error(funcion+eval, response.Message, response.Status)
 	} else {
 		if err := formatdata.FillStruct(response.Data, &parametro); err != nil {
 			logs.Error(err)

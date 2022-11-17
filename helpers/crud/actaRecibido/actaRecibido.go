@@ -14,7 +14,7 @@ import (
 var path = "http://" + beego.AppConfig.String("actaRecibidoService")
 
 // GetElementoById consulta controlador elemento/{id} del api acta_recibido_crud
-func GetElementoById(id int) (elemento *models.Elemento, outputError map[string]interface{}) {
+func GetElementoById(id int, elemento *models.Elemento) (outputError map[string]interface{}) {
 
 	funcion := "GetElementoById - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -23,10 +23,10 @@ func GetElementoById(id int) (elemento *models.Elemento, outputError map[string]
 	if err := request.GetJson(urlcrud, &elemento); err != nil {
 		logs.Error(urlcrud+", ", err)
 		eval := "request.GetJson(urlcrud, &elemento)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		return errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return elemento, nil
+	return
 }
 
 // GetAllElemento query controlador elemento del api acta_recibido_crud
