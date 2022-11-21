@@ -7,6 +7,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	tercerosCRUD "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
@@ -93,6 +94,14 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 				resultado["proveedor"] = tercero
 			}
 		}
+
+		if acta.ActaRecibidoId.UnidadEjecutoraId > 0 {
+			var unidadEjecutora models.Parametro
+			if err := parametros.GetParametroById(acta.ActaRecibidoId.UnidadEjecutoraId, &unidadEjecutora); err != nil {
+				return nil, err
+			}
+			resultado["unidadEjecutora"] = unidadEjecutora
+		}
 	}
 
 	if detalle.Factura > 0 {
@@ -110,6 +119,18 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		} else if len(supervisor) > 0 {
 			resultado["supervisor"] = supervisor
 		}
+
+		if val, ok := supervisor["DependenciaSupervisor"]; ok && val != nil && val.(string) != "" {
+			var dependencia []interface{}
+			if err := administrativaAMAZON.GetAllDependenciaSIC("query=ESFCODIGODEP:"+val.(string), &dependencia); err != nil {
+				return nil, err
+			}
+
+			if len(dependencia) > 0 {
+				resultado["dependenciaSupervisor"] = dependencia[0]
+			}
+		}
+
 	}
 
 	if detalle.OrdenadorGastoId > 0 {
@@ -121,12 +142,31 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 	}
 
-	if detalle.Placa != "" {
-		if encargado, err := GetEncargadoElemento(detalle.Placa); err != nil {
+	if len(detalle.Elementos) > 0 {
+		query = "query=Id__in:" + utilsHelper.ArrayToString(detalle.Elementos, "|")
+		elementos, err := movimientosArka.GetAllElementosMovimiento(query)
+		if err != nil {
 			return nil, err
-		} else if encargado != nil {
-			resultado["encargado"] = encargado
 		}
+
+		var detalleElementos = make([]map[string]interface{}, 0)
+		for _, el := range elementos {
+			var elemento_ models.Elemento
+			if err := actaRecibido.GetElementoById(el.ElementoActaId, &elemento_); err != nil {
+				return nil, err
+			}
+
+			detalleElemento := map[string]interface{}{
+				"Salida":     el.MovimientoId,
+				"Placa":      elemento_.Placa,
+				"ValorTotal": elemento_.ValorTotal,
+			}
+
+			detalleElementos = append(detalleElementos, detalleElemento)
+
+		}
+
+		resultado["elementos"] = detalleElementos
 	}
 
 	resultado["movimiento"] = movimiento

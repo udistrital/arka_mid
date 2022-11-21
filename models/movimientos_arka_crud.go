@@ -90,10 +90,9 @@ type FormatoBaseEntrada struct {
 	ConsecutivoId       int
 	ContratoId          int     `json:"contrato_id"`
 	Divisa              string  `json:"divisa"`
-	EncargadoId         int     `json:"encargado_id"`
 	Factura             int     `json:"factura"`
 	OrdenadorGastoId    int     `json:"ordenador_gasto_id"`
-	Placa               string  `json:"placa_id"`
+	Elementos           []int   `json:"elementos"`
 	RegistroImportacion string  `json:"num_reg_importacion"`
 	SupervisorId        int     `json:"supervisor"`
 	TRM                 float64 `json:"TRM"`

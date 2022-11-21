@@ -8,6 +8,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -23,6 +24,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 	var (
 		historico         models.HistoricoActa
 		elementos         []*models.Elemento
+		terceroId         int
 		detalleMovimiento map[string]interface{}
 		detalleContable   string
 		transaccion       models.TransaccionMovimientos
@@ -53,6 +55,21 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 		historico = *ha[0]
 	}
 
+	if historico.ActaRecibidoId.TipoActaId.CodigoAbreviacion == "REG" && historico.ProveedorId > 0 {
+		terceroId = historico.ProveedorId
+	} else if historico.ActaRecibidoId.TipoActaId.CodigoAbreviacion == "VER" {
+		if UD, err := terceros.GetTerceroUD(); err != nil {
+			return err
+		} else if UD == 0 {
+			resultado_.Error = "No se pudo consultar el tercero para asociar a la transacción contable. Contacte soporte."
+			return
+		} else {
+			terceroId = UD
+		}
+	} else {
+		resultado_.Error = "No se pudo consultar el tercero para asociar a la transacción contable. Contacte soporte."
+	}
+
 	if el_, err := actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1"); err != nil {
 		return err
 	} else {
@@ -71,7 +88,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 	}
 
 	bufferCuentas = make(map[string]models.CuentaContable)
-	if msg, err := asientoContable.CalcularMovimientosContables(elementos, detalleContable, resultado_.Movimiento.FormatoTipoMovimientoId.Id, historico.ProveedorId, historico.ProveedorId, bufferCuentas,
+	if msg, err := asientoContable.CalcularMovimientosContables(elementos, detalleContable, resultado_.Movimiento.FormatoTipoMovimientoId.Id, terceroId, terceroId, bufferCuentas,
 		nil, &transaccion.Movimientos); err != nil || msg != "" {
 		resultado_.Error = msg
 		return err

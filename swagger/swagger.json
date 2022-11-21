@@ -3033,9 +3033,12 @@
                 "divisa": {
                     "type": "string"
                 },
-                "encargado_id": {
-                    "type": "integer",
-                    "format": "int64"
+                "elementos": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
                 },
                 "factura": {
                     "type": "integer",
@@ -3047,9 +3050,6 @@
                 "ordenador_gasto_id": {
                     "type": "integer",
                     "format": "int64"
-                },
-                "placa_id": {
-                    "type": "string"
                 },
                 "supervisor": {
                     "type": "integer",

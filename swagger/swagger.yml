@@ -2095,9 +2095,11 @@ definitions:
         format: int64
       divisa:
         type: string
-      encargado_id:
-        type: integer
-        format: int64
+      elementos:
+        type: array
+        items:
+          type: integer
+          format: int64
       factura:
         type: integer
         format: int64
@@ -2106,8 +2108,6 @@ definitions:
       ordenador_gasto_id:
         type: integer
         format: int64
-      placa_id:
-        type: string
       supervisor:
         type: integer
         format: int64
