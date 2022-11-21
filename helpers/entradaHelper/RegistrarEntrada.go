@@ -118,10 +118,6 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "divisa")
 	}
 
-	if completo.EncargadoId == 0 {
-		delete(detalle, "encargado_id")
-	}
-
 	if completo.Factura == 0 {
 		delete(detalle, "factura")
 	}
@@ -130,8 +126,8 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "ordenador_gasto_id")
 	}
 
-	if completo.Placa == "" {
-		delete(detalle, "placa_id")
+	if len(completo.Elementos) == 0 {
+		delete(detalle, "elementos")
 	}
 
 	if completo.RegistroImportacion == "" {

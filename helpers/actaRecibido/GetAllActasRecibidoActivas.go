@@ -167,8 +167,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
-	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=" + fmt.Sprint(limit) + "&sortby=ActaRecibidoId__Id&order=desc"
-	urlEstados += "&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial&offset=" + fmt.Sprint(offset)
+	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=" + fmt.Sprint(limit) + "&offset=" + fmt.Sprint(offset)
+	urlEstados += "&sortby=ActaRecibidoId__Id&order=desc&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
 		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
@@ -190,29 +190,23 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		}
 
 	} else if len(algunosEstados) > 0 {
-		for _, estado := range algunosEstados {
-			var hists []map[string]interface{}
-			urlEstado := urlEstados + ",EstadoActaId__Nombre:" + estado
-			urlEstado = strings.ReplaceAll(urlEstado, " ", "%20")
-			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
-				if len(hists) == 0 || len(hists[0]) == 0 {
-					continue
-				}
-				Historico = append(Historico, hists...)
-			} else {
-				if err == nil {
-					err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-				}
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlEstado, &hists)",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
+		estados := strings.Join(algunosEstados, "|")
+		urlEstado := urlEstados + ",EstadoActaId__Nombre__in:" + estados
+		urlEstado = strings.ReplaceAll(urlEstado, " ", "%20")
+		var hists = make([]map[string]interface{}, 0)
+		if resp, err := request.GetJsonTest(urlEstado, &hists); err != nil || resp.StatusCode != 200 {
+			if err == nil {
+				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlEstado, &hists)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
-
+		Historico = hists
 	} else if contratista || proveedor {
 
 		urlEstados += ",EstadoActaId__Nombre"
