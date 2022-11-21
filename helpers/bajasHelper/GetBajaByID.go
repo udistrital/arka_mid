@@ -5,7 +5,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/crud/oikos"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -22,7 +22,7 @@ func GetBajaByID(id int, Baja *models.TrBaja) (outputError map[string]interface{
 	var (
 		movimiento  *models.Movimiento
 		detalle     models.FormatoBaja
-		dependencia models.Dependencia
+		dependencia models.Parametro
 	)
 
 	// Se consulta el movimiento
@@ -73,7 +73,7 @@ func GetBajaByID(id int, Baja *models.TrBaja) (outputError map[string]interface{
 	}
 
 	if detalle.DependenciaId > 0 {
-		if err := oikos.GetDependenciaById(detalle.DependenciaId, &dependencia); err != nil {
+		if err := parametros.GetParametroById(detalle.DependenciaId, &dependencia); err != nil {
 			return err
 		}
 	}
