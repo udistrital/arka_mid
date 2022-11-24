@@ -51,7 +51,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 	}
 
 	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
-		rgxp := regexp.MustCompile("\\d+$")
+		rgxp := regexp.MustCompile("\\d.*")
 		str := rgxp.ReplaceAllString(ubicacion.EspacioFisicoId.CodigoAbreviacion, "")
 
 		if val, ok := sedes[str]; !ok {
