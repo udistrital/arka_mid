@@ -52,7 +52,7 @@ func TraerElementoSolicitud(Elemento map[string]interface{}) (Elemento_ map[stri
 
 		ubicacion2 := ubicacion[0]["EspacioFisicoId"].(map[string]interface{})
 
-		rgxp := regexp.MustCompile("\\d+$")
+		rgxp := regexp.MustCompile("\\d.*")
 		str := rgxp.ReplaceAllString(ubicacion2["CodigoAbreviacion"].(string), "")
 
 		urlcrud4 := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=CodigoAbreviacion:" + str

@@ -89,7 +89,6 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 
 	var Dependencias interface{}
 	var Sedes interface{}
-	var Ubicaciones interface{}
 	parametros := make([]map[string]interface{}, 0)
 
 	urlOikosDependencia := "http://" + beego.AppConfig.String("oikosService") + "dependencia?limit=-1"
@@ -97,17 +96,6 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 		logs.Error(err)
 		outputError = map[string]interface{}{
 			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosDependencia, &Dependencias)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	urlOikosAsignacion := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?limit=-1"
-	if _, err := request.GetJsonTest(urlOikosAsignacion, &Ubicaciones); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosAsignacion, &Ubicaciones)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -127,7 +115,6 @@ func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError
 
 	parametros = append(parametros, map[string]interface{}{
 		"Dependencias": Dependencias,
-		"Ubicaciones":  Ubicaciones,
 		"Sedes":        Sedes,
 	})
 
