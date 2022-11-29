@@ -1,7 +1,6 @@
 package actaRecibido
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
@@ -35,13 +33,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 	// PARTE "0": Buffers, para evitar repetir consultas...
 	var Historico []map[string]interface{}
 	Terceros := make(map[int]interface{})
-	Ubicaciones := make(map[int]interface{})
+	Ubicaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
 
 	consultasTerceros := 0
-	consultasUbicaciones := 0
 	consultasProveedores := 0
 	evTerceros := 0
-	evUbicaciones := 0
 	evProveedores := 0
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
@@ -246,12 +242,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 			var acta map[string]interface{}
 			var estado map[string]interface{}
-			var ubicacionData map[string]interface{}
 			var editor *models.Tercero
-			var preUbicacion map[string]interface{}
 			var asignado *models.Tercero
-
-			preUbicacion = nil
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
 				acta = data
@@ -282,24 +274,12 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 				}
 			}
 
-			idUbStr := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
-			reqUbicacion := func() (interface{}, map[string]interface{}) {
-				if ubicacion, err := oikos.GetAsignacionSedeDependencia(idUbStr); err == nil {
-					return ubicacion, nil
-				} else {
-					logs.Error(err)
-					return nil, map[string]interface{}{
-						"funcion": "findAndAddUbicacion - ubicacionHelper.GetAsignacionSedeDependencia(idStr)",
-						"err":     err,
-						"status":  "502",
-					}
-				}
-			}
-			if idUb, err := strconv.Atoi(idUbStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						preUbicacion = v2
-					}
+			if _, ok := Ubicaciones[int(historicos["UbicacionId"].(float64))]; int(historicos["UbicacionId"].(float64)) > 0 && !ok {
+				id_ := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
+				if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
+					return nil, err
+				} else if len(asignacion) == 1 {
+					Ubicaciones[int(historicos["UbicacionId"].(float64))] = asignacion[0]
 				}
 			}
 
@@ -310,24 +290,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 				}
 			}
 
-			if preUbicacion != nil {
-				if jsonString2, err := json.Marshal(preUbicacion["EspacioFisicoId"]); err == nil {
-					if err2 := json.Unmarshal(jsonString2, &ubicacionData); err2 != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				}
-			} else {
-				ubicacionData = map[string]interface{}{
-					"Nombre": "",
-				}
-			}
-
 			fVistoBueno := historicos["FechaVistoBueno"].(string)
 			if fVistoBueno == "0001-01-01T00:00:00Z" {
 				fVistoBueno = ""
@@ -335,7 +297,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 			Acta := map[string]interface{}{
 				"Id":                acta["Id"],
-				"UbicacionId":       ubicacionData["Nombre"],
+				"UbicacionId":       "",
 				"FechaCreacion":     acta["FechaCreacion"],
 				"FechaVistoBueno":   fVistoBueno,
 				"FechaModificacion": historicos["FechaModificacion"],
@@ -346,11 +308,14 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 				"EstadoActaId":      estado,
 			}
 
+			if val, ok := Ubicaciones[int(historicos["UbicacionId"].(float64))]; ok {
+				Acta["UbicacionId"] = val.EspacioFisicoId.Nombre
+			}
+
 			historicoActa = append(historicoActa, Acta)
 		}
 
 		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)
-		logs.Info("consultasUbicaciones:", consultasUbicaciones, " - Evitadas: ", evUbicaciones)
 		logs.Info("consultasProveedores:", consultasProveedores, " - Evitadas: ", evProveedores)
 		logs.Info(len(historicoActa), "actas")
 		return historicoActa, nil

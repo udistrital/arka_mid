@@ -38,11 +38,11 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 
 	if salida.Ubicacion > 0 {
 		if val, ok := asignaciones[salida.Ubicacion]; !ok {
-			query = "?query=Id:" + strconv.Itoa(salida.Ubicacion)
+			query = "query=Id:" + strconv.Itoa(salida.Ubicacion)
 			if asignacion_, err := oikos.GetAllAsignacion(query); err != nil {
 				return nil, err
-			} else if len(asignacion_) > 0 {
-				ubicacion = *asignacion_[0]
+			} else if len(asignacion_) == 1 {
+				ubicacion = asignacion_[0]
 				asignaciones[salida.Ubicacion] = ubicacion
 			}
 		} else {
