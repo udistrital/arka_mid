@@ -1120,9 +1120,6 @@ definitions:
         type: boolean
       Observacion:
         type: string
-      Solicitante:
-        type: integer
-        format: int64
       TipoEntradaId:
         $ref: '#/definitions/models.TipoEntrada'
       Vigencia:
