@@ -438,6 +438,11 @@ paths:
       operationId: BodegaConsumoController.GetAllSolicitud
       parameters:
       - in: query
+        name: user
+        description: Tercero que consulta las solicitudes a bodega de consumo
+        required: true
+        type: string
+      - in: query
         name: tramite_only
         description: Retornar solo las solicitudes en estado pendiente
         type: boolean
