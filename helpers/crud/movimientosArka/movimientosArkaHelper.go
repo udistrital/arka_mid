@@ -380,3 +380,18 @@ func GetBajasByTerceroId(terceroId int, bajas *[]*models.Movimiento) (outputErro
 
 	return
 }
+
+// GetBodegaByTerceroId consulta controlador movimiento/bodega/{tercero_id} del api movimientos_arka_crud
+func GetBodegaByTerceroId(terceroId int, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetBodegaByTerceroId - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "movimiento/bodega/" + strconv.Itoa(terceroId)
+	if err := request.GetJson(urlcrud, &solicitudes); err != nil {
+		eval := "request.GetJson(urlcrud, &solicitudes)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}

@@ -22,7 +22,6 @@ type EntradaElemento struct {
 
 type ConsultaEntrada struct {
 	Id                  int          `orm:"column(id);pk;auto"`
-	Solicitante         int          `orm:"column(solicitante);null"`
 	Observacion         string       `orm:"column(observacion);null"`
 	Importacion         bool         `orm:"column(importacion);null"`
 	FechaCreacion       time.Time    `orm:"auto_now;column(fecha_creacion);type(timestamp without time zone)"`

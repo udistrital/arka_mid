@@ -31,7 +31,7 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 
 	rgxp := regexp.MustCompile("\\d.*")
 	strSede := ubicacion[0].EspacioFisicoId.CodigoAbreviacion
-	strSede = rgxp.ReplaceAllString(strSede, "")
+	strSede = strSede[0:2] + rgxp.ReplaceAllString(strSede[2:], "")
 
 	payload = "?query=CodigoAbreviacion:" + strSede
 	if sede_, err := GetAllEspacioFisico(payload); err != nil {

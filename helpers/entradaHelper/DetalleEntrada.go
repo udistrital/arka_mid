@@ -127,7 +127,8 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			}
 
 			if len(dependencia) > 0 {
-				resultado["dependenciaSupervisor"] = dependencia[0]
+				supervisor["DependenciaSupervisor"] = dependencia[0]
+				resultado["supervisor"] = supervisor
 			}
 		}
 
@@ -167,6 +168,12 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 
 		resultado["elementos"] = detalleElementos
+	}
+
+	if soporte, err := movimientosArka.GetAllSoporteMovimiento("fields=DocumentoId&query=MovimientoId__Id:" + strconv.Itoa(entradaId)); err != nil {
+		return nil, err
+	} else if len(soporte) > 0 {
+		resultado["documentoId"] = soporte[0].DocumentoId
 	}
 
 	resultado["movimiento"] = movimiento
