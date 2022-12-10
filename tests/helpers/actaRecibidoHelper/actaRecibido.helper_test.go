@@ -95,18 +95,6 @@ func TestGetIdElementoPlaca(t *testing.T) {
 	}
 }
 
-// TestGetIdElementoPlaca ...
-func GetAllElementosConsumo(t *testing.T) {
-	valor, err := actaRecibido.GetAllElementosConsumo()
-	if err != nil {
-		t.Error("No se pudo traer los elemenmtos de consumo - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("GetAllElementosConsumo Finalizado Correctamente (OK)")
-	}
-}
-
 // TestEndPointACTA_RECIBIDO_CRUD
 //
 // Ya estaba! Se desconoce su proposito, se podría eliminar?

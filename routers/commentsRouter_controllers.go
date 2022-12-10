@@ -27,15 +27,6 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"],
         beego.ControllerComments{
-            Method: "GetAllElementosConsumo",
-            Router: "/elementosconsumo/",
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"],
-        beego.ControllerComments{
             Method: "GetAllActas",
             Router: "/get_all_actas/",
             AllowHTTPMethods: []string{"get"},

@@ -1,8 +1,6 @@
 package actaRecibido
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -112,48 +110,4 @@ func GetIdElementoPlaca(placa string) (idElemento string, outputError map[string
 		return "", outputError
 	}
 	return
-}
-
-// GetAllElementosConsumo obtiene todos los elementos de consumo
-func GetAllElementosConsumo() (elementos []map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllElementosConsumo - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	url := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?query=TipoBienId:1,Activo:true"
-	if response, err := request.GetJsonTest(url, &elementos); err == nil && response.StatusCode == 200 {
-		if len(elementos) == 0 {
-			err := errors.New("no hay elementos")
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetAllElementosConsumo - len(elementos) == 0",
-				"err":     err,
-				"status":  "404",
-			}
-			return nil, outputError
-		} else {
-			return elementos, nil
-		}
-
-	} else {
-		if err == nil {
-			err = fmt.Errorf("undesired Status Code: %d", response.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllElementosConsumo - request.GetJsonTest(url, &elementos)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
 }

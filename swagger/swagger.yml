@@ -42,19 +42,6 @@ paths:
             $ref: '#/definitions/models.CargaMasivaElementosActa'
         "403":
           description: body is empty
-  /acta_recibido/elementosconsumo/:
-    get:
-      tags:
-      - acta_recibido
-      description: Trae todos los elementos de consumo
-      operationId: ActaRecibidoController.GetAllElementosConsumo
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Elemento'
-        "404":
-          description: not found resource
   /acta_recibido/get_all_actas/:
     get:
       tags:

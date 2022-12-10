@@ -9,7 +9,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 )
 
@@ -23,7 +22,6 @@ func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
-	c.Mapping("GetAllElementosConsumo", c.GetAllElementosConsumo)
 	c.Mapping("GetAllActas", c.GetAllActas)
 }
 
@@ -150,36 +148,6 @@ func (c *ActaRecibidoController) GetElementosActa() {
 		}
 	} else {
 		panic(err)
-	}
-	c.ServeJSON()
-}
-
-// GetAllElementosConsumo ...
-// @Title GetAllElementosConsumo
-// @Description Trae todos los elementos de consumo
-// @Success 200 {object} models.Elemento
-// @Failure 404 not found resource
-// @router /elementosconsumo/ [get]
-func (c *ActaRecibidoController) GetAllElementosConsumo() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
-
-	if l, err := actaRecibido.GetAllElementosConsumo(); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = l
 	}
 	c.ServeJSON()
 }
