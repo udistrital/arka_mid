@@ -69,18 +69,6 @@ func TestDecodeXlsx2Json(t *testing.T) {
 	}
 }
 
-// TestGetAllParametrosSoporte ...
-func TestGetAllParametrosSoporte(t *testing.T) {
-	valor, err := actaRecibido.GetAllParametrosSoporte()
-	if err != nil {
-		t.Error("No se pudo traer los parametros de soporte - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetAllParametrosSoporte Finalizado Correctamente (OK)")
-	}
-}
-
 // TestGetElementos ...
 func TestGetElementos(t *testing.T) {
 	id := 14

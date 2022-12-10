@@ -1024,26 +1024,6 @@
                 }
             }
         },
-        "/parametros_soporte/": {
-            "get": {
-                "tags": [
-                    "parametros_soporte"
-                ],
-                "description": "get ActaRecibido",
-                "operationId": "ParametrosController.Get All",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ActaRecibido"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/polizas/AllElementosPoliza": {
             "get": {
                 "tags": [
@@ -4062,10 +4042,6 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
-        },
-        {
-            "name": "parametros_soporte",
-            "description": "ParametrosController operations for Parametros\n"
         },
         {
             "name": "catalogo_elementos",

@@ -73,54 +73,6 @@ func GetAllParametrosActa() (parametros_ []map[string]interface{}, outputError m
 	return parametros_, nil
 }
 
-// GetAllParametrosSoporte ...
-func GetAllParametrosSoporte() (Parametros []map[string]interface{}, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllParametrosSoporte - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	var Dependencias interface{}
-	var Sedes interface{}
-	parametros := make([]map[string]interface{}, 0)
-
-	urlOikosDependencia := "http://" + beego.AppConfig.String("oikosService") + "dependencia?limit=-1"
-	if _, err := request.GetJsonTest(urlOikosDependencia, &Dependencias); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosDependencia, &Dependencias)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	urlOikosEspFis := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico?query=TipoEspacioFisicoId__Nombre:SEDE&limit=-1"
-	if _, err := request.GetJsonTest(urlOikosEspFis, &Sedes); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosSoporte - request.GetJsonTest(urlOikosEspFis, &Sedes)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	parametros = append(parametros, map[string]interface{}{
-		"Dependencias": Dependencias,
-		"Sedes":        Sedes,
-	})
-
-	return parametros, nil
-}
-
 // GetIdElementoPlaca Busca el id de un elemento a partir de su placa
 func GetIdElementoPlaca(placa string) (idElemento string, outputError map[string]interface{}) {
 

@@ -684,19 +684,6 @@ paths:
           description: '{object]'
         "404":
           description: not found resource
-  /parametros_soporte/:
-    get:
-      tags:
-      - parametros_soporte
-      description: get ActaRecibido
-      operationId: ParametrosController.Get All
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.ActaRecibido'
-        "404":
-          description: not found resource
   /polizas/AllElementosPoliza:
     get:
       tags:
@@ -2803,9 +2790,6 @@ tags:
 - name: entrada
   description: |
     EntradaController operations for Entrada
-- name: parametros_soporte
-  description: |
-    ParametrosController operations for Parametros
 - name: catalogo_elementos
   description: |
     CatalogoElementosController operations for Catalogo
