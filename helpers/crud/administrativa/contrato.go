@@ -4,46 +4,47 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	administrativa "github.com/udistrital/administrativa_mid_api/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	e "github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
 // GetContrato ...
-func GetContrato(contratoId int, vigencia string) (contrato map[string]interface{}, outputError map[string]interface{}) {
-	const funcion = "GetContrato"
-	defer e.ErrorControlFunction(funcion+" - Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
+func GetContrato(contratoId int, vigencia string, contrato *administrativa.InformacionContrato) (outputError map[string]interface{}) {
 
-	if contratoId != 0 { // (1) error parametro
-		urlContrato := "http://" + beego.AppConfig.String("administrativaJbpmService")
-		urlContrato += fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
-		if err := request.GetJsonWSO2(urlContrato, &contrato); err != nil {
-			logs.Error(err)
-			context := " - request.GetJsonWSO2(urlContrato, &contrato)"
-			return nil, e.Error(funcion+context, err, fmt.Sprint(http.StatusBadGateway))
-		}
-		return contrato, nil
+	const funcion = "GetContrato - "
+	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
-	} else {
+	if contratoId <= 0 {
 		err := errors.New("id del contrato debe ser distinto de cero")
-		context := " - contratoId != 0"
+		context := "contratoId <= 0"
 		logs.Error(err)
-		return nil, e.Error(funcion+context, err, fmt.Sprint(http.StatusBadRequest))
+		return e.Error(funcion+context, err, fmt.Sprint(http.StatusBadRequest))
 	}
+
+	urlCrud := "http://" + beego.AppConfig.String("administrativaJbpmService") +
+		fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
+	if err := request.GetJsonWSO2(urlCrud, &contrato); err != nil {
+		logs.Error(err)
+		context := "request.GetJsonWSO2(urlCrud, &contrato)"
+		return e.Error(funcion+context, err, fmt.Sprint(http.StatusBadGateway))
+	}
+
+	return
 }
 
 // GetTipoContratoById Consulta endpoint tipo_contrato/:id del api administrativa_amazon_api
-func GetTipoContratoById(tipoContratoId int, tipoContrato interface{}) (outputError map[string]interface{}) {
+func GetTipoContratoById(tipoContratoId string, tipoContrato interface{}) (outputError map[string]interface{}) {
 
 	const funcion = "GetTipoContratoById - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
-	urlcrud := "http://" + beego.AppConfig.String("administrativaService") + "tipo_contrato/" + strconv.Itoa(tipoContratoId)
+	urlcrud := "http://" + beego.AppConfig.String("administrativaService") + "tipo_contrato/" + tipoContratoId
 	if err := request.GetJson(urlcrud, &tipoContrato); err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &tipoContrato)"

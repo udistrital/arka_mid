@@ -2113,13 +2113,7 @@ definitions:
       supervisor:
         type: integer
         format: int64
-      vigencia:
-        type: string
       vigencia_contrato:
-        type: string
-      vigencia_ordenador:
-        type: string
-      vigencia_solicitante:
         type: string
   models.FormatoSolicitudBodega:
     title: FormatoSolicitudBodega

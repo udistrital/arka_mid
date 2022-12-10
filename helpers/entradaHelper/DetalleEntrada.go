@@ -3,6 +3,7 @@ package entradaHelper
 import (
 	"strconv"
 
+	administrativa_ "github.com/udistrital/administrativa_mid_api/models"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
@@ -40,21 +41,20 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, err
 	}
 
-	if detalle.ContratoId > 0 {
-		if vigencia, err := strconv.Atoi(detalle.VigenciaContrato); err == nil && vigencia > 0 {
-			if contrato, err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato); err != nil {
-				return nil, err
-			} else {
-				if val, ok := contrato["contrato"].(map[string]interface{})["tipo_contrato"].(string); ok {
-					if num, err := strconv.Atoi(val); num > 0 && err == nil {
-						var tipoContrato interface{}
-						if err := administrativa.GetTipoContratoById(num, &tipoContrato); err != nil {
-							return nil, err
-						}
-						contrato["contrato"].(map[string]interface{})["tipo_contrato"] = tipoContrato
-					}
+	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
+		var contrato administrativa_.InformacionContrato
+		if err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato); err != nil {
+			return nil, err
+		}
+
+		if contrato.Contrato.NumeroContratoSuscrito != "" {
+			resultado["contrato"] = contrato.Contrato
+			if contrato.Contrato.TipoContrato != "" {
+				var tipoContrato administrativa_.TipoContrato
+				if err := administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato); err != nil {
+					return nil, err
 				}
-				resultado["contrato"] = contrato["contrato"]
+				resultado["tipo_contrato_id"] = tipoContrato
 			}
 		}
 	}
