@@ -20,7 +20,7 @@ type ActaRecibidoController struct {
 // URLMapping ...
 func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetParametros", c.GetParametros)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
 	c.Mapping("GetAllActas", c.GetAllActas)
 }
@@ -66,13 +66,13 @@ func (c *ActaRecibidoController) Post() {
 	c.ServeJSON()
 }
 
-// GetAll ...
-// @Title Get All
-// @Description get ActaRecibido
+// GetParametros ...
+// @Title Consulta de valores paramétricos
+// @Description Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud
 // @Success 200 {object} models.ActaRecibido
 // @Failure 404 not found resource
 // @router / [get]
-func (c *ActaRecibidoController) GetAll() {
+func (c *ActaRecibidoController) GetParametros() {
 
 	defer func() {
 		if err := recover(); err != nil {

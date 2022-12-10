@@ -20,8 +20,8 @@
                 "tags": [
                     "acta_recibido"
                 ],
-                "description": "get ActaRecibido",
-                "operationId": "ActaRecibidoController.Get All",
+                "description": "Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud",
+                "operationId": "ActaRecibidoController.Consulta de valores paramétricos",
                 "responses": {
                     "200": {
                         "description": "",
