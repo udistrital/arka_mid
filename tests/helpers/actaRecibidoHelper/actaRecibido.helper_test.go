@@ -82,19 +82,6 @@ func TestGetElementos(t *testing.T) {
 	}
 }
 
-// TestGetIdElementoPlaca ...
-func TestGetIdElementoPlaca(t *testing.T) {
-	placa := "2021"
-	valor, err := actaRecibido.GetIdElementoPlaca(placa)
-	if err != nil {
-		t.Error("No se pudo consultar el id a partir de la placa - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetIdElementoPlaca Finalizado Correctamente (OK)")
-	}
-}
-
 // TestEndPointACTA_RECIBIDO_CRUD
 //
 // Ya estaba! Se desconoce su proposito, se podría eliminar?

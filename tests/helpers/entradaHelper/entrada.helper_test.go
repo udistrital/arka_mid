@@ -37,21 +37,6 @@ func TestAnularEntrada(t *testing.T) {
 	}
 }
 
-func TestGetEncargadoElemento(t *testing.T) {
-	valor, err := entradaHelper.GetEncargadoElemento("123456")
-	if err != nil || valor == nil {
-		if err != nil {
-			t.Error("No se pudo consultar encargado err", err)
-		} else {
-			t.Error("No se pudo consultar el valor del encargado", err)
-		}
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetEncargadoElemento Finalizado Correctamente (OK)")
-	}
-}
-
 func TestGetMovimientosByActa(t *testing.T) {
 	valor, err := entradaHelper.GetMovimientosByActa(2)
 	if err != nil || valor == nil {
