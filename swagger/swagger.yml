@@ -744,7 +744,8 @@ paths:
     get:
       tags:
       - salida
-      description: get Entradas
+      description: Consulta lista de salidas registradas. Permite filtrar aquellas
+        que están pendientes por ser aprobadas
       operationId: SalidaController.Get User
       parameters:
       - in: query

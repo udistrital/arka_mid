@@ -207,7 +207,7 @@ func (c *SalidaController) GetElementos() {
 
 // GetSalidas ...
 // @Title Get User
-// @Description get Entradas
+// @Description Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas
 // @Param	tramite_only		query	bool false	"Retornar salidas únicamente en estado En Trámite"
 // @Success 200 {object} []models.Movimiento
 // @Failure 404 not found resource
