@@ -106,7 +106,7 @@ func (c *ActaRecibidoController) GetParametros() {
 // @Failure 404 not found resource
 // @Failure 500 Internal Error
 // @Failure 502 Error with external API
-// @router /get_elementos_acta/:id [get]
+// @router /elementos/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 
 	defer func() {
