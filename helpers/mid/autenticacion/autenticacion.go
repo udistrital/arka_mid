@@ -1,6 +1,9 @@
 package autenticacion
 
 import (
+	"fmt"
+	"regexp"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
@@ -34,26 +37,60 @@ func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, o
 // GetInfoUser Consulta los roles y el TerceroId asociado a un usuario determinado
 func GetInfoUser(usr string, terceroId *int, roles *[]string) (outputError map[string]interface{}) {
 
-	var (
-		user    models.UsuarioAutenticacion
-		tercero models.DatosIdentificacion
-	)
+	funcion := "GetInfoUser - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	if data, err := DataUsuario(usr); err != nil {
+	user, err := DataUsuario(usr)
+	if err != nil {
 		return err
-	} else {
-		user = data
-		*roles = user.Role
 	}
+
+	*roles = user.Role
+
+	return GetTerceroUser(user, terceroId)
+}
+
+// GetTerceroUser Consulta los roles y el TerceroId asociado a un usuario determinado
+func GetTerceroUser(user models.UsuarioAutenticacion, terceroId *int) (outputError map[string]interface{}) {
+
+	funcion := "GetTerceroUser - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if user.Documento == "" {
 		return
 	}
 
-	if data, err := terceros.GetTerceroByDoc(user.Documento); err != nil {
+	rgxp := regexp.MustCompile("\\d.*")
+	tipo := rgxp.ReplaceAllString(user.DocumentoCompuesto, "")
+
+	if tipo != "" {
+		payload := "query=Activo:true,TerceroId__Activo:true,TipoDocumentoId__CodigoAbreviacion:" + tipo + ",Numero:" + user.Documento
+		datosId, err := terceros.GetAllDatosIdentificacion(payload)
+
+		if err != nil {
+			return err
+		}
+
+		if len(datosId) == 1 && datosId[0].TerceroId != nil {
+			*terceroId = datosId[0].TerceroId.Id
+			return
+		} else if len(datosId) > 1 {
+			if terceros.DocumentosValidos(datosId, false, true) {
+				*terceroId = datosId[0].TerceroId.Id
+				return
+			}
+
+			err := fmt.Errorf("el Documento '%s' tiene más de un registro activo en Terceros (%d registros).", user.DocumentoCompuesto, len(datosId))
+			logs.Notice(err)
+			outputError = errorctrl.Error(funcion, err, "409")
+
+			return outputError
+		}
+	}
+
+	tercero, err := terceros.GetTerceroByDoc(user.Documento)
+	if err != nil {
 		return err
-	} else {
-		tercero = *data
 	}
 
 	if tercero.TerceroId != nil && tercero.TerceroId.Id > 0 {

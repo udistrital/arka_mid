@@ -102,7 +102,7 @@ func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimie
 
 	}
 
-	if err := getInfoUser(user, &terceroId, &roles); err != nil {
+	if err := autenticacion.GetInfoUser(user, &terceroId, &roles); err != nil {
 		return err
 	}
 
@@ -126,39 +126,6 @@ func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimie
 		if err := movimientosArka.GetBajasByTerceroId(terceroId, bajas); err != nil {
 			return err
 		}
-	}
-
-	return
-
-}
-
-// getInfoUser Consulta los roles y el TerceroId asociado a un usuario determinado
-func getInfoUser(usr string, terceroId *int, roles *[]string) (outputError map[string]interface{}) {
-
-	var (
-		user    models.UsuarioAutenticacion
-		tercero models.DatosIdentificacion
-	)
-
-	if data, err := autenticacion.DataUsuario(usr); err != nil {
-		return err
-	} else {
-		user = data
-		*roles = user.Role
-	}
-
-	if user.Documento == "" {
-		return
-	}
-
-	if data, err := terceros.GetTerceroByDoc(user.Documento); err != nil {
-		return err
-	} else {
-		tercero = *data
-	}
-
-	if tercero.TerceroId != nil && tercero.TerceroId.Id > 0 {
-		*terceroId = tercero.TerceroId.Id
 	}
 
 	return

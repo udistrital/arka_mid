@@ -14,21 +14,15 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
 // GetAllActasRecibido ...
 func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, offset int64) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+
+	funcion := "GetAllActasRecibidoActivas - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	// PARTE "0": Buffers, para evitar repetir consultas...
 	var Historico []map[string]interface{}
@@ -63,7 +57,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			err := fmt.Errorf("el usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
 			logs.Warn(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - autenticacion.DataUsuario(usrWSO2)",
+				"funcion": funcion + "autenticacion.DataUsuario(usrWSO2)",
 				"err":     err,
 				"status":  "404",
 			}
@@ -119,13 +113,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			}
 			if proveedor || contratista {
 				// fmt.Println(usr.Documento)
-				if data, err := crudTerceros.GetTerceroByDoc(usr.Documento); err == nil {
-					if data.TerceroId != nil {
-						idTercero = data.TerceroId.Id
-					} else {
-						return nil, err
-					}
-				} else {
+				err := autenticacion.GetTerceroUser(usr, &idTercero)
+				if err != nil || idTercero == 0 {
 					return nil, err
 				}
 			}
@@ -178,7 +167,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlTodas, &hists)",
+				"funcion": funcion + "request.GetJsonTest(urlTodas, &hists)",
 				"err":     err,
 				"status":  "502",
 			}
@@ -196,7 +185,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlEstado, &hists)",
+				"funcion": funcion + "request.GetJsonTest(urlEstado, &hists)",
 				"err":     err,
 				"status":  "502",
 			}
@@ -226,7 +215,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlContProv, &hists)",
+				"funcion": funcion + "request.GetJsonTest(urlContProv, &hists)",
 				"err":     err,
 				"status":  "502",
 			}

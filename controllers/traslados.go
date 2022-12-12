@@ -204,7 +204,7 @@ func (c *TrasladosController) GetAll() {
 		aprobar = v
 	}
 
-	if err := trasladoshelper.GetAllTraslados(terceroId, confirmar, aprobar, &traslados); err != nil {
+	if err := trasladoshelper.GetAll(terceroId, confirmar, aprobar, &traslados); err != nil {
 		panic(err)
 	}
 

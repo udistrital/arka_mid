@@ -173,7 +173,7 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetTerceroByUsuarioWSO2 - request.GetJsonTest(urltercero, &datosTerceros)",
+			"funcion": "GetTerceroByDoc - request.GetJsonTest(urltercero, &datosTerceros)",
 			"err":     err,
 			"status":  "502",
 		}

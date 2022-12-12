@@ -14,10 +14,10 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-// GetAllTraslados Consulta información general de todos los traslados asociados a un usuario determinado. Permite filtrar por los que están pendientes por aprobar o confirmar
-func GetAllTraslados(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleTrasladoLista) (outputError map[string]interface{}) {
+// GetAll Consulta información general de todos los traslados asociados a un usuario determinado. Permite filtrar por los que están pendientes por aprobar o confirmar
+func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleTrasladoLista) (outputError map[string]interface{}) {
 
-	funcion := "GetAllTraslados"
+	funcion := "GetAll"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var traslados []*models.Movimiento
@@ -105,7 +105,7 @@ func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Mov
 		opciones  []*models.PerfilXMenuOpcion
 	)
 
-	if err := getInfoUser(user, &terceroId, &roles); err != nil {
+	if err := autenticacion.GetInfoUser(user, &terceroId, &roles); err != nil {
 		return err
 	}
 
@@ -147,39 +147,6 @@ func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Mov
 		} else {
 			*traslados = tr_
 		}
-	}
-
-	return
-
-}
-
-// getInfoUser Consulta los roles y el TerceroId asociado a un usuario determinado
-func getInfoUser(usr string, terceroId *int, roles *[]string) (outputError map[string]interface{}) {
-
-	var (
-		user    models.UsuarioAutenticacion
-		tercero models.DatosIdentificacion
-	)
-
-	if data, err := autenticacion.DataUsuario(usr); err != nil {
-		return err
-	} else {
-		user = data
-		*roles = user.Role
-	}
-
-	if user.Documento == "" {
-		return
-	}
-
-	if data, err := terceros.GetTerceroByDoc(user.Documento); err != nil {
-		return err
-	} else {
-		tercero = *data
-	}
-
-	if tercero.TerceroId != nil && tercero.TerceroId.Id > 0 {
-		*terceroId = tercero.TerceroId.Id
 	}
 
 	return
