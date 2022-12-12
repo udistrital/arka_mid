@@ -9,7 +9,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 )
 
@@ -21,9 +20,8 @@ type ActaRecibidoController struct {
 // URLMapping ...
 func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetParametros", c.GetParametros)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
-	c.Mapping("GetAllElementosConsumo", c.GetAllElementosConsumo)
 	c.Mapping("GetAllActas", c.GetAllActas)
 }
 
@@ -68,13 +66,13 @@ func (c *ActaRecibidoController) Post() {
 	c.ServeJSON()
 }
 
-// GetAll ...
-// @Title Get All
-// @Description get ActaRecibido
+// GetParametros ...
+// @Title Consulta de valores paramétricos
+// @Description Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud
 // @Success 200 {object} models.ActaRecibido
 // @Failure 404 not found resource
 // @router / [get]
-func (c *ActaRecibidoController) GetAll() {
+func (c *ActaRecibidoController) GetParametros() {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -150,36 +148,6 @@ func (c *ActaRecibidoController) GetElementosActa() {
 		}
 	} else {
 		panic(err)
-	}
-	c.ServeJSON()
-}
-
-// GetAllElementosConsumo ...
-// @Title GetAllElementosConsumo
-// @Description Trae todos los elementos de consumo
-// @Success 200 {object} models.Elemento
-// @Failure 404 not found resource
-// @router /elementosconsumo/ [get]
-func (c *ActaRecibidoController) GetAllElementosConsumo() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
-
-	if l, err := actaRecibido.GetAllElementosConsumo(); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = l
 	}
 	c.ServeJSON()
 }

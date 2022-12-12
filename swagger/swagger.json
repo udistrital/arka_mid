@@ -20,8 +20,8 @@
                 "tags": [
                     "acta_recibido"
                 ],
-                "description": "get ActaRecibido",
-                "operationId": "ActaRecibidoController.Get All",
+                "description": "Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud",
+                "operationId": "ActaRecibidoController.Consulta de valores paramétricos",
                 "responses": {
                     "200": {
                         "description": "",
@@ -58,26 +58,6 @@
                     },
                     "403": {
                         "description": "body is empty"
-                    }
-                }
-            }
-        },
-        "/acta_recibido/elementosconsumo/": {
-            "get": {
-                "tags": [
-                    "acta_recibido"
-                ],
-                "description": "Trae todos los elementos de consumo",
-                "operationId": "ActaRecibidoController.GetAllElementosConsumo",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.Elemento"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
                     }
                 }
             }
@@ -943,32 +923,6 @@
                 }
             }
         },
-        "/entrada/encargado/{placa}": {
-            "get": {
-                "tags": [
-                    "entrada"
-                ],
-                "description": "get Entradas",
-                "operationId": "EntradaController.Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "placa",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{\"funcionario\": \"string\"}"
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/entrada/movimientos/{acta_recibido_id}": {
             "get": {
                 "tags": [
@@ -1020,26 +974,6 @@
                     },
                     "403": {
                         "description": ":id is empty"
-                    }
-                }
-            }
-        },
-        "/parametros_soporte/": {
-            "get": {
-                "tags": [
-                    "parametros_soporte"
-                ],
-                "description": "get ActaRecibido",
-                "operationId": "ParametrosController.Get All",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ActaRecibido"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
                     }
                 }
             }
@@ -1112,7 +1046,7 @@
                 "tags": [
                     "salida"
                 ],
-                "description": "get Entradas",
+                "description": "Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas",
                 "operationId": "SalidaController.Get User",
                 "parameters": [
                     {
@@ -3058,16 +2992,7 @@
                     "type": "integer",
                     "format": "int64"
                 },
-                "vigencia": {
-                    "type": "string"
-                },
                 "vigencia_contrato": {
-                    "type": "string"
-                },
-                "vigencia_ordenador": {
-                    "type": "string"
-                },
-                "vigencia_solicitante": {
                     "type": "string"
                 }
             }
@@ -4071,10 +3996,6 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
-        },
-        {
-            "name": "parametros_soporte",
-            "description": "ParametrosController operations for Parametros\n"
         },
         {
             "name": "catalogo_elementos",

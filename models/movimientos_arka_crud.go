@@ -96,10 +96,7 @@ type FormatoBaseEntrada struct {
 	RegistroImportacion string  `json:"num_reg_importacion"`
 	SupervisorId        int     `json:"supervisor"`
 	TRM                 float64 `json:"TRM"`
-	Vigencia            string  `json:"vigencia"`
 	VigenciaContrato    string  `json:"vigencia_contrato"`
-	VigenciaOrdenador   string  `json:"vigencia_ordenador"`
-	VigenciaSolicitante string  `json:"vigencia_solicitante"`
 }
 
 type TrSoporteMovimiento struct {

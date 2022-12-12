@@ -142,16 +142,8 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "TRM")
 	}
 
-	if completo.Vigencia == "" {
-		delete(detalle, "vigencia")
-	}
-
 	if completo.VigenciaContrato == "" {
 		delete(detalle, "vigencia_contrato")
-	}
-
-	if completo.VigenciaOrdenador == "" {
-		delete(detalle, "vigencia_ordenador")
 	}
 
 	if !etl && consecutivo_ == nil {

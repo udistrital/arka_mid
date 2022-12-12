@@ -22,7 +22,6 @@ type EntradaController struct {
 func (c *EntradaController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetEncargadoElemento", c.GetEncargadoElemento)
 	c.Mapping("AnularEntrada", c.AnularEntrada)
 	c.Mapping("GetMovimientos", c.GetMovimientos)
 }
@@ -142,49 +141,6 @@ func (c *EntradaController) GetOne() {
 		})
 	}
 
-	c.ServeJSON()
-}
-
-// GetEncargadoElemento ...
-// @Title Get User
-// @Description get Entradas
-// @Param	placa		path 	string	true		"The key for staticblock"
-// @Success 200  {"funcionario": "string"}
-// @Failure 404 not found resource
-// @router /encargado/:placa [get]
-func (c *EntradaController) GetEncargadoElemento() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
-
-	placa := c.Ctx.Input.Param(":placa")
-	if placa == "" {
-		err := fmt.Errorf("{placa} no debe ser vacia")
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetEncargadoElemento",
-			"err":     err,
-			"status":  "400",
-		})
-	}
-
-	if funcionario, err := entradaHelper.GetEncargadoElemento(placa); err == nil {
-		c.Data["json"] = funcionario
-		c.Ctx.Output.SetStatus(200)
-	} else {
-		panic(err)
-	}
 	c.ServeJSON()
 }
 

@@ -18,17 +18,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"],
         beego.ControllerComments{
-            Method: "GetAll",
+            Method: "GetParametros",
             Router: "/",
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"],
-        beego.ControllerComments{
-            Method: "GetAllElementosConsumo",
-            Router: "/elementosconsumo/",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -279,26 +270,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:EntradaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:EntradaController"],
         beego.ControllerComments{
-            Method: "GetEncargadoElemento",
-            Router: "/encargado/:placa",
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:EntradaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:EntradaController"],
-        beego.ControllerComments{
             Method: "GetMovimientos",
             Router: "/movimientos/:acta_recibido_id",
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ParametrosController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ParametrosController"],
-        beego.ControllerComments{
-            Method: "GetAll",
-            Router: "/",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
