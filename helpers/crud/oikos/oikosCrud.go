@@ -12,32 +12,18 @@ import (
 
 var basePath = "http://" + beego.AppConfig.String("oikosService")
 
-func GetAllAsignacion(query string) (asignacion []*models.AsignacionEspacioFisicoDependencia, outputError map[string]interface{}) {
+func GetAllAsignacion(payload string) (asignaciones []models.AsignacionEspacioFisicoDependencia, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllAsignacion - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetAllAsignacion - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	var ubicacion []*models.AsignacionEspacioFisicoDependencia
-
-	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia" + query
-	if _, err := request.GetJsonTest(urlcrud, &ubicacion); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllAsignacion - request.GetJsonTest(urlcrud, &ubicacion)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?" + payload
+	if _, err := request.GetJsonTest(urlcrud, &asignaciones); err != nil {
+		eval := "request.GetJsonTest(urlcrud, &asignaciones)"
+		return nil, errorctrl.Error(funcion+eval, err, "502")
 	}
-	return ubicacion, nil
+
+	return asignaciones, nil
 }
 
 func GetAllEspacioFisico(query string) (espacio []*models.EspacioFisico, outputError map[string]interface{}) {

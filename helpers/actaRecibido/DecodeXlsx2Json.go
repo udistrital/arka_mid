@@ -1,97 +1,33 @@
 package actaRecibido
 
 import (
-	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"mime/multipart"
+	"strconv"
+	"time"
 
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 
-	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // DecodeXlsx2Json Convierte el archivo excel en una lista de elementos
 func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "DecodeXlsx2Json - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetAllIVAByPeriodo - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
-		Unidades  []Unidad
-		ss        map[string]interface{}
-		Parametro []interface{}
-		Valor     []interface{}
-		IvaTest   []Imp
-		Ivas      []Imp
+		Unidades []Unidad
+		Ivas     []models.Iva
 	)
 
-	urlIva := "http://" + beego.AppConfig.String("parametrosService") + "parametro_periodo?query=PeriodoId__Nombre:2021,ParametroId__TipoParametroId__Id:12"
-	// logs.Debug("urlIva:", urlIva)
-	if resp, err := request.GetJsonTest(urlIva, &ss); err == nil && resp.StatusCode == 200 {
-
-		var data []map[string]interface{}
-		if jsonString, err := json.Marshal(ss["Data"]); err == nil {
-			if err := json.Unmarshal(jsonString, &data); err == nil {
-				for _, valores := range data {
-					Parametro = append(Parametro, valores["ParametroId"])
-					v := []byte(fmt.Sprintf("%v", valores["Valor"]))
-					var valorUnm interface{}
-					if err := json.Unmarshal(v, &valorUnm); err == nil {
-						Valor = append(Valor, valorUnm)
-					}
-				}
-			}
-		}
-
-		if jsonbody1, err := json.Marshal(Parametro); err == nil {
-			if err := json.Unmarshal(jsonbody1, &Ivas); err != nil {
-				fmt.Println(err)
-				return
-			}
-		}
-
-		if jsonbody1, err := json.Marshal(Valor); err == nil {
-			if err := json.Unmarshal(jsonbody1, &IvaTest); err != nil {
-				fmt.Println(err)
-				return
-			}
-		}
-
-		for i, valores := range IvaTest {
-			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
-		}
-		for i, valores := range Ivas {
-			IvaTest[i].BasePesos = valores.BasePesos
-			IvaTest[i].BaseUvt = valores.BaseUvt
-			IvaTest[i].PorcentajeAplicacion = valores.PorcentajeAplicacion
-			IvaTest[i].CodigoAbreviacion = valores.CodigoAbreviacion
-		}
-
-	} else {
-		if err == nil {
-			err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-		}
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - request.GetJsonTest(urlIva, &ss)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	if err := parametros.GetAllIVAByPeriodo(strconv.Itoa(time.Now().Year()-1), &Ivas); err != nil {
+		return nil, err
 	}
 
 	if outputError = administrativa.GetUnidades(&Unidades); outputError != nil {
@@ -123,10 +59,6 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 	resultado = make(map[string]interface{})
 
 	var hojas []string
-	subgrupo := &models.DetalleSubgrupo{
-		SubgrupoId: &models.Subgrupo{},
-		TipoBienId: &models.TipoBien{},
-	}
 
 	validar_campos := []string{"Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Porcentaje IVA", "Valor IVA", "Valor Total"}
 	elementos := make([]*models.PlantillaActa, 0)
@@ -213,7 +145,7 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 								tarifa = int(tarifa_ * 100)
 							}
 
-							for _, tarifa_ := range IvaTest {
+							for _, tarifa_ := range Ivas {
 								if tarifa == tarifa_.Tarifa {
 									fila.PorcentajeIvaId = &tarifa
 									break
@@ -246,7 +178,6 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 						}
 						fila.ValorTotal = fila.Subtotal + fila.ValorIva
 
-						fila.SubgrupoCatalogoId = subgrupo
 						elementos = append(elementos, fila)
 					}
 

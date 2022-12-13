@@ -169,7 +169,7 @@ func (c *TrasladosController) GetElementosFuncionario() {
 // GetAll ...
 // @Title Get All
 // @Description Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
-// @Param	user	query	int	false	"Tercero que consulta los traslados"
+// @Param	user	query	string	false	"Tercero que consulta los traslados"
 // @Param	confirmar	query	bool	false	"Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta."
 // @Param	aprobar	query	bool	false	"Consulta los traslados que están pendientes por ser aprobados por almacén."
 // @Success 200 {object} []models.DetalleTrasladoLista
@@ -204,7 +204,7 @@ func (c *TrasladosController) GetAll() {
 		aprobar = v
 	}
 
-	if err := trasladoshelper.GetAllTraslados(terceroId, confirmar, aprobar, &traslados); err != nil {
+	if err := trasladoshelper.GetAll(terceroId, confirmar, aprobar, &traslados); err != nil {
 		panic(err)
 	}
 
@@ -238,13 +238,11 @@ func (c *TrasladosController) Put() {
 		id = v
 	}
 
-	if respuesta, err := trasladoshelper.AprobarTraslado(id); err == nil && respuesta != nil {
+	var res models.ResultadoMovimiento
+	if err := trasladoshelper.AprobarTraslado(id, &res); err == nil {
 		c.Ctx.Output.SetStatus(201)
-		c.Data["json"] = respuesta
+		c.Data["json"] = res
 	} else {
-		if err != nil {
-			panic(err)
-		}
 		panic(errorctrl.Error("Put - trasladoshelper.AprobarTraslado(id)", err, "404"))
 
 	}

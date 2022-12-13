@@ -23,6 +23,7 @@ func (c *SalidaController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetSalida", c.GetSalida)
 	c.Mapping("GetSalidas", c.GetSalidas)
+	c.Mapping("GetElementos", c.GetElementos)
 	c.Mapping("Put", c.Put)
 }
 
@@ -65,9 +66,10 @@ func (c *SalidaController) Post() {
 	}
 
 	if salidaId > 0 {
-		if respuesta, err := salidaHelper.AprobarSalida(salidaId); err == nil && respuesta != nil {
+		var res models.ResultadoMovimiento
+		if err := salidaHelper.AprobarSalida(salidaId, &res); err == nil {
 			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = respuesta
+			c.Data["json"] = res
 		} else {
 			if err == nil {
 				panic(map[string]interface{}{
@@ -148,7 +150,7 @@ func (c *SalidaController) GetSalida() {
 			"status":  "400",
 		})
 	}
-	if v, err := salidaHelper.GetSalida(id); err != nil {
+	if v, err := salidaHelper.GetSalidaById(id); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
@@ -156,9 +158,56 @@ func (c *SalidaController) GetSalida() {
 	c.ServeJSON()
 }
 
+// GetElementos ...
+// @Title GetElementos
+// @Description Get elementos para asignar en salida segun la entrada o la salida
+// @Param	entrada_id	query	int	true	"The key for staticblock"
+// @Param	salida_id	query	int	true	"Id de la salida que se debe actualizar"
+// @Success 200 {object} []models.DetalleElementoSalida
+// @Failure 404 not found resource
+// @router /elementos [get]
+func (c *SalidaController) GetElementos() {
+
+	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
+
+	var (
+		salidaId  int
+		entradaId int
+	)
+
+	if v, err := c.GetInt("salida_id"); err != nil {
+		logs.Error(err)
+		panic(errorctrl.Error(`GetElementos - c.GetInt("salida_id")`, err, "400"))
+	} else {
+		salidaId = v
+	}
+
+	if salidaId == 0 {
+		if v, err := c.GetInt("entrada_id"); err != nil {
+			logs.Error(err)
+			panic(errorctrl.Error(`GetElementos - c.GetInt("entrada_id")`, err, "400"))
+		} else {
+			entradaId = v
+		}
+	}
+
+	if entradaId == 0 && salidaId == 0 {
+		err := errors.New("se debe especificar una salida o entrada para consultar los elementos válida")
+		panic(errorctrl.Error(`GetElementos - entradaId == 0 && salidaId == 0`, err, "400"))
+	}
+
+	if elementos, err := salidaHelper.GetElementosByTipoBien(entradaId, salidaId); err != nil {
+		panic(err)
+	} else {
+		c.Data["json"] = elementos
+	}
+
+	c.ServeJSON()
+}
+
 // GetSalidas ...
 // @Title Get User
-// @Description get Entradas
+// @Description Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas
 // @Param	tramite_only		query	bool false	"Retornar salidas únicamente en estado En Trámite"
 // @Success 200 {object} []models.Movimiento
 // @Failure 404 not found resource

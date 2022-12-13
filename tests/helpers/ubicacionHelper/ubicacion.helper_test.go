@@ -23,18 +23,6 @@ func TestMain(m *testing.M) {
 }
 
 // GetAsignacionSedeDependencia ...
-func TestGetAsignacionSedeDependencia(t *testing.T) {
-
-	if valor, err := oikos.GetAsignacionSedeDependencia("2"); err != nil {
-		t.Error("No se pudo consultar la ubicacion", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetAsignacionSedeDependencia Finalizado Correctamente")
-	}
-}
-
-// GetAsignacionSedeDependencia ...
 func TestGetSedeDependenciaUbicacion(t *testing.T) {
 
 	if s, err := oikos.GetSedeDependenciaUbicacion(2); err != nil {

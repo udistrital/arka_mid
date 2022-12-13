@@ -264,6 +264,7 @@ github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6/go.mod h1:n931TsDu
 github.com/leodido/go-urn v1.2.1 h1:BqpAaACuzVSgi/VLzGZIobT2z4v53pjosyNd9Yv6n/w=
 github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ictyFfxY=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
+github.com/lib/pq v1.10.0 h1:Zx5DJFEYQXio93kgXnQ09fXNiUKsqv4OUEu2UtGcB1E=
 github.com/lib/pq v1.10.0/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-bc2310a04743/go.mod h1:qklhhLq1aX+mtWk9cPHPzaBjWImj5ULL6C7HFJtXQMM=
 github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0UBX0ZE6WURAspgAczcDHrL4=
@@ -283,7 +284,9 @@ github.com/mitchellh/gox v0.4.0/go.mod h1:Sd9lOJ0+aimLBi73mGofS1ycjY8lL3uZM3JPS4
 github.com/mitchellh/iochan v1.0.0/go.mod h1:JwYml1nuB7xOzsp52dPpHFffvOCDupsG0QubkSMEySY=
 github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
+github.com/mndrix/golog v0.0.0-20170330170653-a28e2a269775 h1:KPqf9x/eMg3ZnHATLXcM1OgQMNVkPUv1QcGv6zTRMRg=
 github.com/mndrix/golog v0.0.0-20170330170653-a28e2a269775/go.mod h1:Q4YHYl483MNk6wwg3g8YsINpKe5S2UzUJCRSRlFaSU0=
+github.com/mndrix/ps v0.0.0-20170330174427-18e65badd6ab h1:fPrYMvMnWuED0MLhLyrny1fLaHhtiXK30pNyBGrk9Gs=
 github.com/mndrix/ps v0.0.0-20170330174427-18e65badd6ab/go.mod h1:dHgTaDInzkAqJv67VaX1IkK449M2UoBY68CZeI/bNCU=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
@@ -331,6 +334,7 @@ github.com/pierrec/lz4 v1.0.2-0.20190131084431-473cd7ce01a1/go.mod h1:3/3N9NVKO0
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/profile v1.2.1/go.mod h1:hJw3o1OdXxsrSjjVksARp5W95eeEaEfptyVZyv6JUPA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
@@ -412,6 +416,12 @@ github.com/syndtr/goleveldb v0.0.0-20181127023241-353a9fca669c/go.mod h1:Z4AUp2K
 github.com/tealeg/xlsx v1.0.5 h1:+f8oFmvY8Gw1iUXzPk+kz+4GpbDZPK1FhPiQRd+ypgE=
 github.com/tealeg/xlsx v1.0.5/go.mod h1:btRS8dz54TDnvKNosuAqxrM1QgN1udgk9O34bDCnORM=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
+github.com/udistrital/administrativa_mid_api v0.0.0-20220920173941-6f8032773208 h1:b2fD3Q9gNQthlAUm5+3ApNej3N54nsKD3RI/DHJmDwg=
+github.com/udistrital/administrativa_mid_api v0.0.0-20220920173941-6f8032773208/go.mod h1:gun59JiPas6DEbdqIBS3WsfFOE6B9H5NDeZjJza0j68=
+github.com/udistrital/auditoria v0.0.0-20200115201815-9680ae9c2515 h1:HTZDLLQ5QiGANHPjsz2rtNoryMncPISVrQ4DIjveWI4=
+github.com/udistrital/auditoria v0.0.0-20200115201815-9680ae9c2515/go.mod h1:2g8J932brTzbNOcSHob/vjt+/GFfMQuRreLZhvGiUro=
+github.com/udistrital/golog v0.0.0-20171023162822-91dc4aca08d2 h1:IsxcFrpUKvkDVaOy8oXf5ZgrKzflj2PecOY1AwdTyI0=
+github.com/udistrital/golog v0.0.0-20171023162822-91dc4aca08d2/go.mod h1:Rs+FPloU9+szKb4cWeDGxlzMyS6E0N+6qFhSC6MkfIw=
 github.com/udistrital/utils_oas v0.0.0-20220415063412-5dae4bd58180 h1:C4NRrY0b4TYIjbgANlP7gvNVEb7+LDBHcci5Lq/a9Ao=
 github.com/udistrital/utils_oas v0.0.0-20220415063412-5dae4bd58180/go.mod h1:jkSKIX5KYbf0/HxzGUs2leHo3KAwTC5n0oI1JDfoY78=
 github.com/ugorji/go v0.0.0-20171122102828-84cb69a8af83/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=

@@ -2,134 +2,16 @@ package entradaHelper
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
-	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
-
-func asignarPlacaActa(actaRecibidoId int) (elementos []*models.Elemento, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "asignarPlacaActa - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
-	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
-		return nil, err
-	} else {
-		for _, elemento := range detalleElementos {
-			placa := ""
-			if elemento.SubgrupoCatalogoId.TipoBienId.NecesitaPlaca {
-				var consecutivo models.Consecutivo
-				if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
-					return nil, err
-				}
-				year, month, day := time.Now().Date()
-				placa = fmt.Sprintf("%04d%02d%02d%05d", year, month, day, consecutivo.Consecutivo)
-			}
-			elemento_ := models.Elemento{
-				Id:                 elemento.Id,
-				Nombre:             elemento.Nombre,
-				Cantidad:           elemento.Cantidad,
-				Marca:              elemento.Marca,
-				Serie:              elemento.Serie,
-				UnidadMedida:       elemento.UnidadMedida,
-				ValorUnitario:      elemento.ValorUnitario,
-				Subtotal:           elemento.Subtotal,
-				Descuento:          elemento.Descuento,
-				ValorTotal:         elemento.ValorTotal,
-				PorcentajeIvaId:    elemento.PorcentajeIvaId,
-				ValorIva:           elemento.ValorIva,
-				ValorFinal:         elemento.ValorFinal,
-				Placa:              placa,
-				SubgrupoCatalogoId: elemento.SubgrupoCatalogoId.SubgrupoId.Id,
-				EstadoElementoId:   &models.EstadoElemento{Id: elemento.EstadoElementoId.Id},
-				ActaRecibidoId:     &models.ActaRecibido{Id: elemento.ActaRecibidoId.Id},
-				Activo:             true,
-			}
-			elementos = append(elementos, &elemento_)
-		}
-		return elementos, nil
-	}
-
-}
-
-//GetEncargadoElemento busca al encargado de un elemento
-func GetEncargadoElemento(placa string) (idElemento *models.Tercero, outputError map[string]interface{}) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetEncargadoElemento - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
-
-	var urlelemento string
-	var detalle []map[string]interface{}
-
-	if placa == "" {
-		err := fmt.Errorf("la placa no puede estar en blanco")
-		logs.Error(err)
-		outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - placa == ''", "status": "400", "err": err}
-		return nil, outputError
-	}
-
-	if id, err := actaRecibido.GetIdElementoPlaca(placa); err == nil {
-		if id == "" {
-			err := fmt.Errorf("la placa '%s' no ha sido asignada a una salida", placa)
-			logs.Error(err)
-			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - id == ''", "status": "404", "err": err}
-			return nil, outputError
-		}
-		urlelemento = "http://" + beego.AppConfig.String("movimientosArkaService") + "elementos_movimiento/?query=ElementoActaId:" + id
-		if resp, err := request.GetJsonTest(urlelemento, &detalle); err == nil && resp.StatusCode == 200 {
-			cadena := detalle[0]["MovimientoId"].(map[string]interface{})["Detalle"]
-			if resultado, err := utilsHelper.ConvertirStringJson(cadena); err == nil {
-				idtercero := int(resultado["funcionario"].(float64))
-				if tercero, err := crudTerceros.GetTerceroById(idtercero); err == nil {
-					return tercero, nil
-				} else {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
-
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-			}
-			logs.Error(err)
-			outputError = map[string]interface{}{"funcion": "GetEncargadoElemento - request.GetJsonTest(urlelemento, &detalle) ", "status": "500", "err": err}
-			return nil, outputError
-		}
-	} else {
-		return nil, err
-	}
-}
 
 // GetMovimientosByActa ...
 func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{}, outputError map[string]interface{}) {
@@ -169,8 +51,8 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 
 					if salidas[0]["Id"] != nil {
 
-						for i, salida := range salidas {
-							if salidaCompleta, err := salidaHelper.TraerDetalle(salida); err == nil {
+						for i := range salidas {
+							if salidaCompleta, err := salidaHelper.TraerDetalle(nil, models.FormatoSalida{}, nil, nil, nil); err == nil {
 								salidas[i] = salidaCompleta
 							} else {
 								return nil, err

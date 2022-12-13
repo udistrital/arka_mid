@@ -110,7 +110,8 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 // GetAllSolicitud ...
 // @Title GetAllSolicitud
 // @Description get Lista solicitudes de elementos de la bodega de consumo.
-// @Param	tramite_only		query	bool false	"Retornar solo las solicitudes en estado pendiente"
+// @Param	user			query	string	true	"Tercero que consulta las solicitudes a bodega de consumo"
+// @Param	tramite_only	query	bool	false	"Retornar solo las solicitudes en estado pendiente"
 // @Success 200 {object} []models.DetalleSolicitudBodega
 // @router /solicitud/ [get]
 func (c *BodegaConsumoController) GetAllSolicitud() {
@@ -120,13 +121,20 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 	var (
 		tramiteOnly bool
 		err         error
+		user        string
 	)
 	if tramiteOnly, err = c.GetBool("tramite_only", false); err != nil {
 		panic(err)
 	}
 
+	if v := c.GetString("user", ""); v == "" {
+		panic(errorctrl.Error(`GetAllSolicitud - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
+	} else {
+		user = v
+	}
+
 	solicitudes := make([]models.DetalleSolicitudBodega, 0)
-	if err := bodegaConsumoHelper.GetAllSolicitudes(tramiteOnly, &solicitudes); err != nil {
+	if err := bodegaConsumoHelper.GetAllSolicitudes(user, tramiteOnly, &solicitudes); err != nil {
 		panic(err)
 	}
 

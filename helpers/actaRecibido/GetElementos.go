@@ -1,7 +1,6 @@
 package actaRecibido
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	// "github.com/udistrital/utils_oas/formatdata"
 )
 
 // GetElementos ...
@@ -33,9 +31,8 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 		auxE    *models.DetalleElemento
 	)
 
-	subgrupos := make(map[int]interface{})
-	consultasSubgrupos := 0
-	evSubgrupos := 0
+	subgrupos := make(map[int]*models.DetalleSubgrupo)
+	tiposBien := make(map[int]*models.TipoBien)
 
 	if actaId > 0 || len(ids) > 0 { // (1) error parametro
 		// Solicita información elementos acta
@@ -56,50 +53,26 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 			}
 
 			for _, elemento := range elementos {
-
-				subgrupoId := new(models.Subgrupo)
-				tipoBienId := new(models.TipoBien)
 				auxE = new(models.DetalleElemento)
-				subgrupo := models.DetalleSubgrupo{
-					SubgrupoId: subgrupoId,
-					TipoBienId: tipoBienId,
-				}
-
-				subgrupo.TipoBienId = tipoBienId
-				subgrupo.SubgrupoId = subgrupoId
-
-				idSubgrupo := elemento.SubgrupoCatalogoId
-				reqSubgrupo := func() (interface{}, map[string]interface{}) {
-					urlcrud = "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(idSubgrupo)
-					urlcrud += "&fields=SubgrupoId,TipoBienId,Depreciacion,Amortizacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
-					if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(urlcrud); err == nil && len(detalleSubgrupo_) > 0 {
-						return detalleSubgrupo_[0], nil
-					} else if err != nil {
-						return nil, err
-					} else {
-						logs.Error(err)
-						return nil, map[string]interface{}{
-							"funcion": "GetElementos - catalogoElementosHelper.GetDetalleSubgrupo(idSubgrupo)",
-							"err":     err,
-							"status":  "500",
+				if elemento.SubgrupoCatalogoId > 0 {
+					if val, ok := subgrupos[elemento.SubgrupoCatalogoId]; !ok || val == nil {
+						urlcrud = "query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(elemento.SubgrupoCatalogoId)
+						urlcrud += "&fields=Id,SubgrupoId,TipoBienId,Depreciacion,Amortizacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
+						if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(urlcrud); err != nil {
+							return nil, err
+						} else if len(detalleSubgrupo_) == 1 {
+							subgrupos[elemento.SubgrupoCatalogoId] = detalleSubgrupo_[0]
 						}
 					}
 				}
 
-				if idSubgrupo > 0 {
-					if v, err := utilsHelper.BufferGeneric(idSubgrupo, subgrupos, reqSubgrupo, &consultasSubgrupos, &evSubgrupos); err == nil {
-						if v != nil {
-							if jsonString, err := json.Marshal(v); err == nil {
-								if err := json.Unmarshal(jsonString, &subgrupo); err != nil {
-									logs.Error(err)
-									outputError = map[string]interface{}{
-										"funcion": "GetElementos - json.Unmarshal(jsonString, &subgrupo)",
-										"err":     err,
-										"status":  "500",
-									}
-									return nil, outputError
-								}
-							}
+				if elemento.TipoBienId > 0 {
+					if val, ok := tiposBien[elemento.TipoBienId]; !ok || val == nil {
+						var tipoBien_ models.TipoBien
+						if err := catalogoElementos.GetTipoBienById(elemento.TipoBienId, &tipoBien_); err != nil {
+							return nil, err
+						} else if tipoBien_.Id > 0 {
+							tiposBien[elemento.TipoBienId] = &tipoBien_
 						}
 					}
 				}
@@ -117,7 +90,8 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 				auxE.PorcentajeIvaId = elemento.PorcentajeIvaId
 				auxE.ValorIva = elemento.ValorIva
 				auxE.ValorFinal = elemento.ValorFinal
-				auxE.SubgrupoCatalogoId = &subgrupo
+				auxE.SubgrupoCatalogoId = subgrupos[elemento.SubgrupoCatalogoId]
+				auxE.TipoBienId = tiposBien[elemento.TipoBienId]
 				auxE.EstadoElementoId = elemento.EstadoElementoId
 				auxE.ActaRecibidoId = elemento.ActaRecibidoId
 				auxE.Placa = elemento.Placa
@@ -129,7 +103,6 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 
 			}
 
-			logs.Info("consultasSubgrupos:", consultasSubgrupos, " - Evitadas: ", evSubgrupos)
 			return elementosActa, nil
 		}
 	} else {

@@ -1,18 +1,15 @@
 package bajasHelper
 
 import (
-	"encoding/json"
 	"net/url"
 	"strconv"
 
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
-	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -22,17 +19,15 @@ import (
 // RegistrarBaja Crea registro de baja
 func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
-	funcion := "RegistrarBaja"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("RegistrarBaja - Unhandled Error!", "500")
 
 	var (
 		detalle     *models.FormatoBaja
 		consecutivo models.Consecutivo
 	)
 
-	if err := json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalle); err != nil {
-		eval := " - json.Unmarshal([]byte(baja.Movimiento.Detalle), &detalle)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+	if err := utilsHelper.Unmarshal(baja.Movimiento.Detalle, &detalle); err != nil {
+		return nil, err
 	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
@@ -43,11 +38,8 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteBajas(), &consecutivo)
 	detalle.ConsecutivoId = consecutivo.Id
 
-	if jsonData, err := json.Marshal(detalle); err != nil {
-		eval := " - json.Marshal(detalle)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		baja.Movimiento.Detalle = string(jsonData[:])
+	if err := utilsHelper.Marshal(detalle, &baja.Movimiento.Detalle); err != nil {
+		return nil, err
 	}
 
 	// Crea registro en api movimientos_arka_crud
@@ -99,150 +91,63 @@ func ActualizarBaja(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models
 
 }
 
-// GetAllSolicitudes Consulta información general de todas las bajas filtrando por las que están pendientes por revisar en almacén y en comité
-func GetAllSolicitudes(revComite bool, revAlmacen bool) (listBajas []*models.DetalleBaja, outputError map[string]interface{}) {
-
-	funcion := "GetAllSolicitudes"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
-
-	urlcrud := "limit=-1&sortby=Id&order=desc&query=Activo:true,EstadoMovimientoId__Nombre"
-
-	if revComite {
-		urlcrud += url.QueryEscape(":Baja En Comité")
-	} else if revAlmacen {
-		urlcrud += url.QueryEscape(":Baja En Trámite")
-	} else {
-		urlcrud += "__startswith:Baja"
-	}
-
-	if Solicitudes, err := movimientosArka.GetAllMovimiento(urlcrud); err == nil {
-
-		if len(Solicitudes) == 0 {
-			return nil, nil
-		}
-
-		tercerosBuffer := make(map[int]interface{})
-
-		for _, solicitud := range Solicitudes {
-
-			var detalle *models.FormatoBaja
-			var Tercero_ string
-			var Revisor_ string
-
-			if err := json.Unmarshal([]byte(solicitud.Detalle), &detalle); err != nil {
-				eval := " - json.Unmarshal([]byte(solicitud.Detalle), &detalle)"
-				return nil, errorctrl.Error(funcion+eval, err, "500")
-			}
-
-			requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
-				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
-						return Tercero, nil
-					}
-					return nil, nil
-				}
-			}
-
-			funcionarioID := detalle.Funcionario
-			if v, err := utilsHelper.BufferGeneric(funcionarioID, tercerosBuffer, requestTercero(funcionarioID), nil, nil); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					Tercero_ = v2.NombreCompleto
-				}
-			}
-
-			revisorID := detalle.Revisor
-			if v, err := utilsHelper.BufferGeneric(revisorID, tercerosBuffer, requestTercero(revisorID), nil, nil); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					Revisor_ = v2.NombreCompleto
-				}
-			}
-
-			baja := models.DetalleBaja{
-				Id:                 solicitud.Id,
-				Consecutivo:        detalle.Consecutivo,
-				FechaCreacion:      solicitud.FechaCreacion.String(),
-				FechaRevisionA:     detalle.FechaRevisionA,
-				FechaRevisionC:     detalle.FechaRevisionC,
-				Funcionario:        Tercero_,
-				Revisor:            Revisor_,
-				TipoBaja:           solicitud.FormatoTipoMovimientoId.Nombre,
-				EstadoMovimientoId: solicitud.EstadoMovimientoId.Id,
-			}
-			listBajas = append(listBajas, &baja)
-		}
-		return listBajas, nil
-
-	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "/GetAllSolicitudes",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-}
-
 // GetDetalleElemento Consulta historial de un elemento dado el id del elemento en el api acta_recibido_crud
-func GetDetalleElemento(id int) (Elemento *models.DetalleElementoBaja, outputError map[string]interface{}) {
+func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputError map[string]interface{}) {
 
-	funcion := "GetDetalleElemento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "GetDetalleElemento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
-		elemento           []*models.DetalleElemento
-		elementoMovimiento *models.ElementosMovimiento
+		elemento           models.DetalleElemento
+		elementoMovimiento models.ElementosMovimiento
 	)
-	Elemento = new(models.DetalleElementoBaja)
 
-	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
-	ids := []int{id}
-	if elemento_, err := actaRecibido.GetElementos(0, ids); err != nil {
-		return nil, err
-	} else {
-		elemento = elemento_
-	}
-
-	query := "sortby=Id&order=desc&query=ElementoActaId:" + strconv.Itoa(id)
-	if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
-		return nil, err
-	} else if len(elementoMovimiento_) > 0 {
-		elementoMovimiento = elementoMovimiento_[0]
-	} else {
-		return Elemento, nil
+	if err := movimientosArka.GetElementosMovimientoById(id, &elementoMovimiento); err != nil {
+		return err
+	} else if elementoMovimiento.Id == 0 {
+		return
 	}
 
 	if historial_, err := movimientosArka.GetHistorialElemento(elementoMovimiento.Id, true); err != nil {
-		return nil, err
+		return err
 	} else {
 		Elemento.Historial = historial_
 	}
 
+	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
+	ids := []int{elementoMovimiento.ElementoActaId}
+	if elementos, err := actaRecibido.GetElementos(0, ids); err != nil {
+		return err
+	} else if len(elementos) == 1 {
+		elemento = *elementos[0]
+	} else {
+		return
+	}
+
 	if fc, ub, err := GetEncargado(Elemento.Historial); err != nil {
-		return nil, err
+		return err
 	} else {
 		if ubicacion_, err := oikos.GetSedeDependenciaUbicacion(ub); err != nil {
-			return nil, err
+			return err
 		} else {
 			Elemento.Ubicacion = ubicacion_
 		}
 
 		if funcionario_, err := midTerceros.GetInfoTerceroById(fc); err != nil {
-			return nil, err
+			return err
 		} else {
 			Elemento.Funcionario = funcionario_
 		}
 	}
 
 	Elemento.Id = elementoMovimiento.Id
-	Elemento.Placa = elemento[0].Placa
-	Elemento.Nombre = elemento[0].Nombre
-	Elemento.Marca = elemento[0].Marca
-	Elemento.Serie = elemento[0].Serie
-	Elemento.SubgrupoCatalogoId = elemento[0].SubgrupoCatalogoId
+	Elemento.Placa = elemento.Placa
+	Elemento.Nombre = elemento.Nombre
+	Elemento.Marca = elemento.Marca
+	Elemento.Serie = elemento.Serie
+	Elemento.SubgrupoCatalogoId = elemento.SubgrupoCatalogoId
 
-	return Elemento, nil
+	return
 }
 
 // GetDetalleElementos consulta el historial de una serie de elementos dados los ids en el api movimientos_arka_crud
@@ -330,29 +235,27 @@ func FindInArray(cuentasSg []*models.CuentaSubgrupo, subgrupoId int) (i int) {
 	return -1
 }
 
-// Retorna el actual encargado de un elemento de acuerdo a su historial
+// GetEncargado Retorna el funcionario y ubicacion actual de un elemento de acuerdo a su historial
 func GetEncargado(historial *models.Historial) (funcionarioId int, ubicacionId int, outputError map[string]interface{}) {
 
-	funcion := "GetEncargado"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "GetEncargado - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if historial.Traslados != nil {
 		var detalleTr models.DetalleTraslado
-		if err := json.Unmarshal([]byte(historial.Traslados[0].Detalle), &detalleTr); err != nil {
-			eval := " - json.Unmarshal([]byte(historial.Traslados[0].Detalle), &detalleTr)"
+		if err := utilsHelper.Unmarshal(historial.Traslados[0].Detalle, &detalleTr); err != nil {
+			eval := "utilsHelper.Unmarshal(historial.Traslados[0].Detalle, &detalleTr)"
 			return 0, 0, errorctrl.Error(funcion+eval, err, "500")
 		}
-		funcionarioId = detalleTr.FuncionarioDestino
-		ubicacionId = detalleTr.Ubicacion
-		return funcionarioId, ubicacionId, nil
+
+		return detalleTr.FuncionarioDestino, detalleTr.Ubicacion, nil
 	} else {
-		detalleS := map[string]interface{}{}
-		if err := json.Unmarshal([]byte(historial.Salida.Detalle), &detalleS); err != nil {
-			eval := " - json.Unmarshal([]byte(historial.Salida.Detalle), &detalleS)"
+		var detalleS models.FormatoSalida
+		if err := utilsHelper.Unmarshal(historial.Salida.Detalle, &detalleS); err != nil {
+			eval := "utilsHelper.Unmarshal(historial.Salida.Detalle, &detalleS)"
 			return 0, 0, errorctrl.Error(funcion+eval, err, "500")
 		}
-		funcionarioId = int(detalleS["funcionario"].(float64))
-		ubicacionId = int(detalleS["ubicacion"].(float64))
-		return funcionarioId, ubicacionId, nil
+
+		return detalleS.Funcionario, detalleS.Ubicacion, nil
 	}
 }

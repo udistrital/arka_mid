@@ -7,6 +7,7 @@ import (
 
 	"github.com/astaxie/beego"
 
+	administrativa_ "github.com/udistrital/administrativa_mid_api/models"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 )
 
@@ -25,8 +26,9 @@ func TestMain(m *testing.M) {
 
 // GetCatalogoById ...
 func TestGetContrato(t *testing.T) {
-	valor, err := administrativa.GetContrato(15, "2020")
-	if err != nil || valor == nil {
+	var contrato administrativa_.InformacionContrato
+	err := administrativa.GetContrato(15, "2020", &contrato)
+	if err != nil {
 		if err != nil {
 			t.Error("No se pudo consultar el contrato", err)
 		} else {
@@ -34,7 +36,7 @@ func TestGetContrato(t *testing.T) {
 		}
 		t.Fail()
 	} else {
-		t.Log(valor)
+		t.Log(contrato)
 		t.Log("TestGetCatalogoById Finalizado Correctamente (OK)")
 	}
 }

@@ -17,6 +17,7 @@ type Elemento struct {
 	ValorIva           float64
 	ValorFinal         float64
 	SubgrupoCatalogoId int
+	TipoBienId         int
 	EstadoElementoId   *EstadoElemento
 	ActaRecibidoId     *ActaRecibido
 	Placa              string
@@ -56,6 +57,7 @@ type DetalleElemento struct {
 	ValorIva           float64
 	ValorFinal         float64
 	SubgrupoCatalogoId *DetalleSubgrupo
+	TipoBienId         *TipoBien
 	EstadoElementoId   *EstadoElemento
 	ActaRecibidoId     *ActaRecibido
 	Placa              string
@@ -85,6 +87,8 @@ type DetalleElementoSalida struct {
 	Placa              string
 	Serie              string
 	SubgrupoCatalogoId *DetalleSubgrupo
+	TipoBienId         *TipoBien
+	ValorUnitario      float64
 	ValorResidual      float64
 	ValorTotal         float64
 	VidaUtil           float64

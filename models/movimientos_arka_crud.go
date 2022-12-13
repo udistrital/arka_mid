@@ -17,19 +17,20 @@ type Movimiento struct {
 }
 
 type ElementosMovimiento struct {
-	Id                int
-	ElementoActaId    int
-	Unidad            float64
-	ValorUnitario     float64
-	ValorTotal        float64
-	SaldoCantidad     float64
-	SaldoValor        float64
-	VidaUtil          float64
-	ValorResidual     float64
-	Activo            bool
-	FechaCreacion     time.Time
-	FechaModificacion time.Time
-	MovimientoId      *Movimiento
+	Id                 int
+	ElementoActaId     int
+	ElementoCatalogoId int
+	Unidad             float64
+	ValorUnitario      float64
+	ValorTotal         float64
+	SaldoCantidad      float64
+	SaldoValor         float64
+	VidaUtil           float64
+	ValorResidual      float64
+	Activo             bool
+	FechaCreacion      time.Time
+	FechaModificacion  time.Time
+	MovimientoId       *Movimiento
 }
 
 type FormatoTipoMovimiento struct {
@@ -89,17 +90,13 @@ type FormatoBaseEntrada struct {
 	ConsecutivoId       int
 	ContratoId          int     `json:"contrato_id"`
 	Divisa              string  `json:"divisa"`
-	EncargadoId         int     `json:"encargado_id"`
 	Factura             int     `json:"factura"`
 	OrdenadorGastoId    int     `json:"ordenador_gasto_id"`
-	Placa               string  `json:"placa_id"`
+	Elementos           []int   `json:"elementos"`
 	RegistroImportacion string  `json:"num_reg_importacion"`
 	SupervisorId        int     `json:"supervisor"`
 	TRM                 float64 `json:"TRM"`
-	Vigencia            string  `json:"vigencia"`
 	VigenciaContrato    string  `json:"vigencia_contrato"`
-	VigenciaOrdenador   string  `json:"vigencia_ordenador"`
-	VigenciaSolicitante string  `json:"vigencia_solicitante"`
 }
 
 type TrSoporteMovimiento struct {

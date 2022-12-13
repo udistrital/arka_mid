@@ -11,7 +11,7 @@ import (
 )
 
 // RegistrarEntrada Crea registro de entrada en estado en trámite
-func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *models.Movimiento) (outputError map[string]interface{}) {
+func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	funcion := "RegistrarEntrada - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -36,7 +36,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *mod
 		return err
 	}
 
-	if err := actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, &acta); err != nil {
+	if err := actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, false, &acta); err != nil {
 		return err
 	}
 
@@ -45,14 +45,18 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *mod
 	}
 
 	if !etl {
-		if elementos, err := asignarPlacaActa(data.Detalle.ActaRecibidoId); err != nil {
-			return outputError
-		} else {
-			acta.Elementos = elementos
+		if msjErr, err := asignarPlacas(data.Detalle.ActaRecibidoId, &acta.Elementos); err != nil {
+			return err
+		} else if msjErr != "" {
+			resultado.Error = msjErr
+			return
+		} else if len(acta.Elementos) == 0 {
+			resultado.Error = "No se encontraron elementos asociados al acta."
+			return
 		}
 	}
 
-	*movimiento = models.Movimiento{
+	resultado.Movimiento = models.Movimiento{
 		Observacion:             data.Observacion,
 		Detalle:                 detalle,
 		Activo:                  true,
@@ -60,7 +64,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *mod
 		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoMovimiento},
 	}
 
-	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
+	if err := movimientosArka.PostMovimiento(&resultado.Movimiento); err != nil {
 		return err
 	}
 
@@ -69,7 +73,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, movimiento *mod
 		soporte := models.SoporteMovimiento{
 			DocumentoId:  data.SoporteMovimientoId,
 			Activo:       true,
-			MovimientoId: &models.Movimiento{Id: movimiento.Id},
+			MovimientoId: &models.Movimiento{Id: resultado.Movimiento.Id},
 		}
 
 		if err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {
@@ -114,10 +118,6 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "divisa")
 	}
 
-	if completo.EncargadoId == 0 {
-		delete(detalle, "encargado_id")
-	}
-
 	if completo.Factura == 0 {
 		delete(detalle, "factura")
 	}
@@ -126,8 +126,8 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "ordenador_gasto_id")
 	}
 
-	if completo.Placa == "" {
-		delete(detalle, "placa_id")
+	if len(completo.Elementos) == 0 {
+		delete(detalle, "elementos")
 	}
 
 	if completo.RegistroImportacion == "" {
@@ -142,20 +142,8 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "TRM")
 	}
 
-	if completo.Vigencia == "" {
-		delete(detalle, "vigencia")
-	}
-
 	if completo.VigenciaContrato == "" {
 		delete(detalle, "vigencia_contrato")
-	}
-
-	if completo.VigenciaOrdenador == "" {
-		delete(detalle, "vigencia_ordenador")
-	}
-
-	if completo.VigenciaSolicitante == "" {
-		delete(detalle, "vigencia_solicitante")
 	}
 
 	if !etl && consecutivo_ == nil {

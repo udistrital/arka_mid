@@ -1,7 +1,6 @@
 package actaRecibido
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -10,39 +9,29 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	// "github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
 
 // GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, offset int64) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetAllActasRecibidoActivas - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	// PARTE "0": Buffers, para evitar repetir consultas...
 	var Historico []map[string]interface{}
 	Terceros := make(map[int]interface{})
-	Ubicaciones := make(map[int]interface{})
+	Ubicaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
 
 	consultasTerceros := 0
-	consultasUbicaciones := 0
 	consultasProveedores := 0
 	evTerceros := 0
-	evUbicaciones := 0
 	evProveedores := 0
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
@@ -68,7 +57,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			err := fmt.Errorf("el usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
 			logs.Warn(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - autenticacion.DataUsuario(usrWSO2)",
+				"funcion": funcion + "autenticacion.DataUsuario(usrWSO2)",
 				"err":     err,
 				"status":  "404",
 			}
@@ -124,14 +113,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 			if proveedor || contratista {
 				// fmt.Println(usr.Documento)
-				if data, err := crudTerceros.GetTerceroByDoc(usr.Documento); err == nil {
-					// fmt.Println(data.TerceroId.Id)
-					if data.TerceroId != nil {
-						idTercero = data.TerceroId.Id
-					} else {
-						return nil, err
-					}
-				} else {
+				err := autenticacion.GetTerceroUser(usr, &idTercero)
+				if err != nil || idTercero == 0 {
 					return nil, err
 				}
 			}
@@ -169,8 +152,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
-	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=-1&sortby=ActaRecibidoId__Id&order=desc"
-	urlEstados += "&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
+	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=" + fmt.Sprint(limit) + "&offset=" + fmt.Sprint(offset)
+	urlEstados += "&sortby=ActaRecibidoId__Id&order=desc&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
 	if verTodasLasActas {
 		var hists []map[string]interface{}
 		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
@@ -184,7 +167,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlTodas, &hists)",
+				"funcion": funcion + "request.GetJsonTest(urlTodas, &hists)",
 				"err":     err,
 				"status":  "502",
 			}
@@ -192,29 +175,23 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 		}
 
 	} else if len(algunosEstados) > 0 {
-		for _, estado := range algunosEstados {
-			var hists []map[string]interface{}
-			urlEstado := urlEstados + ",EstadoActaId__Nombre:" + estado
-			urlEstado = strings.ReplaceAll(urlEstado, " ", "%20")
-			if resp, err := request.GetJsonTest(urlEstado, &hists); err == nil && resp.StatusCode == 200 {
-				if len(hists) == 0 || len(hists[0]) == 0 {
-					continue
-				}
-				Historico = append(Historico, hists...)
-			} else {
-				if err == nil {
-					err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-				}
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlEstado, &hists)",
-					"err":     err,
-					"status":  "502",
-				}
-				return nil, outputError
+		estados := strings.Join(algunosEstados, "|")
+		urlEstado := urlEstados + ",EstadoActaId__Nombre__in:" + estados
+		urlEstado = strings.ReplaceAll(urlEstado, " ", "%20")
+		var hists = make([]map[string]interface{}, 0)
+		if resp, err := request.GetJsonTest(urlEstado, &hists); err != nil || resp.StatusCode != 200 {
+			if err == nil {
+				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
 			}
+			logs.Error(err)
+			outputError = map[string]interface{}{
+				"funcion": funcion + "request.GetJsonTest(urlEstado, &hists)",
+				"err":     err,
+				"status":  "502",
+			}
+			return nil, outputError
 		}
-
+		Historico = hists
 	} else if contratista || proveedor {
 
 		urlEstados += ",EstadoActaId__Nombre"
@@ -238,7 +215,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 			}
 			logs.Error(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlContProv, &hists)",
+				"funcion": funcion + "request.GetJsonTest(urlContProv, &hists)",
 				"err":     err,
 				"status":  "502",
 			}
@@ -254,12 +231,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			var acta map[string]interface{}
 			var estado map[string]interface{}
-			var ubicacionData map[string]interface{}
 			var editor *models.Tercero
-			var preUbicacion map[string]interface{}
 			var asignado *models.Tercero
-
-			preUbicacion = nil
 
 			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
 				acta = data
@@ -290,24 +263,12 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			idUbStr := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
-			reqUbicacion := func() (interface{}, map[string]interface{}) {
-				if ubicacion, err := oikos.GetAsignacionSedeDependencia(idUbStr); err == nil {
-					return ubicacion, nil
-				} else {
-					logs.Error(err)
-					return nil, map[string]interface{}{
-						"funcion": "findAndAddUbicacion - ubicacionHelper.GetAsignacionSedeDependencia(idStr)",
-						"err":     err,
-						"status":  "502",
-					}
-				}
-			}
-			if idUb, err := strconv.Atoi(idUbStr); err == nil {
-				if v, err := utilsHelper.BufferGeneric(idUb, Ubicaciones, reqUbicacion, &consultasUbicaciones, &evUbicaciones); err == nil {
-					if v2, ok := v.(map[string]interface{}); ok {
-						preUbicacion = v2
-					}
+			if _, ok := Ubicaciones[int(historicos["UbicacionId"].(float64))]; int(historicos["UbicacionId"].(float64)) > 0 && !ok {
+				id_ := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
+				if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
+					return nil, err
+				} else if len(asignacion) == 1 {
+					Ubicaciones[int(historicos["UbicacionId"].(float64))] = asignacion[0]
 				}
 			}
 
@@ -318,24 +279,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				}
 			}
 
-			if preUbicacion != nil {
-				if jsonString2, err := json.Marshal(preUbicacion["EspacioFisicoId"]); err == nil {
-					if err2 := json.Unmarshal(jsonString2, &ubicacionData); err2 != nil {
-						logs.Error(err)
-						outputError = map[string]interface{}{
-							"funcion": "/GetAllActasRecibidoActivas",
-							"err":     err,
-							"status":  "500",
-						}
-						return nil, outputError
-					}
-				}
-			} else {
-				ubicacionData = map[string]interface{}{
-					"Nombre": "",
-				}
-			}
-
 			fVistoBueno := historicos["FechaVistoBueno"].(string)
 			if fVistoBueno == "0001-01-01T00:00:00Z" {
 				fVistoBueno = ""
@@ -343,7 +286,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 
 			Acta := map[string]interface{}{
 				"Id":                acta["Id"],
-				"UbicacionId":       ubicacionData["Nombre"],
+				"UbicacionId":       "",
 				"FechaCreacion":     acta["FechaCreacion"],
 				"FechaVistoBueno":   fVistoBueno,
 				"FechaModificacion": historicos["FechaModificacion"],
@@ -354,11 +297,14 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string) (historicoActa 
 				"EstadoActaId":      estado,
 			}
 
+			if val, ok := Ubicaciones[int(historicos["UbicacionId"].(float64))]; ok {
+				Acta["UbicacionId"] = val.EspacioFisicoId.Nombre
+			}
+
 			historicoActa = append(historicoActa, Acta)
 		}
 
 		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)
-		logs.Info("consultasUbicaciones:", consultasUbicaciones, " - Evitadas: ", evUbicaciones)
 		logs.Info("consultasProveedores:", consultasProveedores, " - Evitadas: ", evProveedores)
 		logs.Info(len(historicoActa), "actas")
 		return historicoActa, nil

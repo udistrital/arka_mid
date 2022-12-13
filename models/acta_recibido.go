@@ -8,6 +8,7 @@ type ActaRecibido struct {
 	Id                int
 	Activo            bool
 	TipoActaId        *TipoActa
+	UnidadEjecutoraId int
 	FechaCreacion     time.Time
 	FechaModificacion time.Time
 }

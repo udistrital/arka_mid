@@ -114,6 +114,22 @@ func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[s
 	return movimiento, nil
 }
 
+// GetElementosMovimientoById consulta controlador elementos_movimiento/{id} del api movimientos_arka_crud
+func GetElementosMovimientoById(id int, elemento *models.ElementosMovimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetElementosMovimientoById - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+
+	urlcrud := basePath + "elementos_movimiento/" + strconv.Itoa(id)
+	if err := request.GetJson(urlcrud, &elemento); err != nil {
+		logs.Error(err, urlcrud)
+		eval := "request.GetJson(urlcrud, &elemento)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
 // GetTrSalida consulta controlador tr_salida/{id} del api movimientos_arka_crud
 func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]interface{}) {
 
@@ -333,7 +349,7 @@ func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputE
 	return entrada, nil
 }
 
-// GetTrasladosByTerceroId consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
+// GetTrasladosByTerceroId consulta controlador movimiento/traslado/{tercero_id} del api movimientos_arka_crud
 func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "GetTrasladosByTerceroId - "
@@ -347,5 +363,35 @@ func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models
 		eval := "request.GetJson(urlcrud, &traslados)"
 		return errorctrl.Error(funcion+eval, err, "502")
 	}
+	return
+}
+
+// GetBajasByTerceroId consulta controlador movimiento/baja/{tercero_id} del api movimientos_arka_crud
+func GetBajasByTerceroId(terceroId int, bajas *[]*models.Movimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetBajasByTerceroId - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "movimiento/baja/" + strconv.Itoa(terceroId)
+	if err := request.GetJson(urlcrud, &bajas); err != nil {
+		eval := "request.GetJson(urlcrud, &bajas)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
+// GetBodegaByTerceroId consulta controlador movimiento/bodega/{tercero_id} del api movimientos_arka_crud
+func GetBodegaByTerceroId(terceroId int, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
+
+	funcion := "GetBodegaByTerceroId - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "movimiento/bodega/" + strconv.Itoa(terceroId)
+	if err := request.GetJson(urlcrud, &solicitudes); err != nil {
+		eval := "request.GetJson(urlcrud, &solicitudes)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
 	return
 }

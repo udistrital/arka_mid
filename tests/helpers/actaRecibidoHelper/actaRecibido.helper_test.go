@@ -8,7 +8,6 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/arka_mid/models"
 )
 
 var parameters struct {
@@ -31,7 +30,7 @@ func TestMain(m *testing.M) {
 
 // TestGetAllActasRecibidoActivas ...
 func TestGetAllActasRecibidoActivas(t *testing.T) {
-	valor, err := actaRecibido.GetAllActasRecibidoActivas([]string{"Aceptada"}, "ADMIN_ARKA")
+	valor, err := actaRecibido.GetAllActasRecibidoActivas([]string{"Aceptada"}, "ADMIN_ARKA", 1, 0)
 	if err != nil {
 		t.Error("No se pudo consultar las actas de recibido - err:", err)
 		t.Fail()
@@ -70,32 +69,6 @@ func TestDecodeXlsx2Json(t *testing.T) {
 	}
 }
 
-// TestGetAllParametrosSoporte ...
-func TestGetAllParametrosSoporte(t *testing.T) {
-	valor, err := actaRecibido.GetAllParametrosSoporte()
-	if err != nil {
-		t.Error("No se pudo traer los parametros de soporte - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetAllParametrosSoporte Finalizado Correctamente (OK)")
-	}
-}
-
-// TestGetAsignacionSedeDependencia ...
-func TestGetAsignacionSedeDependencia(t *testing.T) {
-	var data models.GetSedeDependencia
-
-	valor, err := actaRecibido.GetAsignacionSedeDependencia(data)
-	if err != nil {
-		t.Error("No se pudo traer la informacion de sede y dependencia - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetAsignacionSedeDependencia Finalizado Correctamente (OK)")
-	}
-}
-
 // TestGetElementos ...
 func TestGetElementos(t *testing.T) {
 	id := 14
@@ -106,31 +79,6 @@ func TestGetElementos(t *testing.T) {
 	} else {
 		t.Log(valor)
 		t.Log("TestGetElementos Finalizado Correctamente (OK)")
-	}
-}
-
-// TestGetIdElementoPlaca ...
-func TestGetIdElementoPlaca(t *testing.T) {
-	placa := "2021"
-	valor, err := actaRecibido.GetIdElementoPlaca(placa)
-	if err != nil {
-		t.Error("No se pudo consultar el id a partir de la placa - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetIdElementoPlaca Finalizado Correctamente (OK)")
-	}
-}
-
-// TestGetIdElementoPlaca ...
-func GetAllElementosConsumo(t *testing.T) {
-	valor, err := actaRecibido.GetAllElementosConsumo()
-	if err != nil {
-		t.Error("No se pudo traer los elemenmtos de consumo - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("GetAllElementosConsumo Finalizado Correctamente (OK)")
 	}
 }
 

@@ -3,13 +3,15 @@ package entradaHelper
 import (
 	"strconv"
 
+	administrativa_ "github.com/udistrital/administrativa_mid_api/models"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	tercerosCRUD "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
-	tercerosMID "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -18,8 +20,7 @@ import (
 // DetalleEntrada Consulta el detalle de una entrada incluyendo la transaccion contable (si aplica)
 func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
-	funcion := "DetalleEntrada"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
 	var (
 		detalle    models.FormatoBaseEntrada
@@ -40,21 +41,20 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, err
 	}
 
-	if detalle.ContratoId > 0 {
-		if vigencia, err := strconv.Atoi(detalle.VigenciaContrato); err == nil && vigencia > 0 {
-			if contrato, err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato); err != nil {
-				return nil, err
-			} else {
-				if val, ok := contrato["contrato"].(map[string]interface{})["tipo_contrato"].(string); ok {
-					if num, err := strconv.Atoi(val); num > 0 && err == nil {
-						var tipoContrato interface{}
-						if err := administrativa.GetTipoContratoById(num, &tipoContrato); err != nil {
-							return nil, err
-						}
-						contrato["contrato"].(map[string]interface{})["tipo_contrato"] = tipoContrato
-					}
+	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
+		var contrato administrativa_.InformacionContrato
+		if err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato); err != nil {
+			return nil, err
+		}
+
+		if contrato.Contrato.NumeroContratoSuscrito != "" {
+			resultado["contrato"] = contrato.Contrato
+			if contrato.Contrato.TipoContrato != "" {
+				var tipoContrato administrativa_.TipoContrato
+				if err := administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato); err != nil {
+					return nil, err
 				}
-				resultado["contrato"] = contrato["contrato"]
+				resultado["tipo_contrato_id"] = tipoContrato
 			}
 		}
 	}
@@ -67,12 +67,12 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
 					return nil, err
 				} else {
-					trContable := map[string]interface{}{
-						"movimientos": detalleContable,
-						"concepto":    tr.Descripcion,
-						"fecha":       tr.FechaTransaccion,
+					trContable := models.InfoTransaccionContable{
+						Movimientos: detalleContable,
+						Concepto:    tr.Descripcion,
+						Fecha:       tr.FechaTransaccion,
 					}
-					resultado["trContable"] = trContable
+					resultado["TransaccionContable"] = trContable
 				}
 			}
 		}
@@ -94,6 +94,14 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 				resultado["proveedor"] = tercero
 			}
 		}
+
+		if acta.ActaRecibidoId.UnidadEjecutoraId > 0 {
+			var unidadEjecutora models.Parametro
+			if err := parametros.GetParametroById(acta.ActaRecibidoId.UnidadEjecutoraId, &unidadEjecutora); err != nil {
+				return nil, err
+			}
+			resultado["unidadEjecutora"] = unidadEjecutora
+		}
 	}
 
 	if detalle.Factura > 0 {
@@ -105,29 +113,67 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if detalle.SupervisorId > 0 {
-		supervisor := make([]map[string]interface{}, 0)
-		if err := tercerosMID.GetTercerosByTipo("funcionarioPlanta", detalle.SupervisorId, &supervisor); err != nil {
+		supervisor := make(map[string]interface{})
+		if err := administrativaAMAZON.GetSupervisor(detalle.SupervisorId, &supervisor); err != nil {
 			return nil, err
 		} else if len(supervisor) > 0 {
-			resultado["supervisor"] = supervisor[0]
+			resultado["supervisor"] = supervisor
 		}
+
+		if val, ok := supervisor["DependenciaSupervisor"]; ok && val != nil && val.(string) != "" {
+			var dependencia []interface{}
+			if err := administrativaAMAZON.GetAllDependenciaSIC("query=ESFCODIGODEP:"+val.(string), &dependencia); err != nil {
+				return nil, err
+			}
+
+			if len(dependencia) > 0 {
+				supervisor["DependenciaSupervisor"] = dependencia[0]
+				resultado["supervisor"] = supervisor
+			}
+		}
+
 	}
 
 	if detalle.OrdenadorGastoId > 0 {
-		ordenadores := make([]map[string]interface{}, 0)
-		if err := tercerosMID.GetTercerosByTipo("ordenadoresGasto", detalle.OrdenadorGastoId, &ordenadores); err != nil {
+		ordenadores := make(map[string]interface{})
+		if err := administrativaAMAZON.GetOrdenadores(detalle.OrdenadorGastoId, &ordenadores); err != nil {
 			return nil, err
 		} else if len(ordenadores) > 0 {
-			resultado["ordenador"] = ordenadores[0]
+			resultado["ordenador"] = ordenadores
 		}
 	}
 
-	if detalle.Placa != "" {
-		if encargado, err := GetEncargadoElemento(detalle.Placa); err != nil {
+	if len(detalle.Elementos) > 0 {
+		query = "query=Id__in:" + utilsHelper.ArrayToString(detalle.Elementos, "|")
+		elementos, err := movimientosArka.GetAllElementosMovimiento(query)
+		if err != nil {
 			return nil, err
-		} else if encargado != nil {
-			resultado["encargado"] = encargado
 		}
+
+		var detalleElementos = make([]map[string]interface{}, 0)
+		for _, el := range elementos {
+			var elemento_ models.Elemento
+			if err := actaRecibido.GetElementoById(el.ElementoActaId, &elemento_); err != nil {
+				return nil, err
+			}
+
+			detalleElemento := map[string]interface{}{
+				"Salida":     el.MovimientoId,
+				"Placa":      elemento_.Placa,
+				"ValorTotal": elemento_.ValorTotal,
+			}
+
+			detalleElementos = append(detalleElementos, detalleElemento)
+
+		}
+
+		resultado["elementos"] = detalleElementos
+	}
+
+	if soporte, err := movimientosArka.GetAllSoporteMovimiento("fields=DocumentoId&query=MovimientoId__Id:" + strconv.Itoa(entradaId)); err != nil {
+		return nil, err
+	} else if len(soporte) > 0 {
+		resultado["documentoId"] = soporte[0].DocumentoId
 	}
 
 	resultado["movimiento"] = movimiento

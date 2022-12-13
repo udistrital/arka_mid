@@ -20,8 +20,8 @@
                 "tags": [
                     "acta_recibido"
                 ],
-                "description": "get ActaRecibido",
-                "operationId": "ActaRecibidoController.Get All",
+                "description": "Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud",
+                "operationId": "ActaRecibidoController.Consulta de valores paramétricos",
                 "responses": {
                     "200": {
                         "description": "",
@@ -62,73 +62,7 @@
                 }
             }
         },
-        "/acta_recibido/elementosconsumo/": {
-            "get": {
-                "tags": [
-                    "acta_recibido"
-                ],
-                "description": "Trae todos los elementos de consumo",
-                "operationId": "ActaRecibidoController.GetAllElementosConsumo",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.Elemento"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
-        "/acta_recibido/get_all_actas/": {
-            "get": {
-                "tags": [
-                    "acta_recibido"
-                ],
-                "description": "get ActaRecibido",
-                "operationId": "ActaRecibidoController.Get All Actas",
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "states",
-                        "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "u",
-                        "description": "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user",
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.ActaRecibido"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "\"Wrong IDs\""
-                    },
-                    "404": {
-                        "description": "\"not found resource\""
-                    },
-                    "500": {
-                        "description": "\"Unknown API Error\""
-                    },
-                    "502": {
-                        "description": "\"External API Error\""
-                    }
-                }
-            }
-        },
-        "/acta_recibido/get_elementos_acta/{id}": {
+        "/acta_recibido/elementos/{id}": {
             "get": {
                 "tags": [
                     "acta_recibido"
@@ -169,6 +103,64 @@
                     },
                     "502": {
                         "description": "Error with external API"
+                    }
+                }
+            }
+        },
+        "/acta_recibido/get_all_actas/": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "get ActaRecibido",
+                "operationId": "ActaRecibidoController.Get All Actas",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "states",
+                        "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "u",
+                        "description": "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "description": "Limit the size of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ActaRecibido"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\"Wrong IDs\""
+                    },
+                    "404": {
+                        "description": "\"not found resource\""
+                    },
+                    "500": {
+                        "description": "\"Unknown API Error\""
+                    },
+                    "502": {
+                        "description": "\"External API Error\""
                     }
                 }
             }
@@ -357,6 +349,48 @@
             }
         },
         "/bajas_elementos/": {
+            "get": {
+                "tags": [
+                    "bajas_elementos"
+                ],
+                "description": "Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite",
+                "operationId": "BajaController.Get All",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "user",
+                        "description": "Tercero que consulta las bajas",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "revComite",
+                        "description": "Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen",
+                        "type": "boolean"
+                    },
+                    {
+                        "in": "query",
+                        "name": "revAlmacen",
+                        "description": "Indica si se traen las bajas pendientes por revisar",
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DetalleBaja"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "bajas_elementos"
@@ -454,44 +488,7 @@
                 }
             }
         },
-        "/bajas_elementos/solicitud/": {
-            "get": {
-                "tags": [
-                    "bajas_elementos"
-                ],
-                "description": "Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite",
-                "operationId": "BajaController.Get All",
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "revComite",
-                        "description": "Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen",
-                        "type": "boolean"
-                    },
-                    {
-                        "in": "query",
-                        "name": "revAlmacen",
-                        "description": "Indica si se traen las bajas pendientes por revisar",
-                        "type": "boolean"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.DetalleBaja"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
-        "/bajas_elementos/solicitud/{id}": {
+        "/bajas_elementos/{id}": {
             "get": {
                 "tags": [
                     "bajas_elementos"
@@ -524,9 +521,7 @@
                         "description": "\"External API Error\""
                     }
                 }
-            }
-        },
-        "/bajas_elementos/{id}": {
+            },
             "put": {
                 "tags": [
                     "bajas_elementos"
@@ -636,6 +631,13 @@
                 "description": "get Lista solicitudes de elementos de la bodega de consumo.",
                 "operationId": "BodegaConsumoController.GetAllSolicitud",
                 "parameters": [
+                    {
+                        "in": "query",
+                        "name": "user",
+                        "description": "Tercero que consulta las solicitudes a bodega de consumo",
+                        "required": true,
+                        "type": "string"
+                    },
                     {
                         "in": "query",
                         "name": "tramite_only",
@@ -921,32 +923,6 @@
                 }
             }
         },
-        "/entrada/encargado/{placa}": {
-            "get": {
-                "tags": [
-                    "entrada"
-                ],
-                "description": "get Entradas",
-                "operationId": "EntradaController.Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "placa",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{\"funcionario\": \"string\"}"
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/entrada/movimientos/{acta_recibido_id}": {
             "get": {
                 "tags": [
@@ -998,63 +974,6 @@
                     },
                     "403": {
                         "description": ":id is empty"
-                    }
-                }
-            }
-        },
-        "/parametros_soporte/": {
-            "get": {
-                "tags": [
-                    "parametros_soporte"
-                ],
-                "description": "get ActaRecibido",
-                "operationId": "ParametrosController.Get All",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ActaRecibido"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
-        "/parametros_soporte/post_asignacion_espacio_fisico_dependencia/": {
-            "post": {
-                "tags": [
-                    "parametros_soporte"
-                ],
-                "description": "get Soportes by id",
-                "operationId": "ParametrosController.Post Soportes",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.GetSedeDependencia"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.AsignacionEspacioFisicoDependencia"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "the request contains incorrect syntax"
-                    },
-                    "404": {
-                        "description": "not found resource"
                     }
                 }
             }
@@ -1127,7 +1046,7 @@
                 "tags": [
                     "salida"
                 ],
-                "description": "get Entradas",
+                "description": "Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas",
                 "operationId": "SalidaController.Get User",
                 "parameters": [
                     {
@@ -1190,6 +1109,47 @@
                     },
                     "403": {
                         "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/salida/elementos": {
+            "get": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "Get elementos para asignar en salida segun la entrada o la salida",
+                "operationId": "SalidaController.GetElementos",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "entrada_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "salida_id",
+                        "description": "Id de la salida que se debe actualizar",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DetalleElementoSalida"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
@@ -1307,8 +1267,7 @@
                         "in": "query",
                         "name": "user",
                         "description": "Tercero que consulta los traslados",
-                        "type": "integer",
-                        "format": "int64"
+                        "type": "string"
                     },
                     {
                         "in": "query",
@@ -1479,6 +1438,10 @@
                 },
                 "TipoActaId": {
                     "$ref": "#/definitions/models.TipoActa"
+                },
+                "UnidadEjecutoraId": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
@@ -1630,10 +1593,6 @@
                 },
                 "Observacion": {
                     "type": "string"
-                },
-                "Solicitante": {
-                    "type": "integer",
-                    "format": "int64"
                 },
                 "TipoEntradaId": {
                     "$ref": "#/definitions/models.TipoEntrada"
@@ -1888,6 +1847,9 @@
                 },
                 "SubtipoMovimientoId": {
                     "$ref": "#/definitions/models.FormatoTipoMovimiento"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
                 }
             }
         },
@@ -1946,6 +1908,9 @@
                 "Subtotal": {
                     "type": "number",
                     "format": "double"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
                 },
                 "UnidadMedida": {
                     "type": "integer",
@@ -2033,6 +1998,58 @@
                 }
             }
         },
+        "models.DetalleElementoSalida": {
+            "title": "DetalleElementoSalida",
+            "type": "object",
+            "properties": {
+                "Cantidad": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ElementoActaId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Marca": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Placa": {
+                    "type": "string"
+                },
+                "Serie": {
+                    "type": "string"
+                },
+                "SubgrupoCatalogoId": {
+                    "$ref": "#/definitions/models.DetalleSubgrupo"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorTotal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorUnitario": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.DetalleElemento_": {
             "title": "DetalleElemento_",
             "type": "object",
@@ -2089,6 +2106,10 @@
                 "Subtotal": {
                     "type": "number",
                     "format": "double"
+                },
+                "TipoBienId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "UnidadMedida": {
                     "type": "integer",
@@ -2175,6 +2196,9 @@
                 "Subtotal": {
                     "type": "number",
                     "format": "double"
+                },
+                "TipoBienId": {
+                    "$ref": "#/definitions/models.TipoBien"
                 },
                 "UnidadMedida": {
                     "type": "integer",
@@ -2464,6 +2488,10 @@
                     "type": "number",
                     "format": "double"
                 },
+                "TipoBienId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "UnidadMedida": {
                     "type": "integer",
                     "format": "int64"
@@ -2746,6 +2774,10 @@
                     "type": "integer",
                     "format": "int64"
                 },
+                "ElementoCatalogoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "FechaCreacion": {
                     "type": "string",
                     "format": "datetime"
@@ -2938,9 +2970,12 @@
                 "divisa": {
                     "type": "string"
                 },
-                "encargado_id": {
-                    "type": "integer",
-                    "format": "int64"
+                "elementos": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
                 },
                 "factura": {
                     "type": "integer",
@@ -2953,23 +2988,11 @@
                     "type": "integer",
                     "format": "int64"
                 },
-                "placa_id": {
-                    "type": "string"
-                },
                 "supervisor": {
                     "type": "integer",
                     "format": "int64"
                 },
-                "vigencia": {
-                    "type": "string"
-                },
                 "vigencia_contrato": {
-                    "type": "string"
-                },
-                "vigencia_ordenador": {
-                    "type": "string"
-                },
-                "vigencia_solicitante": {
                     "type": "string"
                 }
             }
@@ -3031,18 +3054,6 @@
                 "NumeroOrden": {
                     "type": "number",
                     "format": "double"
-                }
-            }
-        },
-        "models.GetSedeDependencia": {
-            "title": "GetSedeDependencia",
-            "type": "object",
-            "properties": {
-                "Dependencia": {
-                    "$ref": "#/definitions/models.Dependencia"
-                },
-                "Sede": {
-                    "$ref": "#/definitions/models.EspacioFisico"
                 }
             }
         },
@@ -3575,13 +3586,21 @@
                 "Activo": {
                     "type": "boolean"
                 },
-                "CodigoAbreviacion": {
-                    "type": "string"
+                "BodegaConsumo": {
+                    "type": "boolean"
                 },
                 "Descripcion": {
                     "type": "string"
                 },
                 "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "LimiteInferior": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "LimiteSuperior": {
                     "type": "integer",
                     "format": "int64"
                 },
@@ -3594,14 +3613,10 @@
                 "Nombre": {
                     "type": "string"
                 },
-                "Orden": {
-                    "type": "number",
-                    "format": "double"
-                },
                 "Reglas": {
                     "type": "string"
                 },
-                "Tipo_bien_padre": {
+                "TipoBienPadreId": {
                     "$ref": "#/definitions/models.TipoBien"
                 }
             }
@@ -3981,10 +3996,6 @@
         {
             "name": "entrada",
             "description": "EntradaController operations for Entrada\n"
-        },
-        {
-            "name": "parametros_soporte",
-            "description": "ParametrosController operations for Parametros\n"
         },
         {
             "name": "catalogo_elementos",

@@ -9,7 +9,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	//"github.com/udistrital/acta_recibido_crud/models"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 )
 
@@ -21,9 +20,8 @@ type ActaRecibidoController struct {
 // URLMapping ...
 func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("Post", c.Post)
-	c.Mapping("GetAll", c.GetAll)
+	c.Mapping("GetParametros", c.GetParametros)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
-	c.Mapping("GetAllElementosConsumo", c.GetAllElementosConsumo)
 	c.Mapping("GetAllActas", c.GetAllActas)
 }
 
@@ -68,13 +66,13 @@ func (c *ActaRecibidoController) Post() {
 	c.ServeJSON()
 }
 
-// GetAll ...
-// @Title Get All
-// @Description get ActaRecibido
+// GetParametros ...
+// @Title Consulta de valores paramétricos
+// @Description Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud
 // @Success 200 {object} models.ActaRecibido
 // @Failure 404 not found resource
 // @router / [get]
-func (c *ActaRecibidoController) GetAll() {
+func (c *ActaRecibidoController) GetParametros() {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -108,7 +106,7 @@ func (c *ActaRecibidoController) GetAll() {
 // @Failure 404 not found resource
 // @Failure 500 Internal Error
 // @Failure 502 Error with external API
-// @router /get_elementos_acta/:id [get]
+// @router /elementos/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 
 	defer func() {
@@ -154,41 +152,13 @@ func (c *ActaRecibidoController) GetElementosActa() {
 	c.ServeJSON()
 }
 
-// GetAllElementosConsumo ...
-// @Title GetAllElementosConsumo
-// @Description Trae todos los elementos de consumo
-// @Success 200 {object} models.Elemento
-// @Failure 404 not found resource
-// @router /elementosconsumo/ [get]
-func (c *ActaRecibidoController) GetAllElementosConsumo() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
-
-	if l, err := actaRecibido.GetAllElementosConsumo(); err != nil {
-		panic(err)
-	} else {
-		c.Data["json"] = l
-	}
-	c.ServeJSON()
-}
-
 // GetAllActas ...
 // @Title Get All Actas
 // @Description get ActaRecibido
 // @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Param u query string false "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
+// @Param 	limit	query	string	false	"Limit the size of result set. Must be an integer"
+// @Param	offset	query	string	false	"Start position of result set. Must be an integer"
 // @Success 200 {object} []models.ActaRecibido
 // @Failure 400 "Wrong IDs"
 // @Failure 404 "not found resource"
@@ -213,6 +183,8 @@ func (c *ActaRecibidoController) GetAllActas() {
 
 	var reqStates []string
 	var WSO2user string
+	var limit int64 = 10
+	var offset int64
 
 	if v := c.GetString("states"); v != "" {
 		valido := false
@@ -256,7 +228,16 @@ func (c *ActaRecibidoController) GetAllActas() {
 		}
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user); err == nil {
+	// limit: 10 (default is 10)
+	if v, err := c.GetInt64("limit"); err == nil {
+		limit = v
+	}
+	// offset: 0 (default is 0)
+	if v, err := c.GetInt64("offset"); err == nil {
+		offset = v
+	}
+
+	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
 		// fmt.Print("DATA FINAL: ")
 		// fmt.Println(l)
 		if l == nil {
