@@ -166,35 +166,42 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		var editor models.Tercero
 		var asignado models.Tercero
 
-		if val, ok := Terceros[historico.RevisorId]; !ok {
-			if funcionario_, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
-				return nil, err
+		if historico.RevisorId > 0 {
+			if val, ok := Terceros[historico.RevisorId]; !ok {
+				logs.Info("Consulta revisor: ", historico.RevisorId)
+				if revisor, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
+					return nil, err
+				} else if revisor != nil {
+					editor = *revisor
+					Terceros[historico.RevisorId] = *revisor
+				}
 			} else {
-				editor = *funcionario_
-				Terceros[historico.RevisorId] = *funcionario_
-			}
-		} else {
-			editor = val
-		}
-
-		if _, ok := Ubicaciones[historico.UbicacionId]; historico.UbicacionId > 0 && !ok {
-			id_ := strconv.Itoa(historico.UbicacionId)
-			if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
-				return nil, err
-			} else if len(asignacion) == 1 {
-				Ubicaciones[historico.UbicacionId] = asignacion[0]
+				editor = val
 			}
 		}
 
-		if val, ok := Terceros[historico.PersonaAsignadaId]; !ok {
-			if funcionario_, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
-				return nil, err
-			} else {
-				asignado = *funcionario_
-				Terceros[historico.PersonaAsignadaId] = *funcionario_
+		if historico.UbicacionId > 0 {
+			if _, ok := Ubicaciones[historico.UbicacionId]; !ok {
+				id_ := strconv.Itoa(historico.UbicacionId)
+				if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
+					return nil, err
+				} else if len(asignacion) == 1 {
+					Ubicaciones[historico.UbicacionId] = asignacion[0]
+				}
 			}
-		} else {
-			asignado = val
+		}
+
+		if historico.PersonaAsignadaId > 0 {
+			if val, ok := Terceros[historico.PersonaAsignadaId]; !ok {
+				if revisor, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
+					return nil, err
+				} else if revisor != nil {
+					asignado = *revisor
+					Terceros[historico.PersonaAsignadaId] = *revisor
+				}
+			} else {
+				asignado = val
+			}
 		}
 
 		Acta := map[string]interface{}{
@@ -210,7 +217,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			"EstadoActaId":      historico.EstadoActaId,
 		}
 
-		if val, ok := Ubicaciones[historico.UbicacionId]; ok {
+		if val, ok := Ubicaciones[historico.UbicacionId]; ok && val.EspacioFisicoId != nil {
 			Acta["UbicacionId"] = val.EspacioFisicoId.Nombre
 		}
 
