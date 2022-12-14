@@ -168,9 +168,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 		var editor models.Tercero
 		var asignado models.Tercero
+		logs.Info("acta nil:", historico.ActaRecibidoId == nil)
 
 		if historico.RevisorId > 0 {
 			if val, ok := Terceros[historico.RevisorId]; !ok {
+				logs.Info("Consulta revisor: ", historico.RevisorId)
 				if revisor, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
 					return nil, err
 				} else if revisor != nil {
@@ -183,7 +185,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		}
 
 		if historico.UbicacionId > 0 {
-			if _, ok := Ubicaciones[historico.UbicacionId]; historico.UbicacionId > 0 && !ok {
+			if _, ok := Ubicaciones[historico.UbicacionId]; !ok {
+				logs.Info("Consulta ubi: ", historico.UbicacionId)
 				id_ := strconv.Itoa(historico.UbicacionId)
 				if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
 					return nil, err
@@ -195,6 +198,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 		if historico.PersonaAsignadaId > 0 {
 			if val, ok := Terceros[historico.PersonaAsignadaId]; !ok {
+				logs.Info("Consulta asignado: ", historico.UbicacionId)
 				if revisor, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
 					return nil, err
 				} else if revisor != nil {
@@ -206,6 +210,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			}
 		}
 
+		logs.Info("Consulta todos: ", historico.UbicacionId)
 		Acta := map[string]interface{}{
 			"Id":                historico.ActaRecibidoId.Id,
 			"UbicacionId":       "",
