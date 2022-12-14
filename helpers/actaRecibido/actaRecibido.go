@@ -14,12 +14,8 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-func RemoveIndex(s []byte, index int) []byte {
-	return append(s[:index], s[index+1:]...)
-}
-
 // GetAllParametrosActa Consulta diferentes valores paramétricos
-func GetAllParametrosActa() (parametros_ []map[string]interface{}, outputError map[string]interface{}) {
+func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "GetAllParametrosActa - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -61,12 +57,12 @@ func GetAllParametrosActa() (parametros_ []map[string]interface{}, outputError m
 		return
 	}
 
-	parametros_ = append(parametros_, map[string]interface{}{
+	parametros_ = map[string]interface{}{
 		"Unidades":       Unidades,
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
 		"IVA":            Ivas,
-	})
+	}
 
 	return parametros_, nil
 }
