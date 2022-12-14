@@ -35,7 +35,7 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 }
 
 // GetAllDatosIdentificacion get controlador datos_identificacion de api terceros_crud
-func GetAllDatosIdentificacion(query string) (datosId []*models.DatosIdentificacion, outputError map[string]interface{}) {
+func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificacion, outputError map[string]interface{}) {
 
 	funcion := "GetAllDatosIdentificacion"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")

@@ -2,43 +2,28 @@ package actaRecibido
 
 import (
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
-	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // GetAllActasRecibido ...
 func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, offset int64) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+
+	funcion := "GetAllActasRecibidoActivas - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	// PARTE "0": Buffers, para evitar repetir consultas...
-	var Historico []map[string]interface{}
-	Terceros := make(map[int]interface{})
+	Terceros := make(map[int]models.Tercero)
 	Ubicaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
-
-	consultasTerceros := 0
-	consultasProveedores := 0
-	evTerceros := 0
-	evProveedores := 0
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
 	// (y así definir la estrategia para traer las actas)
@@ -63,7 +48,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			err := fmt.Errorf("el usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
 			logs.Warn(err)
 			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - autenticacion.DataUsuario(usrWSO2)",
+				"funcion": funcion + "autenticacion.DataUsuario(usrWSO2)",
 				"err":     err,
 				"status":  "404",
 			}
@@ -119,13 +104,8 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			}
 			if proveedor || contratista {
 				// fmt.Println(usr.Documento)
-				if data, err := crudTerceros.GetTerceroByDoc(usr.Documento); err == nil {
-					if data.TerceroId != nil {
-						idTercero = data.TerceroId.Id
-					} else {
-						return nil, err
-					}
-				} else {
+				err := autenticacion.GetTerceroUser(usr, &idTercero)
+				if err != nil || idTercero == 0 {
 					return nil, err
 				}
 			}
@@ -163,164 +143,89 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 	// - buscar el historico_acta mas reciente
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
-	urlEstados := "http://" + beego.AppConfig.String("actaRecibidoService") + "historico_acta?limit=" + fmt.Sprint(limit) + "&offset=" + fmt.Sprint(offset)
-	urlEstados += "&sortby=ActaRecibidoId__Id&order=desc&query=Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
-	if verTodasLasActas {
-		var hists []map[string]interface{}
-		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || len(hists[0]) == 0 {
-				return nil, nil
-			}
-			Historico = append(Historico, hists...)
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-			}
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlTodas, &hists)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-
-	} else if len(algunosEstados) > 0 {
-		estados := strings.Join(algunosEstados, "|")
-		urlEstado := urlEstados + ",EstadoActaId__Nombre__in:" + estados
-		urlEstado = strings.ReplaceAll(urlEstado, " ", "%20")
-		var hists = make([]map[string]interface{}, 0)
-		if resp, err := request.GetJsonTest(urlEstado, &hists); err != nil || resp.StatusCode != 200 {
-			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-			}
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlEstado, &hists)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-		Historico = hists
+	query := "Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
+	if len(algunosEstados) > 0 {
+		query += ",EstadoActaId__Nombre__in:" + strings.Join(algunosEstados, "|")
 	} else if contratista || proveedor {
-
-		urlEstados += ",EstadoActaId__Nombre"
+		query += ",EstadoActaId__Nombre"
 		if contratista {
-			urlEstados += "__in:" + url.QueryEscape("En Elaboracion|En Modificacion")
-			urlEstados += ",PersonaAsignadaId:" + fmt.Sprint(idTercero)
+			query += "__in:En Elaboracion|En Modificacion,PersonaAsignadaId:" + fmt.Sprint(idTercero)
 		} else if proveedor {
-			urlEstados += ":" + url.QueryEscape("En Elaboracion")
-			urlEstados += ",ProveedorId:" + fmt.Sprint(idTercero)
+			query += ":En Elaboracion,ProveedorId:" + fmt.Sprint(idTercero)
 		}
+	}
 
-		var hists []map[string]interface{}
-		if resp, err := request.GetJsonTest(urlEstados, &hists); err == nil && resp.StatusCode == 200 {
-			if len(hists) == 0 || len(hists[0]) == 0 {
-				return nil, nil
-			}
-			Historico = append(Historico, hists...)
-		} else {
-			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
-			}
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "GetAllActasRecibidoActivas - request.GetJsonTest(urlContProv, &hists)",
-				"err":     err,
-				"status":  "502",
-			}
-			return nil, outputError
-		}
-
+	historicos, err := actaRecibido.GetAllHistoricoActa(query, "", "ActaRecibidoId__Id", "desc", fmt.Sprint(offset), fmt.Sprint(limit))
+	if err != nil {
+		return nil, err
 	}
 
 	// PARTE 3: Completar data faltante
-	if len(Historico) > 0 {
+	for _, historico := range historicos {
 
-		for _, historicos := range Historico {
+		var editor models.Tercero
+		var asignado models.Tercero
 
-			var acta map[string]interface{}
-			var estado map[string]interface{}
-			var editor *models.Tercero
-			var asignado *models.Tercero
-
-			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["ActaRecibidoId"]); err == nil {
-				acta = data
-			} else {
-				return nil, err
-			}
-
-			if data, err := utilsHelper.ConvertirInterfaceMap(historicos["EstadoActaId"]); err == nil {
-				estado = data
-			} else {
-				return nil, err
-			}
-
-			reqTercero := func(id int) func() (interface{}, map[string]interface{}) {
-				return func() (interface{}, map[string]interface{}) {
-					if Tercero, err := crudTerceros.GetTerceroById(id); err == nil {
-						return Tercero, nil
-					} else {
-						return nil, err
-					}
+		if historico.RevisorId > 0 {
+			if val, ok := Terceros[historico.RevisorId]; !ok {
+				logs.Info("Consulta revisor: ", historico.RevisorId)
+				if revisor, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
+					return nil, err
+				} else if revisor != nil {
+					editor = *revisor
+					Terceros[historico.RevisorId] = *revisor
 				}
+			} else {
+				editor = val
 			}
+		}
 
-			idRev := int(historicos["RevisorId"].(float64))
-			if v, err := utilsHelper.BufferGeneric(idRev, Terceros, reqTercero(idRev), &consultasTerceros, &evTerceros); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					editor = v2
-				}
-			}
-
-			if _, ok := Ubicaciones[int(historicos["UbicacionId"].(float64))]; int(historicos["UbicacionId"].(float64)) > 0 && !ok {
-				id_ := strconv.Itoa(int(historicos["UbicacionId"].(float64)))
+		if historico.UbicacionId > 0 {
+			if _, ok := Ubicaciones[historico.UbicacionId]; !ok {
+				id_ := strconv.Itoa(historico.UbicacionId)
 				if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
 					return nil, err
 				} else if len(asignacion) == 1 {
-					Ubicaciones[int(historicos["UbicacionId"].(float64))] = asignacion[0]
+					Ubicaciones[historico.UbicacionId] = asignacion[0]
 				}
 			}
-
-			idAsignado := int(historicos["PersonaAsignadaId"].(float64))
-			if v, err := utilsHelper.BufferGeneric(idAsignado, Terceros, reqTercero(idAsignado), &consultasTerceros, &evTerceros); err == nil {
-				if v2, ok := v.(*models.Tercero); ok {
-					asignado = v2
-				}
-			}
-
-			fVistoBueno := historicos["FechaVistoBueno"].(string)
-			if fVistoBueno == "0001-01-01T00:00:00Z" {
-				fVistoBueno = ""
-			}
-
-			Acta := map[string]interface{}{
-				"Id":                acta["Id"],
-				"UbicacionId":       "",
-				"FechaCreacion":     acta["FechaCreacion"],
-				"FechaVistoBueno":   fVistoBueno,
-				"FechaModificacion": historicos["FechaModificacion"],
-				"Observaciones":     historicos["Observaciones"],
-				"RevisorId":         editor.NombreCompleto,
-				"PersonaAsignada":   asignado.NombreCompleto,
-				"Estado":            estado["Nombre"],
-				"EstadoActaId":      estado,
-			}
-
-			if val, ok := Ubicaciones[int(historicos["UbicacionId"].(float64))]; ok {
-				Acta["UbicacionId"] = val.EspacioFisicoId.Nombre
-			}
-
-			historicoActa = append(historicoActa, Acta)
 		}
 
-		logs.Info("consultasTerceros:", consultasTerceros, " - Evitadas: ", evTerceros)
-		logs.Info("consultasProveedores:", consultasProveedores, " - Evitadas: ", evProveedores)
-		logs.Info(len(historicoActa), "actas")
-		return historicoActa, nil
+		if historico.PersonaAsignadaId > 0 {
+			if val, ok := Terceros[historico.PersonaAsignadaId]; !ok {
+				if revisor, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
+					return nil, err
+				} else if revisor != nil {
+					asignado = *revisor
+					Terceros[historico.PersonaAsignadaId] = *revisor
+				}
+			} else {
+				asignado = val
+			}
+		}
 
-	} else {
-		return nil, nil
+		Acta := map[string]interface{}{
+			"Id":                historico.ActaRecibidoId.Id,
+			"UbicacionId":       "",
+			"FechaCreacion":     historico.FechaCreacion,
+			"FechaVistoBueno":   historico.FechaVistoBueno,
+			"FechaModificacion": historico.FechaModificacion,
+			"Observaciones":     historico.Observaciones,
+			"RevisorId":         editor.NombreCompleto,
+			"PersonaAsignada":   asignado.NombreCompleto,
+			"Estado":            historico.EstadoActaId.Nombre,
+			"EstadoActaId":      historico.EstadoActaId,
+		}
+
+		if val, ok := Ubicaciones[historico.UbicacionId]; ok && val.EspacioFisicoId != nil {
+			Acta["UbicacionId"] = val.EspacioFisicoId.Nombre
+		}
+
+		historicoActa = append(historicoActa, Acta)
 	}
+
+	logs.Info(len(historicoActa), "actas")
+
+	return historicoActa, nil
+
 }

@@ -62,6 +62,51 @@
                 }
             }
         },
+        "/acta_recibido/elementos/{id}": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "get Elementos by id",
+                "operationId": "ActaRecibidoController.Get Elementos",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "id del acta",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Elemento"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Empty response (Due to Act not found or without elements)"
+                    },
+                    "400": {
+                        "description": "Wrong ID (MUST be greater than 0)"
+                    },
+                    "404": {
+                        "description": "not found resource"
+                    },
+                    "500": {
+                        "description": "Internal Error"
+                    },
+                    "502": {
+                        "description": "Error with external API"
+                    }
+                }
+            }
+        },
         "/acta_recibido/get_all_actas/": {
             "get": {
                 "tags": [
@@ -116,51 +161,6 @@
                     },
                     "502": {
                         "description": "\"External API Error\""
-                    }
-                }
-            }
-        },
-        "/acta_recibido/get_elementos_acta/{id}": {
-            "get": {
-                "tags": [
-                    "acta_recibido"
-                ],
-                "description": "get Elementos by id",
-                "operationId": "ActaRecibidoController.Get Elementos",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "id del acta",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Elemento"
-                            }
-                        }
-                    },
-                    "204": {
-                        "description": "Empty response (Due to Act not found or without elements)"
-                    },
-                    "400": {
-                        "description": "Wrong ID (MUST be greater than 0)"
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    },
-                    "500": {
-                        "description": "Internal Error"
-                    },
-                    "502": {
-                        "description": "Error with external API"
                     }
                 }
             }
