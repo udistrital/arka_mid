@@ -36,6 +36,7 @@ func GetAllElemento(query string, fields string, sortby string, order string, of
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := path + "elemento?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
+	logs.Info(urlcrud)
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		logs.Error(urlcrud+", ", err)
 		eval := "request.GetJson(urlcrud, &elementos)"

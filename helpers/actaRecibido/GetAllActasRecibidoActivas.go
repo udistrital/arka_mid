@@ -39,7 +39,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		// Traer la información de Autenticación MID para obtener los roles
 		var usr models.UsuarioAutenticacion
 		if data, err := autenticacion.DataUsuario(usrWSO2); err == nil && data.Role != nil && len(data.Role) > 0 {
-			// logs.Debug(data)
+			logs.Debug(data)
 			usr = data
 		} else if err != nil {
 			// formatdata.JsonPrint(data)
@@ -155,11 +155,14 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		}
 	}
 
+	logs.Info("query:", query)
 	historicos, err := actaRecibido.GetAllHistoricoActa(query, "", "ActaRecibidoId__Id", "desc", fmt.Sprint(offset), fmt.Sprint(limit))
 	if err != nil {
 		return nil, err
 	}
 
+	logs.Debug(historicos)
+	logs.Info("actas:", len(historicos))
 	// PARTE 3: Completar data faltante
 	for _, historico := range historicos {
 
