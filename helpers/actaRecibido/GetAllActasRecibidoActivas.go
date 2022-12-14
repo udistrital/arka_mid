@@ -171,11 +171,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 		if historico.RevisorId > 0 {
 			if val, ok := Terceros[historico.RevisorId]; !ok {
-				if funcionario_, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
+				if revisor, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
 					return nil, err
-				} else {
-					editor = *funcionario_
-					Terceros[historico.RevisorId] = *funcionario_
+				} else if revisor != nil {
+					editor = *revisor
+					Terceros[historico.RevisorId] = *revisor
 				}
 			} else {
 				editor = val
@@ -195,11 +195,11 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 		if historico.PersonaAsignadaId > 0 {
 			if val, ok := Terceros[historico.PersonaAsignadaId]; !ok {
-				if funcionario_, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
+				if revisor, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
 					return nil, err
-				} else {
-					asignado = *funcionario_
-					Terceros[historico.PersonaAsignadaId] = *funcionario_
+				} else if revisor != nil {
+					asignado = *revisor
+					Terceros[historico.PersonaAsignadaId] = *revisor
 				}
 			} else {
 				asignado = val
