@@ -1173,6 +1173,8 @@ definitions:
         $ref: '#/definitions/models.FormatoTipoMovimiento'
       TipoBienId:
         $ref: '#/definitions/models.TipoBien'
+      TipoMovimientoId:
+        $ref: '#/definitions/models.FormatoTipoMovimiento'
   models.DetalleElemento:
     title: DetalleElemento
     type: object
