@@ -19,13 +19,11 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
-		detalle          models.FormatoTraslado
-		elementosActa    []*models.Elemento
-		novedades        map[int]models.NovedadElemento
-		ids              []int
-		query            string
-		tipoMovimientoId int
-		transaccion      models.TransaccionMovimientos
+		detalle      models.FormatoTraslado
+		tipoSalida   int
+		query        string
+		mapElementos = make(map[int][]models.ElementosMovimiento)
+		transaccion  models.TransaccionMovimientos
 	)
 
 	if movimiento_, err := movimientosArka.GetMovimientoById(id); err != nil {
@@ -38,48 +36,7 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		return err
 	}
 
-	query = "limit=-1&fields=Id,ElementoActaId,ValorTotal&sortby=ElementoActaId&order=desc"
-	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(detalle.Elementos, "|"))
-	if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
-		return err
-	} else if len(elementos_) == len(detalle.Elementos) {
-		for _, el := range elementos_ {
-			ids = append(ids, el.ElementoActaId)
-		}
-	} else {
-		response.Error = "No se pudo consultar la parametrización de los elementos. Contacte soporte"
-		return
-	}
-
-	fields := "Id,SubgrupoCatalogoId,TipoBienId,ValorUnitario,ValorTotal"
-	query = "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elementos_, err := actaRecibido.GetAllElemento(query, fields, "Id", "desc", "", "-1"); err != nil {
-		return err
-	} else if len(elementos_) == len(detalle.Elementos) {
-		elementosActa = elementos_
-	} else {
-		response.Error = "No se pudo consultar la parametrización de los elementos. Contacte soporte"
-		return
-	}
-
-	query = "limit=-1&fields=ElementoMovimientoId,ValorLibros&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=Activo:true,ElementoMovimientoId__Id__in:"
-	query += utilsHelper.ArrayToString(detalle.Elementos, "|")
-	if novedades_, err := movimientosArka.GetAllNovedadElemento(query); err != nil {
-		return err
-	} else {
-		novedades = make(map[int]models.NovedadElemento)
-		for _, nov := range novedades_ {
-			novedades[nov.ElementoMovimientoId.ElementoActaId] = *nov
-		}
-	}
-
-	for _, el := range elementosActa {
-		if val, ok := novedades[el.Id]; ok {
-			el.ValorTotal = val.ValorLibros
-		}
-	}
-
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimientoId, "SAL"); err != nil {
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoSalida, "SAL"); err != nil {
 		return err
 	}
 
@@ -87,11 +44,67 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		return err
 	}
 
-	bufferCuentas := make(map[string]models.CuentaContable)
-	if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, descMovDestino(), tipoMovimientoId, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas,
-		nil, &transaccion.Movimientos); err != nil || msg != "" {
-		response.Error = msg
+	query = "limit=-1&fields=Id,ElementoActaId,ValorTotal,MovimientoId&sortby=ElementoActaId&order=desc" +
+		"&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(detalle.Elementos, "|"))
+	if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
 		return err
+	} else if len(elementos_) == len(detalle.Elementos) {
+		for _, el := range elementos_ {
+			mapElementos[el.MovimientoId.MovimientoPadreId.FormatoTipoMovimientoId.Id] = append(mapElementos[el.MovimientoId.MovimientoPadreId.FormatoTipoMovimientoId.Id], *el)
+		}
+	} else {
+		response.Error = "No se pudo consultar la parametrización de los elementos. Contacte soporte"
+		return
+	}
+
+	bufferCuentas := make(map[string]models.CuentaContable)
+	fields := "Id,SubgrupoCatalogoId,TipoBienId,ValorUnitario,ValorTotal"
+	for tipoEntr, el_ := range mapElementos {
+
+		var (
+			ids           []int
+			ids_          []int
+			elementosActa []*models.Elemento
+			novedades     map[int]models.NovedadElemento
+		)
+
+		for _, el := range el_ {
+			ids = append(ids, el.Id)
+			ids_ = append(ids_, el.ElementoActaId)
+		}
+
+		query = "Id__in:" + utilsHelper.ArrayToString(ids_, "|")
+		if elementos_, err := actaRecibido.GetAllElemento(query, fields, "Id", "desc", "", "-1"); err != nil {
+			return err
+		} else if len(elementos_) == len(el_) {
+			elementosActa = elementos_
+		} else {
+			response.Error = "No se pudo consultar la parametrización de los elementos. Contacte soporte"
+			return
+		}
+
+		query = "limit=-1&fields=ElementoMovimientoId,ValorLibros&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=Activo:true,ElementoMovimientoId__Id__in:" +
+			utilsHelper.ArrayToString(ids, "|")
+		if novedades_, err := movimientosArka.GetAllNovedadElemento(query); err != nil {
+			return err
+		} else {
+			novedades = make(map[int]models.NovedadElemento)
+			for _, nov := range novedades_ {
+				novedades[nov.ElementoMovimientoId.ElementoActaId] = *nov
+			}
+		}
+
+		for _, el := range elementosActa {
+			if val, ok := novedades[el.Id]; ok {
+				el.ValorTotal = val.ValorLibros
+			}
+		}
+
+		if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, descMovDestino(), tipoEntr, tipoSalida, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas,
+			nil, &transaccion.Movimientos); err != nil || msg != "" {
+			response.Error = msg
+			return err
+		}
 	}
 
 	transaccion.ConsecutivoId = detalle.ConsecutivoId

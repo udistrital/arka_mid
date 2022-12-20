@@ -23,20 +23,16 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 	defer errorctrl.ErrorControlFunction("AprobarBajas - Unhandled Error!", "500")
 
 	var (
-		movBj, movDp, movAm int
-		terceroUD           int
-		bajas               []*models.Movimiento
+		movBj, movCr int
+		terceroUD    int
+		bajas        []*models.Movimiento
 	)
 
 	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
 		return err
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movDp, "DEP"); err != nil {
-		return err
-	}
-
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movAm, "AMT"); err != nil {
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movCr, "CRR"); err != nil {
 		return err
 	}
 
@@ -82,8 +78,7 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 			elementosMovimiento []*models.ElementosMovimiento
 			elementosActa       = make(map[int]models.Elemento)
 			bajas               []*models.Elemento
-			depreciaciones      []*models.Elemento
-			amortizaciones      []*models.Elemento
+			mediciones          []*models.Elemento
 			transaccion         models.TransaccionMovimientos
 		)
 
@@ -184,10 +179,8 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 					medicion_.ValorTotal = valorMedicion
 					acta.ValorTotal -= valorMedicion
 
-					if subgrupo.Depreciacion {
-						depreciaciones = append(depreciaciones, &medicion_)
-					} else if subgrupo.Amortizacion {
-						amortizaciones = append(amortizaciones, &medicion_)
+					if subgrupo.Depreciacion || subgrupo.Amortizacion {
+						mediciones = append(mediciones, &medicion_)
 					}
 				}
 				bajas = append(bajas, &acta)
@@ -197,17 +190,12 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 
 		}
 
-		if msg, err := asientoContable.CalcularMovimientosContables(bajas, descBaja(), movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos); err != nil || msg != "" {
+		if msg, err := asientoContable.CalcularMovimientosContables(bajas, descBaja(), 0, movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos); err != nil || msg != "" {
 			response.Error = msg
 			return err
 		}
 
-		if msg, err := asientoContable.CalcularMovimientosContables(depreciaciones, descMovDp(), movDp, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos); err != nil || msg != "" {
-			response.Error = msg
-			return err
-		}
-
-		if msg, err := asientoContable.CalcularMovimientosContables(amortizaciones, descMovAm(), movAm, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos); err != nil || msg != "" {
+		if msg, err := asientoContable.CalcularMovimientosContables(mediciones, descMovCr(), 0, movCr, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos); err != nil || msg != "" {
 			response.Error = msg
 			return err
 		}
@@ -260,21 +248,13 @@ func GetTerceroIdEncargado(elementoId int, terceroId *int) (outputError map[stri
 
 // movimientosContablesBaja Genera los tres movimientos contables para un elemenento dado de baja.
 func movimientosContablesBaja(cuentasBj, cuentasDp, cuentasAm map[int]models.CuentaSubgrupo,
-	gasto, depreciacion, amortizacion float64, subgrupo, credito, debito, terceroUD int,
+	gasto, medicion float64, subgrupo, credito, debito, terceroUD int,
 	detalleCuentas map[string]models.CuentaContable, movimientos *[]*models.MovimientoTransaccion) {
 
-	var medicion float64
-
-	if depreciacion > 0 {
-		medicion = depreciacion
+	if medicion > 0 {
 		ctaDp := detalleCuentas[cuentasDp[subgrupo].CuentaDebitoId]
-		movDp := asientoContable.CreaMovimiento(depreciacion, descMovDp(), terceroUD, &ctaDp, debito)
+		movDp := asientoContable.CreaMovimiento(medicion, descMovCr(), terceroUD, &ctaDp, debito)
 		*movimientos = append(*movimientos, movDp)
-	} else if amortizacion > 0 {
-		medicion = amortizacion
-		ctaAm := detalleCuentas[cuentasAm[subgrupo].CuentaDebitoId]
-		movAm := asientoContable.CreaMovimiento(amortizacion, descMovAm(), terceroUD, &ctaAm, debito)
-		*movimientos = append(*movimientos, movAm)
 	}
 
 	if gasto > 0 {
@@ -301,12 +281,8 @@ func descMovGasto() string {
 	return "Movimiento a cuenta de gasto"
 }
 
-func descMovDp() string {
+func descMovCr() string {
 	return "Depreciación restante en baja de elementos"
-}
-
-func descMovAm() string {
-	return "Amortización restante en baja de elementos"
 }
 
 func descBaja() string {
