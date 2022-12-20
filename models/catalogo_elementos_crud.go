@@ -13,6 +13,7 @@ type CuentasSubgrupo struct {
 	Id                  int
 	CuentaCreditoId     string
 	CuentaDebitoId      string
+	TipoMovimientoId    int
 	SubtipoMovimientoId int
 	SubgrupoId          *Subgrupo
 	TipoBienId          *TipoBien
@@ -97,6 +98,7 @@ type DetalleCuentasSubgrupo struct {
 	Id                  int
 	CuentaCreditoId     *DetalleCuenta
 	CuentaDebitoId      *DetalleCuenta
+	TipoMovimientoId    *FormatoTipoMovimiento
 	SubtipoMovimientoId *FormatoTipoMovimiento
 	TipoBienId          TipoBien
 	SubgrupoId          int

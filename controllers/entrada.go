@@ -148,7 +148,7 @@ func (c *EntradaController) GetOne() {
 // @Title Get User
 // @Description anular Entrada by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.ConsultaEntrada
+// @Success 200 {object} models.ResultadoMovimiento
 // @Failure 404 not found resource
 // @router /anular/:id [get]
 func (c *EntradaController) AnularEntrada() {
