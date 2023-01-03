@@ -11,7 +11,7 @@ import (
 )
 
 // CalcularMovimientosContables Calcula los movimientos contables dados los valores y parametrización correspondiente de cada elemento.
-func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movId, terceroCr, terceroDb int,
+func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movId, sMovId, terceroCr, terceroDb int,
 	cuentas map[string]models.CuentaContable, subgrupos map[int]models.DetalleSubgrupo, movimientos *[]*models.MovimientoTransaccion) (
 	errMsg string, outputError map[string]interface{}) {
 
@@ -50,6 +50,10 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 	totalesDb := make(map[string]float64)
 
 	for _, el := range elementos {
+
+		if el.ValorTotal == 0 {
+			continue
+		}
 
 		if el.SubgrupoCatalogoId <= 0 {
 			return "No se pudo determinar la clase de los elementos. Revise el detalle del acta de recibido o contacte soporte.", nil
@@ -98,7 +102,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 		}
 
 		if _, ok := cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId]; !ok {
-			if cst, err := catalogoElementos.GetAllCuentasSubgrupo(payloadCuentas(el.SubgrupoCatalogoId, el.TipoBienId, movId)); err != nil {
+			if cst, err := catalogoElementos.GetAllCuentasSubgrupo(payloadCuentas(el.SubgrupoCatalogoId, el.TipoBienId, movId, sMovId)); err != nil {
 				return "", err
 			} else if len(cst) == 1 {
 				if cuentasSgTb[el.SubgrupoCatalogoId] == nil {
@@ -170,7 +174,8 @@ func fillMovimiento(valor float64, dsc string, terceroId, tipoMov int, cuenta mo
 	return
 }
 
-func payloadCuentas(sg, tb, mov int) string {
+func payloadCuentas(sg, tb, mov, sMov int) string {
 	return "fields=CuentaDebitoId,CuentaCreditoId&query=Activo:true,SubgrupoId__Id:" +
-		strconv.Itoa(sg) + ",TipoBienId__Id:" + strconv.Itoa(tb) + ",SubtipoMovimientoId:" + strconv.Itoa(mov)
+		strconv.Itoa(sg) + ",TipoBienId__Id:" + strconv.Itoa(tb) + ",TipoMovimientoId:" + strconv.Itoa(mov) +
+		",SubtipoMovimientoId:" + strconv.Itoa(sMov)
 }

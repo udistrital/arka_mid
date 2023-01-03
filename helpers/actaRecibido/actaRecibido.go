@@ -24,7 +24,7 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 		Unidades       interface{}
 		EstadoActa     interface{}
 		EstadoElemento interface{}
-		Ivas           []models.Iva
+		Ivas           = make([]models.Iva, 0)
 	)
 
 	urlActasEstadoActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_acta?limit=-1"
@@ -49,7 +49,7 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 		return nil, outputError
 	}
 
-	if err := parametros.GetAllIVAByPeriodo(strconv.Itoa(time.Now().Year()-1), &Ivas); err != nil {
+	if err := parametros.GetAllIVAByPeriodo(strconv.Itoa(time.Now().Year()), &Ivas); err != nil {
 		return nil, err
 	}
 

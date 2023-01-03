@@ -18,13 +18,11 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 	defer errorctrl.ErrorControlFunction("calcularCierre - Unhandled Error!", "500")
 
 	var (
-		infoCorte    []models.DepreciacionElemento
-		formtatoDp   int
-		formtatoAm   int
-		payload      string
-		terceroUD    int
-		elementosAmt []*models.Elemento
-		elementosDep []*models.Elemento
+		infoCorte   []models.DepreciacionElemento
+		formtatoCrr int
+		elementos_  []*models.Elemento
+		payload     string
+		terceroUD   int
 	)
 
 	if err := movimientosArka.GetCorteDepreciacion(fechaCorte, &infoCorte); err != nil {
@@ -51,6 +49,10 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 
 	subgrupos := make(map[int]models.DetalleSubgrupo)
 	for _, val := range infoCorte {
+		if val.DeltaValor == 0 {
+			continue
+		}
+
 		payload = "Id:" + strconv.Itoa(val.ElementoActaId)
 		if elemento, err := actaRecibido.GetAllElemento(payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "", "", "", ""); err != nil {
 			return err
@@ -69,12 +71,9 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 			}
 
 			elemento[0].ValorTotal = val.DeltaValor
-			if subgrupos[elemento[0].SubgrupoCatalogoId].Depreciacion {
+			if subgrupos[elemento[0].SubgrupoCatalogoId].Depreciacion || subgrupos[elemento[0].SubgrupoCatalogoId].Amortizacion {
 				*elementos = append(*elementos, val.ElementoMovimientoId)
-				elementosDep = append(elementosDep, elemento...)
-			} else if subgrupos[elemento[0].SubgrupoCatalogoId].Amortizacion {
-				*elementos = append(*elementos, val.ElementoMovimientoId)
-				elementosAmt = append(elementosAmt, elemento...)
+				elementos_ = append(elementos_, elemento...)
 			}
 
 		} else {
@@ -84,32 +83,18 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 
 	}
 
-	if len(elementosDep) == 0 && len(elementosAmt) == 0 {
+	if len(elementos_) == 0 {
 		return
 	}
 
-	if len(elementosAmt) > 0 {
-		if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formtatoAm, "AMT"); err != nil {
-			return err
-		}
-
-		if msg, err := asientoContable.CalcularMovimientosContables(elementosAmt, getDescripcionMovmientoCierre(), formtatoAm,
-			terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos); err != nil || msg != "" {
-			resultado.Error = msg
-			return err
-		}
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formtatoCrr, "CRR"); err != nil {
+		return err
 	}
 
-	if len(elementosDep) > 0 {
-		if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formtatoDp, "DEP"); err != nil {
-			return err
-		}
-
-		if msg, err := asientoContable.CalcularMovimientosContables(elementosDep, getDescripcionMovmientoCierre(), formtatoDp,
-			terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos); err != nil || msg != "" {
-			resultado.Error = msg
-			return err
-		}
+	if msg, err := asientoContable.CalcularMovimientosContables(elementos_, getDescripcionMovmientoCierre(), 0, formtatoCrr,
+		terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos); err != nil || msg != "" {
+		resultado.Error = msg
+		return err
 	}
 
 	return

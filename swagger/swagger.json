@@ -914,7 +914,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.ConsultaEntrada"
+                            "$ref": "#/definitions/models.ResultadoMovimiento"
                         }
                     },
                     "404": {
@@ -1551,131 +1551,6 @@
                 }
             }
         },
-        "models.ConsultaEntrada": {
-            "title": "ConsultaEntrada",
-            "type": "object",
-            "properties": {
-                "ActaRecibidoId": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Activo": {
-                    "type": "boolean"
-                },
-                "Consecutivo": {
-                    "type": "string"
-                },
-                "ContratoId": {
-                    "$ref": "#/definitions/models.Contrato"
-                },
-                "DocumentoContableId": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "ElementoId": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Importacion": {
-                    "type": "boolean"
-                },
-                "Observacion": {
-                    "type": "string"
-                },
-                "TipoEntradaId": {
-                    "$ref": "#/definitions/models.TipoEntrada"
-                },
-                "Vigencia": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Contrato": {
-            "title": "Contrato",
-            "type": "object",
-            "properties": {
-                "Actividades": {
-                    "type": "string"
-                },
-                "Contratista": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "DescripcionFormaPago": {
-                    "type": "string"
-                },
-                "FechaRegistro": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaSuscripcion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Justificacion": {
-                    "type": "string"
-                },
-                "LugarEjecucion": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "NumeroContrato": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "NumeroContratoSuscrito": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "ObjetoContrato": {
-                    "type": "string"
-                },
-                "Observaciones": {
-                    "type": "string"
-                },
-                "OrdenadorGasto": {
-                    "$ref": "#/definitions/models.OrdenadorGasto"
-                },
-                "PlazoEjecucion": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Rubro": {
-                    "type": "string"
-                },
-                "Supervisor": {
-                    "$ref": "#/definitions/models.Supervisor"
-                },
-                "TipoContrato": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "UnidadEjecucion": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "UnidadEjecutora": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "ValorContrato": {
-                    "type": "integer",
-                    "format": "int64"
-                }
-            }
-        },
         "models.DatosIdentificacion": {
             "title": "DatosIdentificacion",
             "type": "object",
@@ -1850,6 +1725,9 @@
                 },
                 "TipoBienId": {
                     "$ref": "#/definitions/models.TipoBien"
+                },
+                "TipoMovimientoId": {
+                    "$ref": "#/definitions/models.FormatoTipoMovimiento"
                 }
             }
         },
@@ -3283,25 +3161,6 @@
                 }
             }
         },
-        "models.OrdenadorGasto": {
-            "title": "OrdenadorGasto",
-            "type": "object",
-            "properties": {
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "NombreOrdenador": {
-                    "type": "string"
-                },
-                "ObjetoContrato": {
-                    "type": "string"
-                },
-                "RolOrdenadorGasto": {
-                    "type": "string"
-                }
-            }
-        },
         "models.Parametro": {
             "title": "Parametro",
             "type": "object",
@@ -3473,32 +3332,6 @@
                 },
                 "SubgrupoId": {
                     "$ref": "#/definitions/models.Subgrupo"
-                }
-            }
-        },
-        "models.Supervisor": {
-            "title": "Supervisor",
-            "type": "object",
-            "properties": {
-                "Cargo": {
-                    "type": "string"
-                },
-                "Dependencia": {
-                    "type": "string"
-                },
-                "DocumentoIdentificacion": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                },
-                "Sede": {
-                    "type": "string"
                 }
             }
         },
@@ -3678,43 +3511,6 @@
                 "NumeroOrden": {
                     "type": "integer",
                     "format": "int64"
-                }
-            }
-        },
-        "models.TipoEntrada": {
-            "title": "TipoEntrada",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "Clasificacion": {
-                    "type": "string"
-                },
-                "CodigoAbreviacion": {
-                    "type": "string"
-                },
-                "Descripcion": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                },
-                "NumeroOrden": {
-                    "type": "number",
-                    "format": "double"
                 }
             }
         },

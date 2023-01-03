@@ -13,9 +13,13 @@ func GetAllIVAByPeriodo(vigencia string, ivas *[]models.Iva) (outputError map[st
 
 	var parametros__ []models.ParametroPeriodo
 
-	payload := "query=ParametroId__TipoParametroId__CodigoAbreviacion:I,PeriodoId__Nombre:" + vigencia
+	payload := "query=ParametroId__CodigoAbreviacion:IVA,PeriodoId__Nombre:" + vigencia
 	if err := GetAllParametroPeriodo(payload, &parametros__); err != nil {
 		return err
+	}
+
+	if len(parametros__) == 1 && parametros__[0].Id == 0 {
+		return
 	}
 
 	for _, par := range parametros__ {
