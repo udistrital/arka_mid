@@ -49,6 +49,10 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 
 	subgrupos := make(map[int]models.DetalleSubgrupo)
 	for _, val := range infoCorte {
+		if val.DeltaValor == 0 {
+			continue
+		}
+
 		payload = "Id:" + strconv.Itoa(val.ElementoActaId)
 		if elemento, err := actaRecibido.GetAllElemento(payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "", "", "", ""); err != nil {
 			return err
