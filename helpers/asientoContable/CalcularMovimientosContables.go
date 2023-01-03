@@ -51,6 +51,10 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 
 	for _, el := range elementos {
 
+		if el.ValorTotal == 0 {
+			continue
+		}
+
 		if el.SubgrupoCatalogoId <= 0 {
 			return "No se pudo determinar la clase de los elementos. Revise el detalle del acta de recibido o contacte soporte.", nil
 		}
