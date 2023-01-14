@@ -40,7 +40,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 	}
 
 	for _, elementos := range detalle.Elementos {
-		Elemento__, err := TraerElementoSolicitud(elementos)
+		Elemento__, err := traerElementoSolicitud(elementos)
 		if err != nil {
 			return nil, err
 		}

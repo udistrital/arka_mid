@@ -14,16 +14,16 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func TraerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
+func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("TraerElementoSolicitud - Unhandled Error", "500")
+	defer errorctrl.ErrorControlFunction("traerElementoSolicitud - Unhandled Error", "500")
 
 	ubicacionInfo, err := oikos.GetSedeDependenciaUbicacion(Elemento.Ubicacion)
 	if err != nil {
 		return nil, err
 	}
 
-	if Elemento___, err := UltimoMovimientoKardex(Elemento.ElementoCatalogoId); err == nil {
+	if Elemento___, err := ultimoMovimientoKardex(Elemento.ElementoCatalogoId); err == nil {
 
 		Elemento___["Sede"] = ubicacionInfo.Sede
 		Elemento___["Dependencia"] = ubicacionInfo.Dependencia
@@ -41,37 +41,37 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 
 	defer errorctrl.ErrorControlFunction("GetExistenciasKardex - Unhandled Error!", "500")
 
-	var Elementos___ []*models.ElementosMovimiento
-	url := "query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion__in:AP_KDX|SAL_KDX," +
-		"Activo:true,ElementoCatalogoId__gt:0&limit=-1&fields=ElementoCatalogoId"
+	// Funcionalidad temporal, se debería desarrollar un servicio en el api crud para esta consulta
+	url := "query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion__in:AP_KDX," +
+		"ElementoCatalogoId__gt:0&limit=-1&fields=ElementoCatalogoId"
 
-	if elementos_, err := movimientosArka.GetAllElementosMovimiento(url); err != nil {
+	Elementos = make([]map[string]interface{}, 0)
+
+	aperturas, err := movimientosArka.GetAllElementosMovimiento(url)
+	if err != nil {
 		return nil, err
-	} else {
-		Elementos___ = elementos_
 	}
 
-	if len(Elementos___) > 0 {
-
-		for _, elemento := range Elementos___ {
-			if Elemento, err := UltimoMovimientoKardex(elemento.ElementoCatalogoId); err == nil {
-				if s, ok := Elemento["SaldoCantidad"]; ok {
-					if v, ok := s.(float64); ok && v > 0 {
-						Elementos = append(Elementos, Elemento)
-					}
-				}
-			}
+	for _, apertura := range aperturas {
+		Elemento, err := ultimoMovimientoKardex(apertura.ElementoCatalogoId)
+		if err != nil {
+			return nil, err
 		}
 
+		if s, ok := Elemento["SaldoCantidad"]; ok {
+			if v, ok := s.(float64); ok && v > 0 {
+				Elementos = append(Elementos, Elemento)
+			}
+		}
 	}
 
 	return Elementos, nil
 
 }
 
-func UltimoMovimientoKardex(elementoId int) (detalleElemento map[string]interface{}, outputError map[string]interface{}) {
+func ultimoMovimientoKardex(elementoId int) (detalleElemento map[string]interface{}, outputError map[string]interface{}) {
 
-	funcion := "UltimoMovimientoKardex - "
+	funcion := "ultimoMovimientoKardex - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if elementoId <= 0 {
