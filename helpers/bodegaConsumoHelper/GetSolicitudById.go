@@ -15,7 +15,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 
 	defer errorctrl.ErrorControlFunction("GetSolicitudById - Unhandled Error", "500")
 
-	var solicitud_ = make([]map[string]interface{}, 1)
+	var solicitud_ = make(map[string]interface{})
 	var elementos___ []map[string]interface{}
 
 	mov, err := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(id))
@@ -29,7 +29,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 		return
 	}
 
-	outputError = utilsHelper.FillStruct(mov[0], &solicitud_[0])
+	outputError = utilsHelper.FillStruct(mov[0], &solicitud_)
 	if outputError != nil {
 		return
 	}
@@ -50,7 +50,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 		elementos___ = append(elementos___, Elemento__)
 	}
 
-	solicitud_[0]["Funcionario"] = tercero
+	solicitud_["Funcionario"] = tercero
 	Solicitud = map[string]interface{}{
 		"Solicitud": solicitud_,
 		"Elementos": elementos___,
