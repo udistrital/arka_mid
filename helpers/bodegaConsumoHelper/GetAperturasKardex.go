@@ -1,12 +1,8 @@
 package bodegaConsumoHelper
 
 import (
-	"strconv"
-
-	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
-	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
@@ -15,7 +11,8 @@ func GetAperturasKardex() (Elementos []map[string]interface{}, outputError map[s
 	defer errorctrl.ErrorControlFunction("GetAperturasKardex - Unhandled Error", "500")
 
 	Elementos = make([]map[string]interface{}, 0)
-	payload := "limit=-1&query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion:AP_KDX&sortby=FechaCreacion&order=desc"
+	payload := "limit=-1&query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion:AP_KDX" +
+		"&sortby=FechaCreacion&order=desc&fields=FechaCreacion,MovimientoId,ElementoCatalogoId"
 
 	aperturas, err := movimientosArka.GetAllElementosMovimiento(payload)
 	if err != nil {
@@ -31,23 +28,25 @@ func GetAperturasKardex() (Elementos []map[string]interface{}, outputError map[s
 		}
 
 		Elemento := map[string]interface{}{
-			"MetodoValoracion":  detalle["Metodo_Valoracion"],
-			"CantidadMinima":    detalle["Cantidad_Minima"],
-			"CantidadMaxima":    detalle["Cantidad_Maxima"],
-			"FechaCreacion":     elemento.FechaCreacion,
-			"Observaciones":     elemento.MovimientoId.Observacion,
-			"Id":                elemento.MovimientoId.Id,
-			"MovimientoPadreId": elemento.MovimientoId.MovimientoPadreId,
+			"Id":               elemento.MovimientoId.Id,
+			"FechaCreacion":    elemento.MovimientoId.FechaCreacion,
+			"MetodoValoracion": detalle["Metodo_Valoracion"],
+			"CantidadMinima":   detalle["Cantidad_Minima"],
+			"CantidadMaxima":   detalle["Cantidad_Maxima"],
 		}
 
-		var elemento_ []models.ElementoCatalogo
-		outputError = catalogoElementos.GetAllElemento("query=Id:"+strconv.Itoa(elemento.ElementoCatalogoId), &elemento_)
-		if outputError != nil {
-			return
-		} else if len(elemento_) == 1 {
-			Elemento["ElementoCatalogoId"] = elemento_[0]
+		ultimo, err := ultimoMovimientoKardex(elemento.ElementoCatalogoId)
+		if err != nil {
+			return nil, err
 		}
 
+		catalogo, err := detalleElementoCatalogo(elemento.ElementoCatalogoId)
+		if err != nil {
+			return nil, err
+		}
+
+		Elemento["ElementoCatalogoId"] = catalogo
+		Elemento["SaldoCantidad"] = ultimo.SaldoCantidad
 		Elementos = append(Elementos, Elemento)
 	}
 

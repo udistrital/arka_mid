@@ -1,10 +1,7 @@
 package bodegaConsumoHelper
 
 import (
-	"fmt"
 	"strconv"
-
-	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -23,18 +20,27 @@ func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[s
 		return nil, err
 	}
 
-	if Elemento___, err := ultimoMovimientoKardex(Elemento.ElementoCatalogoId); err == nil {
-
-		Elemento___["Sede"] = ubicacionInfo.Sede
-		Elemento___["Dependencia"] = ubicacionInfo.Dependencia
-		Elemento___["Ubicacion"] = ubicacionInfo.Ubicacion.EspacioFisicoId
-
-		return Elemento___, nil
-
-	} else {
+	ultimo, err := ultimoMovimientoKardex(Elemento.ElementoCatalogoId)
+	if err != nil {
 		return nil, err
 	}
 
+	outputError = utilsHelper.FillStruct(ultimo, &Elemento_)
+	if outputError != nil {
+		return
+	}
+
+	catalogo, err := detalleElementoCatalogo(Elemento.ElementoCatalogoId)
+	if err != nil {
+		return nil, err
+	}
+
+	Elemento_["ElementoCatalogoId"] = catalogo
+	Elemento_["Sede"] = ubicacionInfo.Sede
+	Elemento_["Dependencia"] = ubicacionInfo.Dependencia
+	Elemento_["Ubicacion"] = ubicacionInfo.Ubicacion.EspacioFisicoId
+
+	return
 }
 
 func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
@@ -42,67 +48,70 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 	defer errorctrl.ErrorControlFunction("GetExistenciasKardex - Unhandled Error!", "500")
 
 	// Funcionalidad temporal, se debería desarrollar un servicio en el api crud para esta consulta
-	url := "query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion__in:AP_KDX," +
+	payload := "query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion__in:AP_KDX," +
 		"ElementoCatalogoId__gt:0&limit=-1&fields=ElementoCatalogoId"
 
 	Elementos = make([]map[string]interface{}, 0)
 
-	aperturas, err := movimientosArka.GetAllElementosMovimiento(url)
+	aperturas, err := movimientosArka.GetAllElementosMovimiento(payload)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, apertura := range aperturas {
-		Elemento, err := ultimoMovimientoKardex(apertura.ElementoCatalogoId)
+		ultimo, err := ultimoMovimientoKardex(apertura.ElementoCatalogoId)
 		if err != nil {
 			return nil, err
 		}
 
-		if s, ok := Elemento["SaldoCantidad"]; ok {
-			if v, ok := s.(float64); ok && v > 0 {
-				Elementos = append(Elementos, Elemento)
-			}
+		if ultimo.SaldoCantidad <= 0 {
+			continue
 		}
+
+		catalogo, err := detalleElementoCatalogo(apertura.ElementoCatalogoId)
+		if err != nil {
+			return nil, err
+		}
+
+		var detalle map[string]interface{}
+		outputError = utilsHelper.FillStruct(ultimo, &detalle)
+		if outputError != nil {
+			return
+		}
+
+		detalle["ElementoCatalogoId"] = catalogo
+		Elementos = append(Elementos, detalle)
+
 	}
 
 	return Elementos, nil
-
 }
 
-func ultimoMovimientoKardex(elementoId int) (detalleElemento map[string]interface{}, outputError map[string]interface{}) {
+func ultimoMovimientoKardex(elementoId int) (ultimo models.ElementosMovimiento, outputError map[string]interface{}) {
 
 	funcion := "ultimoMovimientoKardex - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	if elementoId <= 0 {
-		err := fmt.Errorf("id MUST be > 0")
-		logs.Error(err)
-		eval := "id_catalogo <= 0"
-		return nil, errorctrl.Error(funcion+eval, err, "400")
+	payload := "limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor&query=ElementoCatalogoId:"
+	elemento, err := movimientosArka.GetAllElementosMovimiento(payload + strconv.Itoa(elementoId))
+	if err != nil || len(elemento) != 1 {
+		return ultimo, err
 	}
 
-	detalleElemento = make(map[string]interface{})
-	idStr := strconv.Itoa(elementoId)
+	ultimo = *elemento[0]
+	return
+}
+
+func detalleElementoCatalogo(elementoId int) (elemento models.ElementoCatalogo, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("detalleElementoCatalogo - Unhandled Error!", "500")
 
 	var elemento_ []models.ElementoCatalogo
-	outputError = catalogoElementos.GetAllElemento("query=Id:"+idStr, &elemento_)
+	outputError = catalogoElementos.GetAllElemento("query=Id:"+strconv.Itoa(elementoId), &elemento_)
 	if outputError != nil || len(elemento_) != 1 {
 		return
 	}
 
-	payload := "limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor&query=ElementoCatalogoId:" + idStr
-	elemento, err := movimientosArka.GetAllElementosMovimiento(payload)
-	if err != nil || len(elemento) != 1 {
-		return nil, err
-	}
-
-	outputError = utilsHelper.FillStruct(elemento[0], &detalleElemento)
-	if outputError != nil {
-		return
-	}
-
-	detalleElemento["ElementoCatalogoId"] = elemento_[0]
-	detalleElemento["SubgrupoCatalogoId"] = elemento_[0].SubgrupoId
-
+	elemento = elemento_[0]
 	return
 }
