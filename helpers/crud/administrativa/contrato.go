@@ -9,7 +9,6 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	administrativa "github.com/udistrital/administrativa_mid_api/models"
-	"github.com/udistrital/utils_oas/errorctrl"
 	e "github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -48,7 +47,7 @@ func GetTipoContratoById(tipoContratoId string, tipoContrato interface{}) (outpu
 	if err := request.GetJson(urlcrud, &tipoContrato); err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &tipoContrato)"
-		return errorctrl.Error(funcion+eval, err, "502")
+		return e.Error(funcion+eval, err, "502")
 	}
 
 	return
