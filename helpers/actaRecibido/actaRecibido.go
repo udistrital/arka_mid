@@ -7,7 +7,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -21,7 +20,6 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
-		Unidades       interface{}
 		EstadoActa     interface{}
 		EstadoElemento interface{}
 		Ivas           = make([]models.Iva, 0)
@@ -53,12 +51,7 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 		return nil, err
 	}
 
-	if outputError = administrativa.GetUnidades(&Unidades); outputError != nil {
-		return
-	}
-
 	parametros_ = map[string]interface{}{
-		"Unidades":       Unidades,
 		"EstadoActa":     EstadoActa,
 		"EstadoElemento": EstadoElemento,
 		"IVA":            Ivas,

@@ -3,13 +3,10 @@ package actaRecibido
 import (
 	"io/ioutil"
 	"mime/multipart"
-	"strconv"
-	"time"
 
 	"github.com/astaxie/beego/logs"
 	"github.com/tealeg/xlsx"
 
-	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -18,42 +15,32 @@ import (
 // DecodeXlsx2Json Convierte el archivo excel en una lista de elementos
 func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	funcion := "GetAllIVAByPeriodo - "
+	funcion := "DecodeXlsx2Json - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	var (
-		Unidades []Unidad
-		Ivas     []models.Iva
-	)
-
-	if err := parametros.GetAllIVAByPeriodo(strconv.Itoa(time.Now().Year()-1), &Ivas); err != nil {
+	var Ivas []models.Iva
+	if err := parametros.GetAllIVAByPeriodo("2023", &Ivas); err != nil {
 		return nil, err
 	}
 
-	if outputError = administrativa.GetUnidades(&Unidades); outputError != nil {
-		return
+	const payload = "limit=-1&fields=Id,Nombre&sortby=Nombre&order=asc&query=TipoParametroId__CodigoAbreviacion__in:L|M|T|C|S"
+	Unidades, err_ := parametros.GetAllParametro(payload)
+	if err_ != nil {
+		return nil, err_
 	}
 
 	file, err := ioutil.ReadAll(c)
 	if err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - ioutil.ReadAll(c)",
-			"err":     err,
-			"status":  "400",
-		}
-		return nil, outputError
+		eval := "ioutil.ReadAll(c)"
+		return nil, errorctrl.Error(funcion+eval, err, "400")
 	}
 
 	xlFile, err := xlsx.OpenBinary(file)
 	if err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "DecodeXlsx2Json - xlsx.OpenBinary(file)",
-			"err":     err,
-			"status":  "400",
-		}
-		return nil, outputError
+		eval := "xlsx.OpenBinary(file)"
+		return nil, errorctrl.Error(funcion+eval, err, "400")
 	}
 
 	resultado = make(map[string]interface{})
@@ -157,7 +144,7 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 						if i == indexes["Unidad de Medida"] {
 							if cell.String() != "" {
 								for _, unidad := range Unidades {
-									if cell.String() == unidad.Unidad {
+									if cell.String() == unidad.Nombre {
 										fila.UnidadMedida = unidad.Id
 										break
 									}
