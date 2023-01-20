@@ -47,26 +47,13 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 
 	defer errorctrl.ErrorControlFunction("GetExistenciasKardex - Unhandled Error!", "500")
 
-	// Funcionalidad temporal, se debería desarrollar un servicio en el api crud para esta consulta
-	payload := "query=MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion__in:AP_KDX," +
-		"ElementoCatalogoId__gt:0&limit=-1&fields=ElementoCatalogoId"
-
-	Elementos = make([]map[string]interface{}, 0)
-
-	aperturas, err := movimientosArka.GetAllElementosMovimiento(payload)
-	if err != nil {
-		return nil, err
+	var aperturas []models.Apertura
+	outputError = movimientosArka.GetAperturas(true, &aperturas)
+	if outputError != nil {
+		return nil, outputError
 	}
 
 	for _, apertura := range aperturas {
-		ultimo, err := ultimoMovimientoKardex(apertura.ElementoCatalogoId)
-		if err != nil {
-			return nil, err
-		}
-
-		if ultimo.SaldoCantidad <= 0 {
-			continue
-		}
 
 		catalogo, err := detalleElementoCatalogo(apertura.ElementoCatalogoId)
 		if err != nil {
@@ -74,7 +61,7 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 		}
 
 		var detalle map[string]interface{}
-		outputError = utilsHelper.FillStruct(ultimo, &detalle)
+		outputError = utilsHelper.FillStruct(apertura, &detalle)
 		if outputError != nil {
 			return
 		}
@@ -89,8 +76,7 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 
 func ultimoMovimientoKardex(elementoId int) (ultimo models.ElementosMovimiento, outputError map[string]interface{}) {
 
-	funcion := "ultimoMovimientoKardex - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("ultimoMovimientoKardex - Unhandled Error!", "500")
 
 	payload := "limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor&query=ElementoCatalogoId:"
 	elemento, err := movimientosArka.GetAllElementosMovimiento(payload + strconv.Itoa(elementoId))
