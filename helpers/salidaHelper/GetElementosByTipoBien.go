@@ -1,12 +1,9 @@
 package salidaHelper
 
 import (
-	"time"
-
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 )
@@ -14,16 +11,16 @@ import (
 // GetElementosByTipoBien Consulta la lista de elementos para asociar en una salida determinada agrupando por si son asignables a bodega de consumo.
 func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, outputError map[string]interface{}) {
 
-	var uvt float64
-	if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
-		return "", err
-	} else if uvt_ == 0 {
-		return map[string]interface{}{
-			"Error": "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.",
-		}, nil
-	} else {
-		uvt = uvt_
-	}
+	var uvt float64 = 1
+	// if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
+	// 	return "", err
+	// } else if uvt_ == 0 {
+	// 	return map[string]interface{}{
+	// 		"Error": "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.",
+	// 	}, nil
+	// } else {
+	// 	uvt = uvt_
+	// }
 
 	bufferTiposBien := make(map[int]models.TipoBien)
 
@@ -57,7 +54,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 		for _, el := range elementos {
 
-			if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, int(el.ValorUnitario/uvt), bufferTiposBien); err != nil {
+			if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
 				return nil, err
 			} else if msg != "" {
 				return map[string]interface{}{
@@ -88,7 +85,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 			for _, el := range elementos {
 
-				if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, int(el.ValorUnitario/uvt), bufferTiposBien); err != nil {
+				if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
 					return nil, err
 				} else if msg != "" {
 					return map[string]interface{}{
@@ -114,7 +111,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 }
 
-func checkBodegaConsumo(tipoBienId *models.TipoBien, subgrupo *models.DetalleSubgrupo, valor int, tiposBien map[int]models.TipoBien) (
+func checkBodegaConsumo(tipoBienId *models.TipoBien, subgrupo *models.DetalleSubgrupo, valor float64, tiposBien map[int]models.TipoBien) (
 	bodega bool, msg string, outputError map[string]interface{}) {
 
 	if (tipoBienId == nil || tipoBienId.Id == 0) && (subgrupo != nil && subgrupo.TipoBienId.Id > 0) {

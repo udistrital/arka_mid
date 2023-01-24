@@ -395,3 +395,18 @@ func GetBodegaByTerceroId(terceroId int, solicitudes *[]*models.Movimiento) (out
 
 	return
 }
+
+// GetAperturas consulta controlador tr_kardex/aperturas del api movimientos_arka_crud
+func GetAperturas(conSaldo bool, aperturas *[]models.Apertura) (outputError map[string]interface{}) {
+
+	funcion := "GetAperturas - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "tr_kardex/aperturas?ConSaldo=" + strconv.FormatBool(conSaldo)
+	if err := request.GetJson(urlcrud, &aperturas); err != nil {
+		eval := "request.GetJson(urlcrud, &aperturas)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}

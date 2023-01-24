@@ -226,7 +226,7 @@ func GetDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 }
 
 // findIdInArray Retorna la posicion en que se encuentra el id específicado
-func FindInArray(cuentasSg []*models.CuentaSubgrupo, subgrupoId int) (i int) {
+func FindInArray(cuentasSg []*models.CuentasSubgrupo, subgrupoId int) (i int) {
 	for i, cuentaSg := range cuentasSg {
 		if int(cuentaSg.SubgrupoId.Id) == subgrupoId {
 			return i

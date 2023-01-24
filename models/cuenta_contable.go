@@ -2,6 +2,16 @@ package models
 
 import "time"
 
+type NivelClasificacion struct {
+	Id                int
+	Nombre            string
+	Longitud          int
+	Descripcion       string
+	CodigoAbreviacion string
+	Activo            bool
+	NumeroOrden       int
+}
+
 type CuentaContable struct {
 	Activo             bool
 	Id                 string

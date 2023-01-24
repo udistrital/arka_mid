@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type BodegaConsumoSolicitud struct {
 	Elementos *ElementoSolicitud
 	Solicitud *Movimiento
@@ -34,4 +36,17 @@ type FormatoSolicitudBodega struct {
 type DetalleSolicitudBodega struct {
 	Movimiento
 	Solicitante IdentificacionTercero
+}
+
+type Apertura struct {
+	CantidadMinima     int
+	CantidadMaxima     int
+	ElementoCatalogoId int
+	FechaCreacion      time.Time
+	MetodoValoracion   int
+	SaldoCantidad      float64
+	SaldoValor         float64
+	Unidad             float64
+	ValorUnitario      float64
+	ValorTotal         float64
 }

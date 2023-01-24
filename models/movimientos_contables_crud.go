@@ -2,17 +2,6 @@ package models
 
 import "time"
 
-type CuentaSubgrupo struct {
-	Id                  int
-	Activo              bool
-	CuentaCreditoId     string
-	CuentaDebitoId      string
-	SubtipoMovimientoId int
-	FechaCreacion       string
-	FechaModificacion   string
-	SubgrupoId          *Subgrupo
-}
-
 type TransaccionMovimientos struct {
 	ConsecutivoId    int
 	Etiquetas        string

@@ -2,7 +2,6 @@ package asientoContable
 
 import (
 	"strconv"
-	"time"
 
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
@@ -21,7 +20,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 
 	var parCr int
 	var parDb int
-	var uvt float64
+	var uvt float64 = 1
 
 	var payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 
@@ -29,13 +28,13 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 		cuentas = make(map[string]models.CuentaContable)
 	}
 
-	if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
-		return "", err
-	} else if uvt_ == 0 {
-		return "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.", nil
-	} else {
-		uvt = uvt_
-	}
+	// if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
+	// 	return "", err
+	// } else if uvt_ == 0 {
+	// 	return "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.", nil
+	// } else {
+	// 	uvt = uvt_
+	// }
 
 	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		return "", err
@@ -45,7 +44,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 	}
 
 	tiposBien := make(map[int]models.TipoBien)
-	cuentasSgTb := make(map[int]map[int]models.CuentaSubgrupo)
+	cuentasSgTb := make(map[int]map[int]models.CuentasSubgrupo)
 	totalesCr := make(map[string]float64)
 	totalesDb := make(map[string]float64)
 
@@ -70,7 +69,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 				}
 			}
 
-			if tb, err := catalogoElementos.GetTipoBienIdByValor(subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id, int(el.ValorUnitario/uvt), tiposBien); err != nil {
+			if tb, err := catalogoElementos.GetTipoBienIdByValor(subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id, el.ValorUnitario/uvt, tiposBien); err != nil {
 				return "", err
 			} else if tb == 0 {
 				return "No se pudo establecer el tipo de bien de los elementos. Contacte soporte.", nil
@@ -106,7 +105,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 				return "", err
 			} else if len(cst) == 1 {
 				if cuentasSgTb[el.SubgrupoCatalogoId] == nil {
-					cuentasSgTb[el.SubgrupoCatalogoId] = make(map[int]models.CuentaSubgrupo)
+					cuentasSgTb[el.SubgrupoCatalogoId] = make(map[int]models.CuentasSubgrupo)
 				}
 				cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId] = *cst[0]
 			} else {

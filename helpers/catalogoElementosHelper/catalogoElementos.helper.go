@@ -149,7 +149,7 @@ func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas ma
 }
 
 // GetCuentasByMovimientoSubgrupos Consulta las cuentas para una serie de subgrupos y las almacena en una estructura de fácil acceso
-func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentaSubgrupo) (
+func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentasSubgrupo) (
 	outputError map[string]interface{}) {
 
 	funcion := "GetCuentasByMovimientoSubgrupos"

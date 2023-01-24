@@ -247,7 +247,7 @@ func GetTerceroIdEncargado(elementoId int, terceroId *int) (outputError map[stri
 }
 
 // movimientosContablesBaja Genera los tres movimientos contables para un elemenento dado de baja.
-func movimientosContablesBaja(cuentasBj, cuentasDp, cuentasAm map[int]models.CuentaSubgrupo,
+func movimientosContablesBaja(cuentasBj, cuentasDp, cuentasAm map[int]models.CuentasSubgrupo,
 	gasto, medicion float64, subgrupo, credito, debito, terceroUD int,
 	detalleCuentas map[string]models.CuentaContable, movimientos *[]*models.MovimientoTransaccion) {
 
