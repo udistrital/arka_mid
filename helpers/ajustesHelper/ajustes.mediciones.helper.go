@@ -22,7 +22,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		cuentasSubgrupo map[int]*models.CuentaSubgrupo
+		cuentasSubgrupo map[int]*models.CuentasSubgrupo
 		bufferCtas      map[string]*models.CuentaContable
 		movDebito       int
 		movCredito      int
@@ -151,7 +151,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 	sg, vls, mp []*models.DetalleElemento_,
 	org []*models.Elemento) (
-	ctasSg map[int]*models.CuentaSubgrupo,
+	ctasSg map[int]*models.CuentasSubgrupo,
 	ctas map[string]*models.CuentaContable,
 	outputError map[string]interface{}) {
 
@@ -160,7 +160,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 
 	var idsD, idsA []int
 	var idD, idA int
-	var ctasD, ctasA map[int]*models.CuentaSubgrupo
+	var ctasD, ctasA map[int]*models.CuentasSubgrupo
 
 	for _, nv := range novedades {
 		var ids []int

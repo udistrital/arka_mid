@@ -45,7 +45,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 	}
 
 	tiposBien := make(map[int]models.TipoBien)
-	cuentasSgTb := make(map[int]map[int]models.CuentaSubgrupo)
+	cuentasSgTb := make(map[int]map[int]models.CuentasSubgrupo)
 	totalesCr := make(map[string]float64)
 	totalesDb := make(map[string]float64)
 
@@ -106,7 +106,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 				return "", err
 			} else if len(cst) == 1 {
 				if cuentasSgTb[el.SubgrupoCatalogoId] == nil {
-					cuentasSgTb[el.SubgrupoCatalogoId] = make(map[int]models.CuentaSubgrupo)
+					cuentasSgTb[el.SubgrupoCatalogoId] = make(map[int]models.CuentasSubgrupo)
 				}
 				cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId] = *cst[0]
 			} else {

@@ -71,7 +71,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 		ids             []int
 		movDebito       int
 		movCredito      int
-		cuentasSubgrupo map[int]*models.CuentaSubgrupo
+		cuentasSubgrupo map[int]*models.CuentasSubgrupo
 		detalleCuenta   map[string]*models.CuentaContable
 	)
 

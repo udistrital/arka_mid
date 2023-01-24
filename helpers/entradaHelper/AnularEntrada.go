@@ -42,7 +42,7 @@ func AnularEntrada(movimientoId int) (response map[string]interface{}, outputErr
 		consecutivoId           int
 		consecutivo             int
 		transaccion             models.TransaccionMovimientos
-		cuentasSubgrupo         []models.CuentaSubgrupo
+		cuentasSubgrupo         []models.CuentasSubgrupo
 		jsonString              []byte
 	)
 

@@ -17,7 +17,7 @@ import (
 func generaTrContable(vInicial, vNuevo float64,
 	consecutivo, tipoMedicion string,
 	db, cr, sgOriginal, sgNuevo, tercero int,
-	ctasSg map[int]*models.CuentaSubgrupo,
+	ctasSg map[int]*models.CuentasSubgrupo,
 	ctas map[string]*models.CuentaContable) (movimientos []*models.MovimientoTransaccion) {
 
 	dsc := getDescripcionMovContable(tipoMedicion, consecutivo)
@@ -74,12 +74,12 @@ func generaTrContable(vInicial, vNuevo float64,
 
 // getCuentasByMovimientoSubgrupos Retorna las cuentas de cada subgrupo en una estructura para fácil acceso
 func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
-	cuentasSubgrupo map[int]*models.CuentaSubgrupo, outputError map[string]interface{}) {
+	cuentasSubgrupo map[int]*models.CuentasSubgrupo, outputError map[string]interface{}) {
 
 	funcion := "getCuentasByMovimientoSubgrupos"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	cuentasSubgrupo = make(map[int]*models.CuentaSubgrupo)
+	cuentasSubgrupo = make(map[int]*models.CuentasSubgrupo)
 
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + strconv.Itoa(movimientoId) + ",Activo:true,SubgrupoId__Id__in:"
@@ -96,7 +96,7 @@ func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
 
 }
 
-func joinMaps(map1, map2 map[int]*models.CuentaSubgrupo) map[int]*models.CuentaSubgrupo {
+func joinMaps(map1, map2 map[int]*models.CuentasSubgrupo) map[int]*models.CuentasSubgrupo {
 
 	if len(map1) > 0 {
 		for sg, ctas := range map2 {

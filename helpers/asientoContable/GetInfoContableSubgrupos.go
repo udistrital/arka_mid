@@ -7,7 +7,7 @@ import (
 )
 
 // GetInfoContableSubgrupos Consulta las cuentas contables para una lista de subgrupos y un tipo de movimiento así como el detalle de las cuentas contables
-func GetInfoContableSubgrupos(tipoMovimiento int, subgrupos []int, cuentasSubgrupo map[int]models.CuentaSubgrupo, detalleCuentas map[string]models.CuentaContable) (outputError map[string]interface{}) {
+func GetInfoContableSubgrupos(tipoMovimiento int, subgrupos []int, cuentasSubgrupo map[int]models.CuentasSubgrupo, detalleCuentas map[string]models.CuentaContable) (outputError map[string]interface{}) {
 
 	if err := catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(tipoMovimiento, subgrupos, cuentasSubgrupo); err != nil {
 		return err
