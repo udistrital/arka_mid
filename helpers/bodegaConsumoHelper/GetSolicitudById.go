@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -58,4 +59,50 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 
 	return
 
+}
+
+func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("traerElementoSolicitud - Unhandled Error", "500")
+
+	ubicacionInfo, err := oikos.GetSedeDependenciaUbicacion(Elemento.Ubicacion)
+	if err != nil {
+		return nil, err
+	}
+
+	ultimo, err := ultimoMovimientoKardex(Elemento.ElementoCatalogoId)
+	if err != nil {
+		return nil, err
+	}
+
+	outputError = utilsHelper.FillStruct(ultimo, &Elemento_)
+	if outputError != nil {
+		return
+	}
+
+	catalogo, err := detalleElementoCatalogo(Elemento.ElementoCatalogoId)
+	if err != nil {
+		return nil, err
+	}
+
+	Elemento_["ElementoCatalogoId"] = catalogo
+	Elemento_["Sede"] = ubicacionInfo.Sede
+	Elemento_["Dependencia"] = ubicacionInfo.Dependencia
+	Elemento_["Ubicacion"] = ubicacionInfo.Ubicacion.EspacioFisicoId
+
+	return
+}
+
+func ultimoMovimientoKardex(elementoId int) (ultimo models.ElementosMovimiento, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("ultimoMovimientoKardex - Unhandled Error!", "500")
+
+	payload := "limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor&query=ElementoCatalogoId:"
+	elemento, err := movimientosArka.GetAllElementosMovimiento(payload + strconv.Itoa(elementoId))
+	if err != nil || len(elemento) != 1 {
+		return ultimo, err
+	}
+
+	ultimo = *elemento[0]
+	return
 }
