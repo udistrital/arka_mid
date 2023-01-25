@@ -98,6 +98,30 @@ paths:
         name: offset
         description: Start position of result set. Must be an integer
         type: string
+      - in: query
+        name: Id
+        description: Id para utilizar en query __in
+        type: string
+      - in: query
+        name: EstadoActaId
+        description: Estado del acta
+        type: string
+      - in: query
+        name: FechaCreacion
+        description: 'Fecha creación del acta: __in'
+        type: string
+      - in: query
+        name: FechaModificacion
+        description: 'Fecha modificación del acta: __in'
+        type: string
+      - in: query
+        name: sortby
+        description: Columna por la que se ordenan los resultados
+        type: string
+      - in: query
+        name: order
+        description: Orden de los resultados de acuerdo a la columna indicada
+        type: string
       responses:
         "200":
           description: ""
@@ -1882,10 +1906,8 @@ definitions:
       TipoEdificacionId:
         type: integer
         format: int64
-      TipoEspacio:
-        $ref: '#/definitions/models.TipoEspacio'
       TipoEspacioFisicoId:
-        $ref: '#/definitions/models.TipoEspacioFisicoV2'
+        $ref: '#/definitions/models.TipoEspacioFisico'
       TipoTerrenoId:
         type: integer
         format: int64
@@ -2370,11 +2392,11 @@ definitions:
         type: integer
         format: int64
       LimiteInferior:
-        type: integer
-        format: int64
+        type: number
+        format: double
       LimiteSuperior:
-        type: integer
-        format: int64
+        type: number
+        format: double
       NecesitaPlaca:
         type: boolean
       NecesitaPoliza:
@@ -2426,27 +2448,8 @@ definitions:
       NumeroOrden:
         type: integer
         format: int64
-  models.TipoEspacio:
-    title: TipoEspacio
-    type: object
-    properties:
-      Activo:
-        type: boolean
-      CodigoAbreviacion:
-        type: string
-      FechaCreacion:
-        type: string
-        format: datetime
-      FechaModificacion:
-        type: string
-        format: datetime
-      Id:
-        type: integer
-        format: int64
-      Nombre:
-        type: string
-  models.TipoEspacioFisicoV2:
-    title: TipoEspacioFisicoV2
+  models.TipoEspacioFisico:
+    title: TipoEspacioFisico
     type: object
     properties:
       Activo:

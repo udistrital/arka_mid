@@ -16,7 +16,9 @@ import (
 )
 
 // GetAllActasRecibidoActivas ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, offset int64) (historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string,
+	id_, estado, fechaCreacion_, fechaModificacion_ string,
+	sortby, order string, limit int64, offset int64) (historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
 
 	funcion := "GetAllActasRecibidoActivas - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -91,7 +93,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 		// Si no puede ver todas las actas de al menos un estado, únicamente se
 		// traerán las asignadas como contratista o proveedor
-		if len(algunosEstados) == 0 {
+		if len(algunosEstados) > 0 {
 			for _, rol := range usr.Role {
 				if proveedor && contratista {
 					break
@@ -136,6 +138,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		logs.Info("t:", verTodasLasActas, "- e:", algunosEstados)
 	}
 
+	if !verTodasLasActas && len(algunosEstados) == 0 {
+		return
+	}
 	// PARTE 2: Traer los tipos de actas identificados
 	// (con base a la estrategia definida anteriormente)
 
@@ -144,18 +149,70 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 	// - Filtrar por estados
 	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 	query := "Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
-	if len(algunosEstados) > 0 {
-		query += ",EstadoActaId__Nombre__in:" + strings.Join(algunosEstados, "|")
-	} else if contratista || proveedor {
-		query += ",EstadoActaId__Nombre"
-		if contratista {
-			query += "__in:En Elaboracion|En Modificacion,PersonaAsignadaId:" + fmt.Sprint(idTercero)
-		} else if proveedor {
-			query += ":En Elaboracion,ProveedorId:" + fmt.Sprint(idTercero)
+
+	if estado != "" {
+		if !verTodasLasActas {
+			for _, d := range algunosEstados {
+				if d == estado {
+					algunosEstados = []string{estado}
+					break
+				}
+			}
+		} else {
+			algunosEstados = []string{estado}
 		}
 	}
 
-	historicos, count, err := actaRecibido.GetAllHistoricoActas(query, "", "ActaRecibidoId__Id", "desc", fmt.Sprint(offset), fmt.Sprint(limit))
+	if !verTodasLasActas && len(algunosEstados) == 0 {
+		return
+	}
+
+	if len(algunosEstados) != 0 {
+		query += ",EstadoActaId__CodigoAbreviacion__in:" + strings.Join(algunosEstados, "|")
+	}
+
+	if contratista || proveedor {
+		if contratista {
+			query += ",PersonaAsignadaId:" + fmt.Sprint(idTercero)
+		} else if proveedor {
+			query += ",ProveedorId:" + fmt.Sprint(idTercero)
+		}
+	}
+
+	if limit > 0 && offset > 0 {
+		offset--
+		offset *= limit
+	}
+
+	if id_ != "" {
+		query += ",ActaRecibidoId__Id__icontains:" + id_
+	}
+
+	if fechaCreacion_ != "" {
+		fechaCreacion_ = strings.ReplaceAll(fechaCreacion_, "/", "-")
+		query += ",ActaRecibidoId__FechaCreacion__icontains:" + fechaCreacion_
+	}
+
+	if fechaModificacion_ != "" {
+		fechaModificacion_ = strings.ReplaceAll(fechaModificacion_, "/", "-")
+		query += ",FechaModificacion__icontains:" + fechaModificacion_
+	}
+
+	if order != "" && (sortby == "Id" || sortby == "FechaCreacion" || sortby == "FechaModificacion" || sortby == "FechaVistoBueno" || sortby == "EstadoActaId") {
+		if sortby == "FechaCreacion" {
+			sortby = "ActaRecibidoId__FechaCreacion"
+		} else if sortby == "Id" {
+			sortby = "ActaRecibidoId__Id"
+		} else if sortby == "EstadoActaId" {
+			sortby = "EstadoActaId__Nombre"
+		}
+		order = strings.ToLower(order)
+	} else {
+		sortby = "ActaRecibidoId__Id"
+		order = "desc"
+	}
+
+	historicos, count, err := actaRecibido.GetAllHistoricoActas(query, "", sortby, order, fmt.Sprint(offset), fmt.Sprint(limit))
 	if err != nil {
 		return nil, "", err
 	}
@@ -206,19 +263,21 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 		Acta := map[string]interface{}{
 			"Id":                historico.ActaRecibidoId.Id,
-			"UbicacionId":       "",
-			"FechaCreacion":     historico.FechaCreacion,
+			"FechaCreacion":     historico.ActaRecibidoId.FechaCreacion,
 			"FechaVistoBueno":   historico.FechaVistoBueno,
 			"FechaModificacion": historico.FechaModificacion,
 			"Observaciones":     historico.Observaciones,
 			"RevisorId":         editor.NombreCompleto,
 			"PersonaAsignada":   asignado.NombreCompleto,
-			"Estado":            historico.EstadoActaId.Nombre,
-			"EstadoActaId":      historico.EstadoActaId,
+			"EstadoActaId":      historico.EstadoActaId.Id,
+		}
+
+		if historico.EstadoActaId.CodigoAbreviacion == "Aceptada" || historico.EstadoActaId.CodigoAbreviacion == "AsociadoEntrada" {
+			Acta["AceptadaPor"] = editor.NombreCompleto
 		}
 
 		if val, ok := Ubicaciones[historico.UbicacionId]; ok && val.EspacioFisicoId != nil {
-			Acta["UbicacionId"] = val.EspacioFisicoId.Nombre
+			Acta["DependenciaId"] = val.DependenciaId.Nombre
 		}
 
 		historicoActa = append(historicoActa, Acta)
