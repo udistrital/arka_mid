@@ -237,9 +237,8 @@ func (c *ActaRecibidoController) GetAllActas() {
 		offset = v
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
-		// fmt.Print("DATA FINAL: ")
-		// fmt.Println(l)
+	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
+		c.Ctx.Output.Header("total-count", t)
 		if l == nil {
 			l = []map[string]interface{}{}
 		}

@@ -15,8 +15,8 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-// GetAllActasRecibido ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, offset int64) (historicoActa []map[string]interface{}, outputError map[string]interface{}) {
+// GetAllActasRecibidoActivas ...
+func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, offset int64) (historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
 
 	funcion := "GetAllActasRecibidoActivas - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -43,7 +43,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			usr = data
 		} else if err != nil {
 			// formatdata.JsonPrint(data)
-			return nil, err
+			return nil, "", err
 		} else { // data.Role == nil || len(data.Role) == 0
 			err := fmt.Errorf("el usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
 			logs.Warn(err)
@@ -52,7 +52,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 				"err":     err,
 				"status":  "404",
 			}
-			return nil, outputError
+			return nil, "", outputError
 		}
 
 		// Averiguar si el usuario puede ver todas las actas en todos los estados
@@ -106,7 +106,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 				// fmt.Println(usr.Documento)
 				err := autenticacion.GetTerceroUser(usr, &idTercero)
 				if err != nil || idTercero == 0 {
-					return nil, err
+					return nil, "", err
 				}
 			}
 		}
@@ -155,9 +155,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		}
 	}
 
-	historicos, err := actaRecibido.GetAllHistoricoActa(query, "", "ActaRecibidoId__Id", "desc", fmt.Sprint(offset), fmt.Sprint(limit))
+	historicos, count, err := actaRecibido.GetAllHistoricoActas(query, "", "ActaRecibidoId__Id", "desc", fmt.Sprint(offset), fmt.Sprint(limit))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// PARTE 3: Completar data faltante
@@ -170,7 +170,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			if val, ok := Terceros[historico.RevisorId]; !ok {
 				logs.Info("Consulta revisor: ", historico.RevisorId)
 				if revisor, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
-					return nil, err
+					return nil, "", err
 				} else if revisor != nil {
 					editor = *revisor
 					Terceros[historico.RevisorId] = *revisor
@@ -184,7 +184,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 			if _, ok := Ubicaciones[historico.UbicacionId]; !ok {
 				id_ := strconv.Itoa(historico.UbicacionId)
 				if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
-					return nil, err
+					return nil, "", err
 				} else if len(asignacion) == 1 {
 					Ubicaciones[historico.UbicacionId] = asignacion[0]
 				}
@@ -194,7 +194,7 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 		if historico.PersonaAsignadaId > 0 {
 			if val, ok := Terceros[historico.PersonaAsignadaId]; !ok {
 				if revisor, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
-					return nil, err
+					return nil, "", err
 				} else if revisor != nil {
 					asignado = *revisor
 					Terceros[historico.PersonaAsignadaId] = *revisor
@@ -226,6 +226,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string, limit int64, of
 
 	logs.Info(len(historicoActa), "actas")
 
-	return historicoActa, nil
+	return
 
 }
