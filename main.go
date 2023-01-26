@@ -27,7 +27,7 @@ func main() {
 			"origin",
 			"authorization",
 			"x-csrftoken"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "X-Total-Count"},
 		AllowCredentials: true,
 	}))
 	beego.ErrorController(&customerrorv2.CustomErrorController{})
