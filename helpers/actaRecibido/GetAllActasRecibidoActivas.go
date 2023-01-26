@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/astaxie/beego/logs"
-
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
@@ -16,157 +14,31 @@ import (
 )
 
 // GetAllActasRecibidoActivas ...
-func GetAllActasRecibidoActivas(states []string, usrWSO2 string,
-	id_, estado, fechaCreacion_, fechaModificacion_ string,
-	sortby, order string, limit int64, offset int64) (historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
+func GetAllActasRecibidoActivas(usrWSO2 string,
+	id_ string, estados []string, fechaCreacion_, fechaModificacion_ string,
+	sortby, order string, limit int64, offset int64) (
+	historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
 
-	funcion := "GetAllActasRecibidoActivas - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
-
-	// PARTE "0": Buffers, para evitar repetir consultas...
-	Terceros := make(map[int]models.Tercero)
-	Ubicaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
+	defer errorctrl.ErrorControlFunction("GetAllActasRecibidoActivas - Unhandled Error!", "500")
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
-	// (y así definir la estrategia para traer las actas)
-	verTodasLasActas := false
-	algunosEstados := []string{}
-	proveedor := false
-	contratista := false
-	idTercero := 0
 
-	// De especificarse un usuario, hay que definir las actas que puede ver
-	if usrWSO2 != "" {
-
-		// Traer la información de Autenticación MID para obtener los roles
-		var usr models.UsuarioAutenticacion
-		if data, err := autenticacion.DataUsuario(usrWSO2); err == nil && data.Role != nil && len(data.Role) > 0 {
-			// logs.Debug(data)
-			usr = data
-		} else if err != nil {
-			// formatdata.JsonPrint(data)
-			return nil, "", err
-		} else { // data.Role == nil || len(data.Role) == 0
-			err := fmt.Errorf("el usuario '%s' no está registrado en WSO2 y/o no tiene roles asignados", usrWSO2)
-			logs.Warn(err)
-			outputError = map[string]interface{}{
-				"funcion": funcion + "autenticacion.DataUsuario(usrWSO2)",
-				"err":     err,
-				"status":  "404",
-			}
-			return nil, "", outputError
-		}
-
-		// Averiguar si el usuario puede ver todas las actas en todos los estados
-		for _, rol := range usr.Role {
-			if verTodasLasActas {
-				break
-			}
-			for _, rolSuficiente := range verCualquierEstado {
-				if rol == rolSuficiente {
-					verTodasLasActas = true
-					break
-				}
-			}
-		}
-
-		// Si no puede ver actas en cualquier estado, averiguar en qué estados puede ver
-		if !verTodasLasActas {
-			for estado, roles := range reglasVerTodas {
-				verEstado := false
-				for _, rolSuficiente := range roles {
-					if verEstado {
-						break
-					}
-					for _, rol := range usr.Role {
-						if rol == rolSuficiente {
-							verEstado = true
-							break
-						}
-					}
-				}
-				if verEstado {
-					algunosEstados = append(algunosEstados, estado)
-				}
-			}
-		}
-
-		// Si no puede ver todas las actas de al menos un estado, únicamente se
-		// traerán las asignadas como contratista o proveedor
-		if len(algunosEstados) > 0 {
-			for _, rol := range usr.Role {
-				if proveedor && contratista {
-					break
-				}
-				if rol == models.RolesArka["Proveedor"] {
-					proveedor = true
-				} else if rol == models.RolesArka["Contratista"] {
-					contratista = true
-				}
-			}
-			if proveedor || contratista {
-				// fmt.Println(usr.Documento)
-				err := autenticacion.GetTerceroUser(usr, &idTercero)
-				if err != nil || idTercero == 0 {
-					return nil, "", err
-				}
-			}
-		}
-	}
-	logs.Info("u:", usrWSO2, "- t:", verTodasLasActas, "- e:", algunosEstados, "- p:", proveedor, "- c:", contratista, "- i:", idTercero)
-
-	// fmt.Print("Estados Solicitados: ")
-	// fmt.Println(states)
-
-	// Si se pasaron estados
-	if len(states) > 0 {
-		if usrWSO2 == "" || verTodasLasActas {
-			algunosEstados = states
-			verTodasLasActas = false
-		} else if idTercero == 0 { // len(algunosEstados) > 0
-			estFinales := []string{}
-			for _, estUsuario := range algunosEstados {
-				for _, est := range states {
-					if est == estUsuario {
-						estFinales = append(estFinales, estUsuario)
-						break
-					}
-				}
-			}
-			algunosEstados = estFinales
-		}
-		logs.Info("t:", verTodasLasActas, "- e:", algunosEstados)
+	verTodasLasActas, algunosEstados, user, outputError := getEstados(estados, usrWSO2)
+	if outputError != nil {
+		return nil, "", outputError
 	}
 
 	if !verTodasLasActas && len(algunosEstados) == 0 {
 		return
 	}
+
+	proveedor, contratista, idTercero, outputError := getTereroId(verTodasLasActas, algunosEstados, user)
+	if outputError != nil {
+		return nil, "", outputError
+	}
+
 	// PARTE 2: Traer los tipos de actas identificados
-	// (con base a la estrategia definida anteriormente)
-
-	// TODO: Por rendimiento, TODO lo relacionado a ...
-	// - buscar el historico_acta mas reciente
-	// - Filtrar por estados
-	// ... debería moverse a una o más función(es) y/o controlador(es) del CRUD
 	query := "Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
-
-	if estado != "" {
-		if !verTodasLasActas {
-			for _, d := range algunosEstados {
-				if d == estado {
-					algunosEstados = []string{estado}
-					break
-				}
-			}
-		} else {
-			algunosEstados = []string{estado}
-		}
-	}
-
-	if !verTodasLasActas && len(algunosEstados) == 0 {
-		return
-	}
-
 	if len(algunosEstados) != 0 {
 		query += ",EstadoActaId__CodigoAbreviacion__in:" + strings.Join(algunosEstados, "|")
 	}
@@ -218,6 +90,9 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string,
 	}
 
 	// PARTE 3: Completar data faltante
+
+	Terceros := make(map[int]models.Tercero)
+	Ubicaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
 	for _, historico := range historicos {
 
 		var editor models.Tercero
@@ -225,7 +100,6 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string,
 
 		if historico.RevisorId > 0 {
 			if val, ok := Terceros[historico.RevisorId]; !ok {
-				logs.Info("Consulta revisor: ", historico.RevisorId)
 				if revisor, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
 					return nil, "", err
 				} else if revisor != nil {
@@ -283,8 +157,103 @@ func GetAllActasRecibidoActivas(states []string, usrWSO2 string,
 		historicoActa = append(historicoActa, Acta)
 	}
 
-	logs.Info(len(historicoActa), "actas")
-
 	return
 
+}
+
+func getEstados(estados []string, user string) (verTodas bool, estados_ []string, usr models.UsuarioAutenticacion, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("getEstados - Unhandled Error!", "500")
+
+	if user != "" {
+		// Consulta de roles
+		usr, outputError = autenticacion.DataUsuario(user)
+		if outputError != nil || usr.Role == nil || len(usr.Role) == 0 {
+			return
+		}
+
+		for _, rol := range usr.Role {
+			if verTodas {
+				break
+			}
+			for _, rolSuficiente := range verCualquierEstado {
+				if rol == rolSuficiente {
+					verTodas = true
+					break
+				}
+			}
+		}
+
+		// Si no puede ver actas en cualquier estado, averiguar en qué estados puede ver
+		if !verTodas {
+			for estado, roles := range reglasVerTodas {
+				verEstado := false
+				for _, rolSuficiente := range roles {
+					if verEstado {
+						break
+					}
+					for _, rol := range usr.Role {
+						if rol == rolSuficiente {
+							verEstado = true
+							break
+						}
+					}
+				}
+
+				if !verEstado {
+					continue
+				} else if len(estados) == 0 {
+					estados_ = append(estados_, estado)
+					continue
+				}
+
+				for _, st := range estados {
+					if estado == st {
+						estados_ = append(estados_, estado)
+						break
+					}
+				}
+			}
+		} else if len(estados) > 0 {
+			estados_ = estados
+		}
+
+	} else if len(estados) > 0 {
+		estados_ = estados
+	} else {
+		verTodas = true
+	}
+
+	return
+}
+
+func getTereroId(verTodas bool, estados []string, usr models.UsuarioAutenticacion) (proveedor, contratista bool, tercero int, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("getTereroId - Unhandled Error!", "500")
+
+	if verTodas {
+		return
+	}
+
+	for _, rol := range usr.Role {
+		if rol == models.RolesArka["Contratista"] {
+			contratista = true
+			break
+		} else if rol == models.RolesArka["Proveedor"] {
+			proveedor = true
+			break
+		}
+	}
+
+	if proveedor || contratista {
+		outputError = autenticacion.GetTerceroUser(usr, &tercero)
+		if outputError != nil {
+			return
+		} else if tercero == 0 {
+			contratista = false
+			proveedor = false
+		}
+	}
+
+	return
 }

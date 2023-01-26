@@ -156,7 +156,6 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // GetAllActas ...
 // @Title Get All Actas
 // @Description get ActaRecibido
-// @Param	states				query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
 // @Param 	u					query	string	false	"WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
 // @Param	limit				query	string	false	"Limit the size of result set. Must be an integer"
 // @Param	offset				query	string	false	"Start position of result set. Must be an integer"
@@ -176,34 +175,9 @@ func (c *ActaRecibidoController) GetAllActas() {
 
 	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
-	var reqStates []string
 	var WSO2user string
 	var limit int64 = 10
 	var offset int64
-
-	if v := c.GetString("states"); v != "" {
-		valido := false
-		states := strings.Split(v, ",")
-		for _, state := range states {
-			state = strings.TrimSpace(state)
-			if state != "" {
-				reqStates = append(reqStates, state)
-				valido = true
-			}
-		}
-
-		if !valido {
-			err := errors.New("bad syntax. States MUST be comma separated")
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "GetAllActas - c.GetString(\"states\")",
-				"err":     err,
-				"status":  "400",
-			})
-		}
-	}
-	// fmt.Print("ESTADOS SOLICITADOS: ")
-	// fmt.Println(reqStates)
 
 	if v := c.GetString("u"); v != "" {
 		valido := false
@@ -223,8 +197,13 @@ func (c *ActaRecibidoController) GetAllActas() {
 		}
 	}
 
+	reqStates := []string{}
+	estados := c.GetString("EstadoActaId")
+	if len(estados) > 0 {
+		reqStates = strings.Split(estados, ",")
+	}
+
 	id := c.GetString("Id")
-	estado := c.GetString("EstadoActaId")
 	creacion := c.GetString("FechaCreacion")
 	modificacion := c.GetString("FechaModificacion")
 	sortby := c.GetString("sortby")
@@ -239,7 +218,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		offset = v
 	}
 
-	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, id, estado, creacion, modificacion, sortby, order, limit, offset); err == nil {
+	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, reqStates, creacion, modificacion, sortby, order, limit, offset); err == nil {
 		c.Ctx.Output.Header("x-total-count", t)
 		if l == nil {
 			l = []map[string]interface{}{}
