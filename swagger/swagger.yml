@@ -98,6 +98,10 @@ paths:
         description: Id para utilizar en query __in
         type: string
       - in: query
+        name: TipoActaId
+        description: Tipos de acta para utilizar en query __in
+        type: string
+      - in: query
         name: EstadoActaId
         description: Estado del acta
         type: string

@@ -160,6 +160,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // @Param	limit				query	string	false	"Limit the size of result set. Must be an integer"
 // @Param	offset				query	string	false	"Start position of result set. Must be an integer"
 // @Param	Id					query	string	false	"Id para utilizar en query __in"
+// @Param	TipoActaId			query	string	false	"Tipos de acta para utilizar en query __in"
 // @Param	EstadoActaId		query	string	false	"Estado del acta"
 // @Param	FechaCreacion		query	string	false	"Fecha creación del acta: __in"
 // @Param	FechaModificacion	query	string	false	"Fecha modificación del acta: __in"
@@ -203,6 +204,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		reqStates = strings.Split(estados, ",")
 	}
 
+	tipos := c.GetString("TipoActaId")
 	id := c.GetString("Id")
 	creacion := c.GetString("FechaCreacion")
 	modificacion := c.GetString("FechaModificacion")
@@ -218,7 +220,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		offset = v
 	}
 
-	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, reqStates, creacion, modificacion, sortby, order, limit, offset); err == nil {
+	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, tipos, reqStates, creacion, modificacion, sortby, order, limit, offset); err == nil {
 		c.Ctx.Output.Header("x-total-count", t)
 		if l == nil {
 			l = []map[string]interface{}{}
