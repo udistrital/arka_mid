@@ -15,7 +15,7 @@ import (
 
 // GetAllActasRecibidoActivas ...
 func GetAllActasRecibidoActivas(usrWSO2 string,
-	id_ string, estados []string, fechaCreacion_, fechaModificacion_ string,
+	id_, tipos string, estados []string, fechaCreacion_, fechaModificacion_ string,
 	sortby, order string, limit int64, offset int64) (
 	historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
 
@@ -38,7 +38,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 	}
 
 	// PARTE 2: Traer los tipos de actas identificados
-	query := "Activo:true,ActaRecibidoId__TipoActaId__Nombre__in:Regular|Especial"
+	query := "Activo:true"
 	if len(algunosEstados) != 0 {
 		query += ",EstadoActaId__CodigoAbreviacion__in:" + strings.Join(algunosEstados, "|")
 	}
@@ -68,6 +68,13 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 	if fechaModificacion_ != "" {
 		fechaModificacion_ = strings.ReplaceAll(fechaModificacion_, "/", "-")
 		query += ",FechaModificacion__icontains:" + fechaModificacion_
+	}
+
+	query += ",ActaRecibidoId__TipoActaId__Id__in:"
+	if tipos != "" {
+		query += tipos
+	} else {
+		query += "1|2"
 	}
 
 	if order != "" && (sortby == "Id" || sortby == "FechaCreacion" || sortby == "FechaModificacion" || sortby == "FechaVistoBueno" || sortby == "EstadoActaId") {

@@ -88,15 +88,23 @@ type FormatoBaseEntrada struct {
 	ActaRecibidoId      int    `json:"acta_recibido_id"`
 	Consecutivo         string `json:"consecutivo"`
 	ConsecutivoId       int
-	ContratoId          int     `json:"contrato_id"`
-	Divisa              string  `json:"divisa"`
-	Factura             int     `json:"factura"`
-	OrdenadorGastoId    int     `json:"ordenador_gasto_id"`
-	Elementos           []int   `json:"elementos"`
-	RegistroImportacion string  `json:"num_reg_importacion"`
-	SupervisorId        int     `json:"supervisor"`
-	TRM                 float64 `json:"TRM"`
-	VigenciaContrato    string  `json:"vigencia_contrato"`
+	ContratoId          int                `json:"contrato_id"`
+	Divisa              string             `json:"divisa"`
+	Factura             int                `json:"factura"`
+	OrdenadorGastoId    int                `json:"ordenador_gasto_id"`
+	Elementos           []ElementoMejorado `json:"elementos"`
+	RegistroImportacion string             `json:"num_reg_importacion"`
+	SupervisorId        int                `json:"supervisor"`
+	TRM                 float64            `json:"TRM"`
+	VigenciaContrato    string             `json:"vigencia_contrato"`
+}
+
+type ElementoMejorado struct {
+	Id            int
+	AprovechadoId *int
+	ValorLibros   *float64
+	VidaUtil      *float64
+	ValorResidual *float64
 }
 
 type TrSoporteMovimiento struct {

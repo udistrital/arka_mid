@@ -144,23 +144,39 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if len(detalle.Elementos) > 0 {
-		query = "query=Id__in:" + utilsHelper.ArrayToString(detalle.Elementos, "|")
-		elementos, err := movimientosArka.GetAllElementosMovimiento(query)
-		if err != nil {
-			return nil, err
-		}
-
 		var detalleElementos = make([]map[string]interface{}, 0)
-		for _, el := range elementos {
-			var elemento_ models.Elemento
-			if err := actaRecibido.GetElementoById(el.ElementoActaId, &elemento_); err != nil {
+		for _, el := range detalle.Elementos {
+			query = "limit=1&query=Id:" + strconv.Itoa(el.Id)
+			detalleMov, err := movimientosArka.GetAllElementosMovimiento(query)
+			if err != nil {
 				return nil, err
+			} else if len(detalleMov) != 1 {
+				continue
 			}
 
-			detalleElemento := map[string]interface{}{
-				"Salida":     el.MovimientoId,
-				"Placa":      elemento_.Placa,
-				"ValorTotal": elemento_.ValorTotal,
+			var detalleElemento map[string]interface{}
+			outputError = utilsHelper.FillStruct(el, &detalleElemento)
+			if outputError != nil {
+				return
+			}
+
+			var elemento_ models.Elemento
+			outputError = actaRecibido.GetElementoById(detalleMov[0].ElementoActaId, &elemento_)
+			if outputError != nil {
+				return
+			}
+
+			detalleElemento["Salida"] = detalleMov[0].MovimientoId
+			detalleElemento["Placa"] = elemento_.Placa
+			detalleElemento["ValorTotal"] = elemento_.ValorTotal
+
+			if el.AprovechadoId != nil && *el.AprovechadoId > 0 {
+				var elemento__ models.Elemento
+				outputError = actaRecibido.GetElementoById(*el.AprovechadoId, &elemento__)
+				if outputError != nil {
+					return
+				}
+				detalleElemento["AprovechadoId"] = elemento__.Placa
 			}
 
 			detalleElementos = append(detalleElementos, detalleElemento)

@@ -141,6 +141,12 @@
                     },
                     {
                         "in": "query",
+                        "name": "TipoActaId",
+                        "description": "Tipos de acta para utilizar en query __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
                         "name": "EstadoActaId",
                         "description": "Estado del acta",
                         "type": "string"
@@ -2536,6 +2542,32 @@
                 }
             }
         },
+        "models.ElementoMejorado": {
+            "title": "ElementoMejorado",
+            "type": "object",
+            "properties": {
+                "AprovechadoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorLibros": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.ElementoSinAsignar": {
             "title": "ElementoSinAsignar",
             "type": "object",
@@ -2878,8 +2910,7 @@
                 "elementos": {
                     "type": "array",
                     "items": {
-                        "type": "integer",
-                        "format": "int64"
+                        "$ref": "#/definitions/models.ElementoMejorado"
                     }
                 },
                 "factura": {

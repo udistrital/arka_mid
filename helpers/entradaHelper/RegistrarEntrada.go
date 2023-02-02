@@ -23,11 +23,6 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *mode
 		detalle          string
 	)
 
-	if data.Detalle.ActaRecibidoId <= 0 {
-		err := "Se debe indicar un acta de recibido válida."
-		return errorctrl.Error(funcion, err, "400")
-	}
-
 	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimiento, "Entrada En Trámite"); err != nil {
 		return err
 	}
@@ -36,15 +31,17 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *mode
 		return err
 	}
 
-	if err := actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, false, &acta); err != nil {
-		return err
+	if data.Detalle.ActaRecibidoId > 0 {
+		if err := actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, false, &acta); err != nil {
+			return err
+		}
 	}
 
 	if err := crearDetalleEntrada(&data.Detalle, etl, nil, &detalle); err != nil {
 		return err
 	}
 
-	if !etl {
+	if !etl && data.Detalle.ActaRecibidoId > 0 {
 		if msjErr, err := asignarPlacas(data.Detalle.ActaRecibidoId, &acta.Elementos); err != nil {
 			return err
 		} else if msjErr != "" {
@@ -82,7 +79,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *mode
 
 	}
 
-	if !etl {
+	if !etl && data.Detalle.ActaRecibidoId > 0 {
 		acta.UltimoEstado.EstadoActaId.Id = 6
 		acta.UltimoEstado.Id = 0
 
@@ -128,6 +125,26 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 
 	if len(completo.Elementos) == 0 {
 		delete(detalle, "elementos")
+	} else {
+		elementos_, _ := detalle["elementos"].([]interface{})
+		for _, elemento_ := range elementos_ {
+			el, _ := elemento_.(map[string]interface{})
+			if el["AprovechadoId"] == nil {
+				delete(el, "AprovechadoId")
+			}
+
+			if el["ValorLibros"] == nil {
+				delete(el, "ValorLibros")
+			}
+
+			if el["VidaUtil"] == nil {
+				delete(el, "VidaUtil")
+			}
+
+			if el["ValorResidual"] == nil {
+				delete(el, "ValorResidual")
+			}
+		}
 	}
 
 	if completo.RegistroImportacion == "" {
