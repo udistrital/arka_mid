@@ -80,7 +80,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if detalle.ActaRecibidoId > 0 {
 		query = "ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
-		var acta *models.HistoricoActa
+		var acta models.HistoricoActa
 		if tr, err := actaRecibido.GetAllHistoricoActa(query, "", "Id", "desc", "", "1"); err != nil {
 			return nil, err
 		} else {

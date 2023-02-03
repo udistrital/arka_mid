@@ -274,6 +274,23 @@ func PutNovedadElemento(novedad *models.NovedadElemento, novedadId int) (novedad
 
 }
 
+// PostNovedadElemento post controlador novedad_elemento del api movimientos_arka_crud
+func PostNovedadElemento(novedad *models.NovedadElemento) (outputError map[string]interface{}) {
+
+	funcion := "PostNovedadElemento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+
+	urlcrud := basePath + "novedad_elemento"
+	err := request.SendJson(urlcrud, "POST", &novedad, &novedad)
+	if err != nil {
+		logs.Error(err, urlcrud)
+		eval := `request.SendJson(urlcrud, "POST", &novedad, &novedad)`
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
 // GetElementosFuncionario query controlador elementos_movimiento/funcionario/{funcionarioId} del api movimientos_arka_crud
 func GetElementosFuncionario(funcionarioId int) (movimientos []int, outputError map[string]interface{}) {
 

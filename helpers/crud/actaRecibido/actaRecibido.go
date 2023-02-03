@@ -46,7 +46,7 @@ func GetAllElemento(query string, fields string, sortby string, order string, of
 }
 
 // GetAllHistoricoActa query controlador historico_acta del api acta_recibido_crud
-func GetAllHistoricoActa(query string, fields string, sortby string, order string, offset string, limit string) (historicos []*models.HistoricoActa, outputError map[string]interface{}) {
+func GetAllHistoricoActa(query string, fields string, sortby string, order string, offset string, limit string) (historicos []models.HistoricoActa, outputError map[string]interface{}) {
 
 	funcion := "GetAllHistoricoActa - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
