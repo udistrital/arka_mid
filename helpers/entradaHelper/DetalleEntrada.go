@@ -170,6 +170,12 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			detalleElemento["Placa"] = elemento_.Placa
 			detalleElemento["ValorTotal"] = elemento_.ValorTotal
 
+			if el.ValorLibros != nil && el.ValorResidual != nil && el.VidaUtil != nil {
+				detalleElemento["ValorLibros"] = el.ValorLibros
+				detalleElemento["ValorResidual"] = el.ValorResidual
+				detalleElemento["VidaUtil"] = el.VidaUtil
+			}
+
 			if el.AprovechadoId != nil && *el.AprovechadoId > 0 {
 				var elemento__ models.Elemento
 				outputError = actaRecibido.GetElementoById(*el.AprovechadoId, &elemento__)

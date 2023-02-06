@@ -163,6 +163,10 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "vigencia_contrato")
 	}
 
+	if completo.FechaCorte == "" {
+		delete(detalle, "FechaCorte")
+	}
+
 	if !etl && consecutivo_ == nil {
 		ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
 		if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {

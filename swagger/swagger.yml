@@ -1996,6 +1996,8 @@ definitions:
       ConsecutivoId:
         type: integer
         format: int64
+      FechaCorte:
+        type: string
       TRM:
         type: number
         format: double
