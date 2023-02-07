@@ -155,6 +155,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 			"RevisorId":         editor.NombreCompleto,
 			"PersonaAsignada":   asignado.NombreCompleto,
 			"EstadoActaId":      historico.EstadoActaId.Id,
+			"UnidadEjecutoraId": historico.ActaRecibidoId.UnidadEjecutoraId,
 		}
 
 		if historico.EstadoActaId.CodigoAbreviacion == "Aceptada" || historico.EstadoActaId.CodigoAbreviacion == "AsociadoEntrada" {

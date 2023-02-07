@@ -23,9 +23,10 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	defer errorctrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
 	var (
-		detalle    models.FormatoBaseEntrada
-		movimiento models.Movimiento
-		query      string
+		detalle         models.FormatoBaseEntrada
+		movimiento      models.Movimiento
+		unidadEjecutora models.Parametro
+		query           string
 	)
 
 	resultado := make(map[string]interface{})
@@ -39,43 +40,6 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
 		return nil, err
-	}
-
-	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
-		var contrato administrativa_.InformacionContrato
-		if err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato); err != nil {
-			return nil, err
-		}
-
-		if contrato.Contrato.NumeroContratoSuscrito != "" {
-			resultado["contrato"] = contrato.Contrato
-			if contrato.Contrato.TipoContrato != "" {
-				var tipoContrato administrativa_.TipoContrato
-				if err := administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato); err != nil {
-					return nil, err
-				}
-				resultado["tipo_contrato_id"] = tipoContrato
-			}
-		}
-	}
-
-	if movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
-		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-				return nil, err
-			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return nil, err
-				} else {
-					trContable := models.InfoTransaccionContable{
-						Movimientos: detalleContable,
-						Concepto:    tr.Descripcion,
-						Fecha:       tr.FechaTransaccion,
-					}
-					resultado["TransaccionContable"] = trContable
-				}
-			}
-		}
 	}
 
 	if detalle.ActaRecibidoId > 0 {
@@ -96,11 +60,55 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 
 		if acta.ActaRecibidoId.UnidadEjecutoraId > 0 {
-			var unidadEjecutora models.Parametro
 			if err := parametros.GetParametroById(acta.ActaRecibidoId.UnidadEjecutoraId, &unidadEjecutora); err != nil {
 				return nil, err
 			}
 			resultado["unidadEjecutora"] = unidadEjecutora
+		}
+	}
+
+	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
+		var contrato administrativa_.InformacionContrato
+		if unidadEjecutora.CodigoAbreviacion != "IDEXUD" {
+			outputError = administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato)
+			if outputError != nil {
+				return
+			}
+
+			if contrato.Contrato.NumeroContratoSuscrito != "" {
+				resultado["contrato"] = contrato.Contrato
+				if contrato.Contrato.TipoContrato != "" {
+					var tipoContrato administrativa_.TipoContrato
+					outputError = administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato)
+					if outputError != nil {
+						return
+					}
+					resultado["tipo_contrato_id"] = tipoContrato
+				}
+			}
+		} else {
+			contrato.Contrato.NumeroContrato = strconv.Itoa(detalle.ContratoId)
+			contrato.Contrato.Vigencia = detalle.VigenciaContrato
+			resultado["contrato"] = contrato.Contrato
+		}
+	}
+
+	if movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
+		if detalle.ConsecutivoId > 0 {
+			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+				return nil, err
+			} else if len(tr.Movimientos) > 0 {
+				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
+					return nil, err
+				} else {
+					trContable := models.InfoTransaccionContable{
+						Movimientos: detalleContable,
+						Concepto:    tr.Descripcion,
+						Fecha:       tr.FechaTransaccion,
+					}
+					resultado["TransaccionContable"] = trContable
+				}
+			}
 		}
 	}
 
