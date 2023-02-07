@@ -15,7 +15,7 @@ import (
 
 // GetAllActasRecibidoActivas ...
 func GetAllActasRecibidoActivas(usrWSO2 string,
-	id_, tipos string, estados []string, fechaCreacion_, fechaModificacion_ string,
+	id_, tipos string, estados []string, fechaCreacion_, fechaModificacion_ string, unidadEjecutora string,
 	sortby, order string, limit int64, offset int64) (
 	historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
 
@@ -68,6 +68,10 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 	if fechaModificacion_ != "" {
 		fechaModificacion_ = strings.ReplaceAll(fechaModificacion_, "/", "-")
 		query += ",FechaModificacion__icontains:" + fechaModificacion_
+	}
+
+	if unidadEjecutora != "" {
+		query += ",ActaRecibidoId__UnidadEjecutoraId:" + unidadEjecutora
 	}
 
 	query += ",ActaRecibidoId__TipoActaId__Id__in:"

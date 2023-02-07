@@ -147,6 +147,12 @@
                     },
                     {
                         "in": "query",
+                        "name": "UnidadEjecutoraId",
+                        "description": "Unidad ejecutora por las actas que se desean filtrar",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
                         "name": "EstadoActaId",
                         "description": "Estado del acta",
                         "type": "string"
