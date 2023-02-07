@@ -69,7 +69,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
 		var contrato administrativa_.InformacionContrato
-		if unidadEjecutora.CodigoAbreviacion != "IDEXUD" {
+		if unidadEjecutora.CodigoAbreviacion == "UD" {
 			outputError = administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato)
 			if outputError != nil {
 				return
@@ -87,7 +87,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 				}
 			}
 		} else {
-			contrato.Contrato.NumeroContrato = strconv.Itoa(detalle.ContratoId)
+			contrato.Contrato.NumeroContratoSuscrito = strconv.Itoa(detalle.ContratoId)
 			contrato.Contrato.Vigencia = detalle.VigenciaContrato
 			resultado["contrato"] = contrato.Contrato
 		}
