@@ -2950,13 +2950,6 @@
             "title": "FormatoSolicitudBodega",
             "type": "object",
             "properties": {
-                "Consecutivo": {
-                    "type": "string"
-                },
-                "ConsecutivoId": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "Elementos": {
                     "type": "array",
                     "items": {
