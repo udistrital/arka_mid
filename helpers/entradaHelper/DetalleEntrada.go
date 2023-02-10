@@ -93,22 +93,23 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 	}
 
-	if movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
-		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-				return nil, err
-			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return nil, err
-				} else {
-					trContable := models.InfoTransaccionContable{
-						Movimientos: detalleContable,
-						Concepto:    tr.Descripcion,
-						Fecha:       tr.FechaTransaccion,
-					}
-					resultado["TransaccionContable"] = trContable
-				}
+	if (movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida") &&
+		movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
+		tr, err := movimientosContables.GetTransaccion(*movimiento.ConsecutivoId, "consecutivo", true)
+		if err != nil {
+			return nil, err
+		} else if len(tr.Movimientos) > 0 {
+			trContable := models.InfoTransaccionContable{
+				Concepto: tr.Descripcion,
+				Fecha:    tr.FechaTransaccion,
 			}
+
+			trContable.Movimientos, outputError = asientoContable.GetDetalleContable(tr.Movimientos, nil)
+			if outputError != nil {
+				return
+			}
+
+			resultado["TransaccionContable"] = trContable
 		}
 	}
 

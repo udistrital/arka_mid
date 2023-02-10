@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -49,6 +50,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 		}
 	}
 
+	resultado_.Movimiento.FechaCorte = utilsHelper.Time(time.Now())
 	_, outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
 	return
 }
@@ -63,13 +65,13 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 	}
 
 	resultado.Movimiento = *movimiento[0]
-	outputError = utilsHelper.Unmarshal(resultado.Movimiento.Detalle, &formato)
-	if outputError != nil {
+	if resultado.Movimiento.ConsecutivoId == nil || *resultado.Movimiento.ConsecutivoId == 0 {
+		resultado.Error = "No se puede continuar con el cálculo de la transaccón contable. Contacte soporte."
 		return
 	}
 
-	if formato.ConsecutivoId == 0 {
-		resultado.Error = "No se puede continuar con el cálculo de la transaccón contable. Contacte soporte."
+	outputError = utilsHelper.Unmarshal(resultado.Movimiento.Detalle, &formato)
+	if outputError != nil {
 		return
 	}
 
@@ -174,7 +176,7 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 		return
 	}
 
-	var transaccion models.TransaccionMovimientos
+	var transaccion = models.TransaccionMovimientos{ConsecutivoId: *resultado_.Movimiento.ConsecutivoId}
 	bufferCuentas := make(map[string]models.CuentaContable)
 	resultado_.Error, outputError = asientoContable.CalcularMovimientosContables(elementos, detalleContable, 0, resultado_.Movimiento.FormatoTipoMovimientoId.Id, terceroId, terceroId, bufferCuentas, nil, &transaccion.Movimientos)
 	if outputError != nil || resultado_.Error != "" {
@@ -189,7 +191,6 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	resultado_.TransaccionContable.Concepto = transaccion.Descripcion
 	resultado_.TransaccionContable.Fecha = transaccion.FechaTransaccion
 	resultado_.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
-	transaccion.ConsecutivoId = formatoEntrada.ConsecutivoId
 	_, outputError = movimientosContables.PostTrContable(&transaccion)
 	return
 }

@@ -7,6 +7,9 @@ import (
 type Movimiento struct {
 	Id                      int
 	Observacion             string
+	ConsecutivoId           *int
+	Consecutivo             *string
+	FechaCorte              *time.Time
 	Detalle                 string
 	FechaCreacion           time.Time
 	FechaModificacion       time.Time
@@ -86,8 +89,6 @@ type TransaccionEntrada struct {
 
 type FormatoBaseEntrada struct {
 	ActaRecibidoId      int    `json:"acta_recibido_id"`
-	Consecutivo         string `json:"consecutivo"`
-	ConsecutivoId       int
 	ContratoId          int    `json:"contrato_id"`
 	Divisa              string `json:"divisa"`
 	Factura             int    `json:"factura"`
