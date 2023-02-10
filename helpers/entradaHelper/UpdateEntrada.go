@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -12,58 +11,40 @@ import (
 // UpdateEntrada Consulta el tipo de movimiento y completa el detalle de una entrada que se quiere actualizar
 func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	funcion := "UpdateEntrada - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("UpdateEntrada - Unhandled Error!", "500")
 
-	var (
-		tipoMovimiento   int
-		estadoMovimiento int
-		detalle          string
-		query            string
-		consecutivo      models.ConsecutivoMovimiento
-	)
-
-	if data.Detalle.ActaRecibidoId <= 0 {
-		err := "Se debe indicar un acta de recibido válida."
-		return errorctrl.Error(funcion, err, "400")
+	mov, outputError := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(movimientoId))
+	if outputError != nil || len(mov) != 1 || mov[0].EstadoMovimientoId.Nombre != "Entrada Rechazada" {
+		return outputError
 	}
 
-	query = "limit=1&query=Id:" + strconv.Itoa(movimientoId)
-	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return err
-	} else if len(mov) == 1 && mov[0].EstadoMovimientoId.Nombre == "Entrada Rechazada" {
-		*&resultado.Movimiento = *mov[0]
-	} else {
+	resultado.Movimiento = *mov[0]
+	resultado.Movimiento.Observacion = data.Observacion
+	resultado.Movimiento.Activo = true
+
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
+	if outputError != nil {
 		return
 	}
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimiento, "Entrada En Trámite"); err != nil {
-		return err
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
+	if outputError != nil {
+		return
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, data.FormatoTipoMovimientoId); err != nil {
-		return err
+	outputError = crearDetalleEntrada(data.Detalle, &resultado.Movimiento.Detalle)
+	if outputError != nil {
+		return
 	}
 
-	if err := utilsHelper.Unmarshal(resultado.Movimiento.Detalle, &consecutivo); err != nil {
-		return err
+	outputError = getConsecutivoEntrada(&resultado.Movimiento, false)
+	if outputError != nil {
+		return
 	}
 
-	if err := crearDetalleEntrada(&data.Detalle, false, &consecutivo, &detalle); err != nil {
-		return err
-	}
-
-	resultado.Movimiento = models.Movimiento{
-		Id:                      movimientoId,
-		Observacion:             data.Observacion,
-		Detalle:                 detalle,
-		Activo:                  true,
-		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{Id: tipoMovimiento},
-		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoMovimiento},
-	}
-
-	if _, err := movimientosArka.PutMovimiento(&resultado.Movimiento, movimientoId); err != nil {
-		return err
+	_, outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, movimientoId)
+	if outputError != nil {
+		return
 	}
 
 	// Crea registro en table soporte_movimiento si es necesario
@@ -74,10 +55,10 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, resultado 
 			MovimientoId: &models.Movimiento{Id: resultado.Movimiento.Id},
 		}
 
-		if err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {
-			return err
+		outputError = movimientosArka.PostSoporteMovimiento(&soporte)
+		if outputError != nil {
+			return
 		}
-
 	}
 
 	return

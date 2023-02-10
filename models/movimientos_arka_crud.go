@@ -7,6 +7,9 @@ import (
 type Movimiento struct {
 	Id                      int
 	Observacion             string
+	ConsecutivoId           *int
+	Consecutivo             *string
+	FechaCorte              *time.Time
 	Detalle                 string
 	FechaCreacion           time.Time
 	FechaModificacion       time.Time
@@ -86,11 +89,10 @@ type TransaccionEntrada struct {
 
 type FormatoBaseEntrada struct {
 	ActaRecibidoId      int    `json:"acta_recibido_id"`
-	Consecutivo         string `json:"consecutivo"`
-	ConsecutivoId       int
-	ContratoId          int                `json:"contrato_id"`
-	Divisa              string             `json:"divisa"`
-	Factura             int                `json:"factura"`
+	ContratoId          int    `json:"contrato_id"`
+	Divisa              string `json:"divisa"`
+	Factura             int    `json:"factura"`
+	FechaCorte          string
 	OrdenadorGastoId    int                `json:"ordenador_gasto_id"`
 	Elementos           []ElementoMejorado `json:"elementos"`
 	RegistroImportacion string             `json:"num_reg_importacion"`
@@ -311,8 +313,6 @@ type ConsecutivoMovimiento struct {
 }
 
 type FormatoSalida struct {
-	Consecutivo   string `json:"consecutivo"`
-	ConsecutivoId int
-	Funcionario   int `json:"funcionario"`
-	Ubicacion     int `json:"ubicacion"`
+	Funcionario int `json:"funcionario"`
+	Ubicacion   int `json:"ubicacion"`
 }

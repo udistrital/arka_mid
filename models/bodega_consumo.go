@@ -27,10 +27,8 @@ type ElementoSolicitud_ struct {
 	CantidadAprobada   int
 }
 type FormatoSolicitudBodega struct {
-	Funcionario   int
-	ConsecutivoId int
-	Consecutivo   string
-	Elementos     []ElementoSolicitud_
+	Funcionario int
+	Elementos   []ElementoSolicitud_
 }
 
 type DetalleSolicitudBodega struct {

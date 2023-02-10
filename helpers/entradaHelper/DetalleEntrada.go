@@ -23,9 +23,10 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	defer errorctrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
 	var (
-		detalle    models.FormatoBaseEntrada
-		movimiento models.Movimiento
-		query      string
+		detalle         models.FormatoBaseEntrada
+		movimiento      models.Movimiento
+		unidadEjecutora models.Parametro
+		query           string
 	)
 
 	resultado := make(map[string]interface{})
@@ -41,46 +42,9 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, err
 	}
 
-	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
-		var contrato administrativa_.InformacionContrato
-		if err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato); err != nil {
-			return nil, err
-		}
-
-		if contrato.Contrato.NumeroContratoSuscrito != "" {
-			resultado["contrato"] = contrato.Contrato
-			if contrato.Contrato.TipoContrato != "" {
-				var tipoContrato administrativa_.TipoContrato
-				if err := administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato); err != nil {
-					return nil, err
-				}
-				resultado["tipo_contrato_id"] = tipoContrato
-			}
-		}
-	}
-
-	if movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
-		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-				return nil, err
-			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return nil, err
-				} else {
-					trContable := models.InfoTransaccionContable{
-						Movimientos: detalleContable,
-						Concepto:    tr.Descripcion,
-						Fecha:       tr.FechaTransaccion,
-					}
-					resultado["TransaccionContable"] = trContable
-				}
-			}
-		}
-	}
-
 	if detalle.ActaRecibidoId > 0 {
 		query = "ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
-		var acta *models.HistoricoActa
+		var acta models.HistoricoActa
 		if tr, err := actaRecibido.GetAllHistoricoActa(query, "", "Id", "desc", "", "1"); err != nil {
 			return nil, err
 		} else {
@@ -96,11 +60,56 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 
 		if acta.ActaRecibidoId.UnidadEjecutoraId > 0 {
-			var unidadEjecutora models.Parametro
 			if err := parametros.GetParametroById(acta.ActaRecibidoId.UnidadEjecutoraId, &unidadEjecutora); err != nil {
 				return nil, err
 			}
 			resultado["unidadEjecutora"] = unidadEjecutora
+		}
+	}
+
+	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
+		var contrato administrativa_.InformacionContrato
+		if unidadEjecutora.CodigoAbreviacion == "UD" {
+			outputError = administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato)
+			if outputError != nil {
+				return
+			}
+
+			if contrato.Contrato.NumeroContratoSuscrito != "" {
+				resultado["contrato"] = contrato.Contrato
+				if contrato.Contrato.TipoContrato != "" {
+					var tipoContrato administrativa_.TipoContrato
+					outputError = administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato)
+					if outputError != nil {
+						return
+					}
+					resultado["tipo_contrato_id"] = tipoContrato
+				}
+			}
+		} else {
+			contrato.Contrato.NumeroContratoSuscrito = strconv.Itoa(detalle.ContratoId)
+			contrato.Contrato.Vigencia = detalle.VigenciaContrato
+			resultado["contrato"] = contrato.Contrato
+		}
+	}
+
+	if (movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida") &&
+		movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
+		tr, err := movimientosContables.GetTransaccion(*movimiento.ConsecutivoId, "consecutivo", true)
+		if err != nil {
+			return nil, err
+		} else if len(tr.Movimientos) > 0 {
+			trContable := models.InfoTransaccionContable{
+				Concepto: tr.Descripcion,
+				Fecha:    tr.FechaTransaccion,
+			}
+
+			trContable.Movimientos, outputError = asientoContable.GetDetalleContable(tr.Movimientos, nil)
+			if outputError != nil {
+				return
+			}
+
+			resultado["TransaccionContable"] = trContable
 		}
 	}
 
@@ -169,6 +178,12 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			detalleElemento["Salida"] = detalleMov[0].MovimientoId
 			detalleElemento["Placa"] = elemento_.Placa
 			detalleElemento["ValorTotal"] = elemento_.ValorTotal
+
+			if el.ValorLibros != nil && el.ValorResidual != nil && el.VidaUtil != nil {
+				detalleElemento["ValorLibros"] = el.ValorLibros
+				detalleElemento["ValorResidual"] = el.ValorResidual
+				detalleElemento["VidaUtil"] = el.VidaUtil
+			}
 
 			if el.AprovechadoId != nil && *el.AprovechadoId > 0 {
 				var elemento__ models.Elemento

@@ -13,14 +13,30 @@ import (
 
 func PostSolicitud(solicitud *models.FormatoSolicitudBodega, movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
-	funcion := "PostSolicitud"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("PostSolicitud - Unhandled Error!", "500")
 
-	var (
-		estadoId  int
-		formatoId int
-		detalle   string
-	)
+	movimiento.EstadoMovimientoId = &models.EstadoMovimiento{}
+	movimiento.FormatoTipoMovimientoId = &models.FormatoTipoMovimiento{}
+
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movimiento.FormatoTipoMovimientoId.Id, "SOL_BOD")
+	if outputError != nil {
+		return
+	}
+
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&movimiento.EstadoMovimientoId.Id, estadoSolicitudPendiente)
+	if outputError != nil {
+		return
+	}
+
+	detalle_ := models.FormatoSolicitudBodega{
+		Funcionario: solicitud.Funcionario,
+		Elementos:   solicitud.Elementos,
+	}
+
+	outputError = utilsHelper.Marshal(detalle_, &movimiento.Detalle)
+	if outputError != nil {
+		return
+	}
 
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtSolicitudBodega")
 	consecutivo := models.Consecutivo{
@@ -30,40 +46,16 @@ func PostSolicitud(solicitud *models.FormatoSolicitudBodega, movimiento *models.
 		Activo:      true,
 	}
 
-	if err := consecutivos.Post(&consecutivo); err != nil {
-		return err
+	outputError = consecutivos.Post(&consecutivo)
+	if outputError != nil {
+		return
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formatoId, "SOL_BOD"); err != nil {
-		return err
-	}
+	movimiento.Activo = true
+	movimiento.ConsecutivoId = &consecutivo.Id
+	movimiento.Consecutivo = utilsHelper.String(strconv.Itoa(consecutivo.Consecutivo))
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoId, estadoSolicitudPendiente); err != nil {
-		return err
-	}
-
-	detalle_ := models.FormatoSolicitudBodega{
-		ConsecutivoId: consecutivo.Id,
-		Consecutivo:   strconv.Itoa(consecutivo.Consecutivo),
-		Funcionario:   solicitud.Funcionario,
-		Elementos:     solicitud.Elementos,
-	}
-
-	if err := utilsHelper.Marshal(detalle_, &detalle); err != nil {
-		return err
-	}
-
-	*movimiento = models.Movimiento{
-		Detalle:                 detalle,
-		Activo:                  true,
-		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{Id: formatoId},
-		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoId},
-	}
-
-	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
-		return err
-	}
+	outputError = movimientosArka.PostMovimiento(movimiento)
 
 	return
-
 }

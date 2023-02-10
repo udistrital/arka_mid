@@ -13,39 +13,49 @@ import (
 // RegistrarEntrada Crea registro de entrada en estado en trámite
 func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	funcion := "RegistrarEntrada - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("RegistrarEntrada - Unhandled Error!", "500")
 
-	var (
-		acta             models.TransaccionActaRecibido
-		tipoMovimiento   int
-		estadoMovimiento int
-		detalle          string
-	)
-
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimiento, "Entrada En Trámite"); err != nil {
-		return err
+	resultado.Movimiento = models.Movimiento{
+		Observacion:             data.Observacion,
+		Activo:                  true,
+		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{},
+		EstadoMovimientoId:      &models.EstadoMovimiento{},
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, data.FormatoTipoMovimientoId); err != nil {
-		return err
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
+	if outputError != nil {
+		return
 	}
 
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
+	if outputError != nil {
+		return
+	}
+
+	outputError = crearDetalleEntrada(data.Detalle, &resultado.Movimiento.Detalle)
+	if outputError != nil {
+		return
+	}
+
+	var acta models.TransaccionActaRecibido
 	if data.Detalle.ActaRecibidoId > 0 {
-		if err := actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, false, &acta); err != nil {
-			return err
+		outputError = actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, false, &acta)
+		if outputError != nil {
+			return
+		} else if acta.UltimoEstado.EstadoActaId.CodigoAbreviacion != "Aceptada" {
+			resultado.Error = "El acta asociada no está en estado aceptada y no se puede continuar."
+			return
 		}
 	}
 
-	if err := crearDetalleEntrada(&data.Detalle, etl, nil, &detalle); err != nil {
-		return err
+	outputError = getConsecutivoEntrada(&resultado.Movimiento, etl)
+	if outputError != nil {
+		return
 	}
 
-	if !etl && data.Detalle.ActaRecibidoId > 0 {
-		if msjErr, err := asignarPlacas(data.Detalle.ActaRecibidoId, &acta.Elementos); err != nil {
-			return err
-		} else if msjErr != "" {
-			resultado.Error = msjErr
+	if data.Detalle.ActaRecibidoId > 0 {
+		resultado.Error, outputError = asignarPlacas(data.Detalle.ActaRecibidoId, &acta.Elementos)
+		if outputError != nil || resultado.Error != "" {
 			return
 		} else if len(acta.Elementos) == 0 {
 			resultado.Error = "No se encontraron elementos asociados al acta."
@@ -53,19 +63,11 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *mode
 		}
 	}
 
-	resultado.Movimiento = models.Movimiento{
-		Observacion:             data.Observacion,
-		Detalle:                 detalle,
-		Activo:                  true,
-		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{Id: tipoMovimiento},
-		EstadoMovimientoId:      &models.EstadoMovimiento{Id: estadoMovimiento},
+	outputError = movimientosArka.PostMovimiento(&resultado.Movimiento)
+	if outputError != nil {
+		return
 	}
 
-	if err := movimientosArka.PostMovimiento(&resultado.Movimiento); err != nil {
-		return err
-	}
-
-	// Crea registro en table soporte_movimiento si es necesario
 	if data.SoporteMovimientoId > 0 {
 		soporte := models.SoporteMovimiento{
 			DocumentoId:  data.SoporteMovimientoId,
@@ -73,38 +75,30 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *mode
 			MovimientoId: &models.Movimiento{Id: resultado.Movimiento.Id},
 		}
 
-		if err := movimientosArka.PostSoporteMovimiento(&soporte); err != nil {
-			return err
+		outputError = movimientosArka.PostSoporteMovimiento(&soporte)
+		if outputError != nil {
+			return
 		}
-
 	}
 
-	if !etl && data.Detalle.ActaRecibidoId > 0 {
+	if data.Detalle.ActaRecibidoId > 0 {
 		acta.UltimoEstado.EstadoActaId.Id = 6
 		acta.UltimoEstado.Id = 0
-
-		if err := actaRecibido.PutTransaccionActaRecibido(data.Detalle.ActaRecibidoId, &acta); err != nil {
-			return err
-		}
+		outputError = actaRecibido.PutTransaccionActaRecibido(data.Detalle.ActaRecibidoId, &acta)
 	}
 
 	return
-
 }
 
 // creaDetalleEntrada construye la data que será almacenada en la columna detalle según se requiera.
-func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecutivo_ *models.ConsecutivoMovimiento, necesario *string) (outputError map[string]interface{}) {
+func crearDetalleEntrada(completo models.FormatoBaseEntrada, necesario *string) (outputError map[string]interface{}) {
 
-	funcion := "crearDetalleEntrada - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("crearDetalleEntrada - Unhandled Error!", "500")
 
-	var (
-		detalle     map[string]interface{}
-		consecutivo models.Consecutivo
-	)
-
-	if err := utilsHelper.FillStruct(completo, &detalle); err != nil {
-		return err
+	var detalle map[string]interface{}
+	outputError = utilsHelper.FillStruct(completo, &detalle)
+	if outputError != nil {
+		return
 	}
 
 	if completo.ContratoId == 0 {
@@ -163,23 +157,31 @@ func crearDetalleEntrada(completo *models.FormatoBaseEntrada, etl bool, consecut
 		delete(detalle, "vigencia_contrato")
 	}
 
-	if !etl && consecutivo_ == nil {
-		ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-		if err := consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo); err != nil {
-			return err
-		}
-
-		detalle["consecutivo"] = consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo)
-		detalle["ConsecutivoId"] = consecutivo.Id
-	} else if consecutivo_ != nil {
-		detalle["consecutivo"] = consecutivo_.Consecutivo
-		detalle["ConsecutivoId"] = consecutivo_.ConsecutivoId
+	if completo.FechaCorte == "" {
+		delete(detalle, "FechaCorte")
 	}
 
-	if err := utilsHelper.Marshal(detalle, necesario); err != nil {
-		return err
+	outputError = utilsHelper.Marshal(detalle, necesario)
+	return
+}
+
+func getConsecutivoEntrada(entrada *models.Movimiento, etl bool) (outputError map[string]interface{}) {
+
+	if etl {
+		return
+	}
+
+	if entrada.ConsecutivoId == nil || *entrada.ConsecutivoId <= 0 {
+		var consecutivo models.Consecutivo
+		ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
+		outputError = consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo)
+		if outputError != nil {
+			return
+		}
+
+		entrada.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteEntradas(), &consecutivo))
+		entrada.ConsecutivoId = &consecutivo.Id
 	}
 
 	return
-
 }

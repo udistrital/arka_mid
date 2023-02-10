@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 
 // TestGetAllActasRecibidoActivas ...
 func TestGetAllActasRecibidoActivas(t *testing.T) {
-	valor, _, err := actaRecibido.GetAllActasRecibidoActivas("", "", "", []string{"Registrada"}, "", "", "", "", 1, 0)
+	valor, _, err := actaRecibido.GetAllActasRecibidoActivas("", "", "", []string{"Registrada"}, "", "", "", "", "", 1, 0)
 	if err != nil {
 		t.Error("No se pudo consultar las actas de recibido - err:", err)
 		t.Fail()

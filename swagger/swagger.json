@@ -147,6 +147,12 @@
                     },
                     {
                         "in": "query",
+                        "name": "UnidadEjecutoraId",
+                        "description": "Unidad ejecutora por las actas que se desean filtrar",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
                         "name": "EstadoActaId",
                         "description": "Estado del acta",
                         "type": "string"
@@ -2228,11 +2234,22 @@
                 "Activo": {
                     "type": "boolean"
                 },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "Detalle": {
                     "type": "string"
                 },
                 "EstadoMovimientoId": {
                     "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "datetime"
                 },
                 "FechaCreacion": {
                     "type": "string",
@@ -2885,9 +2902,8 @@
             "title": "FormatoBaseEntrada",
             "type": "object",
             "properties": {
-                "ConsecutivoId": {
-                    "type": "integer",
-                    "format": "int64"
+                "FechaCorte": {
+                    "type": "string"
                 },
                 "TRM": {
                     "type": "number",
@@ -2896,9 +2912,6 @@
                 "acta_recibido_id": {
                     "type": "integer",
                     "format": "int64"
-                },
-                "consecutivo": {
-                    "type": "string"
                 },
                 "contrato_id": {
                     "type": "integer",
@@ -2937,13 +2950,6 @@
             "title": "FormatoSolicitudBodega",
             "type": "object",
             "properties": {
-                "Consecutivo": {
-                    "type": "string"
-                },
-                "ConsecutivoId": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "Elementos": {
                     "type": "array",
                     "items": {
@@ -3178,11 +3184,22 @@
                 "Activo": {
                     "type": "boolean"
                 },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "Detalle": {
                     "type": "string"
                 },
                 "EstadoMovimientoId": {
                     "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "datetime"
                 },
                 "FechaCreacion": {
                     "type": "string",

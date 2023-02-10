@@ -102,6 +102,10 @@ paths:
         description: Tipos de acta para utilizar en query __in
         type: string
       - in: query
+        name: UnidadEjecutoraId
+        description: Unidad ejecutora por las actas que se desean filtrar
+        type: string
+      - in: query
         name: EstadoActaId
         description: Estado del acta
         type: string
@@ -1525,10 +1529,18 @@ definitions:
     properties:
       Activo:
         type: boolean
+      Consecutivo:
+        type: string
+      ConsecutivoId:
+        type: integer
+        format: int64
       Detalle:
         type: string
       EstadoMovimientoId:
         $ref: '#/definitions/models.EstadoMovimiento'
+      FechaCorte:
+        type: string
+        format: datetime
       FechaCreacion:
         type: string
         format: datetime
@@ -1993,17 +2005,14 @@ definitions:
     title: FormatoBaseEntrada
     type: object
     properties:
-      ConsecutivoId:
-        type: integer
-        format: int64
+      FechaCorte:
+        type: string
       TRM:
         type: number
         format: double
       acta_recibido_id:
         type: integer
         format: int64
-      consecutivo:
-        type: string
       contrato_id:
         type: integer
         format: int64
@@ -2030,11 +2039,6 @@ definitions:
     title: FormatoSolicitudBodega
     type: object
     properties:
-      Consecutivo:
-        type: string
-      ConsecutivoId:
-        type: integer
-        format: int64
       Elementos:
         type: array
         items:
@@ -2195,10 +2199,18 @@ definitions:
     properties:
       Activo:
         type: boolean
+      Consecutivo:
+        type: string
+      ConsecutivoId:
+        type: integer
+        format: int64
       Detalle:
         type: string
       EstadoMovimientoId:
         $ref: '#/definitions/models.EstadoMovimiento'
+      FechaCorte:
+        type: string
+        format: datetime
       FechaCreacion:
         type: string
         format: datetime
