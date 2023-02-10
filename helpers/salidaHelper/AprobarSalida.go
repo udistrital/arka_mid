@@ -1,6 +1,8 @@
 package salidaHelper
 
 import (
+	"time"
+
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -89,6 +91,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 
 	res.TransaccionContable.Concepto = transaccion.Descripcion
 	res.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	trSalida.Salida.FechaCorte = utilsHelper.Time(time.Now())
 	trSalida.Salida, outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
 
 	return
