@@ -34,7 +34,7 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 		return
 	}
 
-	outputError = utilsHelper.FillStruct(salidaOriginal[0].Detalle, &detalleOriginal)
+	outputError = utilsHelper.Unmarshal(salidaOriginal[0].Detalle, &detalleOriginal)
 	if outputError != nil {
 		return
 	}
