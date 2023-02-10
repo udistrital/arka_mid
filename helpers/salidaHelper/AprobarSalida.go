@@ -79,12 +79,12 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 		return
 	}
 
-	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	res.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
 	if outputError != nil {
 		return
 	}
 
-	res.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	_, outputError = movimientosContables.PostTrContable(&transaccion)
 	if outputError != nil {
 		return
 	}

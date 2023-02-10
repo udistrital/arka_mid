@@ -39,7 +39,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 	}
 
 	outputError = contabilidadEntrada(resultado_, formato, elementos, terceroId)
-	if outputError != nil {
+	if outputError != nil || resultado_.Error != "" {
 		return
 	}
 
@@ -60,7 +60,7 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 	defer errorctrl.ErrorControlFunction("getFormato - Unhandled Error!", "500")
 
 	movimiento, outputError := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(entradaId))
-	if outputError != nil || len(movimiento) != 1 || movimiento[0].EstadoMovimientoId.Nombre != "Entrada En Trámite" {
+	if outputError != nil || len(movimiento) != 1 {
 		return
 	}
 
