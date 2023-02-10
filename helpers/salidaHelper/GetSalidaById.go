@@ -4,7 +4,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -77,20 +76,8 @@ func GetSalidaById(id int) (Salida map[string]interface{}, outputError map[strin
 	}
 
 	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" && trSalida.Salida.ConsecutivoId != nil && *trSalida.Salida.ConsecutivoId > 0 {
-		if tr, err := movimientosContables.GetTransaccion(*trSalida.Salida.ConsecutivoId, "consecutivo", true); err != nil {
-			return nil, err
-		} else if len(tr.Movimientos) > 0 {
-			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-				return nil, err
-			} else {
-				trContable := models.InfoTransaccionContable{
-					Movimientos: detalleContable,
-					Concepto:    tr.Descripcion,
-					Fecha:       tr.FechaTransaccion,
-				}
-				Salida["TransaccionContable"] = trContable
-			}
-		}
+		Salida["TransaccionContable"] = models.InfoTransaccionContable{}
+		Salida["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(*trSalida.Salida.ConsecutivoId)
 	}
 
 	return

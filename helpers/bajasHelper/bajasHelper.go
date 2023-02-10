@@ -21,36 +21,27 @@ func RegistrarBaja(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, 
 
 	defer errorctrl.ErrorControlFunction("RegistrarBaja - Unhandled Error!", "500")
 
-	var (
-		detalle     *models.FormatoBaja
-		consecutivo models.Consecutivo
-	)
-
-	if err := utilsHelper.Unmarshal(baja.Movimiento.Detalle, &detalle); err != nil {
-		return nil, err
-	}
-
+	var consecutivo models.Consecutivo
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
-	if err := consecutivos.Get(ctxConsecutivo, "Registro Baja Arka", &consecutivo); err != nil {
-		return nil, err
+	outputError = consecutivos.Get(ctxConsecutivo, "Registro Baja Arka", &consecutivo)
+	if outputError != nil {
+		return
 	}
 
-	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteBajas(), &consecutivo)
-	detalle.ConsecutivoId = consecutivo.Id
-
-	if err := utilsHelper.Marshal(detalle, &baja.Movimiento.Detalle); err != nil {
-		return nil, err
-	}
+	baja.Movimiento.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteBajas(), &consecutivo))
+	baja.Movimiento.ConsecutivoId = &consecutivo.Id
 
 	// Crea registro en api movimientos_arka_crud
-	if err := movimientosArka.PostMovimiento(baja.Movimiento); err != nil {
-		return nil, err
+	outputError = movimientosArka.PostMovimiento(baja.Movimiento)
+	if outputError != nil {
+		return
 	}
 
 	// Crea registro en table soporte_movimiento si es necesario
 	baja.Soporte.MovimientoId = baja.Movimiento
-	if err := movimientosArka.PostSoporteMovimiento(baja.Soporte); err != nil {
-		return nil, err
+	outputError = movimientosArka.PostSoporteMovimiento(baja.Soporte)
+	if outputError != nil {
+		return
 	}
 
 	return baja.Movimiento, nil

@@ -6,7 +6,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
-	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	midTerceros "github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -78,25 +77,6 @@ func GetBajaByID(id int, Baja *models.TrBaja) (outputError map[string]interface{
 		}
 	}
 
-	if movimiento.EstadoMovimientoId.Nombre == "Baja Aprobada" {
-		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-				return err
-			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return err
-				} else {
-					trContable := models.InfoTransaccionContable{
-						Movimientos: detalleContable,
-						Concepto:    tr.Descripcion,
-						Fecha:       tr.FechaTransaccion,
-					}
-					Baja.TrContable = &trContable
-				}
-			}
-		}
-	}
-
 	Baja.Id = movimiento.Id
 	Baja.TipoBaja = movimiento.FormatoTipoMovimientoId
 	Baja.Movimiento = movimiento
@@ -105,6 +85,13 @@ func GetBajaByID(id int, Baja *models.TrBaja) (outputError map[string]interface{
 	Baja.Resolucion = detalle.Resolucion
 	Baja.FechaRevisionC = detalle.FechaRevisionC
 	Baja.DependenciaId = dependencia.Nombre
+	Baja.TrContable = &models.InfoTransaccionContable{}
+
+	if movimiento.EstadoMovimientoId.Nombre != "Baja Aprobada" || movimiento.ConsecutivoId == nil || *movimiento.ConsecutivoId <= 0 {
+		return
+	}
+
+	*Baja.TrContable, outputError = asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
 
 	return
 

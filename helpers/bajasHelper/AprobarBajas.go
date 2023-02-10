@@ -22,11 +22,7 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 
 	defer errorctrl.ErrorControlFunction("AprobarBajas - Unhandled Error!", "500")
 
-	var (
-		movBj, movCr int
-		terceroUD    int
-		bajas        []*models.Movimiento
-	)
+	var movBj, movCr int
 
 	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
 		return err
@@ -36,13 +32,12 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 		return err
 	}
 
-	if UD, err := terceros.GetTerceroUD(); err != nil {
-		return err
-	} else if UD == 0 {
+	terceroUD, outputError := terceros.GetTerceroUD()
+	if outputError != nil {
+		return
+	} else if terceroUD == 0 {
 		response.Error = "No se pudo consultar el tercero para asociar a la transacción contable. Contacte soporte."
 		return
-	} else {
-		terceroUD = UD
 	}
 
 	var (
@@ -52,11 +47,10 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 		detalleBajas      = make(map[int]models.FormatoBaja)
 	)
 
-	if bajas_, err := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas)); err != nil {
-		return err
-	} else if len(bajas_) == len(data.Bajas) {
-		bajas = bajas_
-	} else {
+	bajas, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
+	if outputError != nil {
+		return
+	} else if len(bajas) != len(data.Bajas) {
 		response.Error = "No se pudo consultar el detalle de las bajas a aprobar. Contacte soporte."
 		return
 	}
@@ -190,25 +184,26 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 
 		}
 
-		if msg, err := asientoContable.CalcularMovimientosContables(bajas, descBaja(), 0, movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos); err != nil || msg != "" {
-			response.Error = msg
-			return err
+		response.Error, outputError = asientoContable.CalcularMovimientosContables(bajas, descBaja(), 0, movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
+		if outputError != nil || response.Error != "" {
+			return
 		}
 
-		if msg, err := asientoContable.CalcularMovimientosContables(mediciones, descMovCr(), 0, movCr, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos); err != nil || msg != "" {
-			response.Error = msg
-			return err
+		response.Error, outputError = asientoContable.CalcularMovimientosContables(mediciones, descMovCr(), 0, movCr, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
+		if outputError != nil || response.Error != "" {
+			return
 		}
 
 		if len(transaccion.Movimientos) > 0 {
-			if msg, err := asientoContable.CreateTransaccionContable(getTipoComprobanteBajas(), "Baja de elementos almacén.", &transaccion); err != nil || msg != "" {
-				response.Error = msg
-				return err
+			response.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteBajas(), "Baja de elementos almacén.", &transaccion)
+			if outputError != nil || response.Error != "" {
+				return
 			}
 
-			transaccion.ConsecutivoId = detalleBaja.ConsecutivoId
-			if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
-				return err
+			transaccion.ConsecutivoId = *baja.ConsecutivoId
+			_, outputError = movimientosContables.PostTrContable(&transaccion)
+			if outputError != nil {
+				return
 			}
 		}
 
@@ -294,7 +289,7 @@ func getTipoComprobanteBajas() string {
 }
 
 func payloadBajas(ids []int) string {
-	return "fields=Detalle,Id,FechaCreacion&limit=-1&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
+	return "fields=ConsecutivoId,Detalle,Id,FechaCreacion&limit=-1&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
 }
 
 func payloadElementosMovimiento(elementos []int) string {
