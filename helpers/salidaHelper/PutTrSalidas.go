@@ -18,126 +18,105 @@ func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]i
 	var (
 		detalleOriginal    models.FormatoSalida
 		estadoMovimientoId int
-		query              string
 	)
 
 	resultado = make(map[string]interface{})
 
-	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
-
-	// Se consulta la salida original
-	query = "limit=1&query=Id:" + strconv.Itoa(salidaId)
-	if salida_, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return nil, err
-	} else if len(salida_) == 1 && salida_[0].EstadoMovimientoId.Nombre == "Salida Rechazada" {
-		if err := utilsHelper.Unmarshal(salida_[0].Detalle, &detalleOriginal); err != nil {
-			return nil, err
-		}
-	} else {
+	if len(m.Salidas) == 0 {
 		return
 	}
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite"); err != nil {
-		return nil, err
+	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
+
+	// Se consulta la salida original
+	salidaOriginal, outputError := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(salidaId))
+	if outputError != nil || len(salidaOriginal) != 1 || salidaOriginal[0].EstadoMovimientoId.Nombre != "Salida Rechazada" {
+		return
 	}
 
+	outputError = utilsHelper.FillStruct(salidaOriginal[0].Detalle, &detalleOriginal)
+	if outputError != nil {
+		return
+	}
+
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite")
+	if outputError != nil {
+		return
+	}
+
+	index := -1
 	if len(m.Salidas) == 1 {
 		// Si no se generan nuevas salidas, tan solo se debe actualizar el funcionario y ubicación de la salida original así como la vida útil y valor residual de los elementos
+		index = 0
+	}
 
-		if err := setDetalleSalida(detalleOriginal.Consecutivo, detalleOriginal.ConsecutivoId, &m.Salidas[0].Salida.Detalle); err != nil {
-			return nil, err
-		}
-
-		m.Salidas[0].Salida.EstadoMovimientoId.Id = estadoMovimientoId
-		m.Salidas[0].Salida.Id = salidaId
-		if trRes, err := movimientosArka.PutTrSalida(m); err != nil {
-			return nil, err
-		} else {
-			resultado["trSalida"] = trRes
-		}
-
-	} else {
+	for idx, l := range m.Salidas {
 		// Si se generaron salidas a partir de la original, se debe asignar un consecutivo a cada una y una de ellas debe tener el original
-
 		// Se debe decidir a cuál de las nuevas asignarle el id y el consecutivo original
-		index := -1
+		if index > -1 {
+			break
+		}
+
 		var detalleNuevo models.FormatoSalida
-		for idx, l := range m.Salidas {
-			if err := utilsHelper.Unmarshal(l.Salida.Detalle, &detalleNuevo); err != nil {
-				return nil, err
-			}
-
-			if detalleNuevo.Funcionario == detalleOriginal.Funcionario && detalleNuevo.Ubicacion == detalleOriginal.Ubicacion {
-				index = idx
-				break
-			} else if detalleNuevo.Funcionario == detalleOriginal.Funcionario {
-				index = idx
-				break
-			} else if detalleNuevo.Ubicacion == detalleOriginal.Ubicacion {
-				index = idx
-				break
-			}
+		outputError = utilsHelper.Unmarshal(l.Salida.Detalle, &detalleNuevo)
+		if outputError != nil {
+			return
 		}
 
-		if index == -1 {
-			index = 0
-		}
-
-		for idx, salida := range m.Salidas {
-			var (
-				id            int
-				consecutivo   string
-				consecutivoId int
-			)
-
-			if idx == index {
-				id = salidaId
-				consecutivoId = detalleOriginal.ConsecutivoId
-				consecutivo = detalleOriginal.Consecutivo
-			}
-
-			if err := setDetalleSalida(consecutivo, consecutivoId, &salida.Salida.Detalle); err != nil {
-				return nil, err
-			}
-
-			salida.Salida.Id = id
-			salida.Salida.EstadoMovimientoId.Id = estadoMovimientoId
-		}
-
-		// Hace el put api movimientos_arka_crud
-		if trRes, err := movimientosArka.PutTrSalida(m); err != nil {
-			return nil, err
-		} else {
-			resultado["trSalida"] = trRes
+		if detalleNuevo.Funcionario == detalleOriginal.Funcionario && detalleNuevo.Ubicacion == detalleOriginal.Ubicacion {
+			index = idx
+		} else if detalleNuevo.Funcionario == detalleOriginal.Funcionario {
+			index = idx
+		} else if detalleNuevo.Ubicacion == detalleOriginal.Ubicacion {
+			index = idx
 		}
 	}
 
-	return resultado, nil
+	if index == -1 {
+		index = 0
+	}
+
+	for idx, salida := range m.Salidas {
+
+		var id int
+		if idx == index {
+			id = salidaId
+			salida.Salida.Consecutivo = salidaOriginal[0].Consecutivo
+			salida.Salida.ConsecutivoId = salidaOriginal[0].ConsecutivoId
+		}
+
+		salida.Salida.Id = id
+		salida.Salida.EstadoMovimientoId.Id = estadoMovimientoId
+		outputError = setConsecutivoSalida(salida.Salida)
+		if outputError != nil {
+			return
+		}
+	}
+
+	trRes, outputError := movimientosArka.PutTrSalida(m)
+	if outputError != nil {
+		return
+	}
+
+	resultado["trSalida"] = trRes
+	return
 }
 
-func setDetalleSalida(consecutivo string, consecutivoId int, detalle *string) (outputError map[string]interface{}) {
+func setConsecutivoSalida(salida *models.Movimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("setDetalleSalida - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("setConsecutivoSalida - Unhandled Error!", "500")
 
-	var detalle_ models.FormatoSalida
-	if err := utilsHelper.Unmarshal(*detalle, &detalle_); err != nil {
-		return err
-	}
+	if salida.Consecutivo == nil || salida.ConsecutivoId == nil || *salida.Consecutivo == "" || *salida.ConsecutivoId <= 0 {
 
-	if consecutivo == "" || consecutivoId <= 0 {
-		var consecutivo_ models.Consecutivo
+		var consecutivo models.Consecutivo
 		ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
-		if err := consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo_); err != nil {
-			return err
+		outputError = consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo)
+		if outputError != nil {
+			return
 		}
-		consecutivo = consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo_)
-		consecutivoId = consecutivo_.Id
-	}
 
-	detalle_.Consecutivo = consecutivo
-	detalle_.ConsecutivoId = consecutivoId
-	if err := utilsHelper.Marshal(detalle_, detalle); err != nil {
-		return err
+		salida.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteSalidas(), &consecutivo))
+		salida.ConsecutivoId = &consecutivo.Id
 	}
 
 	return

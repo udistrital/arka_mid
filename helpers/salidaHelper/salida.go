@@ -3,60 +3,40 @@ package salidaHelper
 import (
 	"net/url"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
-
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
 )
 
 // PostTrSalidas Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
 func PostTrSalidas(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	funcion := "PostTrSalidas"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("PostTrSalidas - Unhandled Error!", "500")
 
-	var (
-		res                map[string][](map[string]interface{})
-		estadoMovimientoId int
-	)
-
+	var estadoMovimientoId int
 	resultado = make(map[string]interface{})
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite"); err != nil {
-		return nil, err
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite")
+	if outputError != nil {
+		return
 	}
 
 	for _, salida := range m.Salidas {
 
+		salida.Salida.EstadoMovimientoId = &models.EstadoMovimiento{Id: estadoMovimientoId}
 		if !etl {
-			if err := setDetalleSalida("", 0, &salida.Salida.Detalle); err != nil {
-				return nil, err
+			outputError = setConsecutivoSalida(salida.Salida)
+			if outputError != nil {
+				return
 			}
 		}
-
-		salida.Salida.EstadoMovimientoId.Id = estadoMovimientoId
 	}
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "tr_salida"
+	outputError = movimientosArka.PostTrSalida(m)
+	resultado["trSalida"] = m
 
-	// Crea registros en api movimientos_arka_crud
-	if err := request.SendJson(urlcrud, "POST", &res, &m); err != nil {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "PostTrSalidas - request.SendJson(movArka, \"POST\", &res, &m)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
-	}
-
-	resultado["trSalida"] = res
-
-	return resultado, nil
+	return
 }
 
 func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError map[string]interface{}) {
@@ -75,44 +55,41 @@ func GetSalidas(tramiteOnly bool) (Salidas []map[string]interface{}, outputError
 		query += url.QueryEscape("__startswith:Salida")
 	}
 
-	if salidas_, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return nil, err
-	} else {
-		if len(salidas_) == 0 {
-			return nil, nil
-		}
-
-		for _, salida := range salidas_ {
-
-			var formato models.FormatoSalida
-
-			if err := utilsHelper.Unmarshal(salida.Detalle, &formato); err != nil {
-				return nil, err
-			}
-
-			if salida__, err := TraerDetalle(salida, formato, asignaciones, sedes, funcionarios); err != nil {
-				return nil, err
-			} else {
-				Salidas = append(Salidas, salida__)
-			}
-
-		}
+	salidas_, outputError := movimientosArka.GetAllMovimiento(query)
+	if outputError != nil {
+		return
 	}
 
-	return Salidas, nil
+	for _, salida := range salidas_ {
+
+		var formato models.FormatoSalida
+		outputError = utilsHelper.Unmarshal(salida.Detalle, &formato)
+		if outputError != nil {
+			return
+		}
+
+		salida__, err := TraerDetalle(salida, formato, asignaciones, sedes, funcionarios)
+		if err != nil {
+			return nil, err
+		}
+
+		Salidas = append(Salidas, salida__)
+	}
+
+	return
 }
 
-// GetInfoSalida Retorna el funcionario y el consecutivo de una salida a partir del detalle del movimiento
-func GetInfoSalida(detalle string) (funcionarioId int, consecutivo string, outputError map[string]interface{}) {
+// GetInfoSalida Retorna el funcionario de una salida a partir del detalle del movimiento
+func GetInfoSalida(detalle string) (funcionarioId int, outputError map[string]interface{}) {
 
 	defer errorctrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
 
 	var detalle_ models.FormatoSalida
 	if err := utilsHelper.Unmarshal(detalle, &detalle_); err != nil {
-		return 0, "", err
+		return 0, err
 	}
 
-	return detalle_.Funcionario, detalle_.Consecutivo, nil
+	return detalle_.Funcionario, nil
 }
 
 func getTipoComprobanteSalidas() string {

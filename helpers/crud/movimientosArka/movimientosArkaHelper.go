@@ -194,6 +194,23 @@ func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGene
 
 }
 
+// PostTrSalida post controlador tr_salida del api movimientos_arka_crud
+func PostTrSalida(trSalida *models.SalidaGeneral) (outputError map[string]interface{}) {
+
+	funcion := "PostTrSalida - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "tr_salida"
+	err := request.SendJson(urlcrud, "POST", &trSalida, &trSalida)
+	if err != nil {
+		logs.Error(err)
+		eval := `request.SendJson(urlcrud, "POST", &trSalida, &trSalida)`
+		outputError = errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
 // PutMovimiento put controlador movimiento del api movimientos_arka_crud
 func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (movimientoRes *models.Movimiento, outputError map[string]interface{}) {
 

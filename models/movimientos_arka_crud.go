@@ -313,8 +313,6 @@ type ConsecutivoMovimiento struct {
 }
 
 type FormatoSalida struct {
-	Consecutivo   string `json:"consecutivo"`
-	ConsecutivoId int
-	Funcionario   int `json:"funcionario"`
-	Ubicacion     int `json:"ubicacion"`
+	Funcionario int `json:"funcionario"`
+	Ubicacion   int `json:"ubicacion"`
 }

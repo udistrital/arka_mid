@@ -12,23 +12,16 @@ import (
 
 func GetSalidaById(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
 
-	funcion := "GetSalidaById - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetSalidaById - Unhandled Error!", "500")
 
 	var (
-		trSalida      *models.TrSalida
-		detalle       map[string]interface{}
 		formato       models.FormatoSalida
 		ids           []int
 		elementosActa []*models.DetalleElemento
 	)
 
-	if tr_, err := movimientosArka.GetTrSalida(id); err != nil {
-		return nil, err
-	} else if tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL" ||
-		tr_.Salida.FormatoTipoMovimientoId.CodigoAbreviacion == "SAL_CONS" {
-		trSalida = tr_
-	} else {
+	trSalida, outputError := movimientosArka.GetTrSalida(id)
+	if outputError != nil || (trSalida.Salida.FormatoTipoMovimientoId.CodigoAbreviacion != "SAL" && trSalida.Salida.FormatoTipoMovimientoId.CodigoAbreviacion != "SAL_CONS") {
 		return
 	}
 
@@ -68,23 +61,23 @@ func GetSalidaById(id int) (Salida map[string]interface{}, outputError map[strin
 
 	}
 
-	if err := utilsHelper.Unmarshal(trSalida.Salida.Detalle, &formato); err != nil {
-		return nil, err
+	outputError = utilsHelper.Unmarshal(trSalida.Salida.Detalle, &formato)
+	if outputError != nil {
+		return
 	}
 
-	if salida__, err := TraerDetalle(trSalida.Salida, formato, nil, nil, nil); err != nil {
-		return nil, err
-	} else {
-		detalle = salida__
+	detalle, outputError := TraerDetalle(trSalida.Salida, formato, nil, nil, nil)
+	if outputError != nil {
+		return
 	}
 
-	Salida_final := map[string]interface{}{
+	Salida = map[string]interface{}{
 		"Elementos": elementosCompletos,
 		"Salida":    detalle,
 	}
 
-	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" && formato.ConsecutivoId > 0 {
-		if tr, err := movimientosContables.GetTransaccion(formato.ConsecutivoId, "consecutivo", true); err != nil {
+	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" && trSalida.Salida.ConsecutivoId != nil && *trSalida.Salida.ConsecutivoId > 0 {
+		if tr, err := movimientosContables.GetTransaccion(*trSalida.Salida.ConsecutivoId, "consecutivo", true); err != nil {
 			return nil, err
 		} else if len(tr.Movimientos) > 0 {
 			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
@@ -95,11 +88,10 @@ func GetSalidaById(id int) (Salida map[string]interface{}, outputError map[strin
 					Concepto:    tr.Descripcion,
 					Fecha:       tr.FechaTransaccion,
 				}
-				Salida_final["TransaccionContable"] = trContable
+				Salida["TransaccionContable"] = trContable
 			}
 		}
 	}
 
-	return Salida_final, nil
-
+	return
 }

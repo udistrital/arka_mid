@@ -94,8 +94,8 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		"MovimientoPadreId":       movimiento.MovimientoPadreId,
 		"FormatoTipoMovimientoId": movimiento.FormatoTipoMovimientoId,
 		"EstadoMovimientoId":      movimiento.EstadoMovimientoId.Id,
-		"Consecutivo":             salida.Consecutivo,
-		"ConsecutivoId":           salida.ConsecutivoId,
+		"Consecutivo":             movimiento.Consecutivo,
+		"ConsecutivoId":           movimiento.ConsecutivoId,
 		"Funcionario":             funcionario,
 	}
 
