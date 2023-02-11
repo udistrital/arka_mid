@@ -9,9 +9,9 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func GetSalidaById(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
+func GetOne(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetSalidaById - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	var (
 		formato       models.FormatoSalida

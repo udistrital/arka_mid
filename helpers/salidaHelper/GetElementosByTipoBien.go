@@ -76,7 +76,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 	} else if salidaId > 0 {
 
-		if salida, err := GetSalidaById(salidaId); err != nil {
+		if salida, err := GetOne(salidaId); err != nil {
 			return nil, err
 		} else {
 			var elementos []models.DetalleElementoSalida = salida["Elementos"].([]models.DetalleElementoSalida)

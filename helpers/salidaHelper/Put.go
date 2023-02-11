@@ -11,9 +11,9 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
+func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("PutTrSalidas - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("Put - Unhandled Error!", "500")
 
 	var (
 		detalleOriginal    models.FormatoSalida
