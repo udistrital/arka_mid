@@ -129,8 +129,6 @@ type ResultadoMovimiento struct {
 }
 
 type FormatoTraslado struct {
-	Consecutivo        string
-	ConsecutivoId      int
 	Ubicacion          int
 	FuncionarioOrigen  int
 	FuncionarioDestino int
@@ -303,11 +301,6 @@ type FormatoAjusteAutomatico struct {
 	Consecutivo   string
 	ConsecutivoId int
 	Elementos     []int
-}
-
-type ConsecutivoMovimiento struct {
-	Consecutivo   string
-	ConsecutivoId int
 }
 
 type FormatoSalida struct {

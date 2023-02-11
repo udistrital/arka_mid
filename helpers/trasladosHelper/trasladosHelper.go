@@ -11,7 +11,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
-	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -21,86 +20,63 @@ import (
 // GetDetalle Consulta los funcionarios, ubicación y elementos asociados a un traslado
 func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
-	funcion := "GetDetalleTraslado"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetDetalleTraslado - Unhandled Error!", "500")
 
-	var (
-		movimiento *models.Movimiento
-		detalle    models.FormatoTraslado
-	)
+	var detalle models.FormatoTraslado
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	query := "query=Id:" + strconv.Itoa(id)
-	if movimientoA, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return nil, err
-	} else if len(movimientoA) == 1 {
-		movimiento = movimientoA[0]
-	} else {
-		return nil, nil
+	movimientoA, outputError := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(id))
+	if outputError != nil || len(movimientoA) != 1 {
+		return
 	}
 
-	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
-		return nil, err
+	Traslado.Movimiento = movimientoA[0]
+	outputError = utilsHelper.Unmarshal(Traslado.Movimiento.Detalle, &detalle)
+	if outputError != nil {
+		return
 	}
 
 	// Se consulta el detalle del funcionario origen
-	if origen, err := terceros.GetDetalleFuncionario(detalle.FuncionarioOrigen); err != nil {
-		return nil, err
-	} else {
-		Traslado.FuncionarioOrigen = origen
+	Traslado.FuncionarioOrigen, outputError = terceros.GetDetalleFuncionario(detalle.FuncionarioOrigen)
+	if outputError != nil {
+		return
 	}
 
 	// Se consulta el detalle del funcionario destino
-	if destino, err := terceros.GetDetalleFuncionario(detalle.FuncionarioDestino); err != nil {
-		return nil, err
-	} else {
-		Traslado.FuncionarioDestino = destino
+	Traslado.FuncionarioDestino, outputError = terceros.GetDetalleFuncionario(detalle.FuncionarioDestino)
+	if outputError != nil {
+		return
 	}
 
 	// Se consulta la sede, dependencia correspondiente a la ubicacion
-	if ubicacionDetalle, err := oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion); err != nil {
-		return nil, err
-	} else {
-		Traslado.Ubicacion = ubicacionDetalle
+	Traslado.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion)
+	if outputError != nil {
+		return
 	}
 
 	// Se consultan los detalles de los elementos del traslado
-	if elementos, err := GetElementosTraslado(detalle.Elementos); err != nil {
-		return nil, err
-	} else {
-		Traslado.Elementos = elementos
+	Traslado.Elementos, outputError = getElementosTraslado(detalle.Elementos)
+	if outputError != nil {
+		return
 	}
 
-	if movimiento.EstadoMovimientoId.Nombre == "Traslado Aprobado" {
-		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-				return nil, err
-			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return nil, err
-				} else {
-					trContable := models.InfoTransaccionContable{
-						Movimientos: detalleContable,
-						Concepto:    tr.Descripcion,
-						Fecha:       tr.FechaTransaccion,
-					}
-					Traslado.TrContable = &trContable
-				}
-			}
+	if Traslado.Movimiento.EstadoMovimientoId.Nombre == "Traslado Aprobado" && Traslado.Movimiento.ConsecutivoId != nil && *Traslado.Movimiento.ConsecutivoId > 0 {
+		Traslado.TrContable = &models.InfoTransaccionContable{}
+		*Traslado.TrContable, outputError = asientoContable.GetFullDetalleContable(*Traslado.Movimiento.ConsecutivoId)
+		if outputError != nil {
+			return
 		}
+
 	}
 
-	Traslado.Movimiento = movimiento
-	Traslado.Observaciones = movimiento.Observacion
-
-	return Traslado, nil
-
+	Traslado.Observaciones = Traslado.Movimiento.Observacion
+	return
 }
 
-func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
+func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
-	funcion := "GetElementosTraslado"
+	funcion := "getElementosTraslado"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
@@ -145,41 +121,23 @@ func GetElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 }
 
 // RegistrarEntrada Crea registro de traslado en estado en trámite
-func RegistrarTraslado(data *models.Movimiento) (result *models.Movimiento, outputError map[string]interface{}) {
+func RegistrarTraslado(traslado *models.Movimiento) (outputError map[string]interface{}) {
 
-	funcion := "RegistrarTraslado"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("RegistrarTraslado - Unhandled Error!", "500")
 
-	result = new(models.Movimiento)
-
-	var (
-		detalle     models.FormatoTraslado
-		consecutivo models.Consecutivo
-	)
-
-	if err := utilsHelper.Unmarshal(data.Detalle, &detalle); err != nil {
-		return nil, err
-	}
-
+	var consecutivo models.Consecutivo
 	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	if err := consecutivos.Get(ctxConsecutivo, "Registro Traslado Arka", &consecutivo); err != nil {
-		return nil, err
+	outputError = consecutivos.Get(ctxConsecutivo, "Registro Traslado Arka", &consecutivo)
+	if outputError != nil {
+		return
 	}
 
-	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo)
-	detalle.ConsecutivoId = consecutivo.Id
+	traslado.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo))
+	traslado.ConsecutivoId = &consecutivo.Id
 
-	if err := utilsHelper.Marshal(detalle, &data.Detalle); err != nil {
-		return nil, err
-	}
+	outputError = movimientosArka.PostMovimiento(traslado)
 
-	// Crea registro en api movimientos_arka_crud
-	if err := movimientosArka.PostMovimiento(data); err != nil {
-		return nil, err
-	}
-
-	return data, nil
-
+	return
 }
 
 func getTipoComprobanteTraslados() string {

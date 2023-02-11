@@ -26,12 +26,12 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		transaccion  models.TransaccionMovimientos
 	)
 
-	if movimiento_, err := movimientosArka.GetMovimientoById(id); err != nil {
+	movimiento_, outputError := movimientosArka.GetMovimientoById(id)
+	if outputError != nil {
 		return
-	} else {
-		response.Movimiento = *movimiento_
 	}
 
+	response.Movimiento = *movimiento_
 	if err := utilsHelper.Unmarshal(response.Movimiento.Detalle, &detalle); err != nil {
 		return err
 	}
@@ -74,11 +74,10 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		}
 
 		query = "Id__in:" + utilsHelper.ArrayToString(ids_, "|")
-		if elementos_, err := actaRecibido.GetAllElemento(query, fields, "Id", "desc", "", "-1"); err != nil {
-			return err
-		} else if len(elementos_) == len(el_) {
-			elementosActa = elementos_
-		} else {
+		elementosActa, outputError = actaRecibido.GetAllElemento(query, fields, "Id", "desc", "", "-1")
+		if outputError != nil {
+			return
+		} else if len(elementosActa) != len(el_) {
 			response.Error = "No se pudo consultar la parametrización de los elementos. Contacte soporte"
 			return
 		}
@@ -100,36 +99,31 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 			}
 		}
 
-		if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, descMovDestino(), tipoEntr, tipoSalida, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas,
-			nil, &transaccion.Movimientos); err != nil || msg != "" {
-			response.Error = msg
-			return err
+		response.Error, outputError = asientoContable.CalcularMovimientosContables(elementosActa, descMovDestino(), tipoEntr, tipoSalida, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas, nil, &transaccion.Movimientos)
+		if outputError != nil || response.Error != "" {
+			return
 		}
 	}
 
-	transaccion.ConsecutivoId = detalle.ConsecutivoId
-	if msg, err := asientoContable.CreateTransaccionContable(getTipoComprobanteTraslados(), "Traslado de elementos", &transaccion); err != nil || msg != "" {
-		response.Error = msg
-		return err
+	transaccion.ConsecutivoId = *response.Movimiento.ConsecutivoId
+	response.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteTraslados(), "Traslado de elementos", &transaccion)
+	if outputError != nil || response.Error != "" {
+		return
 	}
 
-	if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
-		return err
+	response.TransaccionContable.Concepto = transaccion.Descripcion
+	response.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	response.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	if outputError != nil {
+		return
 	}
 
-	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas); err != nil {
-		return err
-	} else {
-		response.TransaccionContable.Movimientos = detalleContable
-		response.TransaccionContable.Concepto = transaccion.Descripcion
-		response.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	if outputError != nil {
+		return
 	}
 
-	if movimiento_, err := movimientosArka.PutMovimiento(&response.Movimiento, response.Movimiento.Id); err != nil {
-		return err
-	} else {
-		response.Movimiento = *movimiento_
-	}
+	_, outputError = movimientosArka.PutMovimiento(&response.Movimiento, response.Movimiento.Id)
 
 	return
 }
