@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"errors"
 	"net/url"
 	"time"
 
@@ -97,6 +98,13 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 
 	for _, el := range actualizarSg {
 		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
+
+			if cuentasSubgrupo[originales[idx].SubgrupoCatalogoId] == nil ||
+				cuentasSubgrupo[el.SubgrupoCatalogoId] == nil {
+				err := errors.New("No se pudo establecer la parametrización contable")
+				outputError = errorctrl.Error(funcion, err, "404")
+				return
+			}
 
 			if detalleCuenta_, err := fillCuentas(detalleCuenta,
 				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,

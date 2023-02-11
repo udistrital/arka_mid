@@ -12,12 +12,13 @@ import (
 // Genera un consecutivo con el año actual y para un contextoId determinado
 func Get(contexto string, descripcion string, data *models.Consecutivo) (outputError map[string]interface{}) {
 
-	funcion := "Get"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "Get - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	contextoId, err := beego.AppConfig.Int(contexto)
 	if err != nil {
-		return errorctrl.Error(funcion, err, "500")
+		eval := "beego.AppConfig.Int(contexto)"
+		return errorctrl.Error(funcion+eval, err, "500")
 	}
 
 	year := time.Now().Year()

@@ -42,10 +42,9 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 	}
 
 	var (
-		bufferCuentas     = make(map[string]models.CuentaContable)
-		detalleSubgrupos  = make(map[int]models.DetalleSubgrupo)
-		detalleMediciones = make(map[int]models.FormatoDepreciacion)
-		detalleBajas      = make(map[int]models.FormatoBaja)
+		bufferCuentas    = make(map[string]models.CuentaContable)
+		detalleSubgrupos = make(map[int]models.DetalleSubgrupo)
+		detalleBajas     = make(map[int]models.FormatoBaja)
 	)
 
 	bajas, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
@@ -122,13 +121,6 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 				return err
 			} else if len(novedad_) == 1 {
 				novedad = novedad_[0]
-				if _, ok := detalleMediciones[novedad.MovimientoId.Id]; !ok {
-					var detalle models.FormatoDepreciacion
-					if err := utilsHelper.Unmarshal(novedad.MovimientoId.Detalle, &detalle); err != nil {
-						return err
-					}
-					detalleMediciones[novedad.MovimientoId.Id] = detalle
-				}
 			}
 
 			if subgrupo.Amortizacion || subgrupo.Depreciacion {
@@ -142,7 +134,7 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 
 				if novedad != nil {
 					if novedad.ValorLibros-novedad.ValorResidual > 0 {
-						ref, _ = time.Parse("2006-01-02", detalleMediciones[novedad.MovimientoId.Id].FechaCorte)
+						ref = *novedad.MovimientoId.FechaCorte
 						valorPresente = novedad.ValorLibros
 						valorResidual = novedad.ValorResidual
 						vidaUtil = novedad.VidaUtil

@@ -156,10 +156,6 @@ func crearDetalleEntrada(completo models.FormatoBaseEntrada, necesario *string) 
 		delete(detalle, "vigencia_contrato")
 	}
 
-	if completo.FechaCorte == "" {
-		delete(detalle, "FechaCorte")
-	}
-
 	outputError = utilsHelper.Marshal(detalle, necesario)
 	return
 }

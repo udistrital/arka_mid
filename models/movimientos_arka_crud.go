@@ -88,11 +88,10 @@ type TransaccionEntrada struct {
 }
 
 type FormatoBaseEntrada struct {
-	ActaRecibidoId      int    `json:"acta_recibido_id"`
-	ContratoId          int    `json:"contrato_id"`
-	Divisa              string `json:"divisa"`
-	Factura             int    `json:"factura"`
-	FechaCorte          string
+	ActaRecibidoId      int                `json:"acta_recibido_id"`
+	ContratoId          int                `json:"contrato_id"`
+	Divisa              string             `json:"divisa"`
+	Factura             int                `json:"factura"`
 	OrdenadorGastoId    int                `json:"ordenador_gasto_id"`
 	Elementos           []ElementoMejorado `json:"elementos"`
 	RegistroImportacion string             `json:"num_reg_importacion"`
@@ -250,10 +249,7 @@ type Historial struct {
 }
 
 type FormatoDepreciacion struct {
-	ConsecutivoId int
-	Consecutivo   string
-	FechaCorte    string
-	RazonRechazo  string
+	RazonRechazo string
 }
 
 type DetalleCorteDepreciacion struct {

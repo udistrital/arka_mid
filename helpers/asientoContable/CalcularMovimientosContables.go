@@ -3,6 +3,7 @@ package asientoContable
 import (
 	"strconv"
 
+	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
@@ -72,6 +73,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 			if tb, err := catalogoElementos.GetTipoBienIdByValor(subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id, el.ValorUnitario/uvt, tiposBien); err != nil {
 				return "", err
 			} else if tb == 0 {
+				logs.Info("Elemento conflicto: ", el.Id)
 				return "No se pudo establecer el tipo de bien de los elementos. Contacte soporte.", nil
 			} else {
 				el.TipoBienId = tb
@@ -83,6 +85,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 				} else if len(sg) == 1 {
 					subgrupos[el.SubgrupoCatalogoId] = *sg[0]
 				} else {
+					logs.Info("Elemento conflicto: ", el.Id)
 					return "No se pudo consultar la parametrización de las clases. Contacte soporte.", nil
 				}
 			}
@@ -96,6 +99,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 			}
 
 			if tiposBien[el.TipoBienId].TipoBienPadreId.Id != subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id {
+				logs.Info("Elemento conflicto: ", el.Id)
 				return "El tipo bien asignado manualmente no corresponde a la clase correspondiente", nil
 			}
 		}
@@ -109,6 +113,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 				}
 				cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId] = *cst[0]
 			} else {
+				logs.Info("Elemento conflicto: ", el.Id)
 				return "No se pudo establecer la parametrización contable.", nil
 			}
 		}

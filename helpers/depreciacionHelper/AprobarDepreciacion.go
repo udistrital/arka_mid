@@ -55,7 +55,7 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		return err
 	}
 
-	transaccion.ConsecutivoId = detalle.ConsecutivoId
+	transaccion.ConsecutivoId = *resultado.Movimiento.ConsecutivoId
 	if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
 		resultado.Error = "Error al registrar la transacción contable. Contacte soporte"
 		return err

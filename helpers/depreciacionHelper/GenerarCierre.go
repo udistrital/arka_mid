@@ -72,13 +72,14 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 
 	if info.Id == 0 {
 		var consecutivo_ models.Consecutivo
-		if err := consecutivos.Get("contxtMedicionesCons", "Registro cierre Arka", &consecutivo_); err != nil {
+		outputError = consecutivos.Get("contxtMedicionesCons", "Registro cierre Arka", &consecutivo_)
+		if outputError != nil {
 			desbloquearSistema(parametros[1], *resultado)
-			return err
+			return
 		}
 
-		detalle.ConsecutivoId = consecutivo_.Id
-		detalle.Consecutivo = consecutivos.Format("%02d", getTipoComprobanteCierre(), &consecutivo_)
+		resultado.Movimiento.ConsecutivoId = &consecutivo_.Id
+		resultado.Movimiento.Consecutivo = utilsHelper.String(consecutivos.Format("%02d", getTipoComprobanteCierre(), &consecutivo_))
 	} else {
 		if mov_, err := movimientosArka.GetMovimientoById(info.Id); err != nil {
 			desbloquearSistema(parametros[1], *resultado)
