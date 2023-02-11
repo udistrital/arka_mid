@@ -11,6 +11,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/depreciacionHelper"
+	"github.com/udistrital/arka_mid/helpers/inventarioHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -222,21 +223,14 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 
 func GetTerceroIdEncargado(elementoId int, terceroId *int) (outputError map[string]interface{}) {
 
-	funcion := "GetTerceroIdEncargado"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetTerceroIdEncargado - Unhandled Error!", "500")
 
-	var historial models.Historial
-	if historial_, err := movimientosArka.GetHistorialElemento(elementoId, true); err != nil {
-		return err
-	} else {
-		historial = *historial_
+	historial, outputError := movimientosArka.GetHistorialElemento(elementoId, true)
+	if outputError != nil {
+		return
 	}
 
-	if tercero, _, err := GetEncargado(&historial); err != nil {
-		return err
-	} else {
-		*terceroId = tercero
-	}
+	*terceroId, _, outputError = inventarioHelper.GetEncargado(historial)
 
 	return
 }

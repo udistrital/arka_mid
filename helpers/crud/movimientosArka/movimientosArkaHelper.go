@@ -57,12 +57,12 @@ func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovim
 }
 
 // GetAllSoporteMovimiento query controlador soporte_movimiento del api movimientos_arka_crud
-func GetAllSoporteMovimiento(query string) (soportes []*models.SoporteMovimiento, outputError map[string]interface{}) {
+func GetAllSoporteMovimiento(query string) (soportes []models.SoporteMovimiento, outputError map[string]interface{}) {
 
 	funcion := "GetAllSoporteMovimiento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento?" + query
+	urlcrud := basePath + "soporte_movimiento?" + query
 	if err := request.GetJson(urlcrud, &soportes); err != nil {
 		eval := " - request.GetJson(urlcrud, &soportes)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
