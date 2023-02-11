@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 // GetAsignacionSedeDependencia ...
 func TestGetSalida(t *testing.T) {
 
-	if valor, err := salidaHelper.GetSalidaById(319); err != nil {
+	if valor, err := salidaHelper.GetOne(319); err != nil {
 		t.Error("No se pudo consultar la salida", err)
 		t.Fail()
 	} else {
@@ -57,7 +57,7 @@ func TestGetSalida(t *testing.T) {
 // GetAsignacionSedeDependencia ...
 func TestGetSalidas(t *testing.T) {
 
-	if salidas, err := salidaHelper.GetSalidas(false); err != nil {
+	if salidas, err := salidaHelper.GetAll(false); err != nil {
 		t.Error("No se pudo consultar las salidas", err)
 		t.Fail()
 	} else {

@@ -261,8 +261,8 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 
 	}
 
-	if detalle.ConsecutivoId > 0 {
-		if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+	if movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
+		if tr, err := movimientosContables.GetTransaccion(*movimiento.ConsecutivoId, "consecutivo", true); err != nil {
 			return nil, err
 		} else if len(tr.Movimientos) > 0 {
 			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {

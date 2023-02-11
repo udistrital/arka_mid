@@ -298,9 +298,7 @@ type ElementosPorActualizarSalida struct {
 }
 
 type FormatoAjusteAutomatico struct {
-	Consecutivo   string
-	ConsecutivoId int
-	Elementos     []int
+	Elementos []int
 }
 
 type FormatoSalida struct {
