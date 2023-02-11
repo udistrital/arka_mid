@@ -1,7 +1,6 @@
 package trasladoshelper
 
 import (
-	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -15,8 +14,7 @@ func Post(traslado *models.Movimiento) (outputError map[string]interface{}) {
 	defer errorctrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	outputError = consecutivos.Get(ctxConsecutivo, "Registro Traslado Arka", &consecutivo)
+	outputError = consecutivos.Get("contxtAjusteCons", "Registro Traslado Arka", &consecutivo)
 	if outputError != nil {
 		return
 	}

@@ -4,8 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego"
-
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -43,8 +41,7 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 	}
 
 	var consecutivo models.Consecutivo
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	outputError = consecutivos.Get(ctxConsecutivo, "Ajuste Contable Arka", &consecutivo)
+	outputError = consecutivos.Get("contxtAjusteCons", "Ajuste Contable Arka", &consecutivo)
 	if outputError != nil {
 		return
 	}

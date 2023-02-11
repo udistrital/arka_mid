@@ -1,8 +1,6 @@
 package depreciacionHelper
 
 import (
-	"github.com/astaxie/beego"
-
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -74,8 +72,7 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 
 	if info.Id == 0 {
 		var consecutivo_ models.Consecutivo
-		ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
-		if err := consecutivos.Get(ctxt, "Registro cierre Arka", &consecutivo_); err != nil {
+		if err := consecutivos.Get("contxtMedicionesCons", "Registro cierre Arka", &consecutivo_); err != nil {
 			desbloquearSistema(parametros[1], *resultado)
 			return err
 		}

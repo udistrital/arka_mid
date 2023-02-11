@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -119,13 +118,10 @@ func checkPlacaElemento(tbPadreId int, normalizado float64, bufferTiposBien map[
 
 func generarPlaca(placa *string) (outputError map[string]interface{}) {
 
-	funcion := "generarPlaca - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("generarPlaca - Unhandled Error!", "500")
 
-	ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
 	var consecutivo models.Consecutivo
-
-	if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
+	if err := consecutivos.Get("contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {
 		return err
 	}
 

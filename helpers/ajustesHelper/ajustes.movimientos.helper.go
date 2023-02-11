@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/astaxie/beego"
 	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -277,8 +276,7 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 	}
 
 	var consecutivo models.Consecutivo
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	if err := consecutivos.Get(ctxConsecutivo, "Ajuste automático Arka", &consecutivo); err != nil {
+	if err := consecutivos.Get("contxtAjusteCons", "Ajuste automático Arka", &consecutivo); err != nil {
 		return nil, nil, err
 	}
 

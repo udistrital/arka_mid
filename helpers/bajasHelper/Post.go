@@ -1,7 +1,6 @@
 package bajasHelper
 
 import (
-	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -15,8 +14,7 @@ func Post(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputErr
 	defer errorctrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtBajaCons")
-	outputError = consecutivos.Get(ctxConsecutivo, "Registro Baja Arka", &consecutivo)
+	outputError = consecutivos.Get("contxtBajaCons", "Registro Baja Arka", &consecutivo)
 	if outputError != nil {
 		return
 	}

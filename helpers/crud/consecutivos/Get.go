@@ -4,15 +4,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // Genera un consecutivo con el año actual y para un contextoId determinado
-func Get(contextoId int, descripcion string, data *models.Consecutivo) (outputError map[string]interface{}) {
+func Get(contexto string, descripcion string, data *models.Consecutivo) (outputError map[string]interface{}) {
 
 	funcion := "Get"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	contextoId, err := beego.AppConfig.Int(contexto)
+	if err != nil {
+		return errorctrl.Error(funcion, err, "500")
+	}
 
 	year := time.Now().Year()
 	*data = models.Consecutivo{
