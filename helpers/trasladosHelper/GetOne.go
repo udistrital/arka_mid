@@ -4,11 +4,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/astaxie/beego"
-
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
@@ -17,10 +14,10 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-// GetDetalle Consulta los funcionarios, ubicación y elementos asociados a un traslado
-func GetDetalleTraslado(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
+// GetOne Consulta los funcionarios, ubicación y elementos asociados a un traslado
+func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetDetalleTraslado - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	var detalle models.FormatoTraslado
 	Traslado = new(models.TrTraslado)
@@ -118,26 +115,6 @@ func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 	}
 
 	return Elementos, nil
-}
-
-// RegistrarEntrada Crea registro de traslado en estado en trámite
-func RegistrarTraslado(traslado *models.Movimiento) (outputError map[string]interface{}) {
-
-	defer errorctrl.ErrorControlFunction("RegistrarTraslado - Unhandled Error!", "500")
-
-	var consecutivo models.Consecutivo
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	outputError = consecutivos.Get(ctxConsecutivo, "Registro Traslado Arka", &consecutivo)
-	if outputError != nil {
-		return
-	}
-
-	traslado.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo))
-	traslado.ConsecutivoId = &consecutivo.Id
-
-	outputError = movimientosArka.PostMovimiento(traslado)
-
-	return
 }
 
 func getTipoComprobanteTraslados() string {

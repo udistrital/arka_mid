@@ -57,7 +57,7 @@ func (c *TrasladosController) Post() {
 		})
 	}
 
-	err := trasladoshelper.RegistrarTraslado(&v)
+	err := trasladoshelper.Post(&v)
 	if err != nil {
 		panic(err)
 	} else {
@@ -106,7 +106,7 @@ func (c *TrasladosController) GetTraslado() {
 		id = v
 	}
 
-	if respuesta, err := trasladoshelper.GetDetalleTraslado(id); err == nil || respuesta != nil {
+	if respuesta, err := trasladoshelper.GetOne(id); err == nil || respuesta != nil {
 		c.Data["json"] = respuesta
 	} else {
 		if err != nil {
