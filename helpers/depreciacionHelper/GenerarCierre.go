@@ -96,7 +96,8 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 
 	resultado.Movimiento.FormatoTipoMovimientoId = &models.FormatoTipoMovimiento{Id: formatoCierre}
 	resultado.Movimiento.EstadoMovimientoId = &models.EstadoMovimiento{Id: estadoMovimiento}
-	detalle.FechaCorte = info.FechaCorte.Format("2006-01-02")
+	resultado.Movimiento.FechaCorte = &info.FechaCorte
+
 	detalle.RazonRechazo = info.RazonRechazo
 
 	if err := utilsHelper.Marshal(detalle, &resultado.Movimiento.Detalle); err != nil {

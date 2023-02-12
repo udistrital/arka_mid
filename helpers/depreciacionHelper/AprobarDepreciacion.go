@@ -7,7 +7,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -19,7 +18,6 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 
 	var (
 		parametros        []models.ParametroConfiguracion
-		detalle           models.FormatoDepreciacion
 		transaccionCierre models.TransaccionCierre
 		transaccion       models.TransaccionMovimientos
 		cuentas           map[string]models.CuentaContable
@@ -40,42 +38,36 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		return
 	}
 
-	if err := utilsHelper.Unmarshal(resultado.Movimiento.Detalle, &detalle); err != nil {
-		return err
-	}
-
-	if err := calcularCierre(detalle.FechaCorte, &transaccionCierre.ElementoMovimientoId, cuentas, &transaccion, resultado); err != nil {
+	if err := calcularCierre(resultado.Movimiento.FechaCorte.UTC().Format("2006-01-02"), &transaccionCierre.ElementoMovimientoId, cuentas, &transaccion, resultado); err != nil {
 		return err
 	} else if resultado.Error != "" || len(transaccionCierre.ElementoMovimientoId) == 0 || len(transaccion.Movimientos) == 0 {
 		return
 	}
 
-	if msg, err := asientoContable.CreateTransaccionContable(getTipoComprobanteCierre(), dscTransaccionCierre(), &transaccion); err != nil || msg != "" {
-		resultado.Error = msg
-		return err
+	resultado.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteCierre(), dscTransaccionCierre(), &transaccion)
+	if outputError != nil || resultado.Error != "" {
+		return
+	}
+
+	resultado.TransaccionContable.Concepto = transaccion.Descripcion
+	resultado.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	resultado.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas)
+	if outputError != nil {
+		return
 	}
 
 	transaccion.ConsecutivoId = *resultado.Movimiento.ConsecutivoId
-	if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
+	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	if outputError != nil {
 		resultado.Error = "Error al registrar la transacción contable. Contacte soporte"
-		return err
+		return
 	}
 
 	transaccionCierre.MovimientoId = id
-	if err := movimientosArka.AprobarCierre(&transaccionCierre, &resultado.Movimiento); err != nil {
+	outputError = movimientosArka.AprobarCierre(&transaccionCierre, &resultado.Movimiento)
+	if outputError != nil {
 		resultado.Error = "Se registró la transacción contable pero no se pudo aprobar el cierre correctamente. Contacte soporte"
-		return err
-	}
-
-	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas); err != nil {
-		return err
-	} else if len(detalleContable) > 0 {
-		trContable := models.InfoTransaccionContable{
-			Movimientos: detalleContable,
-			Concepto:    transaccion.Descripcion,
-			Fecha:       transaccion.FechaTransaccion,
-		}
-		resultado.TransaccionContable = trContable
+		return
 	}
 
 	desbloquearSistema(parametros[0], *resultado)
