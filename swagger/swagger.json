@@ -2902,9 +2902,6 @@
             "title": "FormatoBaseEntrada",
             "type": "object",
             "properties": {
-                "FechaCorte": {
-                    "type": "string"
-                },
                 "TRM": {
                     "type": "number",
                     "format": "double"

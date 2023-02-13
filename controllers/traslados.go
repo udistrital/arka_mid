@@ -57,19 +57,12 @@ func (c *TrasladosController) Post() {
 		})
 	}
 
-	if respuesta, err := trasladoshelper.RegistrarTraslado(&v); err == nil && respuesta != nil {
-		c.Ctx.Output.SetStatus(201)
-		c.Data["json"] = respuesta
+	err := trasladoshelper.Post(&v)
+	if err != nil {
+		panic(err)
 	} else {
-		if err != nil {
-			panic(err)
-		}
-
-		panic(map[string]interface{}{
-			"funcion": "trasladoshelper.RegistrarTraslado(&v)",
-			"err":     errors.New("no se obtuvo respuesta al registrar el traslado"),
-			"status":  "404",
-		})
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = v
 	}
 
 	c.ServeJSON()
@@ -113,7 +106,7 @@ func (c *TrasladosController) GetTraslado() {
 		id = v
 	}
 
-	if respuesta, err := trasladoshelper.GetDetalleTraslado(id); err == nil || respuesta != nil {
+	if respuesta, err := trasladoshelper.GetOne(id); err == nil || respuesta != nil {
 		c.Data["json"] = respuesta
 	} else {
 		if err != nil {

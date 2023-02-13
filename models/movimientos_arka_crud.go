@@ -88,11 +88,10 @@ type TransaccionEntrada struct {
 }
 
 type FormatoBaseEntrada struct {
-	ActaRecibidoId      int    `json:"acta_recibido_id"`
-	ContratoId          int    `json:"contrato_id"`
-	Divisa              string `json:"divisa"`
-	Factura             int    `json:"factura"`
-	FechaCorte          string
+	ActaRecibidoId      int                `json:"acta_recibido_id"`
+	ContratoId          int                `json:"contrato_id"`
+	Divisa              string             `json:"divisa"`
+	Factura             int                `json:"factura"`
 	OrdenadorGastoId    int                `json:"ordenador_gasto_id"`
 	Elementos           []ElementoMejorado `json:"elementos"`
 	RegistroImportacion string             `json:"num_reg_importacion"`
@@ -129,8 +128,6 @@ type ResultadoMovimiento struct {
 }
 
 type FormatoTraslado struct {
-	Consecutivo        string
-	ConsecutivoId      int
 	Ubicacion          int
 	FuncionarioOrigen  int
 	FuncionarioDestino int
@@ -185,8 +182,6 @@ type TrTraslado struct {
 }
 
 type FormatoBaja struct {
-	Consecutivo    string
-	ConsecutivoId  int
 	Elementos      []int
 	FechaRevisionA string
 	FechaRevisionC string
@@ -254,10 +249,7 @@ type Historial struct {
 }
 
 type FormatoDepreciacion struct {
-	ConsecutivoId int
-	Consecutivo   string
-	FechaCorte    string
-	RazonRechazo  string
+	RazonRechazo string
 }
 
 type DetalleCorteDepreciacion struct {
@@ -274,11 +266,6 @@ type DepreciacionElemento struct {
 	DeltaValor           float64
 	ElementoMovimientoId int
 	ElementoActaId       int
-}
-
-type TransaccionCierre struct {
-	MovimientoId         int
-	ElementoMovimientoId []int
 }
 
 type InfoDepreciacion struct {
@@ -302,14 +289,7 @@ type ElementosPorActualizarSalida struct {
 }
 
 type FormatoAjusteAutomatico struct {
-	Consecutivo   string
-	ConsecutivoId int
-	Elementos     []int
-}
-
-type ConsecutivoMovimiento struct {
-	Consecutivo   string
-	ConsecutivoId int
+	Elementos []int
 }
 
 type FormatoSalida struct {

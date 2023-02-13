@@ -1,7 +1,6 @@
 package entradaHelper
 
 import (
-	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -157,10 +156,6 @@ func crearDetalleEntrada(completo models.FormatoBaseEntrada, necesario *string) 
 		delete(detalle, "vigencia_contrato")
 	}
 
-	if completo.FechaCorte == "" {
-		delete(detalle, "FechaCorte")
-	}
-
 	outputError = utilsHelper.Marshal(detalle, necesario)
 	return
 }
@@ -173,8 +168,7 @@ func getConsecutivoEntrada(entrada *models.Movimiento, etl bool) (outputError ma
 
 	if entrada.ConsecutivoId == nil || *entrada.ConsecutivoId <= 0 {
 		var consecutivo models.Consecutivo
-		ctxConsecutivo, _ := beego.AppConfig.Int("contxtEntradaCons")
-		outputError = consecutivos.Get(ctxConsecutivo, "Entradas Arka", &consecutivo)
+		outputError = consecutivos.Get("contxtEntradaCons", "Entradas Arka", &consecutivo)
 		if outputError != nil {
 			return
 		}

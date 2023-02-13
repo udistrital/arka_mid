@@ -29,7 +29,6 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 		terceroUD       int
 	)
 
-	detalleMd := make(map[int]*models.FormatoDepreciacion)
 	novedadesNuevas := make(map[int][]*models.NovedadElemento)
 
 	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
@@ -73,18 +72,10 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 
 		for idx, nv_ := range nv {
 
-			if detalleMd[nv_.MovimientoId.Id] == nil {
-				if dt, err := depreciacionHelper.GetDetalleDepreciacion(nv_.MovimientoId.Detalle); err != nil {
-					return nil, nil, err
-				} else {
-					detalleMd[nv_.MovimientoId.Id] = dt
-				}
-			}
-
 			var fCorte time.Time
 			var dpOrg, dpNvo, deltaT float64
 			var novedadNueva *models.NovedadElemento
-			fCorte, _ = time.Parse("2006-01-02", detalleMd[nv_.MovimientoId.Id].FechaCorte)
+			fCorte = *nv_.MovimientoId.FechaCorte
 			if idx == 0 {
 				dpOrg, _ = depreciacionHelper.CalculaDp(
 					nv_.ElementoMovimientoId.ValorTotal,
@@ -104,7 +95,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 					nuevo.VidaUtil-deltaT,
 					nv_)
 			} else {
-				ref, _ := time.Parse("2006-01-02", detalleMd[novedadesNuevas[key][idx-1].MovimientoId.Id].FechaCorte)
+				ref := novedadesNuevas[key][idx-1].MovimientoId.FechaCorte
 				dpOrg, _ = depreciacionHelper.CalculaDp(
 					nv_.ValorLibros,
 					nv_.ValorResidual,
@@ -128,7 +119,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 
 			movimientos = append(movimientos,
 				generaTrContable(dpOrg, dpNvo,
-					detalleMd[nv_.MovimientoId.Id].FechaCorte,
+					nv_.MovimientoId.FechaCorte.UTC().String(),
 					nv_.MovimientoId.FormatoTipoMovimientoId.Nombre,
 					movDebito,
 					movCredito,

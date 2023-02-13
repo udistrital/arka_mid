@@ -2,11 +2,11 @@ package depreciacionHelper
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -16,44 +16,27 @@ func GetCierre(id int, detalle_ *models.ResultadoMovimiento) (outputError map[st
 
 	defer errorctrl.ErrorControlFunction("GetCierre - Unhandled Error!", "500")
 
-	var (
-		detalle     models.FormatoDepreciacion
-		transaccion models.TransaccionMovimientos
-		cuentas     map[string]models.CuentaContable
-	)
-
-	if mov_, err := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(id)); err != nil {
-		return err
-	} else if len(mov_) == 1 {
+	mov_, outputError := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(id))
+	if outputError != nil || len(mov_) != 1 || mov_[0].FormatoTipoMovimientoId.CodigoAbreviacion != "CRR" || !strings.HasPrefix(mov_[0].EstadoMovimientoId.Nombre, "Cierre ") {
+		return
+	} else {
 		detalle_.Movimiento = *mov_[0]
 	}
 
-	if err := utilsHelper.Unmarshal(detalle_.Movimiento.Detalle, &detalle); err != nil {
-		return err
-	}
-
+	var transaccion = new(models.TransaccionMovimientos)
 	if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre En Curso" || detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Rechazado" {
-		if err := calcularCierre(detalle.FechaCorte, nil, nil, &transaccion, detalle_); err != nil {
-			return err
-		}
-	} else if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Aprobado" && detalle.ConsecutivoId > 0 {
-		if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-			return err
-		} else {
-			transaccion = *tr
-		}
+		outputError = calcularCierre(detalle_.Movimiento.FechaCorte.UTC().Format("2006-01-02"), nil, transaccion, detalle_)
+	} else if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Aprobado" && detalle_.Movimiento.ConsecutivoId != nil && *detalle_.Movimiento.ConsecutivoId > 0 {
+		transaccion, outputError = movimientosContables.GetTransaccion(*detalle_.Movimiento.ConsecutivoId, "consecutivo", true)
 	}
 
-	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas); err != nil {
-		return err
-	} else if len(detalleContable) > 0 {
-		trContable := models.InfoTransaccionContable{
-			Movimientos: detalleContable,
-			Concepto:    dscTransaccionCierre(),
-			Fecha:       transaccion.FechaTransaccion,
-		}
-		detalle_.TransaccionContable = trContable
+	if outputError != nil {
+		return
 	}
+
+	detalle_.TransaccionContable.Concepto = dscTransaccionCierre()
+	detalle_.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	detalle_.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, nil)
 
 	return
 }

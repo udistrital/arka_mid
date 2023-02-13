@@ -13,38 +13,36 @@ import (
 )
 
 // calcularCierre Calcula la transacción contable que se generará una vez se liquide el cierre a una fecha determinada
-func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]models.CuentaContable, transaccion *models.TransaccionMovimientos, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable, transaccion *models.TransaccionMovimientos, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorctrl.ErrorControlFunction("calcularCierre - Unhandled Error!", "500")
 
 	var (
-		infoCorte   []models.DepreciacionElemento
 		formtatoCrr int
 		elementos_  []*models.Elemento
 		payload     string
-		terceroUD   int
 	)
 
-	if err := movimientosArka.GetCorteDepreciacion(fechaCorte, &infoCorte); err != nil {
-		return err
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formtatoCrr, "CRR")
+	if outputError != nil {
+		return
+	}
+
+	infoCorte, outputError := movimientosArka.GetCorteDepreciacion(fechaCorte)
+	if outputError != nil {
+		return
 	}
 
 	if len(infoCorte) == 0 {
 		return
 	}
 
-	if elementos == nil {
-		elementos = new([]int)
-	}
-
-	payload = "query=TipoDocumentoId__Nombre:NIT,Numero:" + terceros.GetDocUD()
-	if terceroUD_, err := terceros.GetAllDatosIdentificacion(payload); err != nil {
-		return err
-	} else if len(terceroUD_) != 1 || terceroUD_[0].TerceroId == nil {
-		resultado.Error = "No se pudo consultar el tercero para asociar al movimiento contable. Contacte soporte."
+	terceroUD, outputError := terceros.GetTerceroUD()
+	if outputError != nil {
 		return
-	} else {
-		terceroUD = terceroUD_[0].TerceroId.Id
+	} else if terceroUD == 0 {
+		resultado.Error = "No se pudo consultar el tercero para asociar a la transacción contable. Contacte soporte."
+		return
 	}
 
 	subgrupos := make(map[int]models.DetalleSubgrupo)
@@ -72,7 +70,6 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 
 			elemento[0].ValorTotal = val.DeltaValor
 			if subgrupos[elemento[0].SubgrupoCatalogoId].Depreciacion || subgrupos[elemento[0].SubgrupoCatalogoId].Amortizacion {
-				*elementos = append(*elementos, val.ElementoMovimientoId)
 				elementos_ = append(elementos_, elemento...)
 			}
 
@@ -87,15 +84,7 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 		return
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formtatoCrr, "CRR"); err != nil {
-		return err
-	}
-
-	if msg, err := asientoContable.CalcularMovimientosContables(elementos_, getDescripcionMovmientoCierre(), 0, formtatoCrr,
-		terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos); err != nil || msg != "" {
-		resultado.Error = msg
-		return err
-	}
+	resultado.Error, outputError = asientoContable.CalcularMovimientosContables(elementos_, getDescripcionMovmientoCierre(), 0, formtatoCrr, terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos)
 
 	return
 }

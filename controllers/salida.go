@@ -83,7 +83,7 @@ func (c *SalidaController) Post() {
 	} else {
 		var v models.SalidaGeneral
 		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := salidaHelper.PostTrSalidas(&v, etl); err == nil && respuesta != nil {
+			if respuesta, err := salidaHelper.Post(&v, etl); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
 			} else {
@@ -150,7 +150,7 @@ func (c *SalidaController) GetSalida() {
 			"status":  "400",
 		})
 	}
-	if v, err := salidaHelper.GetSalidaById(id); err != nil {
+	if v, err := salidaHelper.GetOne(id); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
@@ -232,7 +232,7 @@ func (c *SalidaController) GetSalidas() {
 	if v, err := c.GetBool("tramite_only"); err == nil {
 		tramiteOnly = v
 	}
-	if v, err := salidaHelper.GetSalidas(tramiteOnly); err == nil {
+	if v, err := salidaHelper.GetAll(tramiteOnly); err == nil {
 		if v != nil {
 			c.Data["json"] = v
 		} else {
@@ -303,7 +303,7 @@ func (c *SalidaController) Put() {
 	}
 
 	if !rechazar && v.Salidas != nil {
-		if respuesta, err := salidaHelper.PutTrSalidas(&v, id); err == nil && respuesta != nil {
+		if respuesta, err := salidaHelper.Put(&v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {

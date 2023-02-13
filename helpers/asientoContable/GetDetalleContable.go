@@ -4,6 +4,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -90,4 +91,25 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuen
 
 	return movimientos_, nil
 
+}
+
+func GetFullDetalleContable(consecutivoId int) (trContable models.InfoTransaccionContable, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("GetFullDetalleContable - Unhandled Error!", "500")
+
+	transaccion, outputError := movimientosContables.GetTransaccion(consecutivoId, "consecutivo", true)
+	if outputError != nil {
+		return
+	}
+
+	trContable = models.InfoTransaccionContable{
+		Concepto: transaccion.Descripcion,
+		Fecha:    transaccion.FechaTransaccion,
+	}
+
+	if len(transaccion.Movimientos) > 0 {
+		trContable.Movimientos, outputError = GetDetalleContable(transaccion.Movimientos, nil)
+	}
+
+	return
 }

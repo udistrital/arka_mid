@@ -3,7 +3,6 @@ package salidaHelper
 import (
 	"strconv"
 
-	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -11,9 +10,9 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func PutTrSalidas(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
+func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("PutTrSalidas - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("Put - Unhandled Error!", "500")
 
 	var (
 		detalleOriginal    models.FormatoSalida
@@ -109,8 +108,7 @@ func setConsecutivoSalida(salida *models.Movimiento) (outputError map[string]int
 	if salida.Consecutivo == nil || salida.ConsecutivoId == nil || *salida.Consecutivo == "" || *salida.ConsecutivoId <= 0 {
 
 		var consecutivo models.Consecutivo
-		ctxSalida, _ := beego.AppConfig.Int("contxtSalidaCons")
-		outputError = consecutivos.Get(ctxSalida, "Registro Salida Arka", &consecutivo)
+		outputError = consecutivos.Get("contxtSalidaCons", "Registro Salida Arka", &consecutivo)
 		if outputError != nil {
 			return
 		}
