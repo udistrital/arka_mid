@@ -268,11 +268,6 @@ type DepreciacionElemento struct {
 	ElementoActaId       int
 }
 
-type TransaccionCierre struct {
-	MovimientoId         int
-	ElementoMovimientoId []int
-}
-
 type InfoDepreciacion struct {
 	Id            int
 	RazonRechazo  string

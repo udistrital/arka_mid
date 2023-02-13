@@ -25,7 +25,7 @@ func GetCierre(id int, detalle_ *models.ResultadoMovimiento) (outputError map[st
 
 	var transaccion = new(models.TransaccionMovimientos)
 	if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre En Curso" || detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Rechazado" {
-		outputError = calcularCierre(detalle_.Movimiento.FechaCorte.UTC().Format("2006-01-02"), nil, nil, transaccion, detalle_)
+		outputError = calcularCierre(detalle_.Movimiento.FechaCorte.UTC().Format("2006-01-02"), nil, transaccion, detalle_)
 	} else if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Aprobado" && detalle_.Movimiento.ConsecutivoId != nil && *detalle_.Movimiento.ConsecutivoId > 0 {
 		transaccion, outputError = movimientosContables.GetTransaccion(*detalle_.Movimiento.ConsecutivoId, "consecutivo", true)
 	}

@@ -48,7 +48,7 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 		return err
 	}
 
-	if err := calcularCierre(info.FechaCorte.Format("2006-01-02"), nil, cuentas, &transaccion, resultado); err != nil || resultado.Error != "" || len(transaccion.Movimientos) == 0 {
+	if err := calcularCierre(info.FechaCorte.Format("2006-01-02"), cuentas, &transaccion, resultado); err != nil || resultado.Error != "" || len(transaccion.Movimientos) == 0 {
 		desbloquearSistema(parametros[1], *resultado)
 		return err
 	}

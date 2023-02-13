@@ -17,10 +17,9 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 	defer errorctrl.ErrorControlFunction("AprobarDepreciacion - Unhandled Error!", "500")
 
 	var (
-		parametros        []models.ParametroConfiguracion
-		transaccionCierre models.TransaccionCierre
-		transaccion       models.TransaccionMovimientos
-		cuentas           map[string]models.CuentaContable
+		parametros  []models.ParametroConfiguracion
+		transaccion models.TransaccionMovimientos
+		cuentas     map[string]models.CuentaContable
 	)
 
 	if err := configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros); err != nil {
@@ -38,9 +37,9 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		return
 	}
 
-	if err := calcularCierre(resultado.Movimiento.FechaCorte.UTC().Format("2006-01-02"), &transaccionCierre.ElementoMovimientoId, cuentas, &transaccion, resultado); err != nil {
+	if err := calcularCierre(resultado.Movimiento.FechaCorte.UTC().Format("2006-01-02"), cuentas, &transaccion, resultado); err != nil {
 		return err
-	} else if resultado.Error != "" || len(transaccionCierre.ElementoMovimientoId) == 0 || len(transaccion.Movimientos) == 0 {
+	} else if resultado.Error != "" || len(transaccion.Movimientos) == 0 {
 		return
 	}
 
@@ -63,8 +62,7 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		return
 	}
 
-	transaccionCierre.MovimientoId = id
-	outputError = movimientosArka.AprobarCierre(&transaccionCierre, &resultado.Movimiento)
+	outputError = movimientosArka.AprobarCierre(&resultado.Movimiento)
 	if outputError != nil {
 		resultado.Error = "Se registró la transacción contable pero no se pudo aprobar el cierre correctamente. Contacte soporte"
 		return

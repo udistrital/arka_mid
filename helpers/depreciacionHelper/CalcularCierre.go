@@ -13,7 +13,7 @@ import (
 )
 
 // calcularCierre Calcula la transacción contable que se generará una vez se liquide el cierre a una fecha determinada
-func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]models.CuentaContable, transaccion *models.TransaccionMovimientos, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable, transaccion *models.TransaccionMovimientos, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorctrl.ErrorControlFunction("calcularCierre - Unhandled Error!", "500")
 
@@ -35,10 +35,6 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 
 	if len(infoCorte) == 0 {
 		return
-	}
-
-	if elementos == nil {
-		elementos = new([]int)
 	}
 
 	terceroUD, outputError := terceros.GetTerceroUD()
@@ -74,7 +70,6 @@ func calcularCierre(fechaCorte string, elementos *[]int, cuentas map[string]mode
 
 			elemento[0].ValorTotal = val.DeltaValor
 			if subgrupos[elemento[0].SubgrupoCatalogoId].Depreciacion || subgrupos[elemento[0].SubgrupoCatalogoId].Amortizacion {
-				*elementos = append(*elementos, val.ElementoMovimientoId)
 				elementos_ = append(elementos_, elemento...)
 			}
 
