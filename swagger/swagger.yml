@@ -528,6 +528,10 @@ paths:
         required: true
         type: integer
         format: int64
+      - in: query
+        name: movimientoId
+        description: "false"
+        type: string
       responses:
         "200":
           description: ""
