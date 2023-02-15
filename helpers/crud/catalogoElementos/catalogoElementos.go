@@ -29,12 +29,16 @@ func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentasSubgrupo, o
 }
 
 // GetTrCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
-func GetTrCuentasSubgrupo(id int, cuentas *[]models.CuentasSubgrupo) (outputError map[string]interface{}) {
+func GetTrCuentasSubgrupo(id, movimientoId int, cuentas *[]models.CuentasSubgrupo) (outputError map[string]interface{}) {
 
 	funcion := "GetTrCuentasSubgrupo - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tr_cuentas_subgrupo/" + strconv.Itoa(id)
+	if movimientoId > 0 {
+		urlcrud += "?movimientoId=" + strconv.Itoa(movimientoId)
+	}
+
 	if err := request.GetJson(urlcrud, &cuentas); err != nil {
 		logs.Error(urlcrud, err)
 		eval := "request.GetJson(urlcrud, &cuentas)"
