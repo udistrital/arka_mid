@@ -46,7 +46,7 @@ func GetAllElemento(query string, fields string, sortby string, order string, of
 }
 
 // GetAllHistoricoActa query controlador historico_acta del api acta_recibido_crud
-func GetAllHistoricoActa(query string, fields string, sortby string, order string, offset string, limit string) (historicos []*models.HistoricoActa, outputError map[string]interface{}) {
+func GetAllHistoricoActa(query string, fields string, sortby string, order string, offset string, limit string) (historicos []models.HistoricoActa, outputError map[string]interface{}) {
 
 	funcion := "GetAllHistoricoActa - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -59,6 +59,24 @@ func GetAllHistoricoActa(query string, fields string, sortby string, order strin
 	}
 
 	return historicos, nil
+}
+
+// GetAllHistoricoActas query controlador historico_acta del api acta_recibido_crud teniendo el cuenta el número de registros totales
+func GetAllHistoricoActas(query string, fields string, sortby string, order string, offset string, limit string) (historicos []*models.HistoricoActa, count string, outputError map[string]interface{}) {
+
+	funcion := "GetAllHistoricoActas - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := path + "historico_acta?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
+	response, err := request.GetJsonTest(urlcrud, &historicos)
+	if err != nil {
+		logs.Error(urlcrud+", ", err)
+		eval := "request.GetJsonTest(urlcrud, &historicos)"
+		return nil, "", errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	count = response.Header.Get("total-count")
+	return
 }
 
 // PutElemento put controlador elemento del api acta_recibido_crud

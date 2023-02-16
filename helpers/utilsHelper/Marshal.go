@@ -2,6 +2,7 @@ package utilsHelper
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -24,3 +25,6 @@ func Marshal(in interface{}, out *string) (outputError map[string]interface{}) {
 	return
 
 }
+
+func String(v string) *string     { return &v }
+func Time(v time.Time) *time.Time { return &v }

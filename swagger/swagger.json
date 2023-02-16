@@ -117,12 +117,6 @@
                 "parameters": [
                     {
                         "in": "query",
-                        "name": "states",
-                        "description": "If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas",
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
                         "name": "u",
                         "description": "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user",
                         "type": "string"
@@ -137,6 +131,54 @@
                         "in": "query",
                         "name": "offset",
                         "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "Id",
+                        "description": "Id para utilizar en query __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "TipoActaId",
+                        "description": "Tipos de acta para utilizar en query __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "UnidadEjecutoraId",
+                        "description": "Unidad ejecutora por las actas que se desean filtrar",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "EstadoActaId",
+                        "description": "Estado del acta",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "FechaCreacion",
+                        "description": "Fecha creación del acta: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "FechaModificacion",
+                        "description": "Fecha modificación del acta: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Columna por la que se ordenan los resultados",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "description": "Orden de los resultados de acuerdo a la columna indicada",
                         "type": "string"
                     }
                 ],
@@ -741,6 +783,12 @@
                         "required": true,
                         "type": "integer",
                         "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "movimientoId",
+                        "description": "false",
+                        "type": "string"
                     }
                 ],
                 "responses": {
@@ -890,35 +938,6 @@
                     },
                     "403": {
                         "description": "body is empty"
-                    }
-                }
-            }
-        },
-        "/entrada/anular/{id}": {
-            "get": {
-                "tags": [
-                    "entrada"
-                ],
-                "description": "anular Entrada by id",
-                "operationId": "EntradaController.Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ResultadoMovimiento"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
                     }
                 }
             }
@@ -2192,11 +2211,22 @@
                 "Activo": {
                     "type": "boolean"
                 },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "Detalle": {
                     "type": "string"
                 },
                 "EstadoMovimientoId": {
                     "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "datetime"
                 },
                 "FechaCreacion": {
                     "type": "string",
@@ -2506,6 +2536,32 @@
                 }
             }
         },
+        "models.ElementoMejorado": {
+            "title": "ElementoMejorado",
+            "type": "object",
+            "properties": {
+                "AprovechadoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorLibros": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.ElementoSinAsignar": {
             "title": "ElementoSinAsignar",
             "type": "object",
@@ -2725,11 +2781,8 @@
                     "type": "integer",
                     "format": "int64"
                 },
-                "TipoEspacio": {
-                    "$ref": "#/definitions/models.TipoEspacio"
-                },
                 "TipoEspacioFisicoId": {
-                    "$ref": "#/definitions/models.TipoEspacioFisicoV2"
+                    "$ref": "#/definitions/models.TipoEspacioFisico"
                 },
                 "TipoTerrenoId": {
                     "type": "integer",
@@ -2826,10 +2879,6 @@
             "title": "FormatoBaseEntrada",
             "type": "object",
             "properties": {
-                "ConsecutivoId": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "TRM": {
                     "type": "number",
                     "format": "double"
@@ -2837,9 +2886,6 @@
                 "acta_recibido_id": {
                     "type": "integer",
                     "format": "int64"
-                },
-                "consecutivo": {
-                    "type": "string"
                 },
                 "contrato_id": {
                     "type": "integer",
@@ -2851,8 +2897,7 @@
                 "elementos": {
                     "type": "array",
                     "items": {
-                        "type": "integer",
-                        "format": "int64"
+                        "$ref": "#/definitions/models.ElementoMejorado"
                     }
                 },
                 "factura": {
@@ -2879,13 +2924,6 @@
             "title": "FormatoSolicitudBodega",
             "type": "object",
             "properties": {
-                "Consecutivo": {
-                    "type": "string"
-                },
-                "ConsecutivoId": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "Elementos": {
                     "type": "array",
                     "items": {
@@ -2964,8 +3002,20 @@
                 "Baja": {
                     "$ref": "#/definitions/models.Movimiento"
                 },
-                "Depreciacion": {
-                    "$ref": "#/definitions/models.Movimiento"
+                "Elemento": {
+                    "$ref": "#/definitions/models.ElementosMovimiento"
+                },
+                "Entradas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Movimiento"
+                    }
+                },
+                "Novedades": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NovedadElemento"
+                    }
                 },
                 "Salida": {
                     "$ref": "#/definitions/models.Movimiento"
@@ -3120,11 +3170,22 @@
                 "Activo": {
                     "type": "boolean"
                 },
+                "Consecutivo": {
+                    "type": "string"
+                },
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "Detalle": {
                     "type": "string"
                 },
                 "EstadoMovimientoId": {
                     "$ref": "#/definitions/models.EstadoMovimiento"
+                },
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "datetime"
                 },
                 "FechaCreacion": {
                     "type": "string",
@@ -3158,6 +3219,48 @@
                 },
                 "TrContable": {
                     "$ref": "#/definitions/models.PorDefinir"
+                }
+            }
+        },
+        "models.NovedadElemento": {
+            "title": "NovedadElemento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "ElementoMovimientoId": {
+                    "$ref": "#/definitions/models.ElementosMovimiento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Metadata": {
+                    "type": "string"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "ValorLibros": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
                 }
             }
         },
@@ -3430,12 +3533,12 @@
                     "format": "int64"
                 },
                 "LimiteInferior": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "number",
+                    "format": "double"
                 },
                 "LimiteSuperior": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "number",
+                    "format": "double"
                 },
                 "NecesitaPlaca": {
                     "type": "boolean"
@@ -3514,35 +3617,8 @@
                 }
             }
         },
-        "models.TipoEspacio": {
-            "title": "TipoEspacio",
-            "type": "object",
-            "properties": {
-                "Activo": {
-                    "type": "boolean"
-                },
-                "CodigoAbreviacion": {
-                    "type": "string"
-                },
-                "FechaCreacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "FechaModificacion": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Nombre": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.TipoEspacioFisicoV2": {
-            "title": "TipoEspacioFisicoV2",
+        "models.TipoEspacioFisico": {
+            "title": "TipoEspacioFisico",
             "type": "object",
             "properties": {
                 "Activo": {

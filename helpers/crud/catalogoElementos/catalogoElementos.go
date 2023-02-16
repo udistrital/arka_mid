@@ -13,7 +13,7 @@ import (
 var basePath = "http://" + beego.AppConfig.String("catalogoElementosService")
 
 // GetAllCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
-func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, outputError map[string]interface{}) {
+func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentasSubgrupo, outputError map[string]interface{}) {
 
 	funcion := "GetAllCuentasSubgrupo"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -29,12 +29,16 @@ func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentaSubgrupo, ou
 }
 
 // GetTrCuentasSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
-func GetTrCuentasSubgrupo(id int, cuentas *[]models.CuentasSubgrupo) (outputError map[string]interface{}) {
+func GetTrCuentasSubgrupo(id, movimientoId int, cuentas *[]models.CuentasSubgrupo) (outputError map[string]interface{}) {
 
 	funcion := "GetTrCuentasSubgrupo - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tr_cuentas_subgrupo/" + strconv.Itoa(id)
+	if movimientoId > 0 {
+		urlcrud += "?movimientoId=" + strconv.Itoa(movimientoId)
+	}
+
 	if err := request.GetJson(urlcrud, &cuentas); err != nil {
 		logs.Error(urlcrud, err)
 		eval := "request.GetJson(urlcrud, &cuentas)"
@@ -106,4 +110,20 @@ func GetSubgrupoById(id int) (subgrupo *models.Subgrupo, outputError map[string]
 	}
 
 	return subgrupo, nil
+}
+
+// GetAllElemento Consulta controlador elemento del api catalogo_elementos_crud
+func GetAllElemento(payload string, elementos *[]models.ElementoCatalogo) (outputError map[string]interface{}) {
+
+	funcion := "GetAllElemento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "elemento?" + payload
+	if err := request.GetJson(urlcrud, &elementos); err != nil {
+		logs.Error(err)
+		eval := "request.GetJson(urlcrud, &elementos)"
+		return errorctrl.Error(funcion+eval, err, "500")
+	}
+
+	return
 }

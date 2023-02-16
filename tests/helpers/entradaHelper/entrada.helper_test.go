@@ -22,21 +22,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestAnularEntrada(t *testing.T) {
-	valor, err := entradaHelper.AnularEntrada(1)
-	if err != nil || valor == nil {
-		if err != nil {
-			t.Error("No se pudo anular entrada err", err)
-		} else {
-			t.Error("No se pudo anular el valor de la entrada", err)
-		}
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestAnularEntrada Finalizado Correctamente (OK)")
-	}
-}
-
 func TestGetMovimientosByActa(t *testing.T) {
 	valor, err := entradaHelper.GetMovimientosByActa(2)
 	if err != nil || valor == nil {

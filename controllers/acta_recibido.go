@@ -10,6 +10,7 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -155,10 +156,17 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // GetAllActas ...
 // @Title Get All Actas
 // @Description get ActaRecibido
-// @Param	states	query	string	false	"If specified, returns only acts with the specified state(s) from ACTA_RECIBIDO_SERVICE / estado_acta, separated by commas"
-// @Param u query string false "WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
-// @Param 	limit	query	string	false	"Limit the size of result set. Must be an integer"
-// @Param	offset	query	string	false	"Start position of result set. Must be an integer"
+// @Param 	u					query	string	false	"WSO2 User. When specified, acts will be filtered upon the available roles for the specified user"
+// @Param	limit				query	string	false	"Limit the size of result set. Must be an integer"
+// @Param	offset				query	string	false	"Start position of result set. Must be an integer"
+// @Param	Id					query	string	false	"Id para utilizar en query __in"
+// @Param	TipoActaId			query	string	false	"Tipos de acta para utilizar en query __in"
+// @Param	UnidadEjecutoraId	query	string	false	"Unidad ejecutora por las actas que se desean filtrar"
+// @Param	EstadoActaId		query	string	false	"Estado del acta"
+// @Param	FechaCreacion		query	string	false	"Fecha creación del acta: __in"
+// @Param	FechaModificacion	query	string	false	"Fecha modificación del acta: __in"
+// @Param	sortby				query	string	false	"Columna por la que se ordenan los resultados"
+// @Param	order				query	string	false	"Orden de los resultados de acuerdo a la columna indicada"
 // @Success 200 {object} []models.ActaRecibido
 // @Failure 400 "Wrong IDs"
 // @Failure 404 "not found resource"
@@ -167,48 +175,11 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
-	var reqStates []string
 	var WSO2user string
 	var limit int64 = 10
 	var offset int64
-
-	if v := c.GetString("states"); v != "" {
-		valido := false
-		states := strings.Split(v, ",")
-		for _, state := range states {
-			state = strings.TrimSpace(state)
-			if state != "" {
-				reqStates = append(reqStates, state)
-				valido = true
-			}
-		}
-
-		if !valido {
-			err := errors.New("bad syntax. States MUST be comma separated")
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "GetAllActas - c.GetString(\"states\")",
-				"err":     err,
-				"status":  "400",
-			})
-		}
-	}
-	// fmt.Print("ESTADOS SOLICITADOS: ")
-	// fmt.Println(reqStates)
 
 	if v := c.GetString("u"); v != "" {
 		valido := false
@@ -228,6 +199,20 @@ func (c *ActaRecibidoController) GetAllActas() {
 		}
 	}
 
+	reqStates := []string{}
+	estados := c.GetString("EstadoActaId")
+	if len(estados) > 0 {
+		reqStates = strings.Split(estados, ",")
+	}
+
+	tipos := c.GetString("TipoActaId")
+	unidadEjecutora := c.GetString("UnidadEjecutoraId")
+	id := c.GetString("Id")
+	creacion := c.GetString("FechaCreacion")
+	modificacion := c.GetString("FechaModificacion")
+	sortby := c.GetString("sortby")
+	order := c.GetString("order")
+
 	// limit: 10 (default is 10)
 	if v, err := c.GetInt64("limit"); err == nil {
 		limit = v
@@ -237,9 +222,8 @@ func (c *ActaRecibidoController) GetAllActas() {
 		offset = v
 	}
 
-	if l, err := actaRecibido.GetAllActasRecibidoActivas(reqStates, WSO2user, limit, offset); err == nil {
-		// fmt.Print("DATA FINAL: ")
-		// fmt.Println(l)
+	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, tipos, reqStates, creacion, modificacion, unidadEjecutora, sortby, order, limit, offset); err == nil {
+		c.Ctx.Output.Header("x-total-count", t)
 		if l == nil {
 			l = []map[string]interface{}{}
 		}

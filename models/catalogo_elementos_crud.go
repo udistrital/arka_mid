@@ -77,8 +77,8 @@ type TipoBien struct {
 	Descripcion     string
 	Activo          bool
 	Reglas          string
-	LimiteInferior  int
-	LimiteSuperior  int
+	LimiteInferior  float64
+	LimiteSuperior  float64
 	NecesitaPlaca   bool
 	NecesitaPoliza  bool
 	BodegaConsumo   bool

@@ -1,131 +1,108 @@
 package bodegaConsumoHelper
 
 import (
-	"encoding/json"
-	"fmt"
+	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
-
-	// "github.com/udistrital/utils_oas/formatdata"
-	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
+	"github.com/udistrital/arka_mid/models"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-//GetTerceroById trae el nombre de un encargado por su id
+// GetSolicitudById trae el nombre de un encargado por su id
 func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetSolicitudById - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	defer errorctrl.ErrorControlFunction("GetSolicitudById - Unhandled Error", "500")
 
-	var solicitud_ []map[string]interface{}
+	var solicitud_ = make(map[string]interface{})
 	var elementos___ []map[string]interface{}
 
-	// url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/" + fmt.Sprintf("%v", id) + ""
-	url := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + fmt.Sprintf("%v", id) + ""
-	// logs.Debug(url)
-	if res, err := request.GetJsonTest(url, &solicitud_); err == nil && res.StatusCode == 200 {
-
-		// logs.Debug("solicitud_:")
-		// formatdata.JsonPrint(solicitud_)
-		// fmt.Println("")
-
-		// TO-DO: Arreglar el CRUD! No debería retornar un arreglo con un elemento vacío ([{}])
-		// Por máximo debería retornar el arreglo vacío! (sin el objeto vacío, [])
-		// (Y uno de los siguientes estados: 204 o 404)
-		if len(solicitud_) == 0 || len(solicitud_[0]) == 0 {
-			err := fmt.Errorf("movimiento %d no encontrado", id)
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "/GetSolicitudById",
-				"err":     err,
-				"status":  "404",
-			}
-			return nil, outputError
-		}
-
-		str := fmt.Sprintf("%v", solicitud_[0]["Detalle"])
-		// logs.Debug(fmt.Sprintf("str: %s", str))
-		var data map[string]interface{}
-		if err := json.Unmarshal([]byte(str), &data); err == nil {
-
-			// logs.Debug("data:", data)
-			if tercero, err := crudTerceros.GetNombreTerceroById(int(data["Funcionario"].(float64))); err == nil {
-				solicitud_[0]["Funcionario"] = tercero
-			} else {
-				return nil, err
-			}
-			var data_ []map[string]interface{}
-			if jsonString, err := json.Marshal(data["Elementos"]); err == nil {
-				if err2 := json.Unmarshal(jsonString, &data_); err2 == nil {
-
-					for _, elementos := range data_ {
-						// logs.Debug("k:", k, "- elementos:", elementos)
-
-						if Elemento__, err := TraerElementoSolicitud(elementos); err == nil {
-							Elemento__["Cantidad"] = elementos["Cantidad"]
-							// fmt.Println(elementos["CantidadAprobada"])
-							if elementos["CantidadAprobada"] != nil {
-								Elemento__["CantidadAprobada"] = elementos["CantidadAprobada"]
-							} else {
-								Elemento__["CantidadAprobada"] = 0
-							}
-
-							elementos___ = append(elementos___, Elemento__)
-						}
-					}
-					Solicitud = map[string]interface{}{
-						"Solicitud": solicitud_,
-						"Elementos": elementos___,
-					}
-
-					return Solicitud, nil
-
-				} else {
-					logs.Error(err2)
-					outputError = map[string]interface{}{
-						"funcion": "/GetSolicitudById - json.Marshal(data[\"Elementos\"])",
-						"err":     err2,
-						"status":  "500",
-					}
-					return nil, outputError
-				}
-
-			} else {
-				logs.Error(err)
-				outputError = map[string]interface{}{
-					"funcion": "/GetSolicitudById - json.Marshal(data[\"Elementos\"])",
-					"err":     err,
-					"status":  "500",
-				}
-				return nil, outputError
-			}
-
-		} else {
-			logs.Error(err)
-			outputError = map[string]interface{}{
-				"funcion": "/GetSolicitudById - json.Unmarshal([]byte(str), &data)",
-				"err":     err,
-				"status":  "500",
-			}
-			return nil, outputError
-		}
-
-	} else {
-		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "/GetSolicitudById - request.GetJsonTest(url, &solicitud_)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+	mov, err := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(id))
+	if err != nil || len(mov) != 1 {
+		return nil, err
 	}
+
+	var detalle models.FormatoSolicitudBodega
+	outputError = utilsHelper.Unmarshal(mov[0].Detalle, &detalle)
+	if outputError != nil {
+		return
+	}
+
+	outputError = utilsHelper.FillStruct(mov[0], &solicitud_)
+	if outputError != nil {
+		return
+	}
+
+	tercero, err := terceros.GetNombreTerceroById(detalle.Funcionario)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, elementos := range detalle.Elementos {
+		Elemento__, err := traerElementoSolicitud(elementos)
+		if err != nil {
+			return nil, err
+		}
+
+		Elemento__["Cantidad"] = elementos.Cantidad
+		Elemento__["CantidadAprobada"] = elementos.CantidadAprobada
+		elementos___ = append(elementos___, Elemento__)
+	}
+
+	solicitud_["Funcionario"] = tercero
+	Solicitud = map[string]interface{}{
+		"Solicitud": solicitud_,
+		"Elementos": elementos___,
+	}
+
+	return
+
+}
+
+func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("traerElementoSolicitud - Unhandled Error", "500")
+
+	ubicacionInfo, err := oikos.GetSedeDependenciaUbicacion(Elemento.Ubicacion)
+	if err != nil {
+		return nil, err
+	}
+
+	ultimo, err := ultimoMovimientoKardex(Elemento.ElementoCatalogoId)
+	if err != nil {
+		return nil, err
+	}
+
+	outputError = utilsHelper.FillStruct(ultimo, &Elemento_)
+	if outputError != nil {
+		return
+	}
+
+	catalogo, err := detalleElementoCatalogo(Elemento.ElementoCatalogoId)
+	if err != nil {
+		return nil, err
+	}
+
+	Elemento_["ElementoCatalogoId"] = catalogo
+	Elemento_["Sede"] = ubicacionInfo.Sede
+	Elemento_["Dependencia"] = ubicacionInfo.Dependencia
+	Elemento_["Ubicacion"] = ubicacionInfo.Ubicacion.EspacioFisicoId
+
+	return
+}
+
+func ultimoMovimientoKardex(elementoId int) (ultimo models.ElementosMovimiento, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("ultimoMovimientoKardex - Unhandled Error!", "500")
+
+	payload := "limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor&query=ElementoCatalogoId:"
+	elemento, err := movimientosArka.GetAllElementosMovimiento(payload + strconv.Itoa(elementoId))
+	if err != nil || len(elemento) != 1 {
+		return ultimo, err
+	}
+
+	ultimo = *elemento[0]
+	return
 }

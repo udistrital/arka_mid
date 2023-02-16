@@ -22,14 +22,13 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
-		cuentasSubgrupo map[int]*models.CuentaSubgrupo
+		cuentasSubgrupo map[int]*models.CuentasSubgrupo
 		bufferCtas      map[string]*models.CuentaContable
 		movDebito       int
 		movCredito      int
 		terceroUD       int
 	)
 
-	detalleMd := make(map[int]*models.FormatoDepreciacion)
 	novedadesNuevas := make(map[int][]*models.NovedadElemento)
 
 	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
@@ -73,18 +72,10 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 
 		for idx, nv_ := range nv {
 
-			if detalleMd[nv_.MovimientoId.Id] == nil {
-				if dt, err := depreciacionHelper.GetDetalleDepreciacion(nv_.MovimientoId.Detalle); err != nil {
-					return nil, nil, err
-				} else {
-					detalleMd[nv_.MovimientoId.Id] = dt
-				}
-			}
-
 			var fCorte time.Time
 			var dpOrg, dpNvo, deltaT float64
 			var novedadNueva *models.NovedadElemento
-			fCorte, _ = time.Parse("2006-01-02", detalleMd[nv_.MovimientoId.Id].FechaCorte)
+			fCorte = *nv_.MovimientoId.FechaCorte
 			if idx == 0 {
 				dpOrg, _ = depreciacionHelper.CalculaDp(
 					nv_.ElementoMovimientoId.ValorTotal,
@@ -104,7 +95,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 					nuevo.VidaUtil-deltaT,
 					nv_)
 			} else {
-				ref, _ := time.Parse("2006-01-02", detalleMd[novedadesNuevas[key][idx-1].MovimientoId.Id].FechaCorte)
+				ref := novedadesNuevas[key][idx-1].MovimientoId.FechaCorte
 				dpOrg, _ = depreciacionHelper.CalculaDp(
 					nv_.ValorLibros,
 					nv_.ValorResidual,
@@ -128,7 +119,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 
 			movimientos = append(movimientos,
 				generaTrContable(dpOrg, dpNvo,
-					detalleMd[nv_.MovimientoId.Id].FechaCorte,
+					nv_.MovimientoId.FechaCorte.UTC().String(),
 					nv_.MovimientoId.FormatoTipoMovimientoId.Nombre,
 					movDebito,
 					movCredito,
@@ -151,7 +142,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 	sg, vls, mp []*models.DetalleElemento_,
 	org []*models.Elemento) (
-	ctasSg map[int]*models.CuentaSubgrupo,
+	ctasSg map[int]*models.CuentasSubgrupo,
 	ctas map[string]*models.CuentaContable,
 	outputError map[string]interface{}) {
 
@@ -160,7 +151,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 
 	var idsD, idsA []int
 	var idD, idA int
-	var ctasD, ctasA map[int]*models.CuentaSubgrupo
+	var ctasD, ctasA map[int]*models.CuentasSubgrupo
 
 	for _, nv := range novedades {
 		var ids []int

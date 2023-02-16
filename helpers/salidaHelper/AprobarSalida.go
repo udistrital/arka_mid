@@ -1,6 +1,8 @@
 package salidaHelper
 
 import (
+	"time"
+
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -13,46 +15,40 @@ import (
 // AprobarSalida Aprobacion de una salida
 func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	funcion := "AprobarSalida - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("AprobarSalida - Unhandled Error!", "500")
 
 	var (
-		entrada        models.FormatoBaseEntrada
 		salida         models.FormatoSalida
-		trSalida       models.TrSalida
-		elementosActa  []*models.Elemento
-		transaccion    models.TransaccionMovimientos
 		tipoMovimiento int
 	)
 
-	if tr_, err := movimientosArka.GetTrSalida(salidaId); err != nil {
-		return err
-	} else if tr_.Salida.EstadoMovimientoId.Nombre == "Salida En Trámite" {
-		trSalida = *tr_
-		res.Movimiento = *trSalida.Salida
-	} else {
+	trSalida, outputError := movimientosArka.GetTrSalida(salidaId)
+	if outputError != nil || trSalida.Salida.EstadoMovimientoId.Nombre != "Salida En Trámite" {
+		return
+	} else if len(trSalida.Elementos) == 0 || trSalida.Salida.ConsecutivoId == nil || *trSalida.Salida.ConsecutivoId == 0 {
+		res.Error = "No se pudo continuar con la transacción contable. Contacte soporte."
 		return
 	}
 
-	if err := utilsHelper.Unmarshal(trSalida.Salida.Detalle, &salida); err != nil {
-		return err
-	}
-
-	if len(trSalida.Elementos) == 0 || salida.ConsecutivoId == 0 || salida.Funcionario == 0 {
-		res.Error = "No se pudo continuar calcular la transacción contable. Contacte soporte."
+	res.Movimiento = *trSalida.Salida
+	outputError = utilsHelper.Unmarshal(trSalida.Salida.Detalle, &salida)
+	if outputError != nil {
 		return
 	}
 
-	if err := utilsHelper.Unmarshal(trSalida.Salida.MovimientoPadreId.Detalle, &entrada); err != nil {
-		return err
+	if salida.Funcionario == 0 || salida.Ubicacion == 0 {
+		res.Error = "No se pudo continuar con la transacción contable. Contacte soporte."
+		return
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, "SAL"); err != nil {
-		return err
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, "SAL")
+	if outputError != nil {
+		return
 	}
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&trSalida.Salida.EstadoMovimientoId.Id, "Salida Aprobada"); err != nil {
-		return err
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&trSalida.Salida.EstadoMovimientoId.Id, "Salida Aprobada")
+	if outputError != nil {
+		return
 	}
 
 	var idsElementos []int
@@ -61,44 +57,42 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	}
 
 	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
-	if el_, err := actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1"); err != nil {
-		return err
-	} else {
-		elementosActa = el_
+	elementosActa, outputError := actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
+	if outputError != nil {
+		return
 	}
 
-	dsc := "Entrada: " + entrada.Consecutivo
+	dsc := ""
+	if trSalida.Salida.MovimientoPadreId != nil && trSalida.Salida.MovimientoPadreId.Consecutivo != nil {
+		dsc = "Entrada: " + *trSalida.Salida.MovimientoPadreId.Consecutivo
+	}
 
 	bufferCuentas := make(map[string]models.CuentaContable)
-	if msg, err := asientoContable.CalcularMovimientosContables(elementosActa, dsc, res.Movimiento.MovimientoPadreId.FormatoTipoMovimientoId.Id, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas,
-		nil, &transaccion.Movimientos); err != nil || msg != "" {
-		res.Error = msg
-		return err
+	transaccion := models.TransaccionMovimientos{ConsecutivoId: *trSalida.Salida.ConsecutivoId}
+	res.Error, outputError = asientoContable.CalcularMovimientosContables(elementosActa, dsc, res.Movimiento.MovimientoPadreId.FormatoTipoMovimientoId.Id, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas, nil, &transaccion.Movimientos)
+	if outputError != nil || res.Error != "" {
+		return
 	}
 
-	if msg, err := asientoContable.CreateTransaccionContable(getTipoComprobanteSalidas(), "Salida de Almacén", &transaccion); err != nil || msg != "" {
-		res.Error = msg
-		return err
+	res.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteSalidas(), "Salida de Almacén", &transaccion)
+	if outputError != nil || res.Error != "" {
+		return
 	}
 
-	transaccion.ConsecutivoId = salida.ConsecutivoId
-	if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
-		return err
+	res.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	if outputError != nil {
+		return
 	}
 
-	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas); err != nil {
-		return err
-	} else {
-		res.TransaccionContable.Movimientos = detalleContable
-		res.TransaccionContable.Concepto = transaccion.Descripcion
-		res.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	if outputError != nil {
+		return
 	}
 
-	if movimiento_, err := movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id); err != nil {
-		return err
-	} else {
-		trSalida.Salida = movimiento_
-	}
+	res.TransaccionContable.Concepto = transaccion.Descripcion
+	res.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	trSalida.Salida.FechaCorte = utilsHelper.Time(time.Now())
+	trSalida.Salida, outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
 
 	return
 }

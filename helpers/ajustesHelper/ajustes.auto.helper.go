@@ -122,14 +122,9 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 
 	for _, elms := range elementosSalida {
 
-		var funcionario int
-		var consecutivo string
-
-		if func_, cons_, err := salidaHelper.GetInfoSalida(elms.Salida.Detalle); err != nil {
+		funcionario, err := salidaHelper.GetInfoSalida(elms.Salida.Detalle)
+		if err != nil {
 			return nil, err
-		} else {
-			funcionario = func_
-			consecutivo = cons_
 		}
 
 		for _, el := range elms.UpdateSg {
@@ -140,7 +135,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 			ids = append(ids, el.Id)
 		}
 
-		if movsSalida, err := calcularAjusteMovimiento(orgiginalesActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, funcionario, consecutivo, "Salida"); err != nil {
+		if movsSalida, err := calcularAjusteMovimiento(orgiginalesActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, funcionario, *elms.Salida.Consecutivo, "Salida"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsSalida...)
@@ -266,8 +261,8 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 
 	}
 
-	if detalle.ConsecutivoId > 0 {
-		if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
+	if movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
+		if tr, err := movimientosContables.GetTransaccion(*movimiento.ConsecutivoId, "consecutivo", true); err != nil {
 			return nil, err
 		} else if len(tr.Movimientos) > 0 {
 			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {

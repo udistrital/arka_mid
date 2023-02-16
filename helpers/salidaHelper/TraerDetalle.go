@@ -6,6 +6,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -51,7 +52,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 	}
 
 	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
-		rgxp := regexp.MustCompile("\\d.*")
+		rgxp := regexp.MustCompile(`\d.*`)
 		str := ubicacion.EspacioFisicoId.CodigoAbreviacion
 		str = str[0:2] + rgxp.ReplaceAllString(str[2:], "")
 
@@ -94,11 +95,26 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		"MovimientoPadreId":       movimiento.MovimientoPadreId,
 		"FormatoTipoMovimientoId": movimiento.FormatoTipoMovimientoId,
 		"EstadoMovimientoId":      movimiento.EstadoMovimientoId.Id,
-		"Consecutivo":             salida.Consecutivo,
-		"ConsecutivoId":           salida.ConsecutivoId,
+		"Consecutivo":             movimiento.Consecutivo,
+		"ConsecutivoId":           movimiento.ConsecutivoId,
 		"Funcionario":             funcionario,
 	}
 
 	return Salida2, nil
 
+}
+
+// GetInfoSalida Retorna el funcionario de una salida a partir del detalle del movimiento
+func GetInfoSalida(detalle string) (funcionarioId int, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
+
+	var detalle_ models.FormatoSalida
+	outputError = utilsHelper.Unmarshal(detalle, &detalle_)
+	if outputError != nil {
+		return
+	}
+
+	funcionarioId = detalle_.Funcionario
+	return
 }

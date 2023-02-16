@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -15,135 +16,213 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-// AprobarEntrada Actualiza una entrada a estado aprobada y hace los respectivos registros en kronos y transacciones contables
+const errNoElementos = "No se encontraron elementos para asociar a la entrada."
+
+// AprobarEntrada Actualiza una entrada a estado aprobada, calcula la transacción contable y genera las novedades correspondientes
 func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	funcion := "AprobarEntrada - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("AprobarEntrada - Unhandled Error!", "500")
 
-	var (
-		historico         models.HistoricoActa
-		elementos         []*models.Elemento
-		terceroId         int
-		detalleMovimiento map[string]interface{}
-		detalleContable   string
-		transaccion       models.TransaccionMovimientos
-		bufferCuentas     map[string]models.CuentaContable
-	)
-
-	query := "query=Id:" + strconv.Itoa(entradaId)
-	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return err
-	} else if len(mov) == 1 && mov[0].EstadoMovimientoId.Nombre == "Entrada En Trámite" {
-		resultado_.Movimiento = *mov[0]
-	} else {
+	formato, outputError := getFormato(entradaId, resultado_)
+	if outputError != nil || resultado_.Error != "" {
 		return
 	}
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&resultado_.Movimiento.EstadoMovimientoId.Id, "Entrada Aprobada"); err != nil {
-		return err
+	terceroId, outputError := getTerceroEntrada(formato, resultado_)
+	if outputError != nil || resultado_.Error != "" {
+		return
 	}
 
-	if err := utilsHelper.Unmarshal(resultado_.Movimiento.Detalle, &detalleMovimiento); err != nil {
-		return err
+	elementos, novedades, outputError := getElementosEntrada(formato, entradaId, resultado_)
+	if outputError != nil || resultado_.Error != "" {
+		return
 	}
 
-	query = "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(detalleMovimiento["acta_recibido_id"])
-	if ha, err := actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
-		return err
-	} else {
-		historico = *ha[0]
+	outputError = contabilidadEntrada(resultado_, formato, elementos, terceroId)
+	if outputError != nil || resultado_.Error != "" {
+		return
 	}
 
-	if historico.ActaRecibidoId.TipoActaId.CodigoAbreviacion == "REG" && historico.ProveedorId > 0 {
-		terceroId = historico.ProveedorId
-	} else if historico.ActaRecibidoId.TipoActaId.CodigoAbreviacion == "VER" {
-		if UD, err := terceros.GetTerceroUD(); err != nil {
-			return err
-		} else if UD == 0 {
-			resultado_.Error = "No se pudo consultar el tercero para asociar a la transacción contable. Contacte soporte."
+	for _, nov := range novedades {
+		outputError = movimientosArka.PostNovedadElemento(&nov)
+		if outputError != nil {
 			return
-		} else {
-			terceroId = UD
 		}
-	} else {
-		resultado_.Error = "No se pudo consultar el tercero para asociar a la transacción contable. Contacte soporte."
 	}
 
-	if el_, err := actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1"); err != nil {
-		return err
-	} else {
-		elementos = el_
-	}
+	resultado_.Movimiento.FechaCorte = utilsHelper.Time(time.Now())
+	_, outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
+	return
+}
 
-	if val, ok := detalleMovimiento["ConsecutivoId"]; ok && val != nil && val.(float64) > 0 {
-		transaccion.ConsecutivoId = int(val.(float64))
-	} else {
-		resultado_.Error = "No se puede continuar con el cálculo de la transaccón contable. Contacte soporte."
+func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato models.FormatoBaseEntrada, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("getFormato - Unhandled Error!", "500")
+
+	movimiento, outputError := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(entradaId))
+	if outputError != nil || len(movimiento) != 1 {
 		return
 	}
 
-	if err := descripcionMovimientoContable(detalleMovimiento, &detalleContable); err != nil {
-		return err
+	resultado.Movimiento = *movimiento[0]
+	if resultado.Movimiento.ConsecutivoId == nil || *resultado.Movimiento.ConsecutivoId == 0 {
+		resultado.Error = "No se puede continuar con el cálculo de la transaccón contable. Contacte soporte."
+		return
 	}
 
-	bufferCuentas = make(map[string]models.CuentaContable)
-	if msg, err := asientoContable.CalcularMovimientosContables(elementos, detalleContable, 0, resultado_.Movimiento.FormatoTipoMovimientoId.Id, terceroId, terceroId, bufferCuentas,
-		nil, &transaccion.Movimientos); err != nil || msg != "" {
-		resultado_.Error = msg
-		return err
+	outputError = utilsHelper.Unmarshal(resultado.Movimiento.Detalle, &formato)
+	if outputError != nil {
+		return
 	}
 
-	if msg, err := asientoContable.CreateTransaccionContable(getTipoComprobanteEntradas(), "Entrada Almacén", &transaccion); err != nil || msg != "" {
-		resultado_.Error = msg
-		return err
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada Aprobada")
+	return
+}
+
+func getTerceroEntrada(detalle models.FormatoBaseEntrada, resutado *models.ResultadoMovimiento) (terceroId int, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("getTerceroEntrada - Unhandled Error!", "500")
+
+	var historico []models.HistoricoActa
+	query := "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
+	if detalle.ActaRecibidoId > 0 {
+		historico, outputError = actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "1")
+		if outputError != nil || len(historico) != 1 {
+			if len(historico) != 1 {
+				resutado.Error = "No se pudo consultar la información del acta. Contacte soporte."
+			}
+			return
+		}
 	}
 
-	if _, err := movimientosContables.PostTrContable(&transaccion); err != nil {
-		return err
-	}
-
-	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas); err != nil {
-		return err
+	if detalle.ActaRecibidoId > 0 && historico[0].ActaRecibidoId.TipoActaId.CodigoAbreviacion == "REG" {
+		terceroId = historico[0].ProveedorId
 	} else {
-		resultado_.TransaccionContable.Movimientos = detalleContable
-		resultado_.TransaccionContable.Concepto = transaccion.Descripcion
-		resultado_.TransaccionContable.Fecha = transaccion.FechaTransaccion
+		terceroId, outputError = terceros.GetTerceroUD()
 	}
 
-	if movimiento_, err := movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id); err != nil {
-		return err
-	} else {
-		resultado_.Movimiento = *movimiento_
+	if terceroId == 0 {
+		resutado.Error = "No se pudo consultar el tercero para asociar a la transacción contable. Contacte soporte."
 	}
 
 	return
 }
 
-// descripcionMovimientoContable Genera la descipción de cada uno de los movimientos contables asociados a una entrada.
-func descripcionMovimientoContable(detalle map[string]interface{}, detalle_ *string) (outputError map[string]interface{}) {
+func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, resultado *models.ResultadoMovimiento) (elementos []*models.Elemento, novedades []models.NovedadElemento, outputError map[string]interface{}) {
 
-	funcion := "descripcionMovimientoContable"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("getElementosEntrada - Unhandled Error!", "500")
 
-	for k, v := range detalle {
-		if k == "factura" {
-			var sop models.SoporteActa
+	if detalle.ActaRecibidoId == 0 && len(detalle.Elementos) == 0 {
+		resultado.Error = errNoElementos
+		return
+	}
 
-			if err := actaRecibido.GetSoporteById(int(v.(float64)), &sop); err != nil {
-				return err
+	if detalle.ActaRecibidoId > 0 {
+		query := "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
+		elementos, outputError = actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
+		if len(elementos) == 0 {
+			resultado.Error = errNoElementos
+		}
+	} else if len(detalle.Elementos) > 0 {
+		for _, el := range detalle.Elementos {
+			if el.VidaUtil == nil || el.ValorLibros == nil || el.ValorResidual == nil {
+				resultado.Error = "No se indicó correctamente el nuevo valor de los elementos. Rechace la entrada y haga la respectiva edición."
+				return
 			}
 
-			*detalle_ += "Factura: " + sop.Consecutivo + ", "
-		} else if k != "consecutivo" && k != "ConsecutivoId" {
-			k = strings.TrimSuffix(k, "_id")
-			k = strings.ReplaceAll(k, "_", " ")
-			k = strings.Title(k)
-			*detalle_ += k + ": " + fmt.Sprintf("%v", v) + ", "
+			var novedad = models.NovedadElemento{
+				VidaUtil:             *el.VidaUtil,
+				ValorLibros:          *el.ValorLibros,
+				ValorResidual:        *el.ValorResidual * *el.ValorLibros,
+				MovimientoId:         &models.Movimiento{Id: movimientoId},
+				ElementoMovimientoId: &models.ElementosMovimiento{Id: el.Id},
+				Activo:               true,
+			}
+			novedades = append(novedades, novedad)
+
+			if *el.ValorLibros > 0 {
+				var elementoMovimiento models.ElementosMovimiento
+				outputError = movimientosArka.GetElementosMovimientoById(el.Id, &elementoMovimiento)
+				if outputError != nil {
+					return
+				}
+
+				var elementoActa models.Elemento
+				outputError = actaRecibido.GetElementoById(elementoMovimiento.ElementoActaId, &elementoActa)
+				if outputError != nil {
+					return
+				}
+
+				elementoActa.ValorUnitario = *el.ValorLibros
+				elementoActa.ValorTotal = *el.ValorLibros
+				elementos = append(elementos, &elementoActa)
+			}
 		}
 	}
 
-	*detalle_ = strings.TrimSuffix(*detalle_, ", ")
+	return
+}
 
+func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada models.FormatoBaseEntrada, elementos []*models.Elemento, terceroId int) (outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("contabilidadEntrada - Unhandled Error!", "500")
+
+	if len(elementos) == 0 {
+		return
+	}
+
+	detalleContable, outputError := descripcionMovimientoContable(resultado_.Movimiento.Detalle)
+	if outputError != nil {
+		return
+	}
+
+	var transaccion = models.TransaccionMovimientos{ConsecutivoId: *resultado_.Movimiento.ConsecutivoId}
+	bufferCuentas := make(map[string]models.CuentaContable)
+	resultado_.Error, outputError = asientoContable.CalcularMovimientosContables(elementos, detalleContable, 0, resultado_.Movimiento.FormatoTipoMovimientoId.Id, terceroId, terceroId, bufferCuentas, nil, &transaccion.Movimientos)
+	if outputError != nil || resultado_.Error != "" {
+		return
+	}
+
+	resultado_.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteEntradas(), "Entrada Almacén", &transaccion)
+	if outputError != nil || resultado_.Error != "" {
+		return
+	}
+
+	resultado_.TransaccionContable.Concepto = transaccion.Descripcion
+	resultado_.TransaccionContable.Fecha = transaccion.FechaTransaccion
+	resultado_.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	return
+}
+
+// descripcionMovimientoContable Genera la descipción de cada uno de los movimientos contables asociados a una entrada.
+func descripcionMovimientoContable(detalle string) (detalle_ string, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("descripcionMovimientoContable - Unhandled Error!", "500")
+
+	var mapDetalle map[string]interface{}
+	outputError = utilsHelper.Unmarshal(detalle, &mapDetalle)
+	if outputError != nil {
+		return
+	}
+
+	for k, v := range mapDetalle {
+		if k == "factura" {
+			var sop models.SoporteActa
+			outputError = actaRecibido.GetSoporteById(int(v.(float64)), &sop)
+			if outputError != nil {
+				return
+			}
+
+			detalle_ += "Factura: " + sop.Consecutivo + ", "
+		} else if k != "consecutivo" && k != "ConsecutivoId" && k != "elementos" {
+			k = strings.TrimSuffix(k, "_id")
+			k = strings.ReplaceAll(k, "_", " ")
+			k = strings.Title(k)
+			detalle_ += k + ": " + fmt.Sprintf("%v", v) + ", "
+		}
+	}
+
+	detalle_ = strings.TrimSuffix(detalle_, ", ")
 	return
 }

@@ -13,9 +13,9 @@ import (
 // Valores: mapeables desde models.RolesArka
 var reglasVerTodas = map[string][]string{
 	"Registrada":         {models.RolesArka["Secretaria"]},
-	"En Elaboracion":     {},
-	"En Modificacion":    {},
-	"En verificacion":    {},
+	"EnElaboracion":      {models.RolesArka["Proveedor"], models.RolesArka["Contratista"]},
+	"EnModificacion":     {models.RolesArka["Contratista"]},
+	"EnVerificacion":     {},
 	"Aceptada":           {},
 	"Asociada a Entrada": {},
 	"Anulada":            {},

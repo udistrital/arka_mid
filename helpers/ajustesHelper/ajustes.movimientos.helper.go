@@ -1,17 +1,16 @@
 package ajustesHelper
 
 import (
-	"encoding/json"
+	"errors"
 	"net/url"
 	"time"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
 	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -71,7 +70,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 		ids             []int
 		movDebito       int
 		movCredito      int
-		cuentasSubgrupo map[int]*models.CuentaSubgrupo
+		cuentasSubgrupo map[int]*models.CuentasSubgrupo
 		detalleCuenta   map[string]*models.CuentaContable
 	)
 
@@ -99,6 +98,13 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 
 	for _, el := range actualizarSg {
 		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
+
+			if cuentasSubgrupo[originales[idx].SubgrupoCatalogoId] == nil ||
+				cuentasSubgrupo[el.SubgrupoCatalogoId] == nil {
+				err := errors.New("No se pudo establecer la parametrización contable")
+				outputError = errorctrl.Error(funcion, err, "404")
+				return
+			}
 
 			if detalleCuenta_, err := fillCuentas(detalleCuenta,
 				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
@@ -245,16 +251,14 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 }
 
 // generarMovimientoAjuste Crea el registro del movimiento de inventario y contable resultantes del ajuste
-func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
-	movContables []*models.MovimientoTransaccion) (movimiento *models.Movimiento,
-	trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
+func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (
+	movimiento *models.Movimiento, trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
 
-	funcion := "generarMovimientoAjuste"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("generarMovimientoAjuste - Unhandled Error!", "500")
 
-	var consecutivo models.Consecutivo
 	movimiento = new(models.Movimiento)
 	detalle := new(models.FormatoAjusteAutomatico)
+
 	query := "query=Nombre:" + url.QueryEscape("Ajuste Automático")
 	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
 		return nil, nil, err
@@ -273,14 +277,19 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 		ids = append(ids, el.Id)
 	}
 
-	ctxConsecutivo, _ := beego.AppConfig.Int("contxtAjusteCons")
-	if err := consecutivos.Get(ctxConsecutivo, "Ajuste automático Arka", &consecutivo); err != nil {
+	detalle.Elementos = ids
+	outputError = utilsHelper.Marshal(detalle, &movimiento.Detalle)
+	if outputError != nil {
+		return
+	}
+
+	var consecutivo models.Consecutivo
+	if err := consecutivos.Get("contxtAjusteCons", "Ajuste automático Arka", &consecutivo); err != nil {
 		return nil, nil, err
 	}
 
-	detalle.Consecutivo = consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo)
-	detalle.ConsecutivoId = consecutivo.Id
-	detalle.Elementos = ids
+	movimiento.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteAjustes(), &consecutivo))
+	movimiento.ConsecutivoId = &consecutivo.Id
 
 	if len(movContables) > 0 {
 		trContable = new(models.TransaccionMovimientos)
@@ -291,27 +300,16 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_,
 		trContable.Etiquetas = ""
 		trContable.Descripcion = "Ajuste contable almacén"
 
-		if _, err := movimientosContables.PostTrContable(trContable); err != nil {
-			return nil, nil, err
+		_, outputError = movimientosContables.PostTrContable(trContable)
+		if outputError != nil {
+			return
 		}
 	}
 
-	if jsonData, err := json.Marshal(detalle); err != nil {
-		logs.Error(err)
-		eval := " - json.Marshal(detalle)"
-		return nil, nil, errorctrl.Error(funcion+eval, err, "500")
-	} else {
-		movimiento.Detalle = string(jsonData[:])
-	}
-
 	movimiento.Activo = true
+	outputError = movimientosArka.PostMovimiento(movimiento)
 
-	if err := movimientosArka.PostMovimiento(movimiento); err != nil {
-		return nil, nil, err
-	}
-
-	return movimiento, trContable, nil
-
+	return
 }
 
 func creaNuevoElementoMovimiento(nuevo *models.DetalleElemento_, org *models.ElementosMovimiento) *models.ElementosMovimiento {

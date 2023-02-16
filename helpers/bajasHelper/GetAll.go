@@ -56,7 +56,7 @@ func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja
 
 		baja := models.DetalleBaja{
 			Id:                 solicitud.Id,
-			Consecutivo:        detalle.Consecutivo,
+			Consecutivo:        *solicitud.Consecutivo,
 			FechaCreacion:      solicitud.FechaCreacion.String(),
 			FechaRevisionA:     detalle.FechaRevisionA,
 			FechaRevisionC:     detalle.FechaRevisionC,

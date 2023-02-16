@@ -57,12 +57,12 @@ func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovim
 }
 
 // GetAllSoporteMovimiento query controlador soporte_movimiento del api movimientos_arka_crud
-func GetAllSoporteMovimiento(query string) (soportes []*models.SoporteMovimiento, outputError map[string]interface{}) {
+func GetAllSoporteMovimiento(query string) (soportes []models.SoporteMovimiento, outputError map[string]interface{}) {
 
 	funcion := "GetAllSoporteMovimiento"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("movimientosArkaService") + "soporte_movimiento?" + query
+	urlcrud := basePath + "soporte_movimiento?" + query
 	if err := request.GetJson(urlcrud, &soportes); err != nil {
 		eval := " - request.GetJson(urlcrud, &soportes)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
@@ -194,6 +194,23 @@ func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGene
 
 }
 
+// PostTrSalida post controlador tr_salida del api movimientos_arka_crud
+func PostTrSalida(trSalida *models.SalidaGeneral) (outputError map[string]interface{}) {
+
+	funcion := "PostTrSalida - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "tr_salida"
+	err := request.SendJson(urlcrud, "POST", &trSalida, &trSalida)
+	if err != nil {
+		logs.Error(err)
+		eval := `request.SendJson(urlcrud, "POST", &trSalida, &trSalida)`
+		outputError = errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
 // PutMovimiento put controlador movimiento del api movimientos_arka_crud
 func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (movimientoRes *models.Movimiento, outputError map[string]interface{}) {
 
@@ -274,6 +291,23 @@ func PutNovedadElemento(novedad *models.NovedadElemento, novedadId int) (novedad
 
 }
 
+// PostNovedadElemento post controlador novedad_elemento del api movimientos_arka_crud
+func PostNovedadElemento(novedad *models.NovedadElemento) (outputError map[string]interface{}) {
+
+	funcion := "PostNovedadElemento - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+
+	urlcrud := basePath + "novedad_elemento"
+	err := request.SendJson(urlcrud, "POST", &novedad, &novedad)
+	if err != nil {
+		logs.Error(err, urlcrud)
+		eval := `request.SendJson(urlcrud, "POST", &novedad, &novedad)`
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
 // GetElementosFuncionario query controlador elementos_movimiento/funcionario/{funcionarioId} del api movimientos_arka_crud
 func GetElementosFuncionario(funcionarioId int) (movimientos []int, outputError map[string]interface{}) {
 
@@ -303,30 +337,30 @@ func GetHistorialElemento(elementoId int, final bool) (historial *models.Histori
 	return historial, nil
 }
 
-// GetCorteDepreciacion query controlador depreciacion/?fechaCorte={fechaCorte} del api movimientos_arka_crud
-func GetCorteDepreciacion(fechaCorte string, corte *[]models.DepreciacionElemento) (outputError map[string]interface{}) {
+// GetCorteDepreciacion query controlador cierre/?fechaCorte={fechaCorte} del api movimientos_arka_crud
+func GetCorteDepreciacion(fechaCorte string) (corte []models.DepreciacionElemento, outputError map[string]interface{}) {
 
 	funcion := "GetCorteDepreciacion - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := basePath + "depreciacion/?fechaCorte=" + fechaCorte
+	urlcrud := basePath + "cierre/?fechaCorte=" + fechaCorte
 	if err := request.GetJson(urlcrud, &corte); err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &corte)"
-		return errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorctrl.Error(funcion+eval, err, "502")
 	}
 
 	return
 }
 
-// AprobarCierre post controlador depreciacion del api movimientos_arka_crud
-func AprobarCierre(data *models.TransaccionCierre, cierre *models.Movimiento) (outputError map[string]interface{}) {
+// AprobarCierre post controlador cierre del api movimientos_arka_crud
+func AprobarCierre(cierre *models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "AprobarCierre - "
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	urlcrud := basePath + "depreciacion/"
-	if err := request.SendJson(urlcrud, "POST", &cierre, &data); err != nil {
+	urlcrud := basePath + "cierre/"
+	if err := request.SendJson(urlcrud, "POST", &cierre, &cierre); err != nil {
 		logs.Error(err, urlcrud)
 		eval := `request.SendJson(urlcrud, "POST", &cierre, &data)`
 		return errorctrl.Error(funcion+eval, err, "502")
@@ -390,6 +424,21 @@ func GetBodegaByTerceroId(terceroId int, solicitudes *[]*models.Movimiento) (out
 	urlcrud := basePath + "movimiento/bodega/" + strconv.Itoa(terceroId)
 	if err := request.GetJson(urlcrud, &solicitudes); err != nil {
 		eval := "request.GetJson(urlcrud, &solicitudes)"
+		return errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
+// GetAperturas consulta controlador tr_kardex/aperturas del api movimientos_arka_crud
+func GetAperturas(conSaldo bool, aperturas *[]models.Apertura) (outputError map[string]interface{}) {
+
+	funcion := "GetAperturas - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := basePath + "tr_kardex/aperturas?ConSaldo=" + strconv.FormatBool(conSaldo)
+	if err := request.GetJson(urlcrud, &aperturas); err != nil {
+		eval := "request.GetJson(urlcrud, &aperturas)"
 		return errorctrl.Error(funcion+eval, err, "502")
 	}
 

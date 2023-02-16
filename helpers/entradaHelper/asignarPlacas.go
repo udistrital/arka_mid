@@ -5,11 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
-	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
@@ -25,16 +23,16 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 		detalle_ = detalleElementos
 	}
 
-	var uvt float64
-	if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
-		return "", err
-	} else if uvt_ == 0 {
-		return "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.", nil
-	} else {
-		uvt = uvt_
-	}
+	var uvt float64 = 1
+	// if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
+	// 	return "", err
+	// } else if uvt_ == 0 {
+	// 	return "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.", nil
+	// } else {
+	// 	uvt = uvt_
+	// }
 
-	var bufferTiposBien = make(map[int]*models.TipoBien, 0)
+	var bufferTiposBien = make(map[int]*models.TipoBien)
 	for _, el := range detalle_ {
 
 		placa := ""
@@ -51,7 +49,7 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 				}
 			}
 		} else {
-			if placa_, msj, err := checkPlacaElemento(el.SubgrupoCatalogoId.TipoBienId.Id, int(el.ValorUnitario/uvt), bufferTiposBien); err != nil || msj != "" {
+			if placa_, msj, err := checkPlacaElemento(el.SubgrupoCatalogoId.TipoBienId.Id, el.ValorUnitario/uvt, bufferTiposBien); err != nil || msj != "" {
 				return msj, err
 			} else if placa_ {
 				if err := generarPlaca(&placa); err != nil {
@@ -88,7 +86,7 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 
 }
 
-func checkPlacaElemento(tbPadreId int, normalizado int, bufferTiposBien map[int]*models.TipoBien) (placa bool, errMsg string, outputError map[string]interface{}) {
+func checkPlacaElemento(tbPadreId int, normalizado float64, bufferTiposBien map[int]*models.TipoBien) (placa bool, errMsg string, outputError map[string]interface{}) {
 
 	funcion := "checkPlacaElemento - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -105,8 +103,8 @@ func checkPlacaElemento(tbPadreId int, normalizado int, bufferTiposBien map[int]
 	}
 
 	var tb__ []models.TipoBien
-	payload := "limit=1&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(tbPadreId) + ",LimiteInferior__lte:" + strconv.Itoa(normalizado) +
-		",LimiteSuperior__gt:" + strconv.Itoa(normalizado)
+	payload := "limit=1&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(tbPadreId) + ",LimiteInferior__lte:" + fmt.Sprintf("%f", normalizado) +
+		",LimiteSuperior__gt:" + fmt.Sprintf("%f", normalizado)
 	if err := catalogoElementos.GetAllTipoBien(payload, &tb__); err != nil {
 		return false, "", err
 	} else if len(tb__) != 1 {
@@ -120,13 +118,10 @@ func checkPlacaElemento(tbPadreId int, normalizado int, bufferTiposBien map[int]
 
 func generarPlaca(placa *string) (outputError map[string]interface{}) {
 
-	funcion := "generarPlaca - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorctrl.ErrorControlFunction("generarPlaca - Unhandled Error!", "500")
 
-	ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
 	var consecutivo models.Consecutivo
-
-	if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
+	if err := consecutivos.Get("contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {
 		return err
 	}
 

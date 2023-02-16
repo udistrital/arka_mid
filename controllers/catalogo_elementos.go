@@ -22,7 +22,8 @@ func (c *CatalogoElementosController) URLMapping() {
 // GetOne ...
 // @Title GetCuentasSubgrupoById
 // @Description Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado
-// @Param	id		path 	int	true		"subgroupoId"
+// @Param	id				path	int		true	"subgroupoId"
+// @Param	movimientoId	query	string	false	TipoMovimientoId o SubtipoMovimientoId que se desea filtrar"
 // @Success 200 {object} models.DetalleCuentasSubgrupo
 // @Failure 403
 // @router /cuentas_contables/:id [get]
@@ -40,8 +41,13 @@ func (c *CatalogoElementosController) GetOne() {
 		id = v
 	}
 
+	movimientoId, err := c.GetInt("movimientoId", 0)
+	if err != nil {
+		panic(errorctrl.Error(`GetOne - c.GetInt("movimientoId")`, err, "400"))
+	}
+
 	var cuentas = make([]models.DetalleCuentasSubgrupo, 0)
-	if err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id, &cuentas); err != nil {
+	if err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id, movimientoId, &cuentas); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = cuentas

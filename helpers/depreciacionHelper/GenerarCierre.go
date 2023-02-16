@@ -1,8 +1,6 @@
 package depreciacionHelper
 
 import (
-	"github.com/astaxie/beego"
-
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -50,7 +48,7 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 		return err
 	}
 
-	if err := calcularCierre(info.FechaCorte.Format("2006-01-02"), nil, cuentas, &transaccion, resultado); err != nil || resultado.Error != "" || len(transaccion.Movimientos) == 0 {
+	if err := calcularCierre(info.FechaCorte.Format("2006-01-02"), cuentas, &transaccion, resultado); err != nil || resultado.Error != "" || len(transaccion.Movimientos) == 0 {
 		desbloquearSistema(parametros[1], *resultado)
 		return err
 	}
@@ -74,14 +72,14 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 
 	if info.Id == 0 {
 		var consecutivo_ models.Consecutivo
-		ctxt, _ := beego.AppConfig.Int("contxtMedicionesCons")
-		if err := consecutivos.Get(ctxt, "Registro cierre Arka", &consecutivo_); err != nil {
+		outputError = consecutivos.Get("contxtMedicionesCons", "Registro cierre Arka", &consecutivo_)
+		if outputError != nil {
 			desbloquearSistema(parametros[1], *resultado)
-			return err
+			return
 		}
 
-		detalle.ConsecutivoId = consecutivo_.Id
-		detalle.Consecutivo = consecutivos.Format("%02d", getTipoComprobanteCierre(), &consecutivo_)
+		resultado.Movimiento.ConsecutivoId = &consecutivo_.Id
+		resultado.Movimiento.Consecutivo = utilsHelper.String(consecutivos.Format("%02d", getTipoComprobanteCierre(), &consecutivo_))
 	} else {
 		if mov_, err := movimientosArka.GetMovimientoById(info.Id); err != nil {
 			desbloquearSistema(parametros[1], *resultado)
@@ -98,7 +96,8 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 
 	resultado.Movimiento.FormatoTipoMovimientoId = &models.FormatoTipoMovimiento{Id: formatoCierre}
 	resultado.Movimiento.EstadoMovimientoId = &models.EstadoMovimiento{Id: estadoMovimiento}
-	detalle.FechaCorte = info.FechaCorte.Format("2006-01-02")
+	resultado.Movimiento.FechaCorte = &info.FechaCorte
+
 	detalle.RazonRechazo = info.RazonRechazo
 
 	if err := utilsHelper.Marshal(detalle, &resultado.Movimiento.Detalle); err != nil {

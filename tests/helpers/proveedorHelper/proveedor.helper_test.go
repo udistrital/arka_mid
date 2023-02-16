@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-
-	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
 )
 
 var parameters struct {
@@ -21,18 +19,6 @@ func TestMain(m *testing.M) {
 	}
 	flag.Parse()
 	os.Exit(m.Run())
-}
-
-// GetProveedorById ...
-func TestGetProveedorById(t *testing.T) {
-	valor, err := administrativa.GetProveedorById(1)
-	if err != nil {
-		t.Error("No se pudo consultar el proveedor", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetProveedorById Finalizado Correctamente (OK)")
-	}
 }
 
 func TestEndPointGetAdministrativaService(t *testing.T) {

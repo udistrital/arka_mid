@@ -83,7 +83,7 @@ func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleT
 
 		baja := models.DetalleTrasladoLista{
 			Id:                 solicitud.Id,
-			Consecutivo:        detalle.Consecutivo,
+			Consecutivo:        *solicitud.Consecutivo,
 			FechaCreacion:      solicitud.FechaCreacion.String(),
 			FuncionarioOrigen:  origen,
 			FuncionarioDestino: destino,

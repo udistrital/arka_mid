@@ -11,7 +11,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	tercerosCRUD "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
-	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
@@ -23,9 +22,10 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	defer errorctrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
 	var (
-		detalle    models.FormatoBaseEntrada
-		movimiento models.Movimiento
-		query      string
+		detalle         models.FormatoBaseEntrada
+		movimiento      models.Movimiento
+		unidadEjecutora models.Parametro
+		query           string
 	)
 
 	resultado := make(map[string]interface{})
@@ -41,46 +41,9 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		return nil, err
 	}
 
-	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
-		var contrato administrativa_.InformacionContrato
-		if err := administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato); err != nil {
-			return nil, err
-		}
-
-		if contrato.Contrato.NumeroContratoSuscrito != "" {
-			resultado["contrato"] = contrato.Contrato
-			if contrato.Contrato.TipoContrato != "" {
-				var tipoContrato administrativa_.TipoContrato
-				if err := administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato); err != nil {
-					return nil, err
-				}
-				resultado["tipo_contrato_id"] = tipoContrato
-			}
-		}
-	}
-
-	if movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
-		if detalle.ConsecutivoId > 0 {
-			if tr, err := movimientosContables.GetTransaccion(detalle.ConsecutivoId, "consecutivo", true); err != nil {
-				return nil, err
-			} else if len(tr.Movimientos) > 0 {
-				if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
-					return nil, err
-				} else {
-					trContable := models.InfoTransaccionContable{
-						Movimientos: detalleContable,
-						Concepto:    tr.Descripcion,
-						Fecha:       tr.FechaTransaccion,
-					}
-					resultado["TransaccionContable"] = trContable
-				}
-			}
-		}
-	}
-
 	if detalle.ActaRecibidoId > 0 {
 		query = "ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
-		var acta *models.HistoricoActa
+		var acta models.HistoricoActa
 		if tr, err := actaRecibido.GetAllHistoricoActa(query, "", "Id", "desc", "", "1"); err != nil {
 			return nil, err
 		} else {
@@ -96,11 +59,45 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 
 		if acta.ActaRecibidoId.UnidadEjecutoraId > 0 {
-			var unidadEjecutora models.Parametro
 			if err := parametros.GetParametroById(acta.ActaRecibidoId.UnidadEjecutoraId, &unidadEjecutora); err != nil {
 				return nil, err
 			}
 			resultado["unidadEjecutora"] = unidadEjecutora
+		}
+	}
+
+	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
+		var contrato administrativa_.InformacionContrato
+		if unidadEjecutora.CodigoAbreviacion == "UD" {
+			outputError = administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato)
+			if outputError != nil {
+				return
+			}
+
+			if contrato.Contrato.NumeroContratoSuscrito != "" {
+				resultado["contrato"] = contrato.Contrato
+				if contrato.Contrato.TipoContrato != "" {
+					var tipoContrato administrativa_.TipoContrato
+					outputError = administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato)
+					if outputError != nil {
+						return
+					}
+					resultado["tipo_contrato_id"] = tipoContrato
+				}
+			}
+		} else {
+			contrato.Contrato.NumeroContratoSuscrito = strconv.Itoa(detalle.ContratoId)
+			contrato.Contrato.Vigencia = detalle.VigenciaContrato
+			resultado["contrato"] = contrato.Contrato
+		}
+	}
+
+	if (movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida") && movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
+		resultado["TransaccionContable"] = models.InfoTransaccionContable{}
+
+		resultado["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
+		if outputError != nil {
+			return
 		}
 	}
 
@@ -144,23 +141,45 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if len(detalle.Elementos) > 0 {
-		query = "query=Id__in:" + utilsHelper.ArrayToString(detalle.Elementos, "|")
-		elementos, err := movimientosArka.GetAllElementosMovimiento(query)
-		if err != nil {
-			return nil, err
-		}
-
 		var detalleElementos = make([]map[string]interface{}, 0)
-		for _, el := range elementos {
-			var elemento_ models.Elemento
-			if err := actaRecibido.GetElementoById(el.ElementoActaId, &elemento_); err != nil {
+		for _, el := range detalle.Elementos {
+			query = "limit=1&query=Id:" + strconv.Itoa(el.Id)
+			detalleMov, err := movimientosArka.GetAllElementosMovimiento(query)
+			if err != nil {
 				return nil, err
+			} else if len(detalleMov) != 1 {
+				continue
 			}
 
-			detalleElemento := map[string]interface{}{
-				"Salida":     el.MovimientoId,
-				"Placa":      elemento_.Placa,
-				"ValorTotal": elemento_.ValorTotal,
+			var detalleElemento map[string]interface{}
+			outputError = utilsHelper.FillStruct(el, &detalleElemento)
+			if outputError != nil {
+				return
+			}
+
+			var elemento_ models.Elemento
+			outputError = actaRecibido.GetElementoById(detalleMov[0].ElementoActaId, &elemento_)
+			if outputError != nil {
+				return
+			}
+
+			detalleElemento["Salida"] = detalleMov[0].MovimientoId
+			detalleElemento["Placa"] = elemento_.Placa
+			detalleElemento["ValorTotal"] = elemento_.ValorTotal
+
+			if el.ValorLibros != nil && el.ValorResidual != nil && el.VidaUtil != nil {
+				detalleElemento["ValorLibros"] = el.ValorLibros
+				detalleElemento["ValorResidual"] = el.ValorResidual
+				detalleElemento["VidaUtil"] = el.VidaUtil
+			}
+
+			if el.AprovechadoId != nil && *el.AprovechadoId > 0 {
+				var elemento__ models.Elemento
+				outputError = actaRecibido.GetElementoById(*el.AprovechadoId, &elemento__)
+				if outputError != nil {
+					return
+				}
+				detalleElemento["AprovechadoId"] = elemento__.Placa
 			}
 
 			detalleElementos = append(detalleElementos, detalleElemento)

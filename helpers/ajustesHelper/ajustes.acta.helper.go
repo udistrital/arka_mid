@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -38,8 +37,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 		} else {
 			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa == "" {
 				var consecutivo models.Consecutivo
-				ctxPlaca, _ := beego.AppConfig.Int("contxtPlaca")
-				if err := consecutivos.Get(ctxPlaca, "Registro Placa Arka", &consecutivo); err != nil {
+				if err := consecutivos.Get("contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {
 					return false, false, false, err
 				}
 				year, month, day := time.Now().Date()

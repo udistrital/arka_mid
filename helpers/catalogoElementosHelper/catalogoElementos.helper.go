@@ -14,7 +14,7 @@ import (
 )
 
 // GetCuentasContablesSubgrupo ...
-func GetCuentasContablesSubgrupo(subgrupoId int, cuentas *[]models.DetalleCuentasSubgrupo) (outputError map[string]interface{}) {
+func GetCuentasContablesSubgrupo(subgrupoId, movimientoId int, cuentas *[]models.DetalleCuentasSubgrupo) (outputError map[string]interface{}) {
 
 	defer errorctrl.ErrorControlFunction("GetCuentasContablesSubgrupo - Unhandled Error!", "500")
 
@@ -22,47 +22,53 @@ func GetCuentasContablesSubgrupo(subgrupoId int, cuentas *[]models.DetalleCuenta
 		query         string
 		ctas          []models.CuentasSubgrupo
 		movs          []*models.FormatoTipoMovimiento
-		detalle       models.DetalleSubgrupo
 		tiposBien     []models.TipoBien
 		formatoSalida models.FormatoTipoMovimiento
 	)
 
 	query = "limit=1&sortby=FechaCreacion&order=desc&fields=Id,Depreciacion,Amortizacion,TipoBienId" +
 		"&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-	if detalle_, err := catalogoElementos.GetAllDetalleSubgrupo(query); err != nil {
-		return err
-	} else if len(detalle_) == 1 {
-		detalle = *detalle_[0]
-	} else {
+	detalle, outputError := catalogoElementos.GetAllDetalleSubgrupo(query)
+	if outputError != nil || len(detalle) != 1 {
 		return
 	}
 
 	query = "limit=-1&sortby=LimiteSuperior&order=asc&fields=Id,Nombre,BodegaConsumo" +
-		"&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(detalle.TipoBienId.Id)
-	if err := catalogoElementos.GetAllTipoBien(query, &tiposBien); err != nil {
-		return err
-	} else if len(tiposBien) == 0 {
+		"&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(detalle[0].TipoBienId.Id)
+	outputError = catalogoElementos.GetAllTipoBien(query, &tiposBien)
+	if outputError != nil || len(tiposBien) == 0 {
 		return
 	}
 
-	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&query=Activo:true" +
-		"&fields=Id,CodigoAbreviacion,Nombre"
-	if movs_, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
-		return err
+	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&query=Activo:true,CodigoAbreviacion:SAL&fields=Id,CodigoAbreviacion,Nombre"
+	tipos, outputError := movimientosArka.GetAllFormatoTipoMovimiento(query)
+	if outputError != nil || len(tipos) != 1 {
+		return
 	} else {
-		for _, fm := range movs_ {
-			if (strings.Contains(fm.CodigoAbreviacion, "ENT_") || fm.CodigoAbreviacion == "BJ_HT") && !strings.Contains(fm.CodigoAbreviacion, "KDX") {
-				movs = append(movs, fm)
-			} else if fm.CodigoAbreviacion == "CRR" && (detalle.Depreciacion || detalle.Amortizacion) {
-				movs = append(movs, fm)
-			} else if fm.CodigoAbreviacion == "SAL" {
-				formatoSalida = *fm
-			}
+		formatoSalida = *tipos[0]
+	}
+
+	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&fields=Id,CodigoAbreviacion,Nombre&query=Activo:true"
+	if movimientoId > 0 {
+		query += ",Id:" + strconv.Itoa(movimientoId)
+	}
+
+	tipos, outputError = movimientosArka.GetAllFormatoTipoMovimiento(query)
+	if outputError != nil {
+		return
+	}
+
+	for _, fm := range tipos {
+		if (strings.Contains(fm.CodigoAbreviacion, "ENT_") || fm.CodigoAbreviacion == "BJ_HT") && !strings.Contains(fm.CodigoAbreviacion, "KDX") {
+			movs = append(movs, fm)
+		} else if fm.CodigoAbreviacion == "CRR" && (detalle[0].Depreciacion || detalle[0].Amortizacion) {
+			movs = append(movs, fm)
 		}
 	}
 
-	if err := catalogoElementos.GetTrCuentasSubgrupo(subgrupoId, &ctas); err != nil {
-		return err
+	outputError = catalogoElementos.GetTrCuentasSubgrupo(subgrupoId, movimientoId, &ctas)
+	if outputError != nil {
+		return
 	}
 
 	detalleCtas := make(map[string]models.DetalleCuenta)
@@ -72,20 +78,19 @@ func GetCuentasContablesSubgrupo(subgrupoId int, cuentas *[]models.DetalleCuenta
 				continue
 			}
 
-			err := fillCuentaSubgrupo(subgrupoId, cuentas, tb, models.FormatoTipoMovimiento{Id: 0}, *fm, ctas, detalleCtas)
-			if err != nil {
-				return err
+			outputError = fillCuentaSubgrupo(subgrupoId, cuentas, tb, models.FormatoTipoMovimiento{Id: 0}, *fm, ctas, detalleCtas)
+			if outputError != nil {
+				return
 			}
 
 			if !strings.Contains(fm.CodigoAbreviacion, "ENT_") {
 				continue
 			}
 
-			err = fillCuentaSubgrupo(subgrupoId, cuentas, tb, *fm, formatoSalida, ctas, detalleCtas)
-			if err != nil {
-				return err
+			outputError = fillCuentaSubgrupo(subgrupoId, cuentas, tb, *fm, formatoSalida, ctas, detalleCtas)
+			if outputError != nil {
+				return
 			}
-
 		}
 	}
 
@@ -149,7 +154,7 @@ func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas ma
 }
 
 // GetCuentasByMovimientoSubgrupos Consulta las cuentas para una serie de subgrupos y las almacena en una estructura de fácil acceso
-func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentaSubgrupo) (
+func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentasSubgrupo) (
 	outputError map[string]interface{}) {
 
 	funcion := "GetCuentasByMovimientoSubgrupos"
