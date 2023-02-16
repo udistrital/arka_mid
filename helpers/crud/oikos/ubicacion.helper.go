@@ -29,7 +29,7 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 	resultado.Dependencia = ubicacion[0].DependenciaId
 	resultado.Ubicacion = &ubicacion[0]
 
-	rgxp := regexp.MustCompile("\\d.*")
+	rgxp := regexp.MustCompile(`\d.*`)
 	strSede := ubicacion[0].EspacioFisicoId.CodigoAbreviacion
 	strSede = strSede[0:2] + rgxp.ReplaceAllString(strSede[2:], "")
 

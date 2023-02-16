@@ -45,15 +45,12 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 
 	resultado = make(map[string]interface{})
 
-	var hojas []string
-
 	validar_campos := []string{"Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Porcentaje IVA", "Valor IVA", "Valor Total"}
 	elementos := make([]*models.PlantillaActa, 0)
 	for s, sheet := range xlFile.Sheets {
 
 		if s == 0 {
 			indexes := make(map[string]int)
-			hojas = append(hojas, sheet.Name)
 			for r, row := range sheet.Rows {
 				if r == 0 {
 					for _, label := range validar_campos {

@@ -175,7 +175,6 @@ func fillMovimiento(valor float64, dsc string, terceroId, tipoMov int, cuenta mo
 	movimiento.Descripcion = dsc
 	movimiento.Activo = true
 
-	return
 }
 
 func payloadCuentas(sg, tb, mov, sMov int) string {

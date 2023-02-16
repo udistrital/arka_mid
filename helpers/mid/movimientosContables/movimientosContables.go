@@ -44,7 +44,7 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 	} else if !resp["Success"].(bool) {
 		if strings.Contains(resp["Data"].(string), "invalid character") {
 			logs.Error(resp["Data"])
-			tr_, outputError = PostTrContable(tr)
+			_, outputError = PostTrContable(tr)
 		} else {
 			logs.Info(resp["Data"])
 			eval := ` - request.SendJson(urlcrud, "POST", &resp, &tr)`
