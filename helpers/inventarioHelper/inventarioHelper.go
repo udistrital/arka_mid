@@ -1,6 +1,8 @@
 package inventarioHelper
 
 import (
+	"time"
+
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
@@ -84,6 +86,25 @@ func GetEncargado(historial *models.Historial) (funcionarioId int, ubicacionId i
 		}
 
 		funcionarioId, ubicacionId = detalleS.Funcionario, detalleS.Ubicacion
+	}
+
+	return
+}
+
+func GetUltimoValor(historial models.Historial) (valor, residual, vidaUtil float64, fechaCorte time.Time, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("GetUltimoValor - Unhandled Error!", "500")
+
+	if len(historial.Novedades) > 0 {
+		valor = historial.Novedades[0].ValorLibros
+		residual = historial.Novedades[0].ValorResidual
+		vidaUtil = historial.Novedades[0].VidaUtil
+		fechaCorte = *historial.Novedades[0].MovimientoId.FechaCorte
+	} else {
+		valor = historial.Elemento.ValorTotal
+		residual = historial.Elemento.ValorResidual
+		vidaUtil = historial.Elemento.VidaUtil
+		fechaCorte = *historial.Salida.FechaCorte
 	}
 
 	return

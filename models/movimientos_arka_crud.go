@@ -242,10 +242,12 @@ type TrRevisionBaja struct {
 }
 
 type Historial struct {
-	Salida       *Movimiento
-	Traslados    []*Movimiento
-	Baja         *Movimiento
-	Depreciacion *Movimiento
+	Elemento  *ElementosMovimiento
+	Entradas  []*Movimiento
+	Salida    *Movimiento
+	Traslados []*Movimiento
+	Novedades []NovedadElemento
+	Baja      *Movimiento
 }
 
 type FormatoDepreciacion struct {
