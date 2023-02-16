@@ -83,10 +83,8 @@ steps:
 - name: go_build
   image: golang:1.17
   commands:
-  - go get
-  - GOOS=linux GOARCH=amd64 go build -v -o main
-  - sha256sum main # suma de verificacion
-  - ls -l main # peso en bytes y fecha de modificacion
+  - go get -t
+  - GOOS=linux GOARCH=amd64 go build -o main
   when:
     branch:
     - dependabot/**
