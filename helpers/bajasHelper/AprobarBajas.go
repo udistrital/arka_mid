@@ -105,9 +105,9 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 				}
 			}
 
+			elementoActa.ValorTotal = valor
 			subgrupo := detalleSubgrupos[elementoActa.SubgrupoCatalogoId]
 			if !subgrupo.Amortizacion && !subgrupo.Depreciacion || valor-residual == 0 {
-				elementoActa.ValorTotal = valor
 				bajas = append(bajas, &elementoActa)
 				continue
 			}
@@ -116,7 +116,7 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 				valor,
 				residual,
 				vidaUtil,
-				ref.AddDate(0, 0, 1),
+				ref.AddDate(0, 0, 1).UTC(),
 				baja.FechaCreacion.UTC())
 
 			if valorMedicion > 0 {
@@ -126,7 +126,9 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 				mediciones = append(mediciones, &medicion_)
 			}
 
-			bajas = append(bajas, &elementoActa)
+			if elementoActa.ValorTotal > 0 {
+				bajas = append(bajas, &elementoActa)
+			}
 		}
 
 		response.Error, outputError = asientoContable.CalcularMovimientosContables(bajas, descBaja(), 0, movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
