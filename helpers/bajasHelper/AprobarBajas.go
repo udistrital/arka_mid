@@ -3,7 +3,6 @@ package bajasHelper
 import (
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -25,12 +24,14 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 
 	var movBj, movCr int
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT"); err != nil {
-		return err
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT")
+	if outputError != nil {
+		return
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movCr, "CRR"); err != nil {
-		return err
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movCr, "CRR")
+	if outputError != nil {
+		return
 	}
 
 	terceroUD, outputError := terceros.GetTerceroUD()
@@ -44,7 +45,6 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 	var (
 		bufferCuentas    = make(map[string]models.CuentaContable)
 		detalleSubgrupos = make(map[int]models.DetalleSubgrupo)
-		detalleBajas     = make(map[int]models.FormatoBaja)
 	)
 
 	bajas, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
@@ -56,125 +56,79 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 	}
 
 	for _, baja := range bajas {
-		var detalle models.FormatoBaja
-		if err := utilsHelper.Unmarshal(baja.Detalle, &detalle); err != nil {
-			return err
-		}
-
-		detalleBajas[baja.Id] = detalle
-	}
-
-	for _, baja := range bajas {
 
 		var (
-			ids                 []int
-			detalleBaja         models.FormatoBaja
-			elementosMovimiento []*models.ElementosMovimiento
-			elementosActa       = make(map[int]models.Elemento)
-			bajas               []*models.Elemento
-			mediciones          []*models.Elemento
-			transaccion         models.TransaccionMovimientos
+			detalleBaja models.FormatoBaja
+			bajas       []*models.Elemento
+			mediciones  []*models.Elemento
+			transaccion models.TransaccionMovimientos
 		)
 
-		detalleBaja = detalleBajas[baja.Id]
-		if elementos_, err := movimientosArka.GetAllElementosMovimiento(payloadElementosMovimiento(detalleBaja.Elementos)); err != nil {
-			return err
-		} else if len(elementos_) == len(detalleBaja.Elementos) {
-			elementosMovimiento = elementos_
-			for _, el := range elementos_ {
-				ids = append(ids, el.ElementoActaId)
-			}
-		} else {
-			response.Error = "No se pudo consultar el detalle de los elementos. Contacte soporte."
+		outputError = utilsHelper.Unmarshal(baja.Detalle, &detalleBaja)
+		if outputError != nil {
 			return
 		}
 
-		if elementos_, err := actaRecibido.GetAllElemento(payloadElementos(ids), fieldsElementos(), "", "", "", "-1"); err != nil {
-			return err
-		} else if len(elementos_) == len(detalleBaja.Elementos) {
-			for _, el := range elementos_ {
-				elementosActa[el.Id] = *el
+		for _, el := range detalleBaja.Elementos {
+
+			historial, err := movimientosArka.GetHistorialElemento(el, true)
+			if err != nil {
+				return err
+			} else if historial == nil {
+				response.Error = "No se pudo la parametrización de los elementos. Contacte soporte."
+				return
 			}
-		} else {
-			response.Error = "No se pudo consultar el detalle de los elementos. Contacte soporte."
-			return
-		}
 
-		for _, el := range elementosMovimiento {
+			valor, residual, vidaUtil, ref, err := inventarioHelper.GetUltimoValor(*historial)
+			if err != nil {
+				return err
+			}
 
-			acta := elementosActa[el.ElementoActaId]
-			var novedad *models.NovedadElemento
+			if valor-residual <= 0 && valor <= 0 {
+				continue
+			}
 
-			if _, ok := detalleSubgrupos[acta.SubgrupoCatalogoId]; !ok {
-				if detalle, err := catalogoElementos.GetAllDetalleSubgrupo(getPayloadDetalleSubgrupo(acta.SubgrupoCatalogoId)); err != nil {
+			var elementoActa models.Elemento
+			outputError = actaRecibido.GetElementoById(historial.Elemento.ElementoActaId, &elementoActa)
+			if outputError != nil {
+				return
+			}
+
+			if _, ok := detalleSubgrupos[elementoActa.SubgrupoCatalogoId]; !ok {
+				if detalle, err := catalogoElementos.GetAllDetalleSubgrupo(getPayloadDetalleSubgrupo(elementoActa.SubgrupoCatalogoId)); err != nil {
 					return err
 				} else if len(detalle) == 1 {
-					detalleSubgrupos[acta.SubgrupoCatalogoId] = *detalle[0]
+					detalleSubgrupos[elementoActa.SubgrupoCatalogoId] = *detalle[0]
 				} else {
 					response.Error = "No se pudo la parametrización de los elementos. Contacte soporte."
 					return
 				}
 			}
 
-			subgrupo := detalleSubgrupos[acta.SubgrupoCatalogoId]
-			if novedad_, err := movimientosArka.GetAllNovedadElemento(payloadNovedad(el.Id)); err != nil {
-				return err
-			} else if len(novedad_) == 1 {
-				novedad = novedad_[0]
+			elementoActa.ValorTotal = valor
+			subgrupo := detalleSubgrupos[elementoActa.SubgrupoCatalogoId]
+			if !subgrupo.Amortizacion && !subgrupo.Depreciacion || valor-residual == 0 {
+				bajas = append(bajas, &elementoActa)
+				continue
 			}
 
-			if subgrupo.Amortizacion || subgrupo.Depreciacion {
+			valorMedicion, _ := depreciacionHelper.CalculaDp(
+				valor,
+				residual,
+				vidaUtil,
+				ref.AddDate(0, 0, 1).UTC(),
+				baja.FechaCreacion.UTC())
 
-				var (
-					ref           time.Time
-					valorPresente float64
-					valorResidual float64
-					vidaUtil      float64
-				)
-
-				if novedad != nil {
-					if novedad.ValorLibros-novedad.ValorResidual > 0 {
-						ref = *novedad.MovimientoId.FechaCorte
-						valorPresente = novedad.ValorLibros
-						valorResidual = novedad.ValorResidual
-						vidaUtil = novedad.VidaUtil
-						acta.ValorTotal = novedad.ValorLibros
-					} else if novedad.ValorLibros > 0 { // Ya fue depreciado totalmente pero queda el valor residual
-						baja_ := acta
-						baja_.ValorTotal = novedad.ValorLibros
-						bajas = append(bajas, &acta)
-						continue
-					} else { // Ya fue depreciado totalmente. No hay afectaciones contables.
-						continue
-					}
-				} else { // No hay novedad pero se debe depreciar
-					ref = el.MovimientoId.FechaModificacion
-					valorPresente = el.ValorTotal
-					valorResidual = el.ValorResidual
-					vidaUtil = el.VidaUtil
-				}
-
-				valorMedicion, _ := depreciacionHelper.CalculaDp(
-					valorPresente,
-					valorResidual,
-					vidaUtil,
-					ref.AddDate(0, 0, 1),
-					baja.FechaCreacion.Local())
-
-				if valorMedicion > 0 {
-					medicion_ := acta
-					medicion_.ValorTotal = valorMedicion
-					acta.ValorTotal -= valorMedicion
-
-					if subgrupo.Depreciacion || subgrupo.Amortizacion {
-						mediciones = append(mediciones, &medicion_)
-					}
-				}
-				bajas = append(bajas, &acta)
-			} else {
-				bajas = append(bajas, &acta)
+			if valorMedicion > 0 {
+				medicion_ := elementoActa
+				medicion_.ValorTotal = valorMedicion
+				elementoActa.ValorTotal -= valorMedicion
+				mediciones = append(mediciones, &medicion_)
 			}
 
+			if elementoActa.ValorTotal > 0 {
+				bajas = append(bajas, &elementoActa)
+			}
 		}
 
 		response.Error, outputError = asientoContable.CalcularMovimientosContables(bajas, descBaja(), 0, movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
@@ -202,64 +156,14 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 
 		data_ := data
 		data_.Bajas = []int{baja.Id}
-		if ids_, err := movimientosArka.PutRevision(data_); err != nil {
-			return err
-		} else {
-			ids = ids_
+		_, outputError = movimientosArka.PutRevision(data_)
+		if outputError != nil {
+			return
 		}
 
 	}
 
 	return
-}
-
-func GetTerceroIdEncargado(elementoId int, terceroId *int) (outputError map[string]interface{}) {
-
-	defer errorctrl.ErrorControlFunction("GetTerceroIdEncargado - Unhandled Error!", "500")
-
-	historial, outputError := movimientosArka.GetHistorialElemento(elementoId, true)
-	if outputError != nil {
-		return
-	}
-
-	*terceroId, _, outputError = inventarioHelper.GetEncargado(historial)
-
-	return
-}
-
-// movimientosContablesBaja Genera los tres movimientos contables para un elemenento dado de baja.
-func movimientosContablesBaja(cuentasBj, cuentasDp, cuentasAm map[int]models.CuentasSubgrupo,
-	gasto, medicion float64, subgrupo, credito, debito, terceroUD int,
-	detalleCuentas map[string]models.CuentaContable, movimientos *[]*models.MovimientoTransaccion) {
-
-	if medicion > 0 {
-		ctaDp := detalleCuentas[cuentasDp[subgrupo].CuentaDebitoId]
-		movDp := asientoContable.CreaMovimiento(medicion, descMovCr(), terceroUD, &ctaDp, debito)
-		*movimientos = append(*movimientos, movDp)
-	}
-
-	if gasto > 0 {
-		ctaGasto := detalleCuentas[cuentasBj[subgrupo].CuentaDebitoId]
-		movGasto := asientoContable.CreaMovimiento(gasto, descMovGasto(), terceroUD, &ctaGasto, debito)
-		*movimientos = append(*movimientos, movGasto)
-	}
-
-	if gasto+medicion > 0 {
-		ctaInventario := detalleCuentas[cuentasBj[subgrupo].CuentaCreditoId]
-		movInventario := asientoContable.CreaMovimiento(gasto+medicion, descMovInventario(), terceroUD, &ctaInventario, credito)
-		*movimientos = append(*movimientos, movInventario)
-	}
-
-	return
-
-}
-
-func descMovInventario() string {
-	return "Movimiento a cuenta de inventario"
-}
-
-func descMovGasto() string {
-	return "Movimiento a cuenta de gasto"
 }
 
 func descMovCr() string {
@@ -278,24 +182,7 @@ func payloadBajas(ids []int) string {
 	return "fields=ConsecutivoId,Detalle,Id,FechaCreacion&limit=-1&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
 }
 
-func payloadElementosMovimiento(elementos []int) string {
-	return "limit=-1&fields=Id,ElementoActaId,ValorTotal,ValorResidual,VidaUtil,MovimientoId&sortby=ElementoActaId&order=desc&query=Id__in:" +
-		url.QueryEscape(utilsHelper.ArrayToString(elementos, "|"))
-}
-
-func payloadElementos(elementos []int) string {
-	return "Id__in:" + utilsHelper.ArrayToString(elementos, "|")
-}
-
-func fieldsElementos() string {
-	return "Id,SubgrupoCatalogoId,TipoBienId,ValorUnitario,ValorTotal"
-}
-
 func getPayloadDetalleSubgrupo(id int) string {
 	return "limit=1&fields=SubgrupoId,TipoBienId,Amortizacion,Depreciacion&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" +
 		strconv.Itoa(id)
-}
-
-func payloadNovedad(id int) string {
-	return "limit=1&sortby=FechaCreacion&order=desc&query=Activo:true,ElementoMovimientoId__Id:" + strconv.Itoa(id)
 }

@@ -60,7 +60,7 @@ func GetTerceroUser(user models.UsuarioAutenticacion, terceroId *int) (outputErr
 		return
 	}
 
-	rgxp := regexp.MustCompile("\\d.*")
+	rgxp := regexp.MustCompile(`\d.*`)
 	tipo := rgxp.ReplaceAllString(user.DocumentoCompuesto, "")
 
 	if tipo != "" {

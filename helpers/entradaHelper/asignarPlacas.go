@@ -32,7 +32,7 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 	// 	uvt = uvt_
 	// }
 
-	var bufferTiposBien = make(map[int]*models.TipoBien, 0)
+	var bufferTiposBien = make(map[int]*models.TipoBien)
 	for _, el := range detalle_ {
 
 		placa := ""

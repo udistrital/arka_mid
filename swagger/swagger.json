@@ -942,35 +942,6 @@
                 }
             }
         },
-        "/entrada/anular/{id}": {
-            "get": {
-                "tags": [
-                    "entrada"
-                ],
-                "description": "anular Entrada by id",
-                "operationId": "EntradaController.Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/models.ResultadoMovimiento"
-                        }
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/entrada/movimientos/{acta_recibido_id}": {
             "get": {
                 "tags": [
@@ -3031,8 +3002,20 @@
                 "Baja": {
                     "$ref": "#/definitions/models.Movimiento"
                 },
-                "Depreciacion": {
-                    "$ref": "#/definitions/models.Movimiento"
+                "Elemento": {
+                    "$ref": "#/definitions/models.ElementosMovimiento"
+                },
+                "Entradas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Movimiento"
+                    }
+                },
+                "Novedades": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.NovedadElemento"
+                    }
                 },
                 "Salida": {
                     "$ref": "#/definitions/models.Movimiento"
@@ -3236,6 +3219,48 @@
                 },
                 "TrContable": {
                     "$ref": "#/definitions/models.PorDefinir"
+                }
+            }
+        },
+        "models.NovedadElemento": {
+            "title": "NovedadElemento",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "ElementoMovimientoId": {
+                    "$ref": "#/definitions/models.ElementosMovimiento"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Metadata": {
+                    "type": "string"
+                },
+                "MovimientoId": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "ValorLibros": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "ValorResidual": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VidaUtil": {
+                    "type": "number",
+                    "format": "double"
                 }
             }
         },
