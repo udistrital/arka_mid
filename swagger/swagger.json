@@ -997,6 +997,158 @@
                 }
             }
         },
+        "/inmuebles/": {
+            "get": {
+                "tags": [
+                    "inmuebles"
+                ],
+                "description": "get Inmuebles",
+                "operationId": "InmueblesController.GetAll",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "query",
+                        "description": "Filter. e.g. col1:v1,col2:v2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "description": "Fields returned. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Sorted-by fields. e.g. col1,col2 ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "description": "Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "description": "Limit the size of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Inmuebles"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "inmuebles"
+                ],
+                "description": "create Inmuebles",
+                "operationId": "InmueblesController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Inmuebles content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Inmuebles"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Inmuebles"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/inmuebles/{id}": {
+            "get": {
+                "tags": [
+                    "inmuebles"
+                ],
+                "description": "get Inmuebles by id",
+                "operationId": "InmueblesController.GetOne",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Inmueble"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "inmuebles"
+                ],
+                "description": "update the Inmuebles",
+                "operationId": "InmueblesController.Put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The id you want to update",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Inmuebles content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Inmuebles"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Inmuebles"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is not int"
+                    }
+                }
+            }
+        },
         "/polizas/AllElementosPoliza": {
             "get": {
                 "tags": [
@@ -1533,6 +1685,39 @@
                 }
             }
         },
+        "models.Campo": {
+            "title": "Campo",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Metadato": {
+                    "type": "string"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Sigla": {
+                    "type": "string"
+                }
+            }
+        },
         "models.CargaMasivaElementosActa": {
             "title": "CargaMasivaElementosActa",
             "type": "object",
@@ -1567,6 +1752,52 @@
                 },
                 "Nombre": {
                     "type": "string"
+                }
+            }
+        },
+        "models.CuentaContable": {
+            "title": "CuentaContable",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Ajustable": {
+                    "type": "boolean"
+                },
+                "Codigo": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Hijos": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Id": {
+                    "type": "string"
+                },
+                "Naturaleza": {
+                    "type": "string"
+                },
+                "NivelClasificacion": {
+                    "$ref": "#/definitions/models.NivelClasificacion"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "Padre": {
+                    "type": "string"
+                },
+                "RequiereTercero": {
+                    "type": "boolean"
+                },
+                "Saldo": {
+                    "type": "number",
+                    "format": "double"
                 }
             }
         },
@@ -1965,6 +2196,10 @@
                     "type": "number",
                     "format": "double"
                 },
+                "EspacioFisicoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "EstadoElementoId": {
                     "$ref": "#/definitions/models.EstadoElemento"
                 },
@@ -2356,6 +2591,10 @@
                 "Descuento": {
                     "type": "number",
                     "format": "double"
+                },
+                "EspacioFisicoId": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "EstadoElementoId": {
                     "$ref": "#/definitions/models.EstadoElemento"
@@ -2790,6 +3029,25 @@
                 }
             }
         },
+        "models.EspacioFisicoCampo": {
+            "title": "EspacioFisicoCampo",
+            "type": "object",
+            "properties": {
+                "Campo": {
+                    "$ref": "#/definitions/models.Campo"
+                },
+                "EspacioFisico": {
+                    "$ref": "#/definitions/models.EspacioFisico"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Valor": {
+                    "type": "string"
+                }
+            }
+        },
         "models.EstadoElemento": {
             "title": "EstadoElemento",
             "type": "object",
@@ -3148,6 +3406,40 @@
                 }
             }
         },
+        "models.Inmueble": {
+            "title": "Inmueble",
+            "type": "object",
+            "properties": {
+                "Cuentas": {
+                    "$ref": "#/definitions/models.ParametrizacionContable_"
+                },
+                "CuentasMediciones": {
+                    "$ref": "#/definitions/models.ParametrizacionContable_"
+                },
+                "Elemento": {
+                    "$ref": "#/definitions/models.Elemento"
+                },
+                "ElementoMovimiento": {
+                    "$ref": "#/definitions/models.ElementosMovimiento"
+                },
+                "EspacioFisico": {
+                    "$ref": "#/definitions/models.EspacioFisico"
+                },
+                "Otros": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.EspacioFisicoCampo"
+                    }
+                },
+                "Sede": {
+                    "$ref": "#/definitions/models.EspacioFisico"
+                }
+            }
+        },
+        "models.Inmuebles": {
+            "title": "Inmuebles",
+            "type": "object"
+        },
         "models.InventarioTercero": {
             "title": "InventarioTercero",
             "type": "object",
@@ -3222,6 +3514,36 @@
                 }
             }
         },
+        "models.NivelClasificacion": {
+            "title": "NivelClasificacion",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Longitud": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
         "models.NovedadElemento": {
             "title": "NovedadElemento",
             "type": "object",
@@ -3261,6 +3583,18 @@
                 "VidaUtil": {
                     "type": "number",
                     "format": "double"
+                }
+            }
+        },
+        "models.ParametrizacionContable_": {
+            "title": "ParametrizacionContable_",
+            "type": "object",
+            "properties": {
+                "CuentaCreditoId": {
+                    "$ref": "#/definitions/models.CuentaContable"
+                },
+                "CuentaDebitoId": {
+                    "$ref": "#/definitions/models.CuentaContable"
                 }
             }
         },
@@ -3900,6 +4234,10 @@
         {
             "name": "ajustes",
             "description": "AjusteController operations for Ajuste\n"
+        },
+        {
+            "name": "inmuebles",
+            "description": "InmueblesController operations for Inmuebles\n"
         }
     ]
 }

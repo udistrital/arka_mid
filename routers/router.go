@@ -70,6 +70,11 @@ func init() {
 				&controllers.AjusteController{},
 			),
 		),
+		beego.NSNamespace("/inmuebles",
+			beego.NSInclude(
+				&controllers.InmueblesController{},
+			),
+		),
 	)
 
 	beego.AddNamespace(ns)

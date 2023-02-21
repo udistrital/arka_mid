@@ -1,6 +1,7 @@
 package oikos
 
 import (
+	"regexp"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -37,6 +38,44 @@ func GetAllEspacioFisico(payload string) (espacios []models.EspacioFisico, outpu
 		logs.Error(err)
 		eval := `request.GetJson(urlcrud, &espacios)`
 		outputError = errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
+func GetAllEspacioFisicoCampo(payload string) (espacios []models.EspacioFisicoCampo, outputError map[string]interface{}) {
+
+	funcion := "GetAllEspacioFisicoCampo - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+
+	urlcrud := basePath + "espacio_fisico_campo?" + payload
+	err := request.GetJson(urlcrud, &espacios)
+	if err != nil {
+		logs.Error(err)
+		eval := `request.GetJson(urlcrud, &espacios)`
+		outputError = errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
+// GetSedeEspacioFisico
+func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.EspacioFisico, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("GetSedeEspacioFisico - Unhandled Error", "500")
+
+	rgxp := regexp.MustCompile(`\d.*`)
+	codigoSede := espacioFisico.CodigoAbreviacion
+	codigoSede = codigoSede[0:2] + rgxp.ReplaceAllString(codigoSede[2:], "")
+
+	payload := "query=TipoEspacioFisicoId__Nombre:SEDE,CodigoAbreviacion:" + codigoSede
+	sede_, outputError := GetAllEspacioFisico(payload)
+	if outputError != nil {
+		return
+	}
+
+	if len(sede_) > 0 {
+		sede = sede_[0]
 	}
 
 	return

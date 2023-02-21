@@ -143,3 +143,19 @@ func PutTransaccionActaRecibido(id int, transaccion *models.TransaccionActaRecib
 
 	return
 }
+
+// GetAllElementoCampo query controlador historico_acta del api acta_recibido_crud teniendo el cuenta el número de registros totales
+func GetAllElementoCampo(payload string) (elementosCampo []models.ElementoCampo, outputError map[string]interface{}) {
+
+	funcion := "GetAllElementoCampo - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := path + "elemento_campo?" + payload
+	if err := request.GetJson(urlcrud, &elementosCampo); err != nil {
+		logs.Error(err)
+		eval := `request.GetJson(urlcrud, &elementosCampo)`
+		outputError = errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
