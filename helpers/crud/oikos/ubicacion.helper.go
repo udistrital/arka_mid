@@ -37,7 +37,7 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 	if sede_, err := GetAllEspacioFisico(payload); err != nil {
 		return nil, err
 	} else {
-		resultado.Sede = sede_[0]
+		resultado.Sede = &sede_[0]
 	}
 
 	return resultado, nil

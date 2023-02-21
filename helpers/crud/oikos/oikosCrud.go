@@ -1,6 +1,7 @@
 package oikos
 
 import (
+	"regexp"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -26,32 +27,58 @@ func GetAllAsignacion(payload string) (asignaciones []models.AsignacionEspacioFi
 	return asignaciones, nil
 }
 
-func GetAllEspacioFisico(query string) (espacio []*models.EspacioFisico, outputError map[string]interface{}) {
+func GetAllEspacioFisico(payload string) (espacios []models.EspacioFisico, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAllEspacioFisico - Unhandled Error!",
-				"err":     err,
-				"status":  "500",
-			}
-			panic(outputError)
-		}
-	}()
+	funcion := "GetAllEspacioFisico - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	var espacioFisico []*models.EspacioFisico
-
-	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "espacio_fisico" + query
-	if _, err := request.GetJsonTest(urlcrud, &espacioFisico); err != nil {
+	urlcrud := basePath + "espacio_fisico?" + payload
+	err := request.GetJson(urlcrud, &espacios)
+	if err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetAllEspacioFisico - request.GetJsonTest(urlcrud, &espacioFisico)",
-			"err":     err,
-			"status":  "502",
-		}
-		return nil, outputError
+		eval := `request.GetJson(urlcrud, &espacios)`
+		outputError = errorctrl.Error(funcion+eval, err, "502")
 	}
-	return espacioFisico, nil
+
+	return
+}
+
+func GetAllEspacioFisicoCampo(payload string) (espacios []models.EspacioFisicoCampo, outputError map[string]interface{}) {
+
+	funcion := "GetAllEspacioFisicoCampo - "
+	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+
+	urlcrud := basePath + "espacio_fisico_campo?" + payload
+	err := request.GetJson(urlcrud, &espacios)
+	if err != nil {
+		logs.Error(err)
+		eval := `request.GetJson(urlcrud, &espacios)`
+		outputError = errorctrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
+// GetSedeEspacioFisico
+func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.EspacioFisico, outputError map[string]interface{}) {
+
+	defer errorctrl.ErrorControlFunction("GetSedeEspacioFisico - Unhandled Error", "500")
+
+	rgxp := regexp.MustCompile(`\d.*`)
+	codigoSede := espacioFisico.CodigoAbreviacion
+	codigoSede = codigoSede[0:2] + rgxp.ReplaceAllString(codigoSede[2:], "")
+
+	payload := "query=TipoEspacioFisicoId__Nombre:SEDE,CodigoAbreviacion:" + codigoSede
+	sede_, outputError := GetAllEspacioFisico(payload)
+	if outputError != nil {
+		return
+	}
+
+	if len(sede_) > 0 {
+		sede = sede_[0]
+	}
+
+	return
 }
 
 // GetDependenciaById consulta controlador dependencia/{id} del api oikos_crud

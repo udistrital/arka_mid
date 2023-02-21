@@ -43,3 +43,10 @@ type Dependencia struct {
 	TelefonoDependencia string
 	CorreoElectronico   string
 }
+
+type EspacioFisicoCampo struct {
+	Id            int
+	Valor         string
+	EspacioFisico *EspacioFisico
+	Campo         *Campo
+}
