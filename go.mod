@@ -1,13 +1,13 @@
 module github.com/udistrital/arka_mid
 
-go 1.17
+go 1.20
 
 require (
 	github.com/astaxie/beego v1.12.3
 	github.com/smartystreets/goconvey v1.7.2
 	github.com/tealeg/xlsx v1.0.5
 	github.com/udistrital/administrativa_mid_api v0.0.0-20230119030216-84378fd148ca
-	github.com/udistrital/auditoria v0.0.0-20200115201815-9680ae9c2515
+	github.com/udistrital/auditoria v0.0.0-20230221175221-35248dfdd1cd
 	github.com/udistrital/utils_oas v0.0.0-20220521085529-fbd949fcf4e2
 )
 
