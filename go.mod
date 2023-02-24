@@ -7,7 +7,6 @@ require (
 	github.com/smartystreets/goconvey v1.7.2
 	github.com/tealeg/xlsx v1.0.5
 	github.com/udistrital/administrativa_mid_api v0.0.0-20230119030216-84378fd148ca
-	github.com/udistrital/auditoria v0.0.0-20230221175221-35248dfdd1cd
 	github.com/udistrital/utils_oas v0.0.0-20220521085529-fbd949fcf4e2
 )
 
