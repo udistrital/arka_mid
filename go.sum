@@ -331,8 +331,6 @@ github.com/tealeg/xlsx v1.0.5/go.mod h1:btRS8dz54TDnvKNosuAqxrM1QgN1udgk9O34bDCn
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/udistrital/administrativa_mid_api v0.0.0-20230119030216-84378fd148ca h1:GKFFRomogvLhgOcasLnz+Gury/w1hdV9HuO2G/WmpcQ=
 github.com/udistrital/administrativa_mid_api v0.0.0-20230119030216-84378fd148ca/go.mod h1:gun59JiPas6DEbdqIBS3WsfFOE6B9H5NDeZjJza0j68=
-github.com/udistrital/auditoria v0.0.0-20200115201815-9680ae9c2515 h1:HTZDLLQ5QiGANHPjsz2rtNoryMncPISVrQ4DIjveWI4=
-github.com/udistrital/auditoria v0.0.0-20200115201815-9680ae9c2515/go.mod h1:2g8J932brTzbNOcSHob/vjt+/GFfMQuRreLZhvGiUro=
 github.com/udistrital/utils_oas v0.0.0-20220521085529-fbd949fcf4e2 h1:PyIjWzVInzSnZT+NBzucocZn+a8Y+onhN1q2Iy5iNRI=
 github.com/udistrital/utils_oas v0.0.0-20220521085529-fbd949fcf4e2/go.mod h1:jkSKIX5KYbf0/HxzGUs2leHo3KAwTC5n0oI1JDfoY78=
 github.com/ugorji/go v0.0.0-20171122102828-84cb69a8af83/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=
