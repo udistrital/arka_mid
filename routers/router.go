@@ -75,6 +75,11 @@ func init() {
 				&controllers.InmueblesController{},
 			),
 		),
+		beego.NSNamespace("/avaluo",
+			beego.NSInclude(
+				&controllers.AvaluoController{},
+			),
+		),
 	)
 
 	beego.AddNamespace(ns)
