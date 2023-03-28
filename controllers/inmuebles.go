@@ -1,8 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
+
 	"github.com/astaxie/beego"
 	inmuebleshelper "github.com/udistrital/arka_mid/helpers/inmueblesHelper"
+	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
@@ -22,12 +25,28 @@ func (c *InmueblesController) URLMapping() {
 // Post ...
 // @Title Create
 // @Description create Inmuebles
-// @Param	body		body 	models.Inmuebles	true		"body for Inmuebles content"
-// @Success 201 {object} models.Inmuebles
+// @Param	body	body	models.Inmuebles	true	"body for Inmuebles content"
+// @Success 201 {object} models.Inmueble
 // @Failure 403 body is empty
 // @router / [post]
 func (c *InmueblesController) Post() {
 
+	defer errorctrl.ErrorControlController(c.Controller, "InmueblesController")
+
+	var v models.Inmueble
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &v)
+	if err != nil {
+		panic(err)
+	}
+
+	data, err_ := inmuebleshelper.Post(&v)
+	if err_ == nil {
+		c.Data["json"] = data
+	} else {
+		panic(err_)
+	}
+
+	c.ServeJSON()
 }
 
 // GetOne ...
@@ -76,11 +95,33 @@ func (c *InmueblesController) GetAll() {
 // Put ...
 // @Title Put
 // @Description update the Inmuebles
-// @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.Inmuebles	true		"body for Inmuebles content"
+// @Param	id		path 	string			true	"The id you want to update"
+// @Param	body	body 	models.Inmueble	true	"body for Inmuebles content"
 // @Success 200 {object} models.Inmuebles
 // @Failure 403 :id is not int
 // @router /:id [put]
 func (c *InmueblesController) Put() {
 
+	defer errorctrl.ErrorControlController(c.Controller, "InmueblesController")
+
+	id, err := c.GetInt64(":id")
+	if err != nil || id <= 0 {
+		panic(err)
+	}
+
+	var v models.Inmueble
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &v)
+	if err != nil {
+		panic(err)
+	}
+
+	v.Elemento.Id = int(id)
+	data, err_ := inmuebleshelper.Update(&v)
+	if err_ == nil {
+		c.Data["json"] = data
+	} else {
+		panic(err_)
+	}
+
+	c.ServeJSON()
 }

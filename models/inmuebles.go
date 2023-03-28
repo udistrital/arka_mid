@@ -5,6 +5,7 @@ type Inmueble struct {
 	ElementoMovimiento ElementosMovimiento
 	EspacioFisico      EspacioFisico
 	Sede               EspacioFisico
+	SubgrupoId         Subgrupo
 	Cuentas            ParametrizacionContable_
 	CuentasMediciones  ParametrizacionContable_
 	Otros              []EspacioFisicoCampo

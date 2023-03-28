@@ -169,7 +169,7 @@ func submitUpdates(elementosActa []*models.Elemento,
 	novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
 
 	for _, el := range elementosActa {
-		if _, err := crudActas.PutElemento(el, el.Id); err != nil {
+		if err := crudActas.PutElemento(el, el.Id); err != nil {
 			return err
 		}
 	}

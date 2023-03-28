@@ -37,7 +37,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 			if err != nil {
 				return nil, err
 			}
-			subgruposBuffer[el_.SubgrupoCatalogoId] = *sg
+			subgruposBuffer[el_.SubgrupoCatalogoId] = sg
 		}
 
 		detalle := make(map[string]interface{})
