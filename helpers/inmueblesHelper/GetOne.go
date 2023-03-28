@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
@@ -17,6 +18,11 @@ func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}
 	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	outputError = actaRecibido.GetElementoById(id, &detalle.Elemento)
+	if outputError != nil {
+		return
+	}
+
+	detalle.SubgrupoId, outputError = catalogoElementos.GetSubgrupoById(detalle.Elemento.SubgrupoCatalogoId)
 	if outputError != nil {
 		return
 	}

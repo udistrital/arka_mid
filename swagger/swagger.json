@@ -1075,7 +1075,7 @@
                     "201": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.Inmuebles"
+                            "$ref": "#/definitions/models.Inmueble"
                         }
                     },
                     "403": {
@@ -1132,7 +1132,7 @@
                         "description": "body for Inmuebles content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Inmuebles"
+                            "$ref": "#/definitions/models.Inmueble"
                         }
                     }
                 ],
@@ -3433,6 +3433,9 @@
                 },
                 "Sede": {
                     "$ref": "#/definitions/models.EspacioFisico"
+                },
+                "SubgrupoId": {
+                    "$ref": "#/definitions/models.Subgrupo"
                 }
             }
         },
