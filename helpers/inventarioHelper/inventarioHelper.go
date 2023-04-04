@@ -33,7 +33,7 @@ func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputErr
 	}
 
 	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
-	ids := []int{elementoMovimiento.ElementoActaId}
+	ids := []int{*elementoMovimiento.ElementoActaId}
 	if elementos, err := actaRecibido.GetElementos(0, ids); err != nil || len(elementos) != 1 {
 		return err
 	} else {

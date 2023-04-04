@@ -91,7 +91,7 @@ func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 
 	idsActa := []int{}
 	for _, val := range elementos {
-		idsActa = append(idsActa, int(val.ElementoActaId))
+		idsActa = append(idsActa, *val.ElementoActaId)
 	}
 
 	query = "Id__in:" + utilsHelper.ArrayToString(idsActa, "|")
@@ -119,16 +119,4 @@ func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 
 func getTipoComprobanteTraslados() string {
 	return "N39"
-}
-
-func removeDuplicateInt(intSlice []*models.ElementosMovimiento) []*models.ElementosMovimiento {
-	allKeys := make(map[int]bool)
-	list := make([]*models.ElementosMovimiento, 0)
-	for _, item := range intSlice {
-		if _, value := allKeys[item.ElementoActaId]; !value {
-			allKeys[item.ElementoActaId] = true
-			list = append(list, item)
-		}
-	}
-	return list
 }

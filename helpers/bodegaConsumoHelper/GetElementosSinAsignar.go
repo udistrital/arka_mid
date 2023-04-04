@@ -26,7 +26,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 	for _, el := range elementos {
 
 		var el_ models.Elemento
-		outputError = actaRecibido.GetElementoById(el.ElementoActaId, &el_)
+		outputError = actaRecibido.GetElementoById(*el.ElementoActaId, &el_)
 		if outputError != nil {
 			return
 		}

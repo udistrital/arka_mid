@@ -118,7 +118,7 @@ func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 
 	ids = []int{}
 	for _, el := range elementosMovimiento {
-		ids = append(ids, el.ElementoActaId)
+		ids = append(ids, *el.ElementoActaId)
 	}
 
 	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper

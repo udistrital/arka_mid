@@ -310,7 +310,7 @@ func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleEle
 
 	if len(elsMov) > 0 {
 		for _, el := range elsMov {
-			if idx := findElementoInArrayEM(elsActa, el.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayEM(elsActa, *el.ElementoActaId); idx > -1 {
 				var elemento_ *models.DetalleElemento__
 				if elemento_, outputError = utilsHelper.FillElemento(elsActa[idx], el); outputError != nil {
 					return nil, outputError

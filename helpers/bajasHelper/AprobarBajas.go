@@ -89,7 +89,7 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 			}
 
 			var elementoActa models.Elemento
-			outputError = actaRecibido.GetElementoById(historial.Elemento.ElementoActaId, &elementoActa)
+			outputError = actaRecibido.GetElementoById(*historial.Elemento.ElementoActaId, &elementoActa)
 			if outputError != nil {
 				return
 			}
