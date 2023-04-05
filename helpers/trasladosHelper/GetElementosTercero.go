@@ -51,9 +51,8 @@ func GetElementosTercero(terceroId int, inventario *models.InventarioTercero) (o
 	}
 
 	ids := []int{}
-	elementosM = removeDuplicateInt(elementosM)
 	for _, el := range elementosM {
-		ids = append(ids, el.ElementoActaId)
+		ids = append(ids, *el.ElementoActaId)
 	}
 
 	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud

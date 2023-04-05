@@ -56,6 +56,7 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 	inmueble.Elemento.EspacioFisicoId = inmueble.EspacioFisico.Id
 	inmueble.Elemento.EstadoElementoId = &models.EstadoElemento{Id: 2}
 	inmueble.Elemento.SubgrupoCatalogoId = inmueble.SubgrupoId.Id
+	inmueble.Elemento.Activo = true
 
 	outputError = actaRecibido.PostElemento(&inmueble.Elemento)
 	if outputError != nil {
@@ -111,7 +112,8 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 	}
 
 	inmueble.ElementoMovimiento.MovimientoId = &movimiento
-	inmueble.ElementoMovimiento.ElementoActaId = inmueble.Elemento.Id
+	inmueble.ElementoMovimiento.ElementoActaId = utilsHelper.Int(inmueble.Elemento.Id)
+	inmueble.ElementoMovimiento.Activo = true
 
 	outputError = movimientosArka.PostElementosMovimiento(&inmueble.ElementoMovimiento)
 

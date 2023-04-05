@@ -25,7 +25,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 	}
 
 	for _, el := range trSalida.Elementos {
-		ids = append(ids, el.ElementoActaId)
+		ids = append(ids, *el.ElementoActaId)
 	}
 
 	if len(ids) > 0 {

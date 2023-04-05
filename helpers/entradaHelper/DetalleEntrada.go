@@ -158,7 +158,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			}
 
 			var elemento_ models.Elemento
-			outputError = actaRecibido.GetElementoById(detalleMov[0].ElementoActaId, &elemento_)
+			outputError = actaRecibido.GetElementoById(*detalleMov[0].ElementoActaId, &elemento_)
 			if outputError != nil {
 				return
 			}

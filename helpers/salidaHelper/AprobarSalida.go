@@ -53,7 +53,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 
 	var idsElementos []int
 	for _, el := range trSalida.Elementos {
-		idsElementos = append(idsElementos, el.ElementoActaId)
+		idsElementos = append(idsElementos, *el.ElementoActaId)
 	}
 
 	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
