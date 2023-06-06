@@ -1,6 +1,6 @@
 module github.com/udistrital/arka_mid
 
-go 1.20
+go 1.17
 
 require (
 	github.com/astaxie/beego v1.12.3
