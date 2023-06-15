@@ -10,7 +10,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"golang.org/x/exp/slices"
 )
 
 // CalcularMovimientosContables Calcula los movimientos contables dados los valores y parametrización correspondiente de cada elemento.
@@ -103,7 +102,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 					return "", outputError
 				}
 
-				exists := slices.Contains(actasConflicto, elemento.ActaRecibidoId.Id)
+				exists := containsInt(actasConflicto, elemento.ActaRecibidoId.Id)
 				if !exists {
 					actasConflicto = append(actasConflicto, elemento.ActaRecibidoId.Id)
 				}
@@ -121,7 +120,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 				}
 				cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId] = *cst[0]
 			} else {
-				exists := slices.Contains(subgruposConflicto, subgrupos[el.SubgrupoCatalogoId].SubgrupoId.Codigo)
+				exists := containsString(subgruposConflicto, subgrupos[el.SubgrupoCatalogoId].SubgrupoId.Codigo)
 				if !exists {
 					subgruposConflicto = append(subgruposConflicto, subgrupos[el.SubgrupoCatalogoId].SubgrupoId.Codigo)
 				}
@@ -200,4 +199,22 @@ func payloadCuentas(sg, tb, mov, sMov int) string {
 	return "fields=CuentaDebitoId,CuentaCreditoId&query=Activo:true,SubgrupoId__Id:" +
 		strconv.Itoa(sg) + ",TipoBienId__Id:" + strconv.Itoa(tb) + ",TipoMovimientoId:" + strconv.Itoa(mov) +
 		",SubtipoMovimientoId:" + strconv.Itoa(sMov)
+}
+
+func containsInt(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func containsString(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

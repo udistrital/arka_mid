@@ -8,7 +8,6 @@ require (
 	github.com/tealeg/xlsx v1.0.5
 	github.com/udistrital/administrativa_mid_api v0.0.0-20230119030216-84378fd148ca
 	github.com/udistrital/utils_oas v0.0.0-20220521085529-fbd949fcf4e2
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 )
 
 require (
