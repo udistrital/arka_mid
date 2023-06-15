@@ -183,6 +183,6 @@ func payloadBajas(ids []int) string {
 }
 
 func getPayloadDetalleSubgrupo(id int) string {
-	return "limit=1&fields=SubgrupoId,TipoBienId,Amortizacion,Depreciacion&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" +
+	return "limit=1&fields=SubgrupoId,TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" +
 		strconv.Itoa(id)
 }

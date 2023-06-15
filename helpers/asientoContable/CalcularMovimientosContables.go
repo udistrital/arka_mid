@@ -2,12 +2,15 @@ package asientoContable
 
 import (
 	"strconv"
+	"strings"
 
-	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
+	"golang.org/x/exp/slices"
 )
 
 // CalcularMovimientosContables Calcula los movimientos contables dados los valores y parametrización correspondiente de cada elemento.
@@ -23,7 +26,7 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 	var parDb int
 	var uvt float64 = 1
 
-	var payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
+	var payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 
 	if cuentas == nil {
 		cuentas = make(map[string]models.CuentaContable)
@@ -48,6 +51,8 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 	cuentasSgTb := make(map[int]map[int]models.CuentasSubgrupo)
 	totalesCr := make(map[string]float64)
 	totalesDb := make(map[string]float64)
+	var actasConflicto []int
+	var subgruposConflicto []string
 
 	for _, el := range elementos {
 
@@ -59,68 +64,75 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 			return "No se pudo determinar la clase de los elementos. Revise el detalle del acta de recibido o contacte soporte.", nil
 		}
 
+		if _, ok := subgrupos[el.SubgrupoCatalogoId]; !ok {
+			sg, outputError := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(el.SubgrupoCatalogoId))
+			if outputError != nil {
+				return "", outputError
+			} else if len(sg) == 0 {
+				return "No se pudo consultar la parametrización de las clases. Contacte soporte.", nil
+			}
+
+			subgrupos[el.SubgrupoCatalogoId] = *sg[0]
+
+		}
+
 		if el.TipoBienId == 0 {
-			if _, ok := subgrupos[el.SubgrupoCatalogoId]; !ok {
-				if sg, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(el.SubgrupoCatalogoId)); err != nil {
-					return "", err
-				} else if len(sg) == 1 {
-					subgrupos[el.SubgrupoCatalogoId] = *sg[0]
-				} else {
-					return "No se pudo consultar la parametrización de las clases. Contacte soporte.", nil
-				}
-			}
-
-			if tb, err := catalogoElementos.GetTipoBienIdByValor(subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id, el.ValorUnitario/uvt, tiposBien); err != nil {
-				return "", err
+			tb, outputError := catalogoElementos.GetTipoBienIdByValor(subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id, el.ValorUnitario/uvt, tiposBien)
+			if outputError != nil {
+				return "", outputError
 			} else if tb == 0 {
-				logs.Info("Elemento conflicto: ", el.Id)
-				return "No se pudo establecer el tipo de bien de los elementos. Contacte soporte.", nil
-			} else {
-				el.TipoBienId = tb
-			}
-		} else {
-			if _, ok := subgrupos[el.SubgrupoCatalogoId]; !ok {
-				if sg, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(el.SubgrupoCatalogoId)); err != nil {
-					return "", err
-				} else if len(sg) == 1 {
-					subgrupos[el.SubgrupoCatalogoId] = *sg[0]
-				} else {
-					logs.Info("Elemento conflicto: ", el.Id)
-					return "No se pudo consultar la parametrización de las clases. Contacte soporte.", nil
-				}
+				return "No se pudo establecer el tipo de bien de los elementos. Revise la parametrización de los tipos de bien.", nil
 			}
 
+			el.TipoBienId = tb
+
+		} else {
 			if _, ok := tiposBien[el.TipoBienId]; !ok {
 				var tipoBien models.TipoBien
-				if err := catalogoElementos.GetTipoBienById(el.TipoBienId, &tipoBien); err != nil {
-					return "", err
+				outputError = catalogoElementos.GetTipoBienById(el.TipoBienId, &tipoBien)
+				if outputError != nil {
+					return
 				}
 				tiposBien[el.TipoBienId] = tipoBien
 			}
 
 			if tiposBien[el.TipoBienId].TipoBienPadreId.Id != subgrupos[el.SubgrupoCatalogoId].TipoBienId.Id {
-				logs.Info("Elemento conflicto: ", el.Id)
-				return "El tipo bien asignado manualmente no corresponde a la clase correspondiente", nil
+				var elemento models.Elemento
+				outputError = actaRecibido.GetElementoById(el.Id, &elemento)
+				if outputError != nil {
+					return "", outputError
+				}
+
+				exists := slices.Contains(actasConflicto, elemento.ActaRecibidoId.Id)
+				if !exists {
+					actasConflicto = append(actasConflicto, elemento.ActaRecibidoId.Id)
+				}
+				continue
 			}
 		}
 
 		if _, ok := cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId]; !ok {
-			if cst, err := catalogoElementos.GetAllCuentasSubgrupo(payloadCuentas(el.SubgrupoCatalogoId, el.TipoBienId, movId, sMovId)); err != nil {
-				return "", err
+			cst, outputError := catalogoElementos.GetAllCuentasSubgrupo(payloadCuentas(el.SubgrupoCatalogoId, el.TipoBienId, movId, sMovId))
+			if outputError != nil {
+				return "", outputError
 			} else if len(cst) == 1 {
 				if cuentasSgTb[el.SubgrupoCatalogoId] == nil {
 					cuentasSgTb[el.SubgrupoCatalogoId] = make(map[int]models.CuentasSubgrupo)
 				}
 				cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId] = *cst[0]
 			} else {
-				logs.Info("Elemento conflicto: ", el.Id)
-				return "No se pudo establecer la parametrización contable.", nil
+				exists := slices.Contains(subgruposConflicto, subgrupos[el.SubgrupoCatalogoId].SubgrupoId.Codigo)
+				if !exists {
+					subgruposConflicto = append(subgruposConflicto, subgrupos[el.SubgrupoCatalogoId].SubgrupoId.Codigo)
+				}
+				continue
 			}
 		}
 
 		if _, ok := cuentas[cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaCreditoId]; !ok {
-			if cr, err := cuentasContables.GetCuentaContable(cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaCreditoId); err != nil {
-				return "", err
+			cr, outputError := cuentasContables.GetCuentaContable(cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaCreditoId)
+			if outputError != nil {
+				return "", outputError
 			} else if cr != nil {
 				cuentas[cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaCreditoId] = *cr
 			} else {
@@ -129,8 +141,9 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 		}
 
 		if _, ok := cuentas[cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaDebitoId]; !ok {
-			if db, err := cuentasContables.GetCuentaContable(cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaDebitoId); err != nil {
-				return "", err
+			db, outputError := cuentasContables.GetCuentaContable(cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaDebitoId)
+			if outputError != nil {
+				return "", outputError
 			} else if db != nil {
 				cuentas[cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaDebitoId] = *db
 			} else {
@@ -142,6 +155,12 @@ func CalcularMovimientosContables(elementos []*models.Elemento, dsc string, movI
 		totalesCr[cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaCreditoId] += el.ValorTotal
 		totalesDb[cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId].CuentaDebitoId] += el.ValorTotal
 
+	}
+
+	if len(actasConflicto) > 0 {
+		return "El tipo bien asignado manualmente no corresponde a la clase correspondiente. Revise las siguientes actas: " + utilsHelper.ArrayToString(actasConflicto, ", "), nil
+	} else if len(subgruposConflicto) > 0 {
+		return "No se pudo establecer la parametrización contable de las siguientes clases: " + strings.Join(subgruposConflicto, ", "), nil
 	}
 
 	for cta, val := range totalesCr {
