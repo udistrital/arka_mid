@@ -135,7 +135,7 @@ steps:
     - push
 
 - name: update_aws_ecs
-  image: golang:1.20
+  image: golang:1.18
   environment:
     AWS_ACCESS_KEY_ID:
       from_secret: AWS_ACCESS_KEY_ID
