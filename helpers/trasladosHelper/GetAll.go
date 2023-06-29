@@ -76,7 +76,7 @@ func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleT
 		}
 
 		if v, err := utilsHelper.BufferGeneric(detalle.Ubicacion, ubicacionesBuffer, requestUbicacion(detalle.Ubicacion), nil, nil); err == nil {
-			if v2, ok := v.(*models.DetalleSedeDependencia); ok {
+			if v2, ok := v.(*models.DetalleSedeDependencia); ok && v2 != nil && v2.Ubicacion != nil {
 				Ubicacion_ = v2.Ubicacion.EspacioFisicoId.Nombre
 			}
 		}
