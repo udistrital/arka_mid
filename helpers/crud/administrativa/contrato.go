@@ -28,12 +28,12 @@ func GetContrato(contratoId int, vigencia string, contrato *administrativa.Infor
 		return e.Error(funcion+context, err, fmt.Sprint(http.StatusBadRequest))
 	}
 
-	urlCrud := "http://" + basePath +
-		fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
-	if err := request.GetJson(urlCrud, &contrato); err != nil {
-		logs.Error(err)
+	urlCrud := "http://" + basePath + fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
+	err := request.GetJsonWSO2(urlCrud, &contrato)
+	if err != nil {
+		logs.Error(err, urlCrud)
 		context := "request.GetJsonWSO2(urlCrud, &contrato)"
-		return e.Error(funcion+context, err, fmt.Sprint(http.StatusBadGateway))
+		outputError = e.Error(funcion+context, err, fmt.Sprint(http.StatusBadGateway))
 	}
 
 	return
@@ -46,10 +46,11 @@ func GetTipoContratoById(tipoContratoId string, tipoContrato interface{}) (outpu
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
 	urlcrud := "http://" + basePath + "tipo_contrato/" + tipoContratoId
-	if err := request.GetJson(urlcrud, &tipoContrato); err != nil {
+	err := request.GetJsonWSO2(urlcrud, &tipoContrato)
+	if err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &tipoContrato)"
-		return e.Error(funcion+eval, err, "502")
+		outputError = e.Error(funcion+eval, err, "502")
 	}
 
 	return
