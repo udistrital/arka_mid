@@ -10,14 +10,14 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 const estadoSolicitudPendiente = "Solicitud Pendiente"
 
 func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.DetalleSolicitudBodega) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetAllSolicitudes - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetAllSolicitudes - Unhandled Error!", "500")
 
 	var (
 		solicitudes []*models.Movimiento
@@ -64,7 +64,7 @@ func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.Detalle
 
 func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("loadSolicitudes - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("loadSolicitudes - Unhandled Error!", "500")
 
 	var (
 		terceroId int

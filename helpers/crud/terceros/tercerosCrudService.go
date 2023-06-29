@@ -3,19 +3,21 @@ package terceros
 import (
 	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
+
+var basePath, _ = beego.AppConfig.String("tercerosService")
 
 // GetCorreo Consulta el correo de un tercero
 func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, outputError map[string]interface{}) {
 
 	funcion := "GetCorreo"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		urlcrud string
@@ -23,12 +25,12 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 	)
 
 	// Consulta correo
-	urlcrud = "http://" + beego.AppConfig.String("tercerosService") + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
+	urlcrud = "http://" + basePath + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
 	urlcrud += "&query=Activo%3Atrue,InfoComplementariaId__Nombre__icontains%3Acorreo,TerceroId__Id%3A" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &correo); err != nil {
 		logs.Error(err)
 		eval := " - request.GetJson(urlcrud, &correo)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return correo, nil
@@ -38,10 +40,10 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificacion, outputError map[string]interface{}) {
 
 	funcion := "GetAllDatosIdentificacion"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	// Consulta correo
-	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion?" + query
+	urlcrud := "http://" + basePath + "datos_identificacion?" + query
 	if err := request.GetJson(urlcrud, &datosId); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -94,12 +96,12 @@ func DocumentosValidos(documentos []models.DatosIdentificacion,
 func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
 
 	funcion := "GetTerceroById"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/" + strconv.Itoa(id)
+	urlcrud := "http://" + basePath + "tercero/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &tercero); err != nil {
 		eval := " - request.GetJson(urlcrud, &tercero)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return tercero, nil
 }

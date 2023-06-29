@@ -7,12 +7,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetExistenciasKardex - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetExistenciasKardex - Unhandled Error!", "500")
 
 	var aperturas []models.Apertura
 	outputError = movimientosArka.GetAperturas(true, &aperturas)
@@ -43,7 +43,7 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 
 func detalleElementoCatalogo(elementoId int) (elemento models.ElementoCatalogo, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("detalleElementoCatalogo - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("detalleElementoCatalogo - Unhandled Error!", "500")
 
 	var elemento_ []models.ElementoCatalogo
 	outputError = catalogoElementos.GetAllElemento("query=Id:"+strconv.Itoa(elementoId), &elemento_)

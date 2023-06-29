@@ -7,12 +7,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("Put - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("Put - Unhandled Error!", "500")
 
 	var (
 		detalleOriginal    models.FormatoSalida
@@ -103,7 +103,7 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 
 func setConsecutivoSalida(salida *models.Movimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("setConsecutivoSalida - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("setConsecutivoSalida - Unhandled Error!", "500")
 
 	if salida.Consecutivo == nil || salida.ConsecutivoId == nil || *salida.Consecutivo == "" || *salida.ConsecutivoId <= 0 {
 

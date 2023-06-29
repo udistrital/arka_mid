@@ -13,13 +13,13 @@ import (
 	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // DetalleEntrada Consulta el detalle de una entrada incluyendo la transaccion contable (si aplica)
 func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
 	var (
 		detalle         models.FormatoBaseEntrada

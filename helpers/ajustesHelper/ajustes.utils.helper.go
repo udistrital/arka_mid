@@ -10,7 +10,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // generaTrContable Dado un valor, subgrupo nuevo y original genera la transacción contable.
@@ -77,7 +77,7 @@ func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
 	cuentasSubgrupo map[int]*models.CuentasSubgrupo, outputError map[string]interface{}) {
 
 	funcion := "getCuentasByMovimientoSubgrupos"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	cuentasSubgrupo = make(map[int]*models.CuentasSubgrupo)
 
@@ -118,7 +118,7 @@ func joinMaps(map1, map2 map[int]*models.CuentasSubgrupo) map[int]*models.Cuenta
 func fillCuentas(cuentas map[string]*models.CuentaContable, cuentas_ []string) (cuentasCompletas map[string]*models.CuentaContable, outputError map[string]interface{}) {
 
 	funcion := "fillCuentas"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	for _, id := range cuentas_ {
 		if _, ok := cuentas[id]; !ok {

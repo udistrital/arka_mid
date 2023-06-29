@@ -11,13 +11,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetOne Consulta los funcionarios, ubicación y elementos asociados a un traslado
 func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	var detalle models.FormatoTraslado
 	Traslado = new(models.TrTraslado)
@@ -74,7 +74,7 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
 	funcion := "getElementosTraslado"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		query     string

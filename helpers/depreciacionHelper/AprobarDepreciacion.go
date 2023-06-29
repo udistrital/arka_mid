@@ -8,13 +8,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // AprobarDepreciacion Registra las novedades para los elementos depreciados y realiza la transaccion contable
 func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarDepreciacion - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarDepreciacion - Unhandled Error!", "500")
 
 	var (
 		parametros  []models.ParametroConfiguracion

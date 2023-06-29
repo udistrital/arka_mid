@@ -6,12 +6,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetAll(tramiteOnly bool) (Salidas []map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
 
 	asignaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
 	sedes := make(map[string]models.EspacioFisico)

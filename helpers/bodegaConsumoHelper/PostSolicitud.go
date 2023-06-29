@@ -3,17 +3,17 @@ package bodegaConsumoHelper
 import (
 	"strconv"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func PostSolicitud(solicitud *models.FormatoSolicitudBodega, movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("PostSolicitud - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("PostSolicitud - Unhandled Error!", "500")
 
 	movimiento.EstadoMovimientoId = &models.EstadoMovimiento{}
 	movimiento.FormatoTipoMovimientoId = &models.FormatoTipoMovimiento{}

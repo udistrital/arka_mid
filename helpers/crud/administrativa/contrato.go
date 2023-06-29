@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	administrativa "github.com/udistrital/administrativa_mid_api/models"
-	e "github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	e "github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
+
+var basePath, _ = beego.AppConfig.String("administrativaJbpmService")
 
 // GetContrato ...
 func GetContrato(contratoId int, vigencia string, contrato *administrativa.InformacionContrato) (outputError map[string]interface{}) {
@@ -26,9 +28,9 @@ func GetContrato(contratoId int, vigencia string, contrato *administrativa.Infor
 		return e.Error(funcion+context, err, fmt.Sprint(http.StatusBadRequest))
 	}
 
-	urlCrud := "http://" + beego.AppConfig.String("administrativaJbpmService") +
+	urlCrud := "http://" + basePath +
 		fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
-	if err := request.GetJsonWSO2(urlCrud, &contrato); err != nil {
+	if err := request.GetJson(urlCrud, &contrato); err != nil {
 		logs.Error(err)
 		context := "request.GetJsonWSO2(urlCrud, &contrato)"
 		return e.Error(funcion+context, err, fmt.Sprint(http.StatusBadGateway))
@@ -43,7 +45,7 @@ func GetTipoContratoById(tipoContratoId string, tipoContrato interface{}) (outpu
 	const funcion = "GetTipoContratoById - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
-	urlcrud := "http://" + beego.AppConfig.String("administrativaService") + "tipo_contrato/" + tipoContratoId
+	urlcrud := "http://" + basePath + "tipo_contrato/" + tipoContratoId
 	if err := request.GetJson(urlcrud, &tipoContrato); err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &tipoContrato)"

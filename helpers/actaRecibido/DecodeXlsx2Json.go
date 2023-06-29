@@ -4,19 +4,19 @@ import (
 	"io"
 	"mime/multipart"
 
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
 	"github.com/tealeg/xlsx"
 
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // DecodeXlsx2Json Convierte el archivo excel en una lista de elementos
 func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "DecodeXlsx2Json - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var Ivas []models.Iva
 	if err := parametros.GetAllIVAByPeriodo("2023", &Ivas); err != nil {
@@ -33,14 +33,14 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 	if err != nil {
 		logs.Error(err)
 		eval := "io.ReadAll(c)"
-		return nil, errorctrl.Error(funcion+eval, err, "400")
+		return nil, errorCtrl.Error(funcion+eval, err, "400")
 	}
 
 	xlFile, err := xlsx.OpenBinary(file)
 	if err != nil {
 		logs.Error(err)
 		eval := "xlsx.OpenBinary(file)"
-		return nil, errorctrl.Error(funcion+eval, err, "400")
+		return nil, errorCtrl.Error(funcion+eval, err, "400")
 	}
 
 	resultado = make(map[string]interface{})

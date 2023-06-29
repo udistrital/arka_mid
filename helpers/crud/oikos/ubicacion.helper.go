@@ -5,12 +5,12 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetSedeDependenciaUbicacion(ubicacionId int) (resultado *models.DetalleSedeDependencia, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetSedeDependenciaUbicacion - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetSedeDependenciaUbicacion - Unhandled Error!", "500")
 
 	resultado = new(models.DetalleSedeDependencia)
 

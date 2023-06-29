@@ -5,13 +5,13 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // Put Actualiza información de baja
 func Put(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("Put - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("Put - Unhandled Error!", "500")
 
 	// Actualiza registro en api movimientos_arka_crud
 	bajaR, outputError = movimientosArka.PutMovimiento(baja.Movimiento, bajaId)

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 
 	administrativa_ "github.com/udistrital/administrativa_mid_api/models"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"

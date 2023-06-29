@@ -4,40 +4,42 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
-var basePath = "http://" + beego.AppConfig.String("oikosService")
+var basePath, _ = beego.AppConfig.String("oikosService")
 
 func GetAllAsignacion(payload string) (asignaciones []models.AsignacionEspacioFisicoDependencia, outputError map[string]interface{}) {
 
 	funcion := "GetAllAsignacion - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?" + payload
-	if _, err := request.GetJsonTest(urlcrud, &asignaciones); err != nil {
+	urlcrud := "http://" + basePath + "asignacion_espacio_fisico_dependencia?" + payload
+	_, err := request.GetJsonTest(urlcrud, &asignaciones)
+	if err != nil {
+		logs.Info(urlcrud)
 		eval := "request.GetJsonTest(urlcrud, &asignaciones)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
-	return asignaciones, nil
+	return
 }
 
 func GetAllEspacioFisico(payload string) (espacios []models.EspacioFisico, outputError map[string]interface{}) {
 
 	funcion := "GetAllEspacioFisico - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := basePath + "espacio_fisico?" + payload
+	urlcrud := "http://" + basePath + "espacio_fisico?" + payload
 	err := request.GetJson(urlcrud, &espacios)
 	if err != nil {
 		logs.Error(err)
 		eval := `request.GetJson(urlcrud, &espacios)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -46,14 +48,14 @@ func GetAllEspacioFisico(payload string) (espacios []models.EspacioFisico, outpu
 func GetAllEspacioFisicoCampo(payload string) (espacios []models.EspacioFisicoCampo, outputError map[string]interface{}) {
 
 	funcion := "GetAllEspacioFisicoCampo - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := basePath + "espacio_fisico_campo?" + payload
+	urlcrud := "http://" + basePath + "espacio_fisico_campo?" + payload
 	err := request.GetJson(urlcrud, &espacios)
 	if err != nil {
 		logs.Error(err)
 		eval := `request.GetJson(urlcrud, &espacios)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -62,7 +64,7 @@ func GetAllEspacioFisicoCampo(payload string) (espacios []models.EspacioFisicoCa
 // GetSedeEspacioFisico
 func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.EspacioFisico, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetSedeEspacioFisico - Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction("GetSedeEspacioFisico - Unhandled Error", "500")
 
 	rgxp := regexp.MustCompile(`\d.*`)
 	codigoSede := espacioFisico.CodigoAbreviacion
@@ -85,12 +87,12 @@ func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.Espac
 func GetDependenciaById(id int, dependencia *models.Dependencia) (outputError map[string]interface{}) {
 
 	funcion := "GetDependenciaById - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := basePath + "dependencia/" + strconv.Itoa(id)
+	urlcrud := "http://" + basePath + "dependencia/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &dependencia); err != nil {
 		eval := "request.GetJson(urlcrud, &dependencia)"
-		return errorctrl.Error(funcion+eval, err, "502")
+		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return nil

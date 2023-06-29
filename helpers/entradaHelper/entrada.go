@@ -1,16 +1,16 @@
 package entradaHelper
 
 import (
-	"encoding/json"
 	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
 // GetMovimientosByActa ...
@@ -36,17 +36,18 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 
 	res = make(map[string]interface{})
 
-	urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento/entrada/" + strconv.Itoa(actaRecibidoId)
+	var basePath, _ = beego.AppConfig.String("movimientosArkaService")
+	urlcrud = "http://" + basePath + "movimiento/entrada/" + strconv.Itoa(actaRecibidoId)
 	if err := request.GetJson(urlcrud, &entradas); err == nil { // Se consulta la entrada asociada al acta
 
 		for i, entrada := range entradas {
 			var entradaCompleta []models.Movimiento
 
-			urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=Id:" + strconv.Itoa(entrada.Id)
+			urlcrud = "http://" + basePath + "movimiento?query=Id:" + strconv.Itoa(entrada.Id)
 			if err = request.GetJson(urlcrud, &entradaCompleta); err == nil { // Hace la consulta para obtener el detalle completo de la entrada
 				entradas[i] = entradaCompleta[0]
 
-				urlcrud = "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?query=MovimientoPadreId__Id:" + strconv.Itoa(entrada.Id)
+				urlcrud = "http://" + basePath + "movimiento?query=MovimientoPadreId__Id:" + strconv.Itoa(entrada.Id)
 				if err = request.GetJson(urlcrud, &salidas); err == nil { // Se consultan las salidas asociada al acta
 
 					if salidas[0]["Id"] != nil {
@@ -90,15 +91,14 @@ func GetMovimientosByActa(actaRecibidoId int) (movimientos map[string]interface{
 func GetConsecutivoEntrada(detalle string) (consecutivo string, outputError map[string]interface{}) {
 
 	funcion := "GetConsecutivoEntrada"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 	var (
 		detalle_ map[string]interface{}
 	)
 
-	if err := json.Unmarshal([]byte(detalle), &detalle_); err != nil {
-		logs.Error(err)
-		eval := " - json.Unmarshal([]byte(detalle), &detalle_)"
-		return "", errorctrl.Error(funcion+eval, err, "500")
+	outputError = utilsHelper.Unmarshal(detalle, &detalle_)
+	if outputError != nil {
+		return
 	}
 
 	return detalle_["consecutivo"].(string), nil

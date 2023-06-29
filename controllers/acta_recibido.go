@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -35,7 +35,7 @@ func (c *ActaRecibidoController) URLMapping() {
 // @router / [post]
 func (c *ActaRecibidoController) Post() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
 		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
@@ -63,7 +63,7 @@ func (c *ActaRecibidoController) Post() {
 // @router / [get]
 func (c *ActaRecibidoController) GetParametros() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	if l, err := actaRecibido.GetAllParametrosActa(); err != nil {
 		panic(err)
@@ -86,7 +86,7 @@ func (c *ActaRecibidoController) GetParametros() {
 // @router /elementos/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	idStr := c.Ctx.Input.Param(":id")
 	var id int
@@ -139,7 +139,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	var WSO2user string
 	var limit int64 = 10

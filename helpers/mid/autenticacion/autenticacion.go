@@ -4,23 +4,23 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
-var basePath = "http://" + beego.AppConfig.String("autenticacionService")
+var basePath, _ = beego.AppConfig.String("autenticacionService")
 
 // DataUsuario Consulta datos asociados a un usuario de la MID API de Autenticación
 func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, outputError map[string]interface{}) {
 
 	funcion := "DataUsuario - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	url := basePath + "token/userRol"
+	url := "http://" + basePath + "token/userRol"
 	req := models.UsuarioDataRequest{User: usuarioWSO2}
 	// logs.Debug("url:", url, "- req:", req)
 	if err := request.SendJson(url, "POST", &dataUsuario, &req); err == nil {
@@ -29,7 +29,7 @@ func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, o
 		var empty models.UsuarioAutenticacion
 		logs.Error(err)
 		eval := `request.SendJson(url, "POST", &dataUsuario, &req)`
-		return empty, errorctrl.Error(funcion+eval, err, "500")
+		return empty, errorCtrl.Error(funcion+eval, err, "500")
 	}
 
 }
@@ -38,7 +38,7 @@ func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, o
 func GetInfoUser(usr string, terceroId *int, roles *[]string) (outputError map[string]interface{}) {
 
 	funcion := "GetInfoUser - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	user, err := DataUsuario(usr)
 	if err != nil {
@@ -54,7 +54,7 @@ func GetInfoUser(usr string, terceroId *int, roles *[]string) (outputError map[s
 func GetTerceroUser(user models.UsuarioAutenticacion, terceroId *int) (outputError map[string]interface{}) {
 
 	funcion := "GetTerceroUser - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if user.Documento == "" {
 		return
@@ -82,7 +82,7 @@ func GetTerceroUser(user models.UsuarioAutenticacion, terceroId *int) (outputErr
 
 			err := fmt.Errorf("el Documento '%s' tiene más de un registro activo en Terceros (%d registros).", user.DocumentoCompuesto, len(datosId))
 			logs.Notice(err)
-			outputError = errorctrl.Error(funcion, err, "409")
+			outputError = errorCtrl.Error(funcion, err, "409")
 
 			return outputError
 		}

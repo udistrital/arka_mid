@@ -5,13 +5,13 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // UpdateEntrada Consulta el tipo de movimiento y completa el detalle de una entrada que se quiere actualizar
 func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("UpdateEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("UpdateEntrada - Unhandled Error!", "500")
 
 	mov, outputError := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(movimientoId))
 	if outputError != nil || len(mov) != 1 || mov[0].EstadoMovimientoId.Nombre != "Entrada Rechazada" {

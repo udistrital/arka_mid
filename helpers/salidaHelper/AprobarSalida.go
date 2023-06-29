@@ -9,13 +9,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // AprobarSalida Aprobacion de una salida
 func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarSalida - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarSalida - Unhandled Error!", "500")
 
 	var (
 		salida         models.FormatoSalida

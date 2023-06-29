@@ -8,12 +8,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("Post - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
 	if inmueble.Cuentas.CuentaCreditoId.Id == "" || inmueble.Cuentas.CuentaDebitoId.Id == "" {
 		resultado.Error = "No se indicaron las cuentas para el inmueble."
@@ -122,7 +122,7 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 
 func registrarCuentas(inmueble models.Inmueble) (mensaje string, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("registrarCuentas - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("registrarCuentas - Unhandled Error!", "500")
 
 	mensaje, outputError = registrarCuentas_(inmueble.Elemento.Id, inmueble.Cuentas, "CC_ENT")
 	if mensaje != "" || outputError != nil || inmueble.CuentasMediciones.CuentaCreditoId.Id == "" {
@@ -136,7 +136,7 @@ func registrarCuentas(inmueble models.Inmueble) (mensaje string, outputError map
 
 func registrarCuentas_(elementoId int, cuentas_ models.ParametrizacionContable_, tipoCuentas string) (mensaje string, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("registrarCuentas_ - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("registrarCuentas_ - Unhandled Error!", "500")
 
 	payload := "limit=1&sortby=Id&order=desc&query=Activo:true,CampoId__Sigla:" + tipoCuentas + ",ElementoId__Id:" + strconv.Itoa(elementoId)
 	cuentas, outputError := actaRecibido.GetAllElementoCampo(payload)

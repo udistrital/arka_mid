@@ -8,7 +8,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
@@ -16,7 +16,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 	sedes map[string]models.EspacioFisico,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
 
 	var (
 		query       string
@@ -107,7 +107,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 // GetInfoSalida Retorna el funcionario de una salida a partir del detalle del movimiento
 func GetInfoSalida(detalle string) (funcionarioId int, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
 
 	var detalle_ models.FormatoSalida
 	outputError = utilsHelper.Unmarshal(detalle, &detalle_)

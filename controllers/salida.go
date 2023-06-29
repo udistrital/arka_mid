@@ -5,12 +5,12 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // SalidaController operations for Salida
@@ -38,7 +38,7 @@ func (c *SalidaController) URLMapping() {
 // @router / [post]
 func (c *SalidaController) Post() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
 
 	var (
 		salidaId int
@@ -111,7 +111,7 @@ func (c *SalidaController) Post() {
 // @router /:id [get]
 func (c *SalidaController) GetSalida() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
 
 	idStr := c.Ctx.Input.Param(":id")
 	id, err := strconv.Atoi(idStr)
@@ -144,7 +144,7 @@ func (c *SalidaController) GetSalida() {
 // @router /elementos [get]
 func (c *SalidaController) GetElementos() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
 
 	var (
 		salidaId  int
@@ -153,7 +153,7 @@ func (c *SalidaController) GetElementos() {
 
 	if v, err := c.GetInt("salida_id"); err != nil {
 		logs.Error(err)
-		panic(errorctrl.Error(`GetElementos - c.GetInt("salida_id")`, err, "400"))
+		panic(errorCtrl.Error(`GetElementos - c.GetInt("salida_id")`, err, "400"))
 	} else {
 		salidaId = v
 	}
@@ -161,7 +161,7 @@ func (c *SalidaController) GetElementos() {
 	if salidaId == 0 {
 		if v, err := c.GetInt("entrada_id"); err != nil {
 			logs.Error(err)
-			panic(errorctrl.Error(`GetElementos - c.GetInt("entrada_id")`, err, "400"))
+			panic(errorCtrl.Error(`GetElementos - c.GetInt("entrada_id")`, err, "400"))
 		} else {
 			entradaId = v
 		}
@@ -169,7 +169,7 @@ func (c *SalidaController) GetElementos() {
 
 	if entradaId == 0 && salidaId == 0 {
 		err := errors.New("se debe especificar una salida o entrada para consultar los elementos válida")
-		panic(errorctrl.Error(`GetElementos - entradaId == 0 && salidaId == 0`, err, "400"))
+		panic(errorCtrl.Error(`GetElementos - entradaId == 0 && salidaId == 0`, err, "400"))
 	}
 
 	if elementos, err := salidaHelper.GetElementosByTipoBien(entradaId, salidaId); err != nil {
@@ -190,7 +190,7 @@ func (c *SalidaController) GetElementos() {
 // @router / [get]
 func (c *SalidaController) GetSalidas() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
 
 	var tramiteOnly bool
 
@@ -221,7 +221,7 @@ func (c *SalidaController) GetSalidas() {
 // @router /:id [put]
 func (c *SalidaController) Put() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
 
 	var (
 		id       int
@@ -233,14 +233,14 @@ func (c *SalidaController) Put() {
 			err = errors.New("se debe especificar una salida válida")
 		}
 		logs.Error(err)
-		panic(errorctrl.Error(`Put - c.GetInt(":id")`, err, "400"))
+		panic(errorCtrl.Error(`Put - c.GetInt(":id")`, err, "400"))
 	} else {
 		id = v
 	}
 
 	if v, err := c.GetBool("rechazar", false); err != nil {
 		logs.Error(err)
-		panic(errorctrl.Error(`Put - c.GetBool("rechazar", false)`, err, "400"))
+		panic(errorCtrl.Error(`Put - c.GetBool("rechazar", false)`, err, "400"))
 	} else {
 		rechazar = v
 	}

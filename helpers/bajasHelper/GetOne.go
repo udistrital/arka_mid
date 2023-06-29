@@ -13,13 +13,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetOne Consulta el detalle de la baja: elementos, revisor, solicitante, soporte, tipo
 func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	var (
 		movimiento  *models.Movimiento
@@ -99,7 +99,7 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 // getDetalleElementos consulta el historial de una serie de elementos dados los ids en el api movimientos_arka_crud
 func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("getDetalleElementos - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("getDetalleElementos - Unhandled Error!", "500")
 
 	var (
 		elementosActa       []*models.DetalleElemento

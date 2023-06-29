@@ -3,27 +3,27 @@ package actaRecibido
 import (
 	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
-var path = "http://" + beego.AppConfig.String("actaRecibidoService")
+var path, _ = beego.AppConfig.String("actaRecibidoService")
 
 // GetElementoById consulta controlador elemento/{id} del api acta_recibido_crud
 func GetElementoById(id int, elemento *models.Elemento) (outputError map[string]interface{}) {
 
 	funcion := "GetElementoById - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "elemento/" + strconv.Itoa(id)
+	urlcrud := "http://" + path + "elemento/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &elemento); err != nil {
 		logs.Error(urlcrud+", ", err)
 		eval := "request.GetJson(urlcrud, &elemento)"
-		return errorctrl.Error(funcion+eval, err, "502")
+		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -33,13 +33,13 @@ func GetElementoById(id int, elemento *models.Elemento) (outputError map[string]
 func GetAllElemento(query string, fields string, sortby string, order string, offset string, limit string) (elementos []*models.Elemento, outputError map[string]interface{}) {
 
 	funcion := "GetAllElemento - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "elemento?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
+	urlcrud := "http://" + path + "elemento?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		logs.Error(urlcrud+", ", err)
 		eval := "request.GetJson(urlcrud, &elementos)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return elementos, nil
@@ -49,13 +49,13 @@ func GetAllElemento(query string, fields string, sortby string, order string, of
 func GetAllHistoricoActa(query string, fields string, sortby string, order string, offset string, limit string) (historicos []models.HistoricoActa, outputError map[string]interface{}) {
 
 	funcion := "GetAllHistoricoActa - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "historico_acta?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
+	urlcrud := "http://" + path + "historico_acta?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
 	if err := request.GetJson(urlcrud, &historicos); err != nil {
 		logs.Error(urlcrud+", ", err)
 		eval := "request.GetJson(urlcrud, &historicos)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return historicos, nil
@@ -65,14 +65,14 @@ func GetAllHistoricoActa(query string, fields string, sortby string, order strin
 func GetAllHistoricoActas(query string, fields string, sortby string, order string, offset string, limit string) (historicos []*models.HistoricoActa, count string, outputError map[string]interface{}) {
 
 	funcion := "GetAllHistoricoActas - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "historico_acta?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
+	urlcrud := "http://" + path + "historico_acta?" + utilsHelper.EncodeUrl(query, fields, sortby, order, offset, limit)
 	response, err := request.GetJsonTest(urlcrud, &historicos)
 	if err != nil {
 		logs.Error(urlcrud+", ", err)
 		eval := "request.GetJsonTest(urlcrud, &historicos)"
-		return nil, "", errorctrl.Error(funcion+eval, err, "502")
+		return nil, "", errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	count = response.Header.Get("total-count")
@@ -83,14 +83,14 @@ func GetAllHistoricoActas(query string, fields string, sortby string, order stri
 func GetAllActaRecibido(payload string) (actas []models.ActaRecibido, outputError map[string]interface{}) {
 
 	funcion := "GetAllActaRecibido - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "acta_recibido?" + payload
+	urlcrud := "http://" + path + "acta_recibido?" + payload
 	err := request.GetJson(urlcrud, &actas)
 	if err != nil {
 		logs.Error(urlcrud, err)
 		eval := "request.GetJson(urlcrud, &actas)"
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -100,14 +100,14 @@ func GetAllActaRecibido(payload string) (actas []models.ActaRecibido, outputErro
 func GetAllCampo(payload string) (campos []models.Campo, outputError map[string]interface{}) {
 
 	funcion := "GetAllCampo - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "campo?" + payload
+	urlcrud := "http://" + path + "campo?" + payload
 	err := request.GetJson(urlcrud, &campos)
 	if err != nil {
 		logs.Error(urlcrud, err)
 		eval := "request.GetJson(urlcrud, &campos)"
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -117,14 +117,14 @@ func GetAllCampo(payload string) (campos []models.Campo, outputError map[string]
 func PutElemento(elemento *models.Elemento, elementoId int) (outputError map[string]interface{}) {
 
 	funcion := "PutElemento - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "elemento/" + strconv.Itoa(elementoId)
+	urlcrud := "http://" + path + "elemento/" + strconv.Itoa(elementoId)
 	err := request.SendJson(urlcrud, "PUT", &elemento, &elemento)
 	if err != nil {
 		logs.Error(urlcrud, err)
 		eval := `request.SendJson(urlcrud, "PUT", &elemento, &elemento)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -135,14 +135,14 @@ func PutElemento(elemento *models.Elemento, elementoId int) (outputError map[str
 func PutElementoCampo(elemento *models.ElementoCampo, elementoId int) (outputError map[string]interface{}) {
 
 	funcion := "PutElementoCampo - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "elemento_campo/" + strconv.Itoa(elementoId)
+	urlcrud := "http://" + path + "elemento_campo/" + strconv.Itoa(elementoId)
 	err := request.SendJson(urlcrud, "PUT", &elemento, &elemento)
 	if err != nil {
 		logs.Error(urlcrud, err)
 		eval := `request.SendJson(urlcrud, "PUT", &elemento, &elemento)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -152,13 +152,13 @@ func PutElementoCampo(elemento *models.ElementoCampo, elementoId int) (outputErr
 func GetSoporteById(id int, soporte *models.SoporteActa) (outputError map[string]interface{}) {
 
 	funcion := "GetSoporteById"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := path + "soporte_acta/" + strconv.Itoa(id)
+	urlcrud := "http://" + path + "soporte_acta/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &soporte); err != nil {
 		logs.Error(urlcrud+", ", err)
 		eval := " - request.GetJson(urlcrud, &soporte)"
-		return errorctrl.Error(funcion+eval, err, "502")
+		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -168,13 +168,13 @@ func GetSoporteById(id int, soporte *models.SoporteActa) (outputError map[string
 func GetTransaccionActaRecibidoById(id int, elementos bool, transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
 
 	funcion := "GetTransaccionActaRecibidoById - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "transaccion_acta_recibido/" + strconv.Itoa(id) + "?elementos=" + strconv.FormatBool(elementos)
+	urlcrud := "http://" + path + "transaccion_acta_recibido/" + strconv.Itoa(id) + "?elementos=" + strconv.FormatBool(elementos)
 	if err := request.GetJson(urlcrud, &transaccion); err != nil {
 		logs.Error(err)
 		eval := `request.GetJson(urlcrud, &transaccion)`
-		return errorctrl.Error(funcion+eval, err, "502")
+		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -184,13 +184,13 @@ func GetTransaccionActaRecibidoById(id int, elementos bool, transaccion *models.
 func PutTransaccionActaRecibido(id int, transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
 
 	funcion := "PutTransaccionActaRecibido - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "transaccion_acta_recibido/" + strconv.Itoa(id)
+	urlcrud := "http://" + path + "transaccion_acta_recibido/" + strconv.Itoa(id)
 	if err := request.SendJson(urlcrud, "PUT", &transaccion, &transaccion); err != nil {
 		logs.Error(err)
 		eval := `request.SendJson(urlcrud, "PUT", &transaccion, &transaccion)`
-		return errorctrl.Error(funcion+eval, err, "502")
+		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -200,13 +200,13 @@ func PutTransaccionActaRecibido(id int, transaccion *models.TransaccionActaRecib
 func GetAllElementoCampo(payload string) (elementosCampo []models.ElementoCampo, outputError map[string]interface{}) {
 
 	funcion := "GetAllElementoCampo - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := path + "elemento_campo?" + payload
+	urlcrud := "http://" + path + "elemento_campo?" + payload
 	if err := request.GetJson(urlcrud, &elementosCampo); err != nil {
 		logs.Error(err)
 		eval := `request.GetJson(urlcrud, &elementosCampo)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -216,14 +216,14 @@ func GetAllElementoCampo(payload string) (elementosCampo []models.ElementoCampo,
 func PostActaRecibido(acta *models.ActaRecibido) (outputError map[string]interface{}) {
 
 	funcion := "PostActaRecibido - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := path + "acta_recibido/"
+	urlcrud := "http://" + path + "acta_recibido/"
 	err := request.SendJson(urlcrud, "POST", &acta, &acta)
 	if err != nil {
 		logs.Error(err, urlcrud)
 		eval := `request.SendJson(urlcrud, "POST", &acta, &acta)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -233,14 +233,14 @@ func PostActaRecibido(acta *models.ActaRecibido) (outputError map[string]interfa
 func PostElemento(elemento *models.Elemento) (outputError map[string]interface{}) {
 
 	funcion := "PostElemento - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := path + "elemento/"
+	urlcrud := "http://" + path + "elemento/"
 	err := request.SendJson(urlcrud, "POST", &elemento, &elemento)
 	if err != nil {
 		logs.Error(err, urlcrud)
 		eval := `request.SendJson(urlcrud, "POST", &elemento, &elemento)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
@@ -250,14 +250,14 @@ func PostElemento(elemento *models.Elemento) (outputError map[string]interface{}
 func PostElementoCampo(elemento *models.ElementoCampo) (outputError map[string]interface{}) {
 
 	funcion := "PostElementoCampo - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := path + "elemento_campo/"
+	urlcrud := "http://" + path + "elemento_campo/"
 	err := request.SendJson(urlcrud, "POST", &elemento, &elemento)
 	if err != nil {
 		logs.Error(err, urlcrud)
 		eval := `request.SendJson(urlcrud, "POST", &elemento, &elemento)`
-		outputError = errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
