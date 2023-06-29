@@ -38,19 +38,7 @@ func (c *SalidaController) URLMapping() {
 // @router / [post]
 func (c *SalidaController) Post() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
 
 	var (
 		salidaId int
@@ -123,19 +111,7 @@ func (c *SalidaController) Post() {
 // @router /:id [get]
 func (c *SalidaController) GetSalida() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
 
 	idStr := c.Ctx.Input.Param(":id")
 	id, err := strconv.Atoi(idStr)
@@ -168,7 +144,7 @@ func (c *SalidaController) GetSalida() {
 // @router /elementos [get]
 func (c *SalidaController) GetElementos() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
+	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
 
 	var (
 		salidaId  int
@@ -214,19 +190,8 @@ func (c *SalidaController) GetElementos() {
 // @router / [get]
 func (c *SalidaController) GetSalidas() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
+
 	var tramiteOnly bool
 
 	if v, err := c.GetBool("tramite_only"); err == nil {
@@ -256,19 +221,7 @@ func (c *SalidaController) GetSalidas() {
 // @router /:id [put]
 func (c *SalidaController) Put() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SalidaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "SalidaController")
 
 	var (
 		id       int

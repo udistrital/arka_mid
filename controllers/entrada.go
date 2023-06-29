@@ -151,19 +151,8 @@ func (c *EntradaController) GetOne() {
 // @Failure 404 not found resource
 // @router /movimientos/:acta_recibido_id [get]
 func (c *EntradaController) GetMovimientos() {
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EntradaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+
+	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
 
 	idStr := c.Ctx.Input.Param(":acta_recibido_id")
 	actaId, _ := strconv.Atoi(idStr)

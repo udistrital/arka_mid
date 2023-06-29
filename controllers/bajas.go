@@ -199,19 +199,7 @@ func (c *BajaController) GetAll() {
 // @router /elemento/:id [get]
 func (c *BajaController) GetDetalleElemento() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
