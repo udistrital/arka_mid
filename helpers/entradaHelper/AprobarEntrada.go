@@ -14,6 +14,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const errNoElementos = "No se encontraron elementos para asociar a la entrada."
@@ -218,7 +220,8 @@ func descripcionMovimientoContable(detalle string) (detalle_ string, outputError
 		} else if k != "consecutivo" && k != "ConsecutivoId" && k != "elementos" {
 			k = strings.TrimSuffix(k, "_id")
 			k = strings.ReplaceAll(k, "_", " ")
-			k = strings.Title(k)
+			caser := cases.Title(language.Spanish)
+			k = caser.String(k)
 			detalle_ += k + ": " + fmt.Sprintf("%v", v) + ", "
 		}
 	}

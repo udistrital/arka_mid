@@ -2,8 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -22,7 +20,6 @@ type EntradaController struct {
 func (c *EntradaController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetMovimientos", c.GetMovimientos)
 }
 
 // Post ...
@@ -40,23 +37,11 @@ func (c *EntradaController) Post() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
 
-	var (
-		entradaId int
-		etl       bool
-		aprobar   bool
-	)
+	entradaId, _ := c.GetInt("entradaId", 0)
 
-	if v, err := c.GetInt("entradaId", 0); err == nil {
-		entradaId = v
-	}
+	etl, _ := c.GetBool("etl", false)
 
-	if v, err := c.GetBool("etl", false); err == nil {
-		etl = v
-	}
-
-	if v, err := c.GetBool("aprobar", false); err == nil {
-		aprobar = v
-	}
+	aprobar, _ := c.GetBool("aprobar", false)
 
 	if aprobar && entradaId > 0 {
 
@@ -140,42 +125,5 @@ func (c *EntradaController) GetOne() {
 		})
 	}
 
-	c.ServeJSON()
-}
-
-// GetMovimientos ...
-// @Title Get User
-// @Description return movimientos asociados a un acta
-// @Param	acta_recibido_id		path 	string	true		"The key for staticblock"
-// @Success 200 {object]
-// @Failure 404 not found resource
-// @router /movimientos/:acta_recibido_id [get]
-func (c *EntradaController) GetMovimientos() {
-
-	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
-
-	idStr := c.Ctx.Input.Param(":acta_recibido_id")
-	actaId, _ := strconv.Atoi(idStr)
-	if actaId > 0 {
-		if v, err := entradaHelper.GetMovimientosByActa(actaId); err == nil {
-			c.Data["json"] = v
-			c.Ctx.Output.SetStatus(200)
-		} else {
-			logs.Error(err)
-			panic(map[string]interface{}{
-				"funcion": "GetMovimientosByActa",
-				"err":     err,
-				"status":  err["status"],
-			})
-		}
-	} else {
-		err := fmt.Errorf("{acta} no debe ser vacia")
-		logs.Error(err)
-		panic(map[string]interface{}{
-			"funcion": "GetMovimientosByActa",
-			"err":     err,
-			"status":  "404",
-		})
-	}
 	c.ServeJSON()
 }

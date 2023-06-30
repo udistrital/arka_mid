@@ -7,7 +7,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -79,11 +78,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 			proveedorId = ha[0].ProveedorId
 		}
 
-		if cs, err := entradaHelper.GetConsecutivoEntrada(entrada.Detalle); err != nil {
-			return nil, err
-		} else {
-			consecutivo = cs
-		}
+		consecutivo = *entrada.Consecutivo
 
 		if movsEntrada, err := calcularAjusteMovimiento(orgiginalesActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, proveedorId, consecutivo, "Entrada"); err != nil {
 			return nil, err

@@ -179,3 +179,7 @@ func getConsecutivoEntrada(entrada *models.Movimiento, etl bool) (outputError ma
 
 	return
 }
+
+func getTipoComprobanteEntradas() string {
+	return "P8"
+}

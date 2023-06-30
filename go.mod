@@ -8,6 +8,7 @@ require (
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/tealeg/xlsx v1.0.5
 	github.com/udistrital/administrativa_mid_api v0.0.0-20230119030216-84378fd148ca
+	golang.org/x/text v0.7.0
 )
 
 require (
@@ -29,7 +30,6 @@ require (
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
