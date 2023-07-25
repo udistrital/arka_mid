@@ -7,6 +7,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	polizasHelper "github.com/udistrital/arka_mid/helpers/polizasHelper"
+	"github.com/udistrital/utils_oas/errorctrl"
 )
 
 // PolizasController operations for Polizas
@@ -33,19 +34,7 @@ func (c *PolizasController) URLMapping() {
 // @router /AllElementosPoliza [get]
 func (c *PolizasController) GetAllElementosPoliza() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "PolizasController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "PolizasController")
 
 	var fields []string                 //filtra un valor en concreto
 	var sortby []string                 //

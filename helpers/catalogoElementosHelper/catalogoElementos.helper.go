@@ -138,12 +138,14 @@ func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas ma
 		return
 	}
 
-	if cta, err := cuentasContables.GetCuentaContable(cuentaId); err != nil {
-		return err
+	cta, outputError := cuentasContables.GetCuentaContable(cuentaId)
+	if outputError != nil {
+		return
 	} else if cta != nil {
 		var dcta models.DetalleCuenta
-		if err := utilsHelper.FillStruct(cta, &dcta); err != nil {
-			return err
+		outputError = utilsHelper.FillStruct(cta, &dcta)
+		if outputError != nil {
+			return
 		}
 
 		*ctaSg = dcta

@@ -148,7 +148,7 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 				}
 
 				var elementoActa models.Elemento
-				outputError = actaRecibido.GetElementoById(elementoMovimiento.ElementoActaId, &elementoActa)
+				outputError = actaRecibido.GetElementoById(*elementoMovimiento.ElementoActaId, &elementoActa)
 				if outputError != nil {
 					return
 				}

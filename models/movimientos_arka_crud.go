@@ -21,7 +21,7 @@ type Movimiento struct {
 
 type ElementosMovimiento struct {
 	Id                 int
-	ElementoActaId     int
+	ElementoActaId     *int
 	ElementoCatalogoId int
 	Unidad             float64
 	ValorUnitario      float64

@@ -64,7 +64,7 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		}
 
 		var elementoActa models.Elemento
-		outputError = actaRecibido.GetElementoById(historial.Elemento.ElementoActaId, &elementoActa)
+		outputError = actaRecibido.GetElementoById(*historial.Elemento.ElementoActaId, &elementoActa)
 		if outputError != nil {
 			return
 		}

@@ -65,14 +65,14 @@ func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[s
 
 	defer errorctrl.ErrorControlFunction("traerElementoSolicitud - Unhandled Error", "500")
 
-	ubicacionInfo, err := oikos.GetSedeDependenciaUbicacion(Elemento.Ubicacion)
-	if err != nil {
-		return nil, err
+	ubicacionInfo, outputError := oikos.GetSedeDependenciaUbicacion(Elemento.Ubicacion)
+	if outputError != nil {
+		return
 	}
 
-	ultimo, err := ultimoMovimientoKardex(Elemento.ElementoCatalogoId)
-	if err != nil {
-		return nil, err
+	ultimo, outputError := ultimoMovimientoKardex(Elemento.ElementoCatalogoId)
+	if outputError != nil {
+		return
 	}
 
 	outputError = utilsHelper.FillStruct(ultimo, &Elemento_)
@@ -80,12 +80,17 @@ func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[s
 		return
 	}
 
-	catalogo, err := detalleElementoCatalogo(Elemento.ElementoCatalogoId)
-	if err != nil {
-		return nil, err
+	catalogo, outputError := detalleElementoCatalogo(Elemento.ElementoCatalogoId)
+	if outputError != nil {
+		return
 	}
 
 	Elemento_["ElementoCatalogoId"] = catalogo
+
+	if ubicacionInfo == nil || ubicacionInfo.Ubicacion == nil {
+		return
+	}
+
 	Elemento_["Sede"] = ubicacionInfo.Sede
 	Elemento_["Dependencia"] = ubicacionInfo.Dependencia
 	Elemento_["Ubicacion"] = ubicacionInfo.Ubicacion.EspacioFisicoId

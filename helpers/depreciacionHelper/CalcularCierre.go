@@ -56,7 +56,7 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 			return err
 		} else if len(elemento) == 1 {
 
-			payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
+			payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 			if _, ok := subgrupos[elemento[0].SubgrupoCatalogoId]; !ok {
 				if sg, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(elemento[0].SubgrupoCatalogoId)); err != nil {
 					return err

@@ -8,22 +8,16 @@ import (
 	"github.com/udistrital/utils_oas/errorctrl"
 )
 
-func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.DetalleSedeDependencia, outputError map[string]interface{}) {
+func GetSedeDependenciaUbicacion(ubicacionId int) (resultado *models.DetalleSedeDependencia, outputError map[string]interface{}) {
 
 	defer errorctrl.ErrorControlFunction("GetSedeDependenciaUbicacion - Unhandled Error!", "500")
 
-	var (
-		payload   string
-		ubicacion []models.AsignacionEspacioFisicoDependencia
-	)
+	resultado = new(models.DetalleSedeDependencia)
 
-	resultado := new(models.DetalleSedeDependencia)
-
-	payload = "query=Id:" + strconv.Itoa(ubicacionId)
-	if ubicacion_, err := GetAllAsignacion(payload); err != nil {
-		return nil, err
-	} else {
-		ubicacion = ubicacion_
+	payload := "query=Id:" + strconv.Itoa(ubicacionId)
+	ubicacion, outputError := GetAllAsignacion(payload)
+	if outputError != nil || len(ubicacion) == 0 {
+		return
 	}
 
 	resultado.Dependencia = ubicacion[0].DependenciaId
@@ -34,11 +28,12 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.Deta
 	strSede = strSede[0:2] + rgxp.ReplaceAllString(strSede[2:], "")
 
 	payload = "?query=CodigoAbreviacion:" + strSede
-	if sede_, err := GetAllEspacioFisico(payload); err != nil {
-		return nil, err
-	} else {
-		resultado.Sede = sede_[0]
+	sede_, outputError := GetAllEspacioFisico(payload)
+	if outputError != nil || len(sede_) == 0 {
+		return
 	}
 
-	return resultado, nil
+	resultado.Sede = &sede_[0]
+	return
+
 }

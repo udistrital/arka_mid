@@ -61,7 +61,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 			if sede_, err := oikos.GetAllEspacioFisico(query); err != nil {
 				return nil, err
 			} else if len(sede_) > 0 {
-				sede = *sede_[0]
+				sede = sede_[0]
 				sedes[str] = sede
 			}
 		} else {

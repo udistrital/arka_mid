@@ -46,7 +46,7 @@ type Campo struct {
 	FechaModificacion time.Time
 }
 
-type Elemento_campo struct {
+type ElementoCampo struct {
 	Id                int
 	ElementoId        *Elemento
 	CampoId           *Campo
@@ -131,6 +131,12 @@ type Elemento struct {
 	ActaRecibidoId     *ActaRecibido
 	Placa              string
 	Activo             bool
+	EspacioFisicoId    int
 	FechaCreacion      time.Time
 	FechaModificacion  time.Time
+}
+
+type CuentasElemento struct {
+	CuentaDebitoId  string
+	CuentaCreditoId string
 }

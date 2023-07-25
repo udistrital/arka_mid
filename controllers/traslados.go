@@ -33,19 +33,7 @@ func (c *TrasladosController) URLMapping() {
 // @router / [post]
 func (c *TrasladosController) Post() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TrasladosController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
@@ -77,19 +65,7 @@ func (c *TrasladosController) Post() {
 // @router /:id [get]
 func (c *TrasladosController) GetTraslado() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "TrasladosController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
@@ -133,7 +109,7 @@ func (c *TrasladosController) GetTraslado() {
 // @router /funcionario/:tercero_id [get]
 func (c *TrasladosController) GetElementosFuncionario() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController - Unhandled Error!")
+	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var (
 		id         int

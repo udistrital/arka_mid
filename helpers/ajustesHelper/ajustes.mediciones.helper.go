@@ -55,18 +55,18 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 
 		var nuevo *models.DetalleElemento_
 		var sgOrg int
-		if idx := findElementoInArrayD(sg, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+		if idx := findElementoInArrayD(sg, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 			nuevo = sg[idx]
-			if idx := findElementoInArrayE(org, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayE(org, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 				sgOrg = org[idx].SubgrupoCatalogoId
 			}
 		}
 
-		if idx := findElementoInArrayD(vls, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+		if idx := findElementoInArrayD(vls, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 			nuevo = vls[idx]
 		}
 
-		if idx := findElementoInArrayD(mp, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+		if idx := findElementoInArrayD(mp, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 			nuevo = mp[idx]
 		}
 
@@ -156,18 +156,18 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 	for _, nv := range novedades {
 		var ids []int
 		if len(sg) > 0 {
-			if idx := findElementoInArrayD(sg, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayD(sg, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 				ids = append(ids, sg[idx].SubgrupoCatalogoId)
-				if idx := findElementoInArrayE(org, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+				if idx := findElementoInArrayE(org, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 					ids = append(ids, org[idx].SubgrupoCatalogoId)
 				}
 			}
 		} else if len(vls) > 0 {
-			if idx := findElementoInArrayD(vls, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayD(vls, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 				ids = append(ids, vls[idx].SubgrupoCatalogoId)
 			}
 		} else if len(mp) > 0 {
-			if idx := findElementoInArrayD(mp, nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayD(mp, *nv[0].ElementoMovimientoId.ElementoActaId); idx > -1 {
 				ids = append(ids, mp[idx].SubgrupoCatalogoId)
 			}
 		}

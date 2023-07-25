@@ -97,19 +97,19 @@ func GetTipoBienById(id int, tipoBien *models.TipoBien) (outputError map[string]
 }
 
 // GetSubgrupoById Consulta controlador subgrupo/{id} del api catalogo_elementos_crud
-func GetSubgrupoById(id int) (subgrupo *models.Subgrupo, outputError map[string]interface{}) {
+func GetSubgrupoById(id int) (subgrupo models.Subgrupo, outputError map[string]interface{}) {
 
-	funcion := "GetSubgrupoById"
+	funcion := "GetSubgrupoById - "
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("catalogoElementosService") + "subgrupo/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &subgrupo); err != nil {
 		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &subgrupo)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+		eval := "request.GetJson(urlcrud, &subgrupo)"
+		outputError = errorctrl.Error(funcion+eval, err, "500")
 	}
 
-	return subgrupo, nil
+	return
 }
 
 // GetAllElemento Consulta controlador elemento del api catalogo_elementos_crud

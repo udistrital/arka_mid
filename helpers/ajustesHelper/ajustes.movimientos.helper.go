@@ -169,7 +169,7 @@ func submitUpdates(elementosActa []*models.Elemento,
 	novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
 
 	for _, el := range elementosActa {
-		if _, err := crudActas.PutElemento(el, el.Id); err != nil {
+		if err := crudActas.PutElemento(el, el.Id); err != nil {
 			return err
 		}
 	}
@@ -208,7 +208,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 	for _, el := range elementos {
 
 		if len(updateMp) > 0 {
-			if idx := findElementoInArrayD(updateMp, el.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayD(updateMp, *el.ElementoActaId); idx > -1 {
 				if updateMp[idx].ValorResidual == el.ValorResidual && updateMp[idx].VidaUtil == el.VidaUtil {
 					updateMp = append(updateMp[:idx], updateMp[idx+1:]...)
 				} else {
@@ -222,7 +222,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 		}
 
 		if len(updateSg) > 0 {
-			if idx := findElementoInArrayD(updateSg, el.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayD(updateSg, *el.ElementoActaId); idx > -1 {
 				if elementosSalidas[el.MovimientoId.Id] == nil {
 					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
 					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId
@@ -233,7 +233,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 				elementosSalidas[el.MovimientoId.Id].UpdateSg = append(elementosSalidas[el.MovimientoId.Id].UpdateSg, updateSg[idx])
 			}
 		} else if len(updateVls) > 0 {
-			if idx := findElementoInArrayD(updateVls, el.ElementoActaId); idx > -1 {
+			if idx := findElementoInArrayD(updateVls, *el.ElementoActaId); idx > -1 {
 				if elementosSalidas[el.MovimientoId.Id] == nil {
 					elementosSalidas[el.MovimientoId.Id] = new(models.ElementosPorActualizarSalida)
 					elementosSalidas[el.MovimientoId.Id].Salida = el.MovimientoId

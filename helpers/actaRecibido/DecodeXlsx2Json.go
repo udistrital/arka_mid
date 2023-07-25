@@ -1,7 +1,7 @@
 package actaRecibido
 
 import (
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 
 	"github.com/astaxie/beego/logs"
@@ -29,10 +29,10 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 		return nil, err_
 	}
 
-	file, err := ioutil.ReadAll(c)
+	file, err := io.ReadAll(c)
 	if err != nil {
 		logs.Error(err)
-		eval := "ioutil.ReadAll(c)"
+		eval := "io.ReadAll(c)"
 		return nil, errorctrl.Error(funcion+eval, err, "400")
 	}
 

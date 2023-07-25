@@ -35,19 +35,7 @@ func (c *ActaRecibidoController) URLMapping() {
 // @router / [post]
 func (c *ActaRecibidoController) Post() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
 		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
@@ -75,19 +63,7 @@ func (c *ActaRecibidoController) Post() {
 // @router / [get]
 func (c *ActaRecibidoController) GetParametros() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	if l, err := actaRecibido.GetAllParametrosActa(); err != nil {
 		panic(err)
@@ -110,19 +86,7 @@ func (c *ActaRecibidoController) GetParametros() {
 // @router /elementos/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	idStr := c.Ctx.Input.Param(":id")
 	var id int
