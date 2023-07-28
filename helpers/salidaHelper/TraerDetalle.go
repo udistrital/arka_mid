@@ -57,7 +57,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		str = str[0:2] + rgxp.ReplaceAllString(str[2:], "")
 
 		if val, ok := sedes[str]; !ok {
-			query = "?query=CodigoAbreviacion:" + str
+			query = "query=CodigoAbreviacion:" + str
 			if sede_, err := oikos.GetAllEspacioFisico(query); err != nil {
 				return nil, err
 			} else if len(sede_) > 0 {
