@@ -27,7 +27,7 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (resultado *models.DetalleSede
 	strSede := ubicacion[0].EspacioFisicoId.CodigoAbreviacion
 	strSede = strSede[0:2] + rgxp.ReplaceAllString(strSede[2:], "")
 
-	payload = "?query=CodigoAbreviacion:" + strSede
+	payload = "query=CodigoAbreviacion:" + strSede
 	sede_, outputError := GetAllEspacioFisico(payload)
 	if outputError != nil || len(sede_) == 0 {
 		return
