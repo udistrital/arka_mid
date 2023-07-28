@@ -3,10 +3,13 @@ package terceros
 import (
 	"strconv"
 
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/utils_oas/errorctrl"
 	"github.com/udistrital/utils_oas/request"
 )
+
+var tercerosMID = beego.AppConfig.String("tercerosMidService")
 
 func GetTercerosByTipo(tipo string, id int, terceros interface{}) (outputError map[string]interface{}) {
 
