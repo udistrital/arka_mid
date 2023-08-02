@@ -8,7 +8,7 @@ import (
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 
-	administrativa "github.com/udistrital/administrativa_mid_api/models"
+	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 	"github.com/udistrital/arka_mid/utils_oas/request"
 )
@@ -16,7 +16,7 @@ import (
 var basePath, _ = beego.AppConfig.String("administrativaJbpmService")
 
 // GetContrato ...
-func GetContrato(contratoId int, vigencia string, contrato *administrativa.InformacionContrato) (outputError map[string]interface{}) {
+func GetContrato(contratoId int, vigencia string, contrato *models.InformacionContrato) (outputError map[string]interface{}) {
 
 	const funcion = "GetContrato - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))

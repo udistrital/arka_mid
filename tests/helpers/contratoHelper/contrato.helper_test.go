@@ -7,8 +7,8 @@ import (
 
 	beego "github.com/beego/beego/v2/server/web"
 
-	administrativa_ "github.com/udistrital/administrativa_mid_api/models"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
+	"github.com/udistrital/arka_mid/models"
 )
 
 var parameters struct {
@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 
 // GetCatalogoById ...
 func TestGetContrato(t *testing.T) {
-	var contrato administrativa_.InformacionContrato
+	var contrato models.InformacionContrato
 	err := administrativa.GetContrato(15, "2020", &contrato)
 	if err != nil {
 		if err != nil {

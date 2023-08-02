@@ -15,7 +15,7 @@ var administrativa_amazon, _ = beego.AppConfig.String("administrativaService")
 func GetOrdenadores(id int, ordenadores interface{}) (outputError map[string]interface{}) {
 
 	funcion := "GetOrdenadores - "
-	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := "http://" + administrativa_amazon + "ordenadores"
 	if id > 0 {
