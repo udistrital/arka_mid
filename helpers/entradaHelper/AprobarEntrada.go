@@ -5,7 +5,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -16,6 +15,9 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/utils_oas/time_bogota"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const errNoElementos = "No se encontraron elementos para asociar a la entrada."
@@ -52,7 +54,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 		}
 	}
 
-	resultado_.Movimiento.FechaCorte = utilsHelper.Time(time.Now().UTC())
+	resultado_.Movimiento.FechaCorte = utilsHelper.Time(time_bogota.Tiempo_bogota())
 	_, outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
 	return
 }
@@ -226,8 +228,8 @@ func descripcionMovimientoContable(detalle string) (detalle_ string, outputError
 			detalle_ += "Factura: " + sop.Consecutivo + ", "
 		} else if k != "consecutivo" && k != "ConsecutivoId" && k != "elementos" {
 			k = strings.TrimSuffix(k, "_id")
-			k = strings.ReplaceAll(k, "_", " ")
-			k = strings.Title(k)
+			caser := cases.Title(language.Spanish)
+			k = caser.String(k)
 			detalle_ += k + ": " + fmt.Sprintf("%v", v) + ", "
 		}
 	}

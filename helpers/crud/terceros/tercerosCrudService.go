@@ -11,6 +11,8 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+var basePath = beego.AppConfig.String("tercerosService")
+
 // GetCorreo Consulta el correo de un tercero
 func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, outputError map[string]interface{}) {
 
@@ -23,7 +25,7 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 	)
 
 	// Consulta correo
-	urlcrud = "http://" + beego.AppConfig.String("tercerosService") + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
+	urlcrud = "http://" + basePath + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
 	urlcrud += "&query=Activo%3Atrue,InfoComplementariaId__Nombre__icontains%3Acorreo,TerceroId__Id%3A" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &correo); err != nil {
 		logs.Error(err)
@@ -41,7 +43,7 @@ func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificaci
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	// Consulta correo
-	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion?" + query
+	urlcrud := "http://" + basePath + "datos_identificacion?" + query
 	if err := request.GetJson(urlcrud, &datosId); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -96,7 +98,7 @@ func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]int
 	funcion := "GetTerceroById"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/" + strconv.Itoa(id)
+	urlcrud := "http://" + basePath + "tercero/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &tercero); err != nil {
 		eval := " - request.GetJson(urlcrud, &tercero)"
 		return nil, errorctrl.Error(funcion+eval, err, "502")
@@ -110,7 +112,7 @@ func GetTrTerceroIdentificacionById(id int) (tercero models.DetalleTercero, outp
 	funcion := "GetTrTerceroIdentificacionById"
 	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + beego.AppConfig.String("tercerosService") + "tercero/identificacion/" + strconv.Itoa(id)
+	urlcrud := "http://" + basePath + "tercero/identificacion/" + strconv.Itoa(id)
 	err := request.GetJson(urlcrud, &tercero)
 	if err != nil {
 		logs.Error(err, urlcrud)
