@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -14,6 +13,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	timebogota "github.com/udistrital/arka_mid/utils_oas/timeBogota"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -52,7 +52,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 		}
 	}
 
-	resultado_.Movimiento.FechaCorte = utilsHelper.Time(time.Now())
+	resultado_.Movimiento.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
 	_, outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
 	return
 }
