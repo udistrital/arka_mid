@@ -106,6 +106,23 @@ func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]int
 	return tercero, nil
 }
 
+// GetTrTerceroIdentificacionById get controlador tercero/{id} del api terceros_crud
+func GetTrTerceroIdentificacionById(id int) (tercero models.DetalleTercero, outputError map[string]interface{}) {
+
+	funcion := "GetTrTerceroIdentificacionById"
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+
+	urlcrud := "http://" + basePath + "tercero/identificacion/" + strconv.Itoa(id)
+	err := request.GetJson(urlcrud, &tercero)
+	if err != nil {
+		logs.Error(err, urlcrud)
+		eval := " - request.GetJson(urlcrud, &tercero)"
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
 // GetDocUD Get documento de identificación UD
 func GetDocUD() string {
 	return "899999230"

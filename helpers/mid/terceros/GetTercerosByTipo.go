@@ -4,9 +4,12 @@ import (
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 	"github.com/udistrital/arka_mid/utils_oas/request"
 )
+
+var tercerosMID, _ = beego.AppConfig.String("tercerosMidService")
 
 func GetTercerosByTipo(tipo string, id int, terceros interface{}) (outputError map[string]interface{}) {
 

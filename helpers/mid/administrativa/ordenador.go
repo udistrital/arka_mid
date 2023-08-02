@@ -14,7 +14,7 @@ var administrativa_amazon, _ = beego.AppConfig.String("administrativaService")
 
 func GetOrdenadores(id int, ordenadores interface{}) (outputError map[string]interface{}) {
 
-	funcion := "GetTercerosByTipo"
+	funcion := "GetOrdenadores - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "http://" + administrativa_amazon + "ordenadores"
@@ -24,8 +24,8 @@ func GetOrdenadores(id int, ordenadores interface{}) (outputError map[string]int
 
 	if err := request.GetJson(urlcrud, &ordenadores); err != nil {
 		logs.Error(urlcrud + ", " + err.Error())
-		eval := " - request.GetJson(urlcrud, &ordenadores)"
-		return errorCtrl.Error(funcion+eval, err, "502")
+		eval := "request.GetJson(urlcrud, &ordenadores)"
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return

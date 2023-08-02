@@ -78,7 +78,9 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 			proveedorId = ha[0].ProveedorId
 		}
 
-		consecutivo = *entrada.Consecutivo
+		if entrada.Consecutivo != nil {
+			consecutivo = *entrada.Consecutivo
+		}
 
 		if movsEntrada, err := calcularAjusteMovimiento(orgiginalesActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, proveedorId, consecutivo, "Entrada"); err != nil {
 			return nil, err

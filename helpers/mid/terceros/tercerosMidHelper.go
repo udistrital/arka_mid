@@ -6,39 +6,34 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-// GetDetalle Consulta El nombre, número de identificación, correo y cargo asociado a un funcionario
+// GetDetalleFuncionario Consulta El nombre, número de identificación, correo y cargo asociado a un funcionario
 func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionario, outputError map[string]interface{}) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{"funcion": "/GetDetalleFuncionario", "err": err, "status": "500"}
-			panic(outputError)
-		}
-	}()
+	defer errorCtrl.ErrorControlFunction("GetDetalleFuncionario - Unhandled Error!", "500")
 
 	DetalleFuncionario = new(models.DetalleFuncionario)
 
 	// Consulta información general y documento de identidad
-	if tercero_, err := GetFuncionario(id); err != nil {
-		return nil, err
-	} else {
-		DetalleFuncionario.Tercero = tercero_
+	tercero_, outputError := crudTerceros.GetTrTerceroIdentificacionById(id)
+	if outputError != nil {
+		return
 	}
 
 	// Consulta correo
-	if correo_, err := crudTerceros.GetCorreo(id); err != nil {
-		return nil, err
-	} else {
-		DetalleFuncionario.Correo = correo_
+	correo_, outputError := crudTerceros.GetCorreo(id)
+	if outputError != nil {
+		return
 	}
 
 	// Consulta cargo
-	if cargo_, err := GetCargoFuncionario(id); err != nil {
-		return nil, err
-	} else {
-		DetalleFuncionario.Cargo = cargo_
+	cargo_, outputError := GetCargoFuncionario(id)
+	if outputError != nil {
+		return
 	}
 
+	DetalleFuncionario.Tercero = []models.DetalleTercero{tercero_}
+	DetalleFuncionario.Correo = correo_
+	DetalleFuncionario.Cargo = cargo_
 	return DetalleFuncionario, nil
 }
 
