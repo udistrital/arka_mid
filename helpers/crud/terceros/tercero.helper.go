@@ -13,7 +13,9 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
-//GetNombreTerceroById trae el nombre de un encargado por su id
+var path = beego.AppConfig.String("tercerosService")
+
+// GetNombreTerceroById trae el nombre de un encargado por su id
 func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero, outputError map[string]interface{}) {
 
 	funcion := "GetNombreTerceroById"
@@ -63,7 +65,7 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 	}()
 
 	var terceros []*models.Tercero
-	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "tercero"
+	urltercero := "http://" + path + "tercero"
 	urltercero += "?fields=Id,NombreCompleto,TipoContribuyenteId"
 	urltercero += "&query=Activo:true,UsuarioWSO2:" + usuario
 	// logs.Info(urltercero)
@@ -125,7 +127,7 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 			panic(outputError)
 		}
 	}()
-	urltercero := "http://" + beego.AppConfig.String("tercerosService") + "datos_identificacion"
+	urltercero := "http://" + path + "datos_identificacion"
 	urltercero += "?query=Activo:true,TerceroId__Activo:true,Numero:" + doc
 	// TODO: Alternativamente, se podría usar una de las siguientes:
 	// urltercero += "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero)
