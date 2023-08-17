@@ -1,6 +1,6 @@
 # arka_mid
 
-definir
+Api dedicada a gestionar transacciones relacionadas con inventario y almacenamiento de bienes de la UD.
 
 ## Especificaciones Técnicas
 
