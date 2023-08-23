@@ -1,8 +1,8 @@
 package oikos
 
 import (
+	"fmt"
 	"regexp"
-	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -19,12 +19,14 @@ func GetAllAsignacion(payload string) (asignaciones []models.AsignacionEspacioFi
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := "http://" + beego.AppConfig.String("oikosService") + "asignacion_espacio_fisico_dependencia?" + payload
-	if _, err := request.GetJsonTest(urlcrud, &asignaciones); err != nil {
+	err := request.GetJson(urlcrud, &asignaciones)
+	if err != nil {
+		logs.Error(err)
 		eval := "request.GetJsonTest(urlcrud, &asignaciones)"
-		return nil, errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return asignaciones, nil
+	return
 }
 
 func GetAllEspacioFisico(payload string) (espacios []models.EspacioFisico, outputError map[string]interface{}) {
@@ -82,16 +84,18 @@ func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.Espac
 }
 
 // GetDependenciaById consulta controlador dependencia/{id} del api oikos_crud
-func GetDependenciaById(id int, dependencia *models.Dependencia) (outputError map[string]interface{}) {
+func GetDependenciaById(id int) (dependencia *models.Dependencia, outputError map[string]interface{}) {
 
 	funcion := "GetDependenciaById - "
 	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := basePath + "dependencia/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &dependencia); err != nil {
+	urlcrud := basePath + "dependencia/" + fmt.Sprint(id)
+	err := request.GetJson(urlcrud, &dependencia)
+	if err != nil {
+		logs.Error(err)
 		eval := "request.GetJson(urlcrud, &dependencia)"
-		return errorctrl.Error(funcion+eval, err, "502")
+		outputError = errorctrl.Error(funcion+eval, err, "502")
 	}
 
-	return nil
+	return
 }

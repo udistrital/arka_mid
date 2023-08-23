@@ -31,13 +31,13 @@ func GetAll(tramiteOnly bool) (Salidas []map[string]interface{}, outputError map
 
 	for _, salida := range salidas_ {
 
-		var formato models.FormatoSalida
+		var formato models.FormatoSalidaCostos
 		outputError = utilsHelper.Unmarshal(salida.Detalle, &formato)
 		if outputError != nil {
 			return
 		}
 
-		salida__, err := TraerDetalle(salida, formato, asignaciones, sedes, funcionarios)
+		salida__, err := traerDetalle(salida, formato, asignaciones, sedes, funcionarios)
 		if err != nil {
 			return nil, err
 		}

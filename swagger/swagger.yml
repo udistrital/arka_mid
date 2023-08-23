@@ -756,23 +756,6 @@ paths:
             $ref: '#/definitions/models.DetalleEntrada'
         "403":
           description: :id is empty
-  /entrada/movimientos/{acta_recibido_id}:
-    get:
-      tags:
-      - entrada
-      description: return movimientos asociados a un acta
-      operationId: EntradaController.Get User
-      parameters:
-      - in: path
-        name: acta_recibido_id
-        description: The key for staticblock
-        required: true
-        type: string
-      responses:
-        "200":
-          description: '{object]'
-        "404":
-          description: not found resource
   /inmuebles/:
     get:
       tags:
