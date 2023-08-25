@@ -21,13 +21,12 @@ func RechazarSalida(salida *models.Movimiento) (outputError map[string]interface
 		return
 	}
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&salida.EstadoMovimientoId.Id, "Salida Rechazada"); err != nil {
-		return err
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&salida.EstadoMovimientoId.Id, "Salida Rechazada")
+	if outputError != nil {
+		return
 	}
 
-	if _, err := movimientosArka.PutMovimiento(salida, salida.Id); err != nil {
-		return err
-	}
+	_, outputError = movimientosArka.PutMovimiento(salida, salida.Id)
 
 	return
 }

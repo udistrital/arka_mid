@@ -14,7 +14,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	var (
-		formato       models.FormatoSalida
+		formato       models.FormatoSalidaCostos
 		ids           []int
 		elementosActa []*models.DetalleElemento
 	)
@@ -65,7 +65,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 		return
 	}
 
-	detalle, outputError := TraerDetalle(trSalida.Salida, formato, nil, nil, nil)
+	detalle, outputError := traerDetalle(trSalida.Salida, formato, nil, nil, nil)
 	if outputError != nil {
 		return
 	}

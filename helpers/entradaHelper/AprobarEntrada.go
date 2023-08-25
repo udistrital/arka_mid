@@ -2,6 +2,7 @@ package entradaHelper
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/inventarioHelper"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -142,23 +144,30 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 			}
 			novedades = append(novedades, novedad)
 
-			if *el.ValorLibros > 0 {
-				var elementoMovimiento models.ElementosMovimiento
-				outputError = movimientosArka.GetElementosMovimientoById(el.Id, &elementoMovimiento)
-				if outputError != nil {
-					return
-				}
-
-				var elementoActa models.Elemento
-				outputError = actaRecibido.GetElementoById(*elementoMovimiento.ElementoActaId, &elementoActa)
-				if outputError != nil {
-					return
-				}
-
-				elementoActa.ValorUnitario = *el.ValorLibros
-				elementoActa.ValorTotal = *el.ValorLibros
-				elementos = append(elementos, &elementoActa)
+			historial, err := movimientosArka.GetHistorialElemento(el.Id, true)
+			if err != nil {
+				outputError = err
+				return
+			} else if historial == nil {
+				resultado.Error = "No se pudo consultar la parametrización de los elementos. Contacte soporte."
+				return
 			}
+
+			valor, _, _, _, err := inventarioHelper.GetUltimoValor(*historial)
+			if err != nil || math.Abs(*el.ValorLibros-valor) == 0 {
+				outputError = err
+				return
+			}
+
+			var elementoActa models.Elemento
+			outputError = actaRecibido.GetElementoById(*historial.Elemento.ElementoActaId, &elementoActa)
+			if outputError != nil {
+				return
+			}
+
+			elementoActa.ValorUnitario = *el.ValorLibros / float64(elementoActa.Cantidad)
+			elementoActa.ValorTotal = math.Abs(*el.ValorLibros - valor)
+			elementos = append(elementos, &elementoActa)
 		}
 	}
 
@@ -219,7 +228,6 @@ func descripcionMovimientoContable(detalle string) (detalle_ string, outputError
 			detalle_ += "Factura: " + sop.Consecutivo + ", "
 		} else if k != "consecutivo" && k != "ConsecutivoId" && k != "elementos" {
 			k = strings.TrimSuffix(k, "_id")
-			k = strings.ReplaceAll(k, "_", " ")
 			caser := cases.Title(language.Spanish)
 			k = caser.String(k)
 			detalle_ += k + ": " + fmt.Sprintf("%v", v) + ", "

@@ -1,9 +1,11 @@
 package salidaHelper
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -11,7 +13,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
+func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
 	asignaciones map[int]models.AsignacionEspacioFisicoDependencia,
 	sedes map[string]models.EspacioFisico,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
@@ -49,6 +51,36 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		} else {
 			ubicacion = val
 		}
+	} else if salida.CentroCostosId > 0 {
+		centroCostos, outputError := movimientosArka.GetCentroCostosById(salida.CentroCostosId)
+		if outputError != nil {
+			return nil, outputError
+		}
+
+		if centroCostos.SedeId == nil && centroCostos.DependenciaId == nil {
+			ubicacion = models.AsignacionEspacioFisicoDependencia{
+				DependenciaId: &models.Dependencia{Nombre: centroCostos.Nombre},
+			}
+		} else {
+			if centroCostos.SedeId != nil {
+				sede_, outputError := oikos.GetAllEspacioFisico("query=Id:" + fmt.Sprint(centroCostos.SedeId))
+				if outputError != nil {
+					return nil, outputError
+				}
+
+				if len(sede_) == 1 {
+					sede = sede_[0]
+				}
+			}
+
+			if centroCostos.DependenciaId != nil {
+				ubicacion.DependenciaId, outputError = oikos.GetDependenciaById(*centroCostos.DependenciaId)
+				if outputError != nil {
+					return nil, outputError
+				}
+			}
+		}
+
 	}
 
 	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
@@ -57,11 +89,11 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		str = str[0:2] + rgxp.ReplaceAllString(str[2:], "")
 
 		if val, ok := sedes[str]; !ok {
-			query = "?query=CodigoAbreviacion:" + str
-			if sede_, err := oikos.GetAllEspacioFisico(query); err != nil {
+			sede_, err := oikos.GetSedeEspacioFisico(*ubicacion.EspacioFisicoId)
+			if err != nil {
 				return nil, err
-			} else if len(sede_) > 0 {
-				sede = sede_[0]
+			} else if sede_.Id > 0 {
+				sede = sede_
 				sedes[str] = sede
 			}
 		} else {

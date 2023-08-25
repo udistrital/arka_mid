@@ -84,16 +84,17 @@ func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.Espac
 }
 
 // GetDependenciaById consulta controlador dependencia/{id} del api oikos_crud
-func GetDependenciaById(id int, dependencia *models.Dependencia) (outputError map[string]interface{}) {
+func GetDependenciaById(id int) (dependencia *models.Dependencia, outputError map[string]interface{}) {
 
 	funcion := "GetDependenciaById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := "http://" + basePath + "dependencia/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &dependencia); err != nil {
+	err := request.GetJson(urlcrud, &dependencia)
+	if err != nil {
 		eval := "request.GetJson(urlcrud, &dependencia)"
-		return errorCtrl.Error(funcion+eval, err, "502")
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
-	return nil
+	return
 }

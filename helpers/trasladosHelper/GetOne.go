@@ -76,17 +76,11 @@ func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 	funcion := "getElementosTraslado"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	var (
-		query     string
-		elementos []*models.ElementosMovimiento
-	)
-
-	query = "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
+	query := "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
-		return nil, err
-	} else {
-		elementos = elementos_
+	elementos, outputError := movimientosArka.GetAllElementosMovimiento(query)
+	if outputError != nil {
+		return
 	}
 
 	idsActa := []int{}

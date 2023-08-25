@@ -1,7 +1,6 @@
 package oikos
 
 import (
-	"regexp"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/models"
@@ -23,17 +22,11 @@ func GetSedeDependenciaUbicacion(ubicacionId int) (resultado *models.DetalleSede
 	resultado.Dependencia = ubicacion[0].DependenciaId
 	resultado.Ubicacion = &ubicacion[0]
 
-	rgxp := regexp.MustCompile(`\d.*`)
-	strSede := ubicacion[0].EspacioFisicoId.CodigoAbreviacion
-	strSede = strSede[0:2] + rgxp.ReplaceAllString(strSede[2:], "")
-
-	payload = "?query=CodigoAbreviacion:" + strSede
-	sede_, outputError := GetAllEspacioFisico(payload)
-	if outputError != nil || len(sede_) == 0 {
+	sede, outputError := GetSedeEspacioFisico(*resultado.Ubicacion.EspacioFisicoId)
+	if outputError != nil {
 		return
 	}
 
-	resultado.Sede = &sede_[0]
+	resultado.Sede = &sede
 	return
-
 }
