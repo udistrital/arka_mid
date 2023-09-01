@@ -215,7 +215,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	}
 
 	movimiento.Detalle = "{}"
-	movimiento, outputError = movimientosArka.PutMovimiento(movimiento, movimiento.Id)
+	outputError = movimientosArka.PutMovimiento(movimiento, movimiento.Id)
 
 	return
 }

@@ -109,11 +109,10 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 	resultado.Movimiento.Activo = true
 
 	if resultado.Movimiento.Id > 0 {
-		if movimiento_, err := movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id); err != nil {
+		outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id)
+		if outputError != nil {
 			desbloquearSistema(parametros[1], *resultado)
-			return err
-		} else {
-			resultado.Movimiento = *movimiento_
+			return
 		}
 	} else {
 		if err := movimientosArka.PostMovimiento(&resultado.Movimiento); err != nil {

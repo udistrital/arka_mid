@@ -23,7 +23,7 @@ func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, 
 
 		salida.Salida.EstadoMovimientoId = &models.EstadoMovimiento{Id: estadoMovimientoId}
 		if !etl {
-			outputError = setConsecutivoSalida(salida.Salida)
+			outputError = setConsecutivoSalida(&salida.Salida)
 			if outputError != nil {
 				return
 			}

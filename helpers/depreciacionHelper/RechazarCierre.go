@@ -47,8 +47,9 @@ func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMo
 		return err
 	}
 
-	if _, err := movimientosArka.PutMovimiento(&resultado.Movimiento, info.Id); err != nil {
-		return err
+	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, info.Id)
+	if outputError != nil {
+		return
 	}
 
 	parametros[0].Valor = "false"

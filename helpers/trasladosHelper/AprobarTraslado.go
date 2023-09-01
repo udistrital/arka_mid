@@ -97,7 +97,7 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 	}
 
 	response.Movimiento.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
-	_, outputError = movimientosArka.PutMovimiento(&response.Movimiento, response.Movimiento.Id)
+	outputError = movimientosArka.PutMovimiento(&response.Movimiento, response.Movimiento.Id)
 
 	return
 }

@@ -29,7 +29,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 		return
 	}
 
-	res.Movimiento = *trSalida.Salida
+	res.Movimiento = trSalida.Salida
 	outputError = utilsHelper.Unmarshal(trSalida.Salida.Detalle, &salida)
 	if outputError != nil {
 		return
@@ -91,7 +91,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	res.TransaccionContable.Concepto = transaccion.Descripcion
 	res.TransaccionContable.Fecha = transaccion.FechaTransaccion
 	trSalida.Salida.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
-	trSalida.Salida, outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
+	outputError = movimientosArka.PutMovimiento(&trSalida.Salida, trSalida.Salida.Id)
 
 	return
 }

@@ -42,7 +42,7 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, resultado 
 		return
 	}
 
-	_, outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, movimientoId)
+	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, movimientoId)
 	if outputError != nil {
 		return
 	}

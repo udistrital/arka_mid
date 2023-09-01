@@ -14,7 +14,7 @@ func Put(baja *models.TrSoporteMovimiento, bajaId int) (bajaR *models.Movimiento
 	defer errorCtrl.ErrorControlFunction("Put - Unhandled Error!", "500")
 
 	// Actualiza registro en api movimientos_arka_crud
-	bajaR, outputError = movimientosArka.PutMovimiento(baja.Movimiento, bajaId)
+	outputError = movimientosArka.PutMovimiento(baja.Movimiento, bajaId)
 	if outputError != nil {
 		return
 	}

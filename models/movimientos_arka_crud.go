@@ -122,11 +122,11 @@ type TrSoporteMovimiento struct {
 }
 
 type TrSalida struct {
-	Salida    *Movimiento
+	Salida    Movimiento
 	Elementos []*ElementosMovimiento
 }
 type SalidaGeneral struct {
-	Salidas []*TrSalida
+	Salidas []TrSalida
 }
 
 type ResultadoMovimiento struct {

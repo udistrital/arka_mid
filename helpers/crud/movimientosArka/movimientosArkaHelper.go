@@ -230,19 +230,19 @@ func PostTrSalida(trSalida *models.SalidaGeneral) (outputError map[string]interf
 }
 
 // PutMovimiento put controlador movimiento del api movimientos_arka_crud
-func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (movimientoRes *models.Movimiento, outputError map[string]interface{}) {
+func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (outputError map[string]interface{}) {
 
 	funcion := "PutMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := "http://" + basePath + "movimiento/" + strconv.Itoa(movimientoId)
-	if err := request.SendJson(urlcrud, "PUT", &movimientoRes, &movimiento); err != nil {
-		eval := " - request.SendJson(urlcrud, \"PUT\", &movimientoRes, &movimiento)"
-		return nil, errorCtrl.Error(funcion+eval, err, "502")
+	err := request.SendJson(urlcrud, "PUT", &movimiento, &movimiento)
+	if err != nil {
+		eval := `request.SendJson(urlcrud, "PUT", &movimientoRes, &movimiento)`
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
-	return movimientoRes, nil
-
+	return
 }
 
 // PutRevision put controlador bajas/ del api movimientos_arka_crud

@@ -55,7 +55,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 	}
 
 	resultado_.Movimiento.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
-	_, outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
+	outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
 	return
 }
 

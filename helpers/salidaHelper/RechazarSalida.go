@@ -26,7 +26,7 @@ func RechazarSalida(salida *models.Movimiento) (outputError map[string]interface
 		return
 	}
 
-	_, outputError = movimientosArka.PutMovimiento(salida, salida.Id)
+	outputError = movimientosArka.PutMovimiento(salida, salida.Id)
 
 	return
 }
