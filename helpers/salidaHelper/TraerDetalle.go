@@ -51,32 +51,33 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		} else {
 			ubicacion = val
 		}
-	} else if salida.CentroCostosId > 0 {
-		centroCostos, outputError := movimientosArka.GetCentroCostosById(salida.CentroCostosId)
+	} else if salida.CentroCostos != "" {
+		payload := "query=Codigo:" + salida.CentroCostos
+		centroCostos, outputError := movimientosArka.GetAllCentroCostos(payload)
 		if outputError != nil {
 			return nil, outputError
-		}
+		} else if len(centroCostos) == 1 {
+			if centroCostos[0].SedeId == nil && centroCostos[0].DependenciaId == nil {
+				ubicacion = models.AsignacionEspacioFisicoDependencia{
+					DependenciaId: &models.Dependencia{Nombre: centroCostos[0].Nombre},
+				}
+			} else {
+				if centroCostos[0].SedeId != nil {
+					sede_, outputError := oikos.GetAllEspacioFisico("query=Id:" + fmt.Sprint(centroCostos[0].SedeId))
+					if outputError != nil {
+						return nil, outputError
+					}
 
-		if centroCostos.SedeId == nil && centroCostos.DependenciaId == nil {
-			ubicacion = models.AsignacionEspacioFisicoDependencia{
-				DependenciaId: &models.Dependencia{Nombre: centroCostos.Nombre},
-			}
-		} else {
-			if centroCostos.SedeId != nil {
-				sede_, outputError := oikos.GetAllEspacioFisico("query=Id:" + fmt.Sprint(centroCostos.SedeId))
-				if outputError != nil {
-					return nil, outputError
+					if len(sede_) == 1 {
+						sede = sede_[0]
+					}
 				}
 
-				if len(sede_) == 1 {
-					sede = sede_[0]
-				}
-			}
-
-			if centroCostos.DependenciaId != nil {
-				ubicacion.DependenciaId, outputError = oikos.GetDependenciaById(*centroCostos.DependenciaId)
-				if outputError != nil {
-					return nil, outputError
+				if centroCostos[0].DependenciaId != nil {
+					ubicacion.DependenciaId, outputError = oikos.GetDependenciaById(*centroCostos[0].DependenciaId)
+					if outputError != nil {
+						return nil, outputError
+					}
 				}
 			}
 		}

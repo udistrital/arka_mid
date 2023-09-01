@@ -65,7 +65,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 		return
 	}
 
-	detalle, outputError := traerDetalle(&trSalida.Salida, formato, nil, nil, nil)
+	detalle, outputError := traerDetalle(trSalida.Salida, formato, nil, nil, nil)
 	if outputError != nil {
 		return
 	}

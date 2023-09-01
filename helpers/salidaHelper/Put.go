@@ -86,7 +86,7 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 
 		salida.Salida.Id = id
 		salida.Salida.EstadoMovimientoId.Id = estadoMovimientoId
-		outputError = setConsecutivoSalida(&salida.Salida)
+		outputError = setConsecutivoSalida(salida.Salida)
 		if outputError != nil {
 			return
 		}

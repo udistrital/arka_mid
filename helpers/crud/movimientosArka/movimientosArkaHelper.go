@@ -1,7 +1,6 @@
 package movimientosArka
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -463,12 +462,12 @@ func GetAperturas(conSaldo bool, aperturas *[]models.Apertura) (outputError map[
 	return
 }
 
-func GetCentroCostosById(id int) (centroCostos models.CentroCostos, outputError map[string]interface{}) {
+func GetAllCentroCostos(payload string) (centroCostos []models.CentroCostos, outputError map[string]interface{}) {
 
 	funcion := "GetCentroCostosById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := basePath + "centro_costos/" + fmt.Sprint(id)
+	urlcrud := basePath + "centro_costos" + payload
 	err := request.GetJson(urlcrud, &centroCostos)
 	if err != nil {
 		logs.Error(err)

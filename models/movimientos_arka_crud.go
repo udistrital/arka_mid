@@ -122,7 +122,7 @@ type TrSoporteMovimiento struct {
 }
 
 type TrSalida struct {
-	Salida    Movimiento
+	Salida    *Movimiento
 	Elementos []*ElementosMovimiento
 }
 type SalidaGeneral struct {
@@ -309,5 +309,5 @@ type FormatoSalida struct {
 
 type FormatoSalidaCostos struct {
 	FormatoSalida
-	CentroCostosId int `json:"centro_costos"`
+	CentroCostos string `json:"centro_costos"`
 }
