@@ -464,10 +464,10 @@ func GetAperturas(conSaldo bool, aperturas *[]models.Apertura) (outputError map[
 
 func GetAllCentroCostos(payload string) (centroCostos []models.CentroCostos, outputError map[string]interface{}) {
 
-	funcion := "GetCentroCostosById - "
+	funcion := "GetAllCentroCostos - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := basePath + "centro_costos" + payload
+	urlcrud := "http://" + basePath + "centro_costos?" + payload
 	err := request.GetJson(urlcrud, &centroCostos)
 	if err != nil {
 		logs.Error(err)
