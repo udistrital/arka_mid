@@ -80,11 +80,11 @@ type NovedadElemento struct {
 }
 
 type CentroCostos struct {
-	Id            int
-	DependenciaId *int
-	SedeId        *int
-	Codigo        string
-	Nombre        string
+	Id          int
+	Dependencia string
+	Sede        string
+	Codigo      string
+	Nombre      string
 }
 
 type TransaccionEntrada struct {
