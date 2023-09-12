@@ -7,14 +7,14 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/time_bogota"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	timebogota "github.com/udistrital/arka_mid/utils_oas/timeBogota"
 )
 
 // AprobarSalida Aprobacion de una salida
 func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarSalida - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarSalida - Unhandled Error!", "500")
 
 	var (
 		salida         models.FormatoSalida
@@ -90,8 +90,8 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 
 	res.TransaccionContable.Concepto = transaccion.Descripcion
 	res.TransaccionContable.Fecha = transaccion.FechaTransaccion
-	trSalida.Salida.FechaCorte = utilsHelper.Time(time_bogota.Tiempo_bogota())
-	trSalida.Salida, outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
+	trSalida.Salida.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
+	outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
 
 	return
 }

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
 
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
 // BufferGeneric actúa como proxy para evitar consultas repetidas a un helper

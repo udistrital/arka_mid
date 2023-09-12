@@ -14,13 +14,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // AprobarBajas Aprobación masiva de bajas: transacciones contables, actualización de movmientos y registro de novedades
 func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarBajas - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarBajas - Unhandled Error!", "500")
 
 	var movBj, movCr int
 

@@ -3,12 +3,12 @@ package controllers
 import (
 	"errors"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // EntradaController operations for Entrada
@@ -35,25 +35,13 @@ func (c *EntradaController) URLMapping() {
 // @router / [post]
 func (c *EntradaController) Post() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
 
-	var (
-		entradaId int
-		etl       bool
-		aprobar   bool
-	)
+	entradaId, _ := c.GetInt("entradaId", 0)
 
-	if v, err := c.GetInt("entradaId", 0); err == nil {
-		entradaId = v
-	}
+	etl, _ := c.GetBool("etl", false)
 
-	if v, err := c.GetBool("etl", false); err == nil {
-		etl = v
-	}
-
-	if v, err := c.GetBool("aprobar", false); err == nil {
-		aprobar = v
-	}
+	aprobar, _ := c.GetBool("aprobar", false)
 
 	if aprobar && entradaId > 0 {
 
@@ -62,7 +50,7 @@ func (c *EntradaController) Post() {
 			if err == nil {
 				panic(map[string]interface{}{
 					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId)",
-					"err":     errors.New("no se obtuvo respuesta al aprobar la entrada."),
+					"err":     errors.New("no se obtuvo respuesta al aprobar la entrada"),
 					"status":  "400",
 				})
 			}
@@ -106,7 +94,7 @@ func (c *EntradaController) Post() {
 // @router /:id [get]
 func (c *EntradaController) GetOne() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "EntradaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {

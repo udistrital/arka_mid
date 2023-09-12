@@ -12,12 +12,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("PostAjuste - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("PostAjuste - Unhandled Error!", "500")
 
 	movimiento = &models.Movimiento{
 		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{},
@@ -58,7 +58,7 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 // GetDetalleAjuste Consulta los detalles de un ajuste contable
 func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetDetalleAjuste - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetDetalleAjuste - Unhandled Error!", "500")
 
 	var (
 		movimiento  models.Movimiento
@@ -147,7 +147,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 // AprobarAjuste Realiza la transacción contable correspondiente
 func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarAjuste - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarAjuste - Unhandled Error!", "500")
 
 	movimiento, outputError = movimientosArka.GetMovimientoById(id)
 	if outputError != nil {
@@ -177,8 +177,9 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		if ctaCr_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
 			return nil, err
 		} else {
-			if err := utilsHelper.FillStruct(ctaCr_, &cta); err != nil {
-				return nil, err
+			outputError = utilsHelper.FillStruct(ctaCr_, &cta)
+			if outputError != nil {
+				return
 			}
 			mov_.CuentaId = cta.Id
 			mov_.NombreCuenta = cta.Nombre
@@ -214,7 +215,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	}
 
 	movimiento.Detalle = "{}"
-	movimiento, outputError = movimientosArka.PutMovimiento(movimiento, movimiento.Id)
+	outputError = movimientosArka.PutMovimiento(movimiento, movimiento.Id)
 
 	return
 }

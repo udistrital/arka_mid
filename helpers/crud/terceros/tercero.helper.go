@@ -5,27 +5,27 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
-var path = beego.AppConfig.String("tercerosService")
+var path, _ = beego.AppConfig.String("tercerosService")
 
 // GetNombreTerceroById trae el nombre de un encargado por su id
 func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero, outputError map[string]interface{}) {
 
 	funcion := "GetNombreTerceroById"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	if idTercero <= 0 {
 		err := errors.New("el idTercero debe ser mayor a 0")
 		logs.Error(err)
 		eval := " - strconv.Atoi(idTercero)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+		return nil, errorCtrl.Error(funcion+eval, err, "500")
 	}
 
 	urlcrud := "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero)
@@ -186,7 +186,7 @@ func GetTerceroByDoc(doc string) (tercero *models.DatosIdentificacion, outputErr
 
 func GetTerceroUD() (int, map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetTerceroUD - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetTerceroUD - Unhandled Error!", "500")
 
 	payload := "query=TipoDocumentoId__Nombre:NIT,Numero:" + GetDocUD()
 	if tercero, err := GetAllDatosIdentificacion(payload); err != nil {

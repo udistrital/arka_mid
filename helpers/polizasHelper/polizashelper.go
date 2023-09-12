@@ -7,16 +7,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	utilsHelper "github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/formatdata"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
 // GetElementosPoliza Obtiene todos los elementos que necesiten poliza
-//
 func GetElementosPoliza(offset int, limit int, fields []string, order []string, query map[string]string, sortby []string) (ElementosPoliza *[]models.Elemento, outputError map[string]interface{}) {
 
 	defer func() {
@@ -60,7 +58,6 @@ func GetElementosPoliza(offset int, limit int, fields []string, order []string, 
 }
 
 // GetElementosEntrada obtiene todos las ActasId que sean entradas (P8)
-//
 func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interface{}) {
 
 	defer func() {
@@ -85,7 +82,8 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 	params.Add("query", "Activo:true,Detalle__contains:consecutivo\": \"P")
 	params.Add("fields", "Detalle")
 	params.Add("limit", "-1")
-	urlRespuestaAPI := "http://" + beego.AppConfig.String("movimientosArkaService") + "movimiento?" + params.Encode()
+	path, _ := beego.AppConfig.String("movimientosArkaService")
+	urlRespuestaAPI := "http://" + path + "movimiento?" + params.Encode()
 	if _, err := request.GetJsonTest(urlRespuestaAPI, &RespuestaAPI); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -97,7 +95,7 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 	}
 
 	// Asignar a Movimientos RespuestaAPI
-	if err := formatdata.FillStruct(&RespuestaAPI, &Movimientos); err != nil {
+	if err := utilsHelper.FillStruct(&RespuestaAPI, &Movimientos); err != nil {
 		logs.Error(err)
 	}
 
@@ -118,7 +116,6 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 }
 
 // Obtiene todos los idSubgrupos que necesitan poliza
-//
 func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]interface{}) {
 
 	defer func() {
@@ -142,7 +139,8 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 	params := url.Values{}
 	params.Add("query", "TipoBienId__NecesitaPoliza:True,Activo:True")
 	params.Add("limit", "-1")
-	urlSubgrupos := "http://" + beego.AppConfig.String("catalogoElementosService") + "detalle_subgrupo?" + params.Encode()
+	path, _ := beego.AppConfig.String("catalogoElementosService")
+	urlSubgrupos := "http://" + path + "detalle_subgrupo?" + params.Encode()
 	if _, err := request.GetJsonTest(urlSubgrupos, &Respuesta); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -154,7 +152,7 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 	}
 
 	// Asignar a DetalleSubgrupo RespuestaAPI
-	if err := formatdata.FillStruct(&Respuesta, &DetalleSubgrupo); err != nil {
+	if err := utilsHelper.FillStruct(&Respuesta, &DetalleSubgrupo); err != nil {
 		logs.Warn(err)
 	}
 
@@ -170,7 +168,6 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 }
 
 // Consulta los elementos por ActaId y retorna algunos parametros
-//
 func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int, offset int, fields []string, order []string,
 	query map[string]string, sortby []string) (ElementosEntradas *[]models.Elemento, outputError map[string]interface{}) {
 
@@ -229,7 +226,8 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 		params.Add("order", orde)
 	}
 
-	urlElementosSubgrupos := "http://" + beego.AppConfig.String("actaRecibidoService") + "elemento?" + params.Encode()
+	path, _ := beego.AppConfig.String("actaRecibidoService")
+	urlElementosSubgrupos := "http://" + path + "elemento?" + params.Encode()
 	//logs.Debug(urlElementosSubgrupos)
 	if _, err := request.GetJsonTest(urlElementosSubgrupos, &Respuest); err != nil {
 		logs.Error(err)
@@ -241,7 +239,7 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 		return nil, outputError
 	}
 
-	if err := formatdata.FillStruct(&Respuest, &ElementosEntradas); err != nil {
+	if err := utilsHelper.FillStruct(&Respuest, &ElementosEntradas); err != nil {
 		logs.Error(err)
 	}
 

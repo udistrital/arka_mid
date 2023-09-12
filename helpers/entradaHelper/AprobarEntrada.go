@@ -14,8 +14,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/time_bogota"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	timebogota "github.com/udistrital/arka_mid/utils_oas/timeBogota"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -25,7 +25,7 @@ const errNoElementos = "No se encontraron elementos para asociar a la entrada."
 // AprobarEntrada Actualiza una entrada a estado aprobada, calcula la transacción contable y genera las novedades correspondientes
 func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarEntrada - Unhandled Error!", "500")
 
 	formato, outputError := getFormato(entradaId, resultado_)
 	if outputError != nil || resultado_.Error != "" {
@@ -54,14 +54,14 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 		}
 	}
 
-	resultado_.Movimiento.FechaCorte = utilsHelper.Time(time_bogota.Tiempo_bogota())
-	_, outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
+	resultado_.Movimiento.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
+	outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
 	return
 }
 
 func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato models.FormatoBaseEntrada, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("getFormato - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("getFormato - Unhandled Error!", "500")
 
 	movimiento, outputError := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(entradaId))
 	if outputError != nil || len(movimiento) != 1 {
@@ -85,7 +85,7 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 
 func getTerceroEntrada(detalle models.FormatoBaseEntrada, resutado *models.ResultadoMovimiento) (terceroId int, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("getTerceroEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("getTerceroEntrada - Unhandled Error!", "500")
 
 	var historico []models.HistoricoActa
 	query := "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
@@ -114,7 +114,7 @@ func getTerceroEntrada(detalle models.FormatoBaseEntrada, resutado *models.Resul
 
 func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, resultado *models.ResultadoMovimiento) (elementos []*models.Elemento, novedades []models.NovedadElemento, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("getElementosEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("getElementosEntrada - Unhandled Error!", "500")
 
 	if detalle.ActaRecibidoId == 0 && len(detalle.Elementos) == 0 {
 		resultado.Error = errNoElementos
@@ -176,7 +176,7 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 
 func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada models.FormatoBaseEntrada, elementos []*models.Elemento, terceroId int) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("contabilidadEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("contabilidadEntrada - Unhandled Error!", "500")
 
 	if len(elementos) == 0 {
 		return
@@ -209,7 +209,7 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 // descripcionMovimientoContable Genera la descipción de cada uno de los movimientos contables asociados a una entrada.
 func descripcionMovimientoContable(detalle string) (detalle_ string, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("descripcionMovimientoContable - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("descripcionMovimientoContable - Unhandled Error!", "500")
 
 	var mapDetalle map[string]interface{}
 	outputError = utilsHelper.Unmarshal(detalle, &mapDetalle)

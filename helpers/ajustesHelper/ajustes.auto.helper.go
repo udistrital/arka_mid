@@ -1,10 +1,8 @@
 package ajustesHelper
 
 import (
-	"encoding/json"
 	"strconv"
 
-	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	crudActas "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -13,14 +11,14 @@ import (
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GenerarAjusteAutomatico Genera transacción contable, actualiza elementos y novedades como consecuencia de actualizar una serie de elementos de un acta
 func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
 
 	funcion := "GenerarAjusteAutomatico"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		ids                  []int
@@ -201,7 +199,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
 
 	funcion := "GetAjusteAutomatico"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		ids           []int
@@ -219,10 +217,9 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 		return nil, outputError
 	}
 
-	if err := json.Unmarshal([]byte(movimiento.Detalle), &detalle); err != nil {
-		logs.Error(err)
-		eval := " - json.Unmarshal([]byte(movimiento.Detalle), &detalle)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+	outputError = utilsHelper.Unmarshal(movimiento.Detalle, &detalle)
+	if outputError != nil {
+		return
 	}
 
 	if elementosActa, outputError = actaRecibido.GetElementos(0, detalle.Elementos); outputError != nil {
@@ -281,7 +278,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleElemento__, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleElementosActa"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		ids     []int

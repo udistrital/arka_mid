@@ -80,11 +80,11 @@ type NovedadElemento struct {
 }
 
 type CentroCostos struct {
-	Id            int
-	DependenciaId *int
-	SedeId        *int
-	Codigo        string
-	Nombre        string
+	Id          int
+	Dependencia string
+	Sede        string
+	Codigo      string
+	Nombre      string
 }
 
 type TransaccionEntrada struct {
@@ -126,7 +126,7 @@ type TrSalida struct {
 	Elementos []*ElementosMovimiento
 }
 type SalidaGeneral struct {
-	Salidas []*TrSalida
+	Salidas []TrSalida
 }
 
 type ResultadoMovimiento struct {
@@ -309,5 +309,5 @@ type FormatoSalida struct {
 
 type FormatoSalidaCostos struct {
 	FormatoSalida
-	CentroCostosId int `json:"centro_costos"`
+	CentroCostos string `json:"centro_costos"`
 }

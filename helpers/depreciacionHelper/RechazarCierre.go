@@ -7,13 +7,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // RechazarCierre Verifica el estado de las cuentas contables y actualiza el estado del cierre.
 func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("RechazarCierre - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("RechazarCierre - Unhandled Error!", "500")
 
 	var (
 		detalle    *models.FormatoDepreciacion
@@ -47,8 +47,9 @@ func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMo
 		return err
 	}
 
-	if _, err := movimientosArka.PutMovimiento(&resultado.Movimiento, info.Id); err != nil {
-		return err
+	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, info.Id)
+	if outputError != nil {
+		return
 	}
 
 	parametros[0].Valor = "false"

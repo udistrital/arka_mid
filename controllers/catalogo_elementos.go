@@ -3,10 +3,10 @@ package controllers
 import (
 	"errors"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // CatalogoElementosController operations for Catalogo
@@ -29,21 +29,21 @@ func (c *CatalogoElementosController) URLMapping() {
 // @router /cuentas_contables/:id [get]
 func (c *CatalogoElementosController) GetOne() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "CatalogoElementosController")
+	defer errorCtrl.ErrorControlController(c.Controller, "CatalogoElementosController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar una subgrupo válido")
 		}
-		panic(errorctrl.Error(`GetOne - c.GetInt(":id")`, err, "400"))
+		panic(errorCtrl.Error(`GetOne - c.GetInt(":id")`, err, "400"))
 	} else {
 		id = v
 	}
 
 	movimientoId, err := c.GetInt("movimientoId", 0)
 	if err != nil {
-		panic(errorctrl.Error(`GetOne - c.GetInt("movimientoId")`, err, "400"))
+		panic(errorCtrl.Error(`GetOne - c.GetInt("movimientoId")`, err, "400"))
 	}
 
 	var cuentas = make([]models.DetalleCuentasSubgrupo, 0)

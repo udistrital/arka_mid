@@ -10,7 +10,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetAllActasRecibidoActivas ...
@@ -19,7 +19,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 	sortby, order string, limit int64, offset int64) (
 	historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetAllActasRecibidoActivas - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetAllActasRecibidoActivas - Unhandled Error!", "500")
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
 
@@ -175,7 +175,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 
 func getEstados(estados []string, user string) (verTodas bool, estados_ []string, usr models.UsuarioAutenticacion, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("getEstados - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("getEstados - Unhandled Error!", "500")
 
 	if user != "" {
 		// Consulta de roles
@@ -241,7 +241,7 @@ func getEstados(estados []string, user string) (verTodas bool, estados_ []string
 
 func getTereroId(verTodas bool, estados []string, usr models.UsuarioAutenticacion) (proveedor, contratista bool, tercero int, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("getTereroId - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("getTereroId - Unhandled Error!", "500")
 
 	if verTodas {
 		return

@@ -8,13 +8,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetSolicitudById trae el nombre de un encargado por su id
 func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetSolicitudById - Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction("GetSolicitudById - Unhandled Error", "500")
 
 	var solicitud_ = make(map[string]interface{})
 	var elementos___ []map[string]interface{}
@@ -63,7 +63,7 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 
 func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("traerElementoSolicitud - Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction("traerElementoSolicitud - Unhandled Error", "500")
 
 	ubicacionInfo, outputError := oikos.GetSedeDependenciaUbicacion(Elemento.Ubicacion)
 	if outputError != nil {
@@ -100,7 +100,7 @@ func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[s
 
 func ultimoMovimientoKardex(elementoId int) (ultimo models.ElementosMovimiento, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("ultimoMovimientoKardex - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("ultimoMovimientoKardex - Unhandled Error!", "500")
 
 	payload := "limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor&query=ElementoCatalogoId:"
 	elemento, err := movimientosArka.GetAllElementosMovimiento(payload + strconv.Itoa(elementoId))

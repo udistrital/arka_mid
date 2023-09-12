@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 )
 

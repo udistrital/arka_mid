@@ -1,7 +1,6 @@
 package salidaHelper
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
@@ -18,7 +17,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 	sedes map[string]models.EspacioFisico,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("traerDetalle - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
 
 	var (
 		query       string
@@ -51,32 +50,23 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		} else {
 			ubicacion = val
 		}
-	} else if salida.CentroCostosId > 0 {
-		centroCostos, outputError := movimientosArka.GetCentroCostosById(salida.CentroCostosId)
+	} else if salida.CentroCostos != "" {
+		payload := "query=Codigo:" + salida.CentroCostos
+		centroCostos, outputError := movimientosArka.GetAllCentroCostos(payload)
 		if outputError != nil {
 			return nil, outputError
-		}
-
-		if centroCostos.SedeId == nil && centroCostos.DependenciaId == nil {
-			ubicacion = models.AsignacionEspacioFisicoDependencia{
-				DependenciaId: &models.Dependencia{Nombre: centroCostos.Nombre},
-			}
-		} else {
-			if centroCostos.SedeId != nil {
-				sede_, outputError := oikos.GetAllEspacioFisico("query=Id:" + fmt.Sprint(centroCostos.SedeId))
-				if outputError != nil {
-					return nil, outputError
+		} else if len(centroCostos) == 1 {
+			if centroCostos[0].Sede == "" && centroCostos[0].Dependencia == "" {
+				ubicacion = models.AsignacionEspacioFisicoDependencia{
+					DependenciaId: &models.Dependencia{Nombre: centroCostos[0].Nombre},
+				}
+			} else {
+				if centroCostos[0].Sede != "" {
+					sede = models.EspacioFisico{Nombre: centroCostos[0].Sede}
 				}
 
-				if len(sede_) == 1 {
-					sede = sede_[0]
-				}
-			}
-
-			if centroCostos.DependenciaId != nil {
-				ubicacion.DependenciaId, outputError = oikos.GetDependenciaById(*centroCostos.DependenciaId)
-				if outputError != nil {
-					return nil, outputError
+				if centroCostos[0].Dependencia != "" {
+					ubicacion.DependenciaId = &models.Dependencia{Nombre: centroCostos[0].Dependencia}
 				}
 			}
 		}
@@ -139,7 +129,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 // GetInfoSalida Retorna el funcionario de una salida a partir del detalle del movimiento
 func GetInfoSalida(detalle string) (funcionarioId int, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
 
 	var detalle_ models.FormatoSalida
 	outputError = utilsHelper.Unmarshal(detalle, &detalle_)
