@@ -78,7 +78,7 @@ func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimien
 
 		payload += ",EstadoMovimientoId__Nombre:" + url.QueryEscape(estadoSolicitudPendiente)
 
-		if solicitudes_, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
 			return err
 		} else {
 			*solicitudes = solicitudes_
@@ -102,7 +102,7 @@ func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimien
 	}
 
 	if len(opciones) > 0 {
-		if sol_, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if sol_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
 			return err
 		} else {
 			*solicitudes = sol_

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -184,7 +185,15 @@ func (c *SalidaController) GetElementos() {
 // GetSalidas ...
 // @Title Get User
 // @Description Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas
-// @Param	tramite_only		query	bool false	"Retornar salidas únicamente en estado En Trámite"
+// @Param	limit				query	string	false	"Limit the size of result set. Must be an integer"
+// @Param	offset				query	string	false	"Start position of result set. Must be an integer"
+// @Param	sortby				query	string	false	"Columna por la que se ordenan los resultados"
+// @Param	order				query	string	false	"Orden de los resultados de acuerdo a la columna indicada"
+// @Param	Consecutivo			query	string	false	"Consecutivo de la salida: __in"
+// @Param	FechaCreacion		query	string	false	"Fecha creación de la salida: __in"
+// @Param	FechaCorte			query	string	false	"Fecha aprobación de la salida: __in"
+// @Param	MovimientoPadreId	query	string	false	"Consecutivo de la entrada: __in"
+// @Param	EstadoMovimientoId	query	string	false	"Estado de la salida"
 // @Success 200 {object} []models.Movimiento
 // @Failure 404 not found resource
 // @router / [get]
@@ -192,17 +201,25 @@ func (c *SalidaController) GetSalidas() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
 
-	var tramiteOnly bool
+	sortby := c.GetString("sortby")
+	order := c.GetString("order")
+	limit, _ := c.GetInt("limit", 10)
+	offset, _ := c.GetInt("offset", 0)
 
-	if v, err := c.GetBool("tramite_only"); err == nil {
-		tramiteOnly = v
+	consecutivo := c.GetString("Consecutivo")
+	creacion := c.GetString("FechaCreacion")
+	aprobacion := c.GetString("FechaCorte")
+	entrada := c.GetString("MovimientoPadreId")
+	estados_ := c.GetString("EstadoMovimientoId")
+
+	estados := []string{}
+	if estados_ != "" {
+		estados = strings.Split(estados_, ",")
 	}
-	if v, err := salidaHelper.GetAll(tramiteOnly); err == nil {
-		if v != nil {
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = []interface{}{}
-		}
+
+	if v, t, err := salidaHelper.GetAll(estados, creacion, aprobacion, consecutivo, entrada, sortby, order, limit, offset); err == nil {
+		c.Ctx.Output.Header("x-total-count", t)
+		c.Data["json"] = v
 	} else {
 		panic(err)
 	}
@@ -271,9 +288,7 @@ func (c *SalidaController) Put() {
 			})
 		}
 	} else if rechazar {
-		var salida = models.Movimiento{Id: id}
-
-		if err := salidaHelper.RechazarSalida(&salida); err != nil {
+		if salida, err := salidaHelper.RechazarSalida(id); err != nil {
 			panic(err)
 		} else {
 			c.Data["json"] = salida

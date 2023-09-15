@@ -15,6 +15,7 @@ import (
 func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
 	asignaciones map[int]models.AsignacionEspacioFisicoDependencia,
 	sedes map[string]models.EspacioFisico,
+	centrosCostos map[string]models.CentroCostos,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
@@ -51,26 +52,26 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 			ubicacion = val
 		}
 	} else if salida.CentroCostos != "" {
-		payload := "query=Codigo:" + salida.CentroCostos
-		centroCostos, outputError := movimientosArka.GetAllCentroCostos(payload)
-		if outputError != nil {
-			return nil, outputError
-		} else if len(centroCostos) == 1 {
-			if centroCostos[0].Sede == "" && centroCostos[0].Dependencia == "" {
-				ubicacion = models.AsignacionEspacioFisicoDependencia{
-					DependenciaId: &models.Dependencia{Nombre: centroCostos[0].Nombre},
-				}
-			} else {
-				if centroCostos[0].Sede != "" {
-					sede = models.EspacioFisico{Nombre: centroCostos[0].Sede}
-				}
-
-				if centroCostos[0].Dependencia != "" {
-					ubicacion.DependenciaId = &models.Dependencia{Nombre: centroCostos[0].Dependencia}
-				}
+		_, ok := centrosCostos[salida.CentroCostos]
+		if !ok {
+			payload := "query=Codigo:" + salida.CentroCostos
+			centroCostos_, err := movimientosArka.GetAllCentroCostos(payload)
+			if err != nil {
+				return nil, err
+			} else if len(centroCostos_) == 1 {
+				centrosCostos[salida.CentroCostos] = centroCostos_[0]
 			}
 		}
 
+		centroCostos_ := centrosCostos[salida.CentroCostos]
+		if centroCostos_.Sede == "" && centroCostos_.Dependencia == "" {
+			ubicacion = models.AsignacionEspacioFisicoDependencia{
+				DependenciaId: &models.Dependencia{Nombre: centroCostos_.Nombre},
+			}
+		} else {
+			sede = models.EspacioFisico{Nombre: centroCostos_.Sede}
+			ubicacion.DependenciaId = &models.Dependencia{Nombre: centroCostos_.Dependencia}
+		}
 	}
 
 	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
@@ -112,11 +113,11 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		"Dependencia":             ubicacion.DependenciaId,
 		"Ubicacion":               ubicacion,
 		"FechaCreacion":           movimiento.FechaCreacion,
-		"FechaModificacion":       movimiento.FechaModificacion,
+		"FechaCorte":              movimiento.FechaCorte,
 		"Activo":                  movimiento.Activo,
 		"MovimientoPadreId":       movimiento.MovimientoPadreId,
 		"FormatoTipoMovimientoId": movimiento.FormatoTipoMovimientoId,
-		"EstadoMovimientoId":      movimiento.EstadoMovimientoId.Id,
+		"EstadoMovimientoId":      movimiento.EstadoMovimientoId,
 		"Consecutivo":             movimiento.Consecutivo,
 		"ConsecutivoId":           movimiento.ConsecutivoId,
 		"Funcionario":             funcionario,

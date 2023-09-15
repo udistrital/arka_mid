@@ -63,12 +63,12 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 
 	defer errorCtrl.ErrorControlFunction("getFormato - Unhandled Error!", "500")
 
-	movimiento, outputError := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(entradaId))
-	if outputError != nil || len(movimiento) != 1 {
+	movimiento, outputError := movimientosArka.GetMovimientoById(entradaId)
+	if outputError != nil || movimiento.EstadoMovimientoId.Nombre != "Entrada En Trámite" {
 		return
 	}
 
-	resultado.Movimiento = *movimiento[0]
+	resultado.Movimiento = *movimiento
 	if resultado.Movimiento.ConsecutivoId == nil || *resultado.Movimiento.ConsecutivoId == 0 {
 		resultado.Error = "No se puede continuar con el cálculo de la transaccón contable. Contacte soporte."
 		return

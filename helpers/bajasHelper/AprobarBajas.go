@@ -47,7 +47,7 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 		detalleSubgrupos = make(map[int]models.DetalleSubgrupo)
 	)
 
-	bajas, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
+	bajas, _, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
 	if outputError != nil {
 		return
 	} else if len(bajas) != len(data.Bajas) {

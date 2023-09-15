@@ -1,8 +1,6 @@
 package depreciacionHelper
 
 import (
-	"strconv"
-
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -22,24 +20,22 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		cuentas     map[string]models.CuentaContable
 	)
 
-	if err := configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros); err != nil {
-		return err
-	} else if len(parametros) != 1 || parametros[0].Valor != "true" {
+	outputError = configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros)
+	if outputError != nil || len(parametros) != 1 || parametros[0].Valor != "true" {
 		return
 	}
 
-	if mov_, err := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(id)); err != nil {
-		return err
-	} else if len(mov_) == 1 && mov_[0].EstadoMovimientoId.Nombre == "Cierre En Curso" {
-		resultado.Movimiento = *mov_[0]
-	} else {
-		resultado.Error = "No se pudo consultar la información del cierre. Contacte soporte."
+	mov_, outputError := movimientosArka.GetMovimientoById(id)
+	if outputError != nil {
+		return
+	} else if mov_.EstadoMovimientoId.Nombre != "Cierre En Curso" {
+		resultado.Error = "El cierre no está en curso por lo que no puede ser aprobado."
 		return
 	}
 
-	if err := calcularCierre(resultado.Movimiento.FechaCorte.UTC().Format("2006-01-02"), cuentas, &transaccion, resultado); err != nil {
-		return err
-	} else if resultado.Error != "" || len(transaccion.Movimientos) == 0 {
+	resultado.Movimiento = *mov_
+	outputError = calcularCierre(resultado.Movimiento.FechaCorte.UTC().Format("2006-01-02"), cuentas, &transaccion, resultado)
+	if outputError != nil || resultado.Error != "" || len(transaccion.Movimientos) == 0 {
 		return
 	}
 
