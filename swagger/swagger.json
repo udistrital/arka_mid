@@ -171,6 +171,12 @@
                     },
                     {
                         "in": "query",
+                        "name": "FechaVistoBueno",
+                        "description": "Fecha aprobación del acta: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
                         "name": "sortby",
                         "description": "Columna por la que se ordenan los resultados",
                         "type": "string"
