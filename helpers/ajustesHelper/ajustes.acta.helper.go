@@ -5,13 +5,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/formatdata"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // determinarDeltaActa Determina el tipo de ajuste del elemento.
@@ -23,7 +21,7 @@ import (
 func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg bool, outputError map[string]interface{}) {
 
 	funcion := "determinarDeltaActa"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	if org.SubgrupoCatalogoId != nvo.SubgrupoCatalogoId {
 
@@ -33,7 +31,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 		} else if len(detalleSubgrupo_) == 0 {
 			err := "len(detalleSubgrupo_) = 0"
 			eval := " - catalogoElementosHelper.GetAllDetalleSubgrupo(urlcrud)"
-			return false, false, false, errorctrl.Error(funcion+eval, err, "500")
+			return false, false, false, errorCtrl.Error(funcion+eval, err, "500")
 		} else {
 			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa == "" {
 				var consecutivo models.Consecutivo
@@ -75,7 +73,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 func fillElementos(elsOrg []*models.DetalleElemento_) (completos []*models.DetalleElemento__, outputError map[string]interface{}) {
 
 	funcion := "fillElementos"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		ids       []int
@@ -133,29 +131,19 @@ func fillElementos(elsOrg []*models.DetalleElemento_) (completos []*models.Detal
 func generarNuevosActa(nuevos []*models.DetalleElemento_) (actualizados []*models.Elemento, outputError map[string]interface{}) {
 
 	funcion := "generarNuevosActa"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	if err := formatdata.FillStruct(nuevos, &actualizados); err != nil {
-		logs.Error(err)
-		eval := " - formatdata.FillStruct(nuevos, &actualizados)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	return actualizados, nil
+	outputError = utilsHelper.FillStruct(nuevos, &actualizados)
+	return
 
 }
 
 func generarNuevos(nuevos []*models.DetalleElemento) (actualizados []*models.DetalleElemento__, outputError map[string]interface{}) {
 
 	funcion := "generarNuevosActa"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	if err := formatdata.FillStruct(nuevos, &actualizados); err != nil {
-		logs.Error(err)
-		eval := " - formatdata.FillStruct(nuevos, &actualizados)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
-	}
-
-	return actualizados, nil
+	outputError = utilsHelper.FillStruct(nuevos, &actualizados)
+	return
 
 }

@@ -3,10 +3,10 @@ package controllers
 import (
 	"encoding/json"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	inmuebleshelper "github.com/udistrital/arka_mid/helpers/inmueblesHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // InmueblesController operations for Inmuebles
@@ -31,7 +31,7 @@ func (c *InmueblesController) URLMapping() {
 // @router / [post]
 func (c *InmueblesController) Post() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "InmueblesController")
+	defer errorCtrl.ErrorControlController(c.Controller, "InmueblesController")
 
 	var v models.Inmueble
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &v)
@@ -58,7 +58,7 @@ func (c *InmueblesController) Post() {
 // @router /:id [get]
 func (c *InmueblesController) GetOne() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "InmueblesController")
+	defer errorCtrl.ErrorControlController(c.Controller, "InmueblesController")
 
 	id, err := c.GetInt64(":id")
 	if err != nil {
@@ -102,7 +102,7 @@ func (c *InmueblesController) GetAll() {
 // @router /:id [put]
 func (c *InmueblesController) Put() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "InmueblesController")
+	defer errorCtrl.ErrorControlController(c.Controller, "InmueblesController")
 
 	id, err := c.GetInt64(":id")
 	if err != nil || id <= 0 {

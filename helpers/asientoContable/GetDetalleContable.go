@@ -6,14 +6,14 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetDetalleContable Consulta los detalles de una transacción contable para ser mostrada en el cliente
 func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuentas map[string]models.CuentaContable) (movimientos_ []*models.DetalleMovimientoContable, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleContable"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		dbId int
@@ -95,7 +95,7 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuen
 
 func GetFullDetalleContable(consecutivoId int) (trContable models.InfoTransaccionContable, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetFullDetalleContable - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetFullDetalleContable - Unhandled Error!", "500")
 
 	transaccion, outputError := movimientosContables.GetTransaccion(consecutivoId, "consecutivo", true)
 	if outputError != nil {

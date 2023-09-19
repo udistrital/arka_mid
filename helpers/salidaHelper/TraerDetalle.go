@@ -4,19 +4,21 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
+func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
 	asignaciones map[int]models.AsignacionEspacioFisicoDependencia,
 	sedes map[string]models.EspacioFisico,
+	centrosCostos map[string]models.CentroCostos,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
 
 	var (
 		query       string
@@ -49,6 +51,27 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		} else {
 			ubicacion = val
 		}
+	} else if salida.CentroCostos != "" {
+		_, ok := centrosCostos[salida.CentroCostos]
+		if !ok {
+			payload := "query=Codigo:" + salida.CentroCostos
+			centroCostos_, err := movimientosArka.GetAllCentroCostos(payload)
+			if err != nil {
+				return nil, err
+			} else if len(centroCostos_) == 1 {
+				centrosCostos[salida.CentroCostos] = centroCostos_[0]
+			}
+		}
+
+		centroCostos_ := centrosCostos[salida.CentroCostos]
+		if centroCostos_.Sede == "" && centroCostos_.Dependencia == "" {
+			ubicacion = models.AsignacionEspacioFisicoDependencia{
+				DependenciaId: &models.Dependencia{Nombre: centroCostos_.Nombre},
+			}
+		} else {
+			sede = models.EspacioFisico{Nombre: centroCostos_.Sede}
+			ubicacion.DependenciaId = &models.Dependencia{Nombre: centroCostos_.Dependencia}
+		}
 	}
 
 	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
@@ -57,11 +80,11 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		str = str[0:2] + rgxp.ReplaceAllString(str[2:], "")
 
 		if val, ok := sedes[str]; !ok {
-			query = "?query=CodigoAbreviacion:" + str
-			if sede_, err := oikos.GetAllEspacioFisico(query); err != nil {
+			sede_, err := oikos.GetSedeEspacioFisico(*ubicacion.EspacioFisicoId)
+			if err != nil {
 				return nil, err
-			} else if len(sede_) > 0 {
-				sede = sede_[0]
+			} else if sede_.Id > 0 {
+				sede = sede_
 				sedes[str] = sede
 			}
 		} else {
@@ -90,11 +113,11 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 		"Dependencia":             ubicacion.DependenciaId,
 		"Ubicacion":               ubicacion,
 		"FechaCreacion":           movimiento.FechaCreacion,
-		"FechaModificacion":       movimiento.FechaModificacion,
+		"FechaCorte":              movimiento.FechaCorte,
 		"Activo":                  movimiento.Activo,
 		"MovimientoPadreId":       movimiento.MovimientoPadreId,
 		"FormatoTipoMovimientoId": movimiento.FormatoTipoMovimientoId,
-		"EstadoMovimientoId":      movimiento.EstadoMovimientoId.Id,
+		"EstadoMovimientoId":      movimiento.EstadoMovimientoId,
 		"Consecutivo":             movimiento.Consecutivo,
 		"ConsecutivoId":           movimiento.ConsecutivoId,
 		"Funcionario":             funcionario,
@@ -107,7 +130,7 @@ func TraerDetalle(movimiento *models.Movimiento, salida models.FormatoSalida,
 // GetInfoSalida Retorna el funcionario de una salida a partir del detalle del movimiento
 func GetInfoSalida(detalle string) (funcionarioId int, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
 
 	var detalle_ models.FormatoSalida
 	outputError = utilsHelper.Unmarshal(detalle, &detalle_)

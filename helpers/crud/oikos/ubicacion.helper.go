@@ -1,44 +1,32 @@
 package oikos
 
 import (
-	"regexp"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetSedeDependenciaUbicacion(ubicacionId int) (DetalleUbicacion *models.DetalleSedeDependencia, outputError map[string]interface{}) {
+func GetSedeDependenciaUbicacion(ubicacionId int) (resultado *models.DetalleSedeDependencia, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetSedeDependenciaUbicacion - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetSedeDependenciaUbicacion - Unhandled Error!", "500")
 
-	var (
-		payload   string
-		ubicacion []models.AsignacionEspacioFisicoDependencia
-	)
+	resultado = new(models.DetalleSedeDependencia)
 
-	resultado := new(models.DetalleSedeDependencia)
-
-	payload = "query=Id:" + strconv.Itoa(ubicacionId)
-	if ubicacion_, err := GetAllAsignacion(payload); err != nil {
-		return nil, err
-	} else {
-		ubicacion = ubicacion_
+	payload := "query=Id:" + strconv.Itoa(ubicacionId)
+	ubicacion, outputError := GetAllAsignacion(payload)
+	if outputError != nil || len(ubicacion) == 0 {
+		return
 	}
 
 	resultado.Dependencia = ubicacion[0].DependenciaId
 	resultado.Ubicacion = &ubicacion[0]
 
-	rgxp := regexp.MustCompile(`\d.*`)
-	strSede := ubicacion[0].EspacioFisicoId.CodigoAbreviacion
-	strSede = strSede[0:2] + rgxp.ReplaceAllString(strSede[2:], "")
-
-	payload = "?query=CodigoAbreviacion:" + strSede
-	if sede_, err := GetAllEspacioFisico(payload); err != nil {
-		return nil, err
-	} else {
-		resultado.Sede = &sede_[0]
+	sede, outputError := GetSedeEspacioFisico(*resultado.Ubicacion.EspacioFisicoId)
+	if outputError != nil {
+		return
 	}
 
-	return resultado, nil
+	resultado.Sede = &sede
+	return
 }

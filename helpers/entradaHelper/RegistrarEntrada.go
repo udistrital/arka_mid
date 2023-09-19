@@ -6,13 +6,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // RegistrarEntrada Crea registro de entrada en estado en trámite
 func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("RegistrarEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("RegistrarEntrada - Unhandled Error!", "500")
 
 	resultado.Movimiento = models.Movimiento{
 		Observacion:             data.Observacion,
@@ -92,7 +92,7 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *mode
 // creaDetalleEntrada construye la data que será almacenada en la columna detalle según se requiera.
 func crearDetalleEntrada(completo models.FormatoBaseEntrada, necesario *string) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("crearDetalleEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("crearDetalleEntrada - Unhandled Error!", "500")
 
 	var detalle map[string]interface{}
 	outputError = utilsHelper.FillStruct(completo, &detalle)
@@ -178,4 +178,8 @@ func getConsecutivoEntrada(entrada *models.Movimiento, etl bool) (outputError ma
 	}
 
 	return
+}
+
+func getTipoComprobanteEntradas() string {
+	return "P8"
 }

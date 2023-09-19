@@ -7,13 +7,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GenerarCierre Crear el movimiento y transacción contable correspondientes al cierre a una fecha determinada
 func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GenerarCierre - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GenerarCierre - Unhandled Error!", "500")
 
 	var (
 		detalle          models.FormatoDepreciacion
@@ -109,11 +109,10 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 	resultado.Movimiento.Activo = true
 
 	if resultado.Movimiento.Id > 0 {
-		if movimiento_, err := movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id); err != nil {
+		outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id)
+		if outputError != nil {
 			desbloquearSistema(parametros[1], *resultado)
-			return err
-		} else {
-			resultado.Movimiento = *movimiento_
+			return
 		}
 	} else {
 		if err := movimientosArka.PostMovimiento(&resultado.Movimiento); err != nil {

@@ -1,8 +1,6 @@
 package trasladoshelper
 
 import (
-	"time"
-
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -10,13 +8,14 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	timebogota "github.com/udistrital/arka_mid/utils_oas/timeBogota"
 )
 
 // AprobarTraslado Actualiza el estado del traslado y genera la transaccion contable correspondiente
 func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarTraslado - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarTraslado - Unhandled Error!", "500")
 
 	var (
 		detalle     models.FormatoTraslado
@@ -97,8 +96,8 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		return
 	}
 
-	response.Movimiento.FechaCorte = utilsHelper.Time(time.Now())
-	_, outputError = movimientosArka.PutMovimiento(&response.Movimiento, response.Movimiento.Id)
+	response.Movimiento.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
+	outputError = movimientosArka.PutMovimiento(&response.Movimiento, response.Movimiento.Id)
 
 	return
 }

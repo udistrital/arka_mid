@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // ActaRecibidoController operations for ActaRecibido
@@ -35,19 +35,7 @@ func (c *ActaRecibidoController) URLMapping() {
 // @router / [post]
 func (c *ActaRecibidoController) Post() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
 		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
@@ -75,19 +63,7 @@ func (c *ActaRecibidoController) Post() {
 // @router / [get]
 func (c *ActaRecibidoController) GetParametros() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	if l, err := actaRecibido.GetAllParametrosActa(); err != nil {
 		panic(err)
@@ -110,19 +86,7 @@ func (c *ActaRecibidoController) GetParametros() {
 // @router /elementos/:id [get]
 func (c *ActaRecibidoController) GetElementosActa() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ActaRecibidoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	idStr := c.Ctx.Input.Param(":id")
 	var id int
@@ -165,6 +129,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // @Param	EstadoActaId		query	string	false	"Estado del acta"
 // @Param	FechaCreacion		query	string	false	"Fecha creación del acta: __in"
 // @Param	FechaModificacion	query	string	false	"Fecha modificación del acta: __in"
+// @Param	FechaVistoBueno		query	string	false	"Fecha aprobación del acta: __in"
 // @Param	sortby				query	string	false	"Columna por la que se ordenan los resultados"
 // @Param	order				query	string	false	"Orden de los resultados de acuerdo a la columna indicada"
 // @Success 200 {object} []models.ActaRecibido
@@ -175,7 +140,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // @router /get_all_actas/ [get]
 func (c *ActaRecibidoController) GetAllActas() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "ActaRecibidoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	var WSO2user string
 	var limit int64 = 10
@@ -210,6 +175,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 	id := c.GetString("Id")
 	creacion := c.GetString("FechaCreacion")
 	modificacion := c.GetString("FechaModificacion")
+	vistoBueno := c.GetString("FechaVistoBueno")
 	sortby := c.GetString("sortby")
 	order := c.GetString("order")
 
@@ -222,7 +188,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		offset = v
 	}
 
-	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, tipos, reqStates, creacion, modificacion, unidadEjecutora, sortby, order, limit, offset); err == nil {
+	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, tipos, reqStates, creacion, modificacion, vistoBueno, unidadEjecutora, sortby, order, limit, offset); err == nil {
 		c.Ctx.Output.Header("x-total-count", t)
 		if l == nil {
 			l = []map[string]interface{}{}

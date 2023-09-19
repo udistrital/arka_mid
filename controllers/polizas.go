@@ -4,9 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	polizasHelper "github.com/udistrital/arka_mid/helpers/polizasHelper"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // PolizasController operations for Polizas
@@ -33,19 +34,7 @@ func (c *PolizasController) URLMapping() {
 // @router /AllElementosPoliza [get]
 func (c *PolizasController) GetAllElementosPoliza() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "PolizasController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Error no manejado!
-			}
-		}
-	}()
+	defer errorCtrl.ErrorControlController(c.Controller, "PolizasController")
 
 	var fields []string                 //filtra un valor en concreto
 	var sortby []string                 //

@@ -3,7 +3,6 @@ package entradaHelper
 import (
 	"strconv"
 
-	administrativa_ "github.com/udistrital/administrativa_mid_api/models"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/administrativa"
@@ -13,32 +12,30 @@ import (
 	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // DetalleEntrada Consulta el detalle de una entrada incluyendo la transaccion contable (si aplica)
 func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
 	var (
 		detalle         models.FormatoBaseEntrada
-		movimiento      models.Movimiento
 		unidadEjecutora models.Parametro
 		query           string
 	)
 
 	resultado := make(map[string]interface{})
 
-	query = "query=Id:" + strconv.Itoa(entradaId)
-	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return nil, err
-	} else if len(mov) > 0 {
-		movimiento = *mov[0]
+	movimiento, outputError := movimientosArka.GetMovimientoById(entradaId)
+	if outputError != nil {
+		return
 	}
 
-	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
-		return nil, err
+	outputError = utilsHelper.Unmarshal(movimiento.Detalle, &detalle)
+	if outputError != nil {
+		return
 	}
 
 	if detalle.ActaRecibidoId > 0 {
@@ -67,7 +64,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	}
 
 	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
-		var contrato administrativa_.InformacionContrato
+		var contrato models.InformacionContrato
 		if unidadEjecutora.CodigoAbreviacion == "UD" {
 			outputError = administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato)
 			if outputError != nil {
@@ -77,7 +74,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			if contrato.Contrato.NumeroContratoSuscrito != "" {
 				resultado["contrato"] = contrato.Contrato
 				if contrato.Contrato.TipoContrato != "" {
-					var tipoContrato administrativa_.TipoContrato
+					var tipoContrato models.TipoContrato
 					outputError = administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato)
 					if outputError != nil {
 						return

@@ -5,14 +5,14 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetTipoBienIdByValor Determina el tipo bien al que pertenece un elemento dado el valor en UVT
 func GetTipoBienIdByValor(tbPadreId int, normalizado float64, bufferTiposBien map[int]models.TipoBien) (tipoBienId int, outputError map[string]interface{}) {
 
 	funcion := "GetTipoBienIdByValor - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if tbPadreId <= 0 {
 		return

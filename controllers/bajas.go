@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/bajasHelper"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/inventarioHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // BajaController
@@ -39,11 +39,11 @@ func (c *BajaController) URLMapping() {
 // @router / [post]
 func (c *BajaController) Post() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BajaController")
 
 	var v *models.TrSoporteMovimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
-		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
+		panic(errorCtrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if respuesta, err := bajasHelper.Post(v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
@@ -54,7 +54,7 @@ func (c *BajaController) Post() {
 				panic(err)
 			}
 
-			panic(errorctrl.Error("Post", "No se obtuvo respuesta al registrar la baja", "404"))
+			panic(errorCtrl.Error("Post", "No se obtuvo respuesta al registrar la baja", "404"))
 		}
 
 	}
@@ -71,21 +71,21 @@ func (c *BajaController) Post() {
 // @router /:id [put]
 func (c *BajaController) Put() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BajaController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar una baja válida")
 		}
-		panic(errorctrl.Error("Put - c.GetInt(\":id\")", err, "400"))
+		panic(errorCtrl.Error("Put - c.GetInt(\":id\")", err, "400"))
 	} else {
 		id = v
 	}
 
 	var v *models.TrSoporteMovimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
-		panic(errorctrl.Error("Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
+		panic(errorCtrl.Error("Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if respuesta, err := bajasHelper.Put(v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
@@ -96,7 +96,7 @@ func (c *BajaController) Put() {
 				panic(err)
 			}
 
-			panic(errorctrl.Error("Put", "No se obtuvo respuesta al actualizar la baja", "404"))
+			panic(errorCtrl.Error("Put", "No se obtuvo respuesta al actualizar la baja", "404"))
 		}
 	}
 
@@ -113,7 +113,7 @@ func (c *BajaController) Put() {
 // @router /:id [get]
 func (c *BajaController) GetSolicitud() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BajaController")
 
 	var (
 		id   int
@@ -154,7 +154,7 @@ func (c *BajaController) GetSolicitud() {
 // @router / [get]
 func (c *BajaController) GetAll() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BajaController")
 
 	var (
 		revComite  bool
@@ -163,19 +163,19 @@ func (c *BajaController) GetAll() {
 	)
 
 	if v := c.GetString("user", ""); v == "" {
-		panic(errorctrl.Error(`GetAll - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
+		panic(errorCtrl.Error(`GetAll - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
 	} else {
 		terceroId = v
 	}
 
 	if v, err := c.GetBool("revComite"); err != nil {
-		panic(errorctrl.Error(`GetAll - c.GetBool("revComite")`, err, "400"))
+		panic(errorCtrl.Error(`GetAll - c.GetBool("revComite")`, err, "400"))
 	} else {
 		revComite = v
 	}
 
 	if v, err := c.GetBool("revAlmacen"); err != nil {
-		panic(errorctrl.Error(`GetAll - c.GetBool("revAlmacen")`, err, "400"))
+		panic(errorCtrl.Error(`GetAll - c.GetBool("revAlmacen")`, err, "400"))
 	} else {
 		revAlmacen = v
 	}
@@ -199,19 +199,7 @@ func (c *BajaController) GetAll() {
 // @router /elemento/:id [get]
 func (c *BajaController) GetDetalleElemento() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			logs.Error(err)
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "BajaController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500") // Unhandled Error!
-			}
-		}
-	}()
+	defer errorCtrl.ErrorControlController(c.Controller, "BajaController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
@@ -247,23 +235,23 @@ func (c *BajaController) GetDetalleElemento() {
 // @router /aprobar [put]
 func (c *BajaController) PutRevision() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BajaController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BajaController")
 
 	var trBaja *models.TrRevisionBaja
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja); err != nil {
-		panic(errorctrl.Error("PutRevision - json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja)", err, "400"))
+		panic(errorCtrl.Error("PutRevision - json.Unmarshal(c.Ctx.Input.RequestBody, &trBaja)", err, "400"))
 	}
 
 	if !trBaja.Aprobacion {
 		if ids, err := movimientosArka.PutRevision(trBaja); err != nil {
-			panic(errorctrl.Error("PutRevision - movimientosArkaHelper.PutRevision(trBaja)", err, "404"))
+			panic(errorCtrl.Error("PutRevision - movimientosArkaHelper.PutRevision(trBaja)", err, "404"))
 		} else {
 			c.Data["json"] = ids
 		}
 	} else {
 		var response models.ResultadoMovimiento
 		if err := bajasHelper.AprobarBajas(trBaja, &response); err != nil {
-			panic(errorctrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
+			panic(errorCtrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
 		} else {
 			c.Data["json"] = response
 		}

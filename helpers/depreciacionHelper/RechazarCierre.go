@@ -1,19 +1,17 @@
 package depreciacionHelper
 
 import (
-	"strconv"
-
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // RechazarCierre Verifica el estado de las cuentas contables y actualiza el estado del cierre.
 func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("RechazarCierre - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("RechazarCierre - Unhandled Error!", "500")
 
 	var (
 		detalle    *models.FormatoDepreciacion
@@ -26,14 +24,12 @@ func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMo
 		return
 	}
 
-	if mov_, err := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(info.Id)); err != nil {
-		return err
-	} else if len(mov_) == 1 && mov_[0].EstadoMovimientoId.Nombre == "Cierre En Curso" {
-		resultado.Movimiento = *mov_[0]
-	} else {
+	mov_, outputError := movimientosArka.GetMovimientoById(info.Id)
+	if outputError != nil || mov_.EstadoMovimientoId.Nombre != "Cierre En Curso" {
 		return
 	}
 
+	resultado.Movimiento = *mov_
 	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Cierre Rechazado"); err != nil {
 		return err
 	}
@@ -47,8 +43,9 @@ func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMo
 		return err
 	}
 
-	if _, err := movimientosArka.PutMovimiento(&resultado.Movimiento, info.Id); err != nil {
-		return err
+	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, info.Id)
+	if outputError != nil {
+		return
 	}
 
 	parametros[0].Valor = "false"

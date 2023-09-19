@@ -79,6 +79,14 @@ type NovedadElemento struct {
 	FechaModificacion    time.Time
 }
 
+type CentroCostos struct {
+	Id          int
+	Dependencia string
+	Sede        string
+	Codigo      string
+	Nombre      string
+}
+
 type TransaccionEntrada struct {
 	Id                      int
 	Observacion             string
@@ -118,7 +126,7 @@ type TrSalida struct {
 	Elementos []*ElementosMovimiento
 }
 type SalidaGeneral struct {
-	Salidas []*TrSalida
+	Salidas []TrSalida
 }
 
 type ResultadoMovimiento struct {
@@ -297,4 +305,9 @@ type FormatoAjusteAutomatico struct {
 type FormatoSalida struct {
 	Funcionario int `json:"funcionario"`
 	Ubicacion   int `json:"ubicacion"`
+}
+
+type FormatoSalidaCostos struct {
+	FormatoSalida
+	CentroCostos string `json:"centro_costos"`
 }

@@ -171,6 +171,12 @@
                     },
                     {
                         "in": "query",
+                        "name": "FechaVistoBueno",
+                        "description": "Fecha aprobación del acta: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
                         "name": "sortby",
                         "description": "Columna por la que se ordenan los resultados",
                         "type": "string"
@@ -1118,32 +1124,6 @@
                 }
             }
         },
-        "/entrada/movimientos/{acta_recibido_id}": {
-            "get": {
-                "tags": [
-                    "entrada"
-                ],
-                "description": "return movimientos asociados a un acta",
-                "operationId": "EntradaController.Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "acta_recibido_id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{object]"
-                    },
-                    "404": {
-                        "description": "not found resource"
-                    }
-                }
-            }
-        },
         "/entrada/{id}": {
             "get": {
                 "tags": [
@@ -1398,9 +1378,57 @@
                 "parameters": [
                     {
                         "in": "query",
-                        "name": "tramite_only",
-                        "description": "Retornar salidas únicamente en estado En Trámite",
-                        "type": "boolean"
+                        "name": "limit",
+                        "description": "Limit the size of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "description": "Start position of result set. Must be an integer",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortby",
+                        "description": "Columna por la que se ordenan los resultados",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "description": "Orden de los resultados de acuerdo a la columna indicada",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "Consecutivo",
+                        "description": "Consecutivo de la salida: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "FechaCreacion",
+                        "description": "Fecha creación de la salida: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "FechaCorte",
+                        "description": "Fecha aprobación de la salida: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "MovimientoPadreId",
+                        "description": "Consecutivo de la entrada: __in",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "EstadoMovimientoId",
+                        "description": "Estado de la salida",
+                        "type": "string"
                     }
                 ],
                 "responses": {

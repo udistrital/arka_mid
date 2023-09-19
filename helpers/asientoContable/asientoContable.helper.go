@@ -1,11 +1,8 @@
 package asientoContable
 
 import (
-	"encoding/json"
 	"net/url"
 	"time"
-
-	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
@@ -14,7 +11,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
@@ -40,7 +37,7 @@ func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero, consecutivoId int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "AsientoContable"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		res                  map[string]interface{}
@@ -70,12 +67,9 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	if comprobanteID != "" {
 		etiquetas := *new(models.Etiquetas)
 		etiquetas.ComprobanteId = comprobanteID
-		if jsonData, err := json.Marshal(etiquetas); err != nil {
-			logs.Error(err)
-			eval := " - json.Marshal(etiquetas)"
-			return nil, errorctrl.Error(funcion+eval, err, "500")
-		} else {
-			transaccion.Etiquetas = string(jsonData[:])
+		outputError = utilsHelper.Marshal(etiquetas, &transaccion.Etiquetas)
+		if outputError != nil {
+			return
 		}
 	} else {
 		transaccion.Etiquetas = ""

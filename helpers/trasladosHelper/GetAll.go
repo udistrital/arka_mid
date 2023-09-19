@@ -11,14 +11,14 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetAll Consulta información general de todos los traslados asociados a un usuario determinado. Permite filtrar por los que están pendientes por aprobar o confirmar
 func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleTrasladoLista) (outputError map[string]interface{}) {
 
 	funcion := "GetAll"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var traslados []*models.Movimiento
 	if err := getTraslados(user, confirmar, aprobar, &traslados); err != nil {
@@ -76,7 +76,7 @@ func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleT
 		}
 
 		if v, err := utilsHelper.BufferGeneric(detalle.Ubicacion, ubicacionesBuffer, requestUbicacion(detalle.Ubicacion), nil, nil); err == nil {
-			if v2, ok := v.(*models.DetalleSedeDependencia); ok {
+			if v2, ok := v.(*models.DetalleSedeDependencia); ok && v2 != nil && v2.Ubicacion != nil {
 				Ubicacion_ = v2.Ubicacion.EspacioFisicoId.Nombre
 			}
 		}
@@ -129,7 +129,7 @@ func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Mov
 
 		if len(opciones) > 0 {
 			query := "limit=-1&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion:SOL_TRD"
-			if tr_, err := movimientosArka.GetAllMovimiento(query); err != nil {
+			if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
 				return err
 			} else {
 				*traslados = tr_
@@ -142,7 +142,7 @@ func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Mov
 
 	} else if aprobar {
 		query := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre:" + url.QueryEscape("Traslado Confirmado")
-		if tr_, err := movimientosArka.GetAllMovimiento(query); err != nil {
+		if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
 			return err
 		} else {
 			*traslados = tr_

@@ -14,13 +14,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // AprobarBajas Aprobación masiva de bajas: transacciones contables, actualización de movmientos y registro de novedades
 func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("AprobarBajas - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("AprobarBajas - Unhandled Error!", "500")
 
 	var movBj, movCr int
 
@@ -47,7 +47,7 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 		detalleSubgrupos = make(map[int]models.DetalleSubgrupo)
 	)
 
-	bajas, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
+	bajas, _, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
 	if outputError != nil {
 		return
 	} else if len(bajas) != len(data.Bajas) {
@@ -183,6 +183,6 @@ func payloadBajas(ids []int) string {
 }
 
 func getPayloadDetalleSubgrupo(id int) string {
-	return "limit=1&fields=SubgrupoId,TipoBienId,Amortizacion,Depreciacion&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" +
+	return "limit=1&fields=SubgrupoId,TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=FechaCreacion&order=desc&query=Activo:true,SubgrupoId__Id:" +
 		strconv.Itoa(id)
 }

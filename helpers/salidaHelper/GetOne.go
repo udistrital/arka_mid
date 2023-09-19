@@ -6,15 +6,15 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetOne(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	var (
-		formato       models.FormatoSalida
+		formato       models.FormatoSalidaCostos
 		ids           []int
 		elementosActa []*models.DetalleElemento
 	)
@@ -65,7 +65,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 		return
 	}
 
-	detalle, outputError := TraerDetalle(trSalida.Salida, formato, nil, nil, nil)
+	detalle, outputError := traerDetalle(trSalida.Salida, formato, nil, nil, nil, nil)
 	if outputError != nil {
 		return
 	}

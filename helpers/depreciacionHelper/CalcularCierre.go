@@ -9,13 +9,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // calcularCierre Calcula la transacción contable que se generará una vez se liquide el cierre a una fecha determinada
 func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable, transaccion *models.TransaccionMovimientos, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("calcularCierre - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("calcularCierre - Unhandled Error!", "500")
 
 	var (
 		formtatoCrr int
@@ -56,7 +56,7 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 			return err
 		} else if len(elemento) == 1 {
 
-			payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
+			payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 			if _, ok := subgrupos[elemento[0].SubgrupoCatalogoId]; !ok {
 				if sg, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(elemento[0].SubgrupoCatalogoId)); err != nil {
 					return err

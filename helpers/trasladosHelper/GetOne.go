@@ -2,7 +2,6 @@ package trasladoshelper
 
 import (
 	"net/url"
-	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -11,24 +10,24 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetOne Consulta los funcionarios, ubicación y elementos asociados a un traslado
 func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	var detalle models.FormatoTraslado
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	movimientoA, outputError := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(id))
-	if outputError != nil || len(movimientoA) != 1 {
+	movimientoA, outputError := movimientosArka.GetMovimientoById(id)
+	if outputError != nil {
 		return
 	}
 
-	Traslado.Movimiento = movimientoA[0]
+	Traslado.Movimiento = movimientoA
 	outputError = utilsHelper.Unmarshal(Traslado.Movimiento.Detalle, &detalle)
 	if outputError != nil {
 		return
@@ -74,19 +73,13 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
 	funcion := "getElementosTraslado"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	var (
-		query     string
-		elementos []*models.ElementosMovimiento
-	)
-
-	query = "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
+	query := "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
-		return nil, err
-	} else {
-		elementos = elementos_
+	elementos, outputError := movimientosArka.GetAllElementosMovimiento(query)
+	if outputError != nil {
+		return
 	}
 
 	idsActa := []int{}

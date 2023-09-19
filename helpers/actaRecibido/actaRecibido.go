@@ -4,20 +4,20 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
 // GetAllParametrosActa Consulta diferentes valores paramétricos
 func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "GetAllParametrosActa - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var (
 		EstadoActa     interface{}
@@ -25,7 +25,9 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 		Ivas           = make([]models.Iva, 0)
 	)
 
-	urlActasEstadoActa := "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_acta?limit=-1"
+	var path, _ = beego.AppConfig.String("actaRecibidoService")
+	path = "http://" + path
+	urlActasEstadoActa := path + "estado_acta?limit=-1"
 	if _, err := request.GetJsonTest(urlActasEstadoActa, &EstadoActa); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -36,7 +38,7 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 		return nil, outputError
 	}
 
-	urlACtasEstadoElem := "http://" + beego.AppConfig.String("actaRecibidoService") + "estado_elemento?limit=-1"
+	urlACtasEstadoElem := path + "estado_elemento?limit=-1"
 	if _, err := request.GetJsonTest(urlACtasEstadoElem, &EstadoElemento); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
