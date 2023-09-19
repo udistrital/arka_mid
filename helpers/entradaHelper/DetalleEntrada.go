@@ -22,22 +22,20 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	var (
 		detalle         models.FormatoBaseEntrada
-		movimiento      models.Movimiento
 		unidadEjecutora models.Parametro
 		query           string
 	)
 
 	resultado := make(map[string]interface{})
 
-	query = "query=Id:" + strconv.Itoa(entradaId)
-	if mov, err := movimientosArka.GetAllMovimiento(query); err != nil {
-		return nil, err
-	} else if len(mov) > 0 {
-		movimiento = *mov[0]
+	movimiento, outputError := movimientosArka.GetMovimientoById(entradaId)
+	if outputError != nil {
+		return
 	}
 
-	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
-		return nil, err
+	outputError = utilsHelper.Unmarshal(movimiento.Detalle, &detalle)
+	if outputError != nil {
+		return
 	}
 
 	if detalle.ActaRecibidoId > 0 {

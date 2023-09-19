@@ -92,7 +92,7 @@ func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimie
 			payload += url.QueryEscape("Baja En Trámite")
 		}
 
-		if solicitudes_, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
 			return err
 		} else {
 			*bajas = solicitudes_
@@ -117,7 +117,7 @@ func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimie
 
 	if len(opciones) > 0 {
 		query := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre__startswith:Baja"
-		if tr_, err := movimientosArka.GetAllMovimiento(query); err != nil {
+		if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
 			return err
 		} else {
 			*bajas = tr_

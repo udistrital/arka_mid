@@ -129,7 +129,7 @@ func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Mov
 
 		if len(opciones) > 0 {
 			query := "limit=-1&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion:SOL_TRD"
-			if tr_, err := movimientosArka.GetAllMovimiento(query); err != nil {
+			if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
 				return err
 			} else {
 				*traslados = tr_
@@ -142,7 +142,7 @@ func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Mov
 
 	} else if aprobar {
 		query := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre:" + url.QueryEscape("Traslado Confirmado")
-		if tr_, err := movimientosArka.GetAllMovimiento(query); err != nil {
+		if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
 			return err
 		} else {
 			*traslados = tr_

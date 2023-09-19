@@ -77,7 +77,7 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 		fechaCorte = inmueble.ElementoMovimiento.MovimientoId.FechaCorte
 	}
 
-	movimientos, outputError := movimientosArka.GetAllMovimiento(payload)
+	movimientos, _, outputError := movimientosArka.GetAllMovimiento(payload)
 	if outputError != nil {
 		return
 	}

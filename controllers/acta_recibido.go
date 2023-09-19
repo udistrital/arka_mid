@@ -129,6 +129,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 // @Param	EstadoActaId		query	string	false	"Estado del acta"
 // @Param	FechaCreacion		query	string	false	"Fecha creación del acta: __in"
 // @Param	FechaModificacion	query	string	false	"Fecha modificación del acta: __in"
+// @Param	FechaVistoBueno		query	string	false	"Fecha aprobación del acta: __in"
 // @Param	sortby				query	string	false	"Columna por la que se ordenan los resultados"
 // @Param	order				query	string	false	"Orden de los resultados de acuerdo a la columna indicada"
 // @Success 200 {object} []models.ActaRecibido
@@ -174,6 +175,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 	id := c.GetString("Id")
 	creacion := c.GetString("FechaCreacion")
 	modificacion := c.GetString("FechaModificacion")
+	vistoBueno := c.GetString("FechaVistoBueno")
 	sortby := c.GetString("sortby")
 	order := c.GetString("order")
 
@@ -186,7 +188,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		offset = v
 	}
 
-	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, tipos, reqStates, creacion, modificacion, unidadEjecutora, sortby, order, limit, offset); err == nil {
+	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, tipos, reqStates, creacion, modificacion, vistoBueno, unidadEjecutora, sortby, order, limit, offset); err == nil {
 		c.Ctx.Output.Header("x-total-count", t)
 		if l == nil {
 			l = []map[string]interface{}{}

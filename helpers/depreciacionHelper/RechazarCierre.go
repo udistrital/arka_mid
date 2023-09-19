@@ -1,8 +1,6 @@
 package depreciacionHelper
 
 import (
-	"strconv"
-
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -26,14 +24,12 @@ func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMo
 		return
 	}
 
-	if mov_, err := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(info.Id)); err != nil {
-		return err
-	} else if len(mov_) == 1 && mov_[0].EstadoMovimientoId.Nombre == "Cierre En Curso" {
-		resultado.Movimiento = *mov_[0]
-	} else {
+	mov_, outputError := movimientosArka.GetMovimientoById(info.Id)
+	if outputError != nil || mov_.EstadoMovimientoId.Nombre != "Cierre En Curso" {
 		return
 	}
 
+	resultado.Movimiento = *mov_
 	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Cierre Rechazado"); err != nil {
 		return err
 	}

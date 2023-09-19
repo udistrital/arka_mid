@@ -1,8 +1,6 @@
 package salidaHelper
 
 import (
-	"strconv"
-
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -28,12 +26,12 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
 
 	// Se consulta la salida original
-	salidaOriginal, outputError := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(salidaId))
-	if outputError != nil || len(salidaOriginal) != 1 || salidaOriginal[0].EstadoMovimientoId.Nombre != "Salida Rechazada" {
+	salidaOriginal, outputError := movimientosArka.GetMovimientoById(salidaId)
+	if outputError != nil || salidaOriginal.EstadoMovimientoId.Nombre != "Salida Rechazada" {
 		return
 	}
 
-	outputError = utilsHelper.Unmarshal(salidaOriginal[0].Detalle, &detalleOriginal)
+	outputError = utilsHelper.Unmarshal(salidaOriginal.Detalle, &detalleOriginal)
 	if outputError != nil {
 		return
 	}
@@ -80,8 +78,8 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 		var id int
 		if idx == index {
 			id = salidaId
-			salida.Salida.Consecutivo = salidaOriginal[0].Consecutivo
-			salida.Salida.ConsecutivoId = salidaOriginal[0].ConsecutivoId
+			salida.Salida.Consecutivo = salidaOriginal.Consecutivo
+			salida.Salida.ConsecutivoId = salidaOriginal.ConsecutivoId
 		}
 
 		salida.Salida.Id = id

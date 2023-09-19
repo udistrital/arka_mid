@@ -19,25 +19,25 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 	var solicitud_ = make(map[string]interface{})
 	var elementos___ []map[string]interface{}
 
-	mov, err := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(id))
-	if err != nil || len(mov) != 1 {
-		return nil, err
+	mov, outputError := movimientosArka.GetMovimientoById(id)
+	if outputError != nil {
+		return
 	}
 
 	var detalle models.FormatoSolicitudBodega
-	outputError = utilsHelper.Unmarshal(mov[0].Detalle, &detalle)
+	outputError = utilsHelper.Unmarshal(mov.Detalle, &detalle)
 	if outputError != nil {
 		return
 	}
 
-	outputError = utilsHelper.FillStruct(mov[0], &solicitud_)
+	outputError = utilsHelper.FillStruct(mov, &solicitud_)
 	if outputError != nil {
 		return
 	}
 
-	tercero, err := terceros.GetNombreTerceroById(detalle.Funcionario)
-	if err != nil {
-		return nil, err
+	tercero, outputError := terceros.GetNombreTerceroById(detalle.Funcionario)
+	if outputError != nil {
+		return
 	}
 
 	for _, elementos := range detalle.Elementos {

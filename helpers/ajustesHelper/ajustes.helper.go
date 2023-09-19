@@ -1,7 +1,6 @@
 package ajustesHelper
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -61,17 +60,15 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 	defer errorCtrl.ErrorControlFunction("GetDetalleAjuste - Unhandled Error!", "500")
 
 	var (
-		movimiento  models.Movimiento
 		detalle     models.FormatoAjuste
 		movimientos []*models.PreMovAjuste
 	)
 
 	Ajuste = new(models.DetalleAjuste)
 
-	if mov, err := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(id)); err != nil || len(mov) != 1 {
-		return nil, err
-	} else {
-		movimiento = *mov[0]
+	movimiento, outputError := movimientosArka.GetMovimientoById(id)
+	if outputError != nil {
+		return
 	}
 
 	outputError = utilsHelper.Unmarshal(movimiento.Detalle, &detalle)
@@ -138,7 +135,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 	}
 
 	Ajuste.TrContable = movs
-	Ajuste.Movimiento = &movimiento
+	Ajuste.Movimiento = movimiento
 
 	return Ajuste, nil
 

@@ -2,7 +2,6 @@ package trasladoshelper
 
 import (
 	"net/url"
-	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -23,12 +22,12 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	movimientoA, outputError := movimientosArka.GetAllMovimiento("query=Id:" + strconv.Itoa(id))
-	if outputError != nil || len(movimientoA) != 1 {
+	movimientoA, outputError := movimientosArka.GetMovimientoById(id)
+	if outputError != nil {
 		return
 	}
 
-	Traslado.Movimiento = movimientoA[0]
+	Traslado.Movimiento = movimientoA
 	outputError = utilsHelper.Unmarshal(Traslado.Movimiento.Detalle, &detalle)
 	if outputError != nil {
 		return

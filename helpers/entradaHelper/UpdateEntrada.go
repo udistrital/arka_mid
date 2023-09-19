@@ -1,8 +1,6 @@
 package entradaHelper
 
 import (
-	"strconv"
-
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
@@ -13,12 +11,12 @@ func UpdateEntrada(data *models.TransaccionEntrada, movimientoId int, resultado 
 
 	defer errorCtrl.ErrorControlFunction("UpdateEntrada - Unhandled Error!", "500")
 
-	mov, outputError := movimientosArka.GetAllMovimiento("limit=1&query=Id:" + strconv.Itoa(movimientoId))
-	if outputError != nil || len(mov) != 1 || mov[0].EstadoMovimientoId.Nombre != "Entrada Rechazada" {
+	mov, outputError := movimientosArka.GetMovimientoById(movimientoId)
+	if outputError != nil || mov.EstadoMovimientoId.Nombre != "Entrada Rechazada" {
 		return outputError
 	}
 
-	resultado.Movimiento = *mov[0]
+	resultado.Movimiento = *mov
 	resultado.Movimiento.Observacion = data.Observacion
 	resultado.Movimiento.Activo = true
 

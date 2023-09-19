@@ -71,17 +71,20 @@ func GetAllSoporteMovimiento(query string) (soportes []models.SoporteMovimiento,
 }
 
 // GetAllMovimiento query controlador movimiento del api movimientos_arka_crud
-func GetAllMovimiento(query string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
+func GetAllMovimiento(payload string) (movimientos []*models.Movimiento, count string, outputError map[string]interface{}) {
 
-	funcion := "GetAllMovimiento"
-	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	funcion := "GetAllMovimiento - "
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "movimiento?" + query
-	if err := request.GetJson(urlcrud, &movimientos); err != nil {
-		eval := " - request.GetJson(urlcrud, &movimientos)"
-		return nil, errorCtrl.Error(funcion+eval, err, "502")
+	urlcrud := "http://" + basePath + "movimiento?" + payload
+	response, err := request.GetJsonTest(urlcrud, &movimientos)
+	if err != nil {
+		eval := "request.GetJson(urlcrud, &movimientos)"
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
-	return movimientos, nil
+
+	count = response.Header.Get("total-count")
+	return
 }
 
 // GetAllNovedadElemento query controlador novedad_elemento del api movimientos_arka_crud
