@@ -186,7 +186,7 @@ func (c *SalidaController) GetElementos() {
 // @Title Get User
 // @Description Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas
 // @Param	limit				query	string	false	"Limit the size of result set. Must be an integer"
-// @Param	offset				query	string	false	"Start position of result set. Must be an integer"
+// @Param	page				query	string	false	"Start position of result set. Must be an integer"
 // @Param	sortby				query	string	false	"Columna por la que se ordenan los resultados"
 // @Param	order				query	string	false	"Orden de los resultados de acuerdo a la columna indicada"
 // @Param	Consecutivo			query	string	false	"Consecutivo de la salida: __in"
@@ -204,7 +204,7 @@ func (c *SalidaController) GetSalidas() {
 	sortby := c.GetString("sortby")
 	order := c.GetString("order")
 	limit, _ := c.GetInt("limit", 10)
-	offset, _ := c.GetInt("offset", 0)
+	page, _ := c.GetInt("page", 1)
 
 	consecutivo := c.GetString("Consecutivo")
 	creacion := c.GetString("FechaCreacion")
@@ -217,7 +217,7 @@ func (c *SalidaController) GetSalidas() {
 		estados = strings.Split(estados_, ",")
 	}
 
-	if v, t, err := salidaHelper.GetAll(estados, creacion, aprobacion, consecutivo, entrada, sortby, order, limit, offset); err == nil {
+	if v, t, err := salidaHelper.GetAll(estados, creacion, aprobacion, consecutivo, entrada, sortby, order, limit, page); err == nil {
 		c.Ctx.Output.Header("x-total-count", t)
 		c.Data["json"] = v
 	} else {
