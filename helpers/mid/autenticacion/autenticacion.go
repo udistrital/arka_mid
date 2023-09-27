@@ -1,9 +1,6 @@
 package autenticacion
 
 import (
-	"fmt"
-	"regexp"
-
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
@@ -60,41 +57,15 @@ func GetTerceroUser(user models.UsuarioAutenticacion, terceroId *int) (outputErr
 		return
 	}
 
-	rgxp := regexp.MustCompile(`\d.*`)
-	tipo := rgxp.ReplaceAllString(user.DocumentoCompuesto, "")
+	payload := "documento=" + user.Documento
 
-	if tipo != "" {
-		payload := "query=Activo:true,TerceroId__Activo:true,TipoDocumentoId__CodigoAbreviacion:" + tipo + ",Numero:" + user.Documento
-		datosId, err := terceros.GetAllDatosIdentificacion(payload)
-
-		if err != nil {
-			return err
-		}
-
-		if len(datosId) == 1 && datosId[0].TerceroId != nil {
-			*terceroId = datosId[0].TerceroId.Id
-			return
-		} else if len(datosId) > 1 {
-			if terceros.DocumentosValidos(datosId, false, true) {
-				*terceroId = datosId[0].TerceroId.Id
-				return
-			}
-
-			err := fmt.Errorf("el Documento '%s' tiene más de un registro activo en Terceros (%d registros).", user.DocumentoCompuesto, len(datosId))
-			logs.Notice(err)
-			outputError = errorCtrl.Error(funcion, err, "409")
-
-			return outputError
-		}
+	tercero, outputError := terceros.GetAllTrTerceroIdentificacion(payload)
+	if outputError != nil {
+		return
 	}
 
-	tercero, err := terceros.GetTerceroByDoc(user.Documento)
-	if err != nil {
-		return err
-	}
-
-	if tercero.TerceroId != nil && tercero.TerceroId.Id > 0 {
-		*terceroId = tercero.TerceroId.Id
+	if len(tercero) > 0 {
+		*terceroId = tercero[0].Tercero.Id
 	}
 
 	return
