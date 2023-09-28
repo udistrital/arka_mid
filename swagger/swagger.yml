@@ -914,7 +914,7 @@ paths:
         description: Limit the size of result set. Must be an integer
         type: string
       - in: query
-        name: offset
+        name: page
         description: Start position of result set. Must be an integer
         type: string
       - in: query
