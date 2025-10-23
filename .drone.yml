@@ -81,9 +81,8 @@ steps:
     - release/*
 
 - name: go_build
-  image: golang:1.18
+  image: golang:1.24
   commands:
-  - go get -t
   - GOOS=linux GOARCH=amd64 go build -o main
   when:
     branch:
