@@ -39,6 +39,10 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		funcionarios = make(map[int]models.Tercero)
 	}
 
+	if centrosCostos == nil {
+		centrosCostos = make(map[string]models.CentroCostos)
+	}
+
 	if salida.Ubicacion > 0 {
 		if val, ok := asignaciones[salida.Ubicacion]; !ok {
 			query = "query=Id:" + strconv.Itoa(salida.Ubicacion)

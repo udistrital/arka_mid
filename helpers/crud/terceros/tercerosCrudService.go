@@ -57,41 +57,6 @@ func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificaci
 	return datosId, nil
 }
 
-// DocumentosValidos recibe un arreglo de documentos activos
-// y retorna true solo si son únicos en su tipo (si solo hay 1 CC, 1 NIT, 1...)
-//
-// si los documentos incluyen Activo=true/false, se pueden filtrar con soloActivos = true
-//
-// si los documentos incluyen el tercero, se puede validar que correspondan
-// al mismo con validaTercero = true
-func DocumentosValidos(documentos []models.DatosIdentificacion,
-	soloActivos, validaTercero bool) bool {
-	dicc := make(map[int]bool)
-	tercero := -1
-	for _, documento := range documentos {
-		if soloActivos {
-			if !documento.Activo {
-				continue
-			}
-		}
-		if _, ok := dicc[documento.TipoDocumentoId.Id]; ok {
-			return false
-		}
-		dicc[documento.TipoDocumentoId.Id] = true
-		if validaTercero { // Que estén asociados al mismo tercero
-			terceroActual := documento.TerceroId.Id
-			if tercero >= 0 {
-				if terceroActual != tercero {
-					return false
-				}
-			} else {
-				tercero = terceroActual
-			}
-		}
-	}
-	return true
-}
-
 // GetTerceroById get controlador tercero/{id} del api terceros_crud
 func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
 
@@ -117,6 +82,23 @@ func GetTrTerceroIdentificacionById(id int) (tercero models.DetalleTercero, outp
 	if err != nil {
 		logs.Error(err, urlcrud)
 		eval := " - request.GetJson(urlcrud, &tercero)"
+		outputError = errorCtrl.Error(funcion+eval, err, "502")
+	}
+
+	return
+}
+
+// GetAllTrTerceroIdentificacion get controlador tercero/identificacion del api terceros_crud
+func GetAllTrTerceroIdentificacion(payload string) (terceros []models.DetalleTercero, outputError map[string]interface{}) {
+
+	funcion := "GetAllTrTerceroIdentificacion - "
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+
+	urlcrud := "http://" + basePath + "tercero/identificacion?" + payload
+	err := request.GetJson(urlcrud, &terceros)
+	if err != nil {
+		logs.Error(err, urlcrud)
+		eval := "request.GetJson(urlcrud, &terceros)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
