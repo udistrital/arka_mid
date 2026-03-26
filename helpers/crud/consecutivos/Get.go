@@ -45,4 +45,5 @@ func Format(format, prefix string, consecutivo *models.Consecutivo) (consFormat 
 	consecutivo_ := fmt.Sprintf(format, consecutivo.Consecutivo)
 	suffix := fmt.Sprintf("%04d", consecutivo.Year)
 	return prefix + "-" + consecutivo_ + "-" + suffix
+
 }
