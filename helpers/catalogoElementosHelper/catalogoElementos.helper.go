@@ -1,7 +1,6 @@
 package catalogoElementosHelper
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -58,7 +57,6 @@ func GetCuentasContablesSubgrupo(subgrupoId, movimientoId int, cuentas *[]models
 	if outputError != nil {
 		return
 	}
-	fmt.Println("ME QUIERO MATAR")
 
 	for _, fm := range tipos {
 		if (strings.Contains(fm.CodigoAbreviacion, "ENT_") || fm.CodigoAbreviacion == "BJ_HT") && !strings.Contains(fm.CodigoAbreviacion, "KDX") {

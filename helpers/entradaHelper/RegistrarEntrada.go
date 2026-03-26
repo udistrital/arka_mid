@@ -1,8 +1,6 @@
 package entradaHelper
 
 import (
-	"fmt"
-
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -188,15 +186,12 @@ func crearDetalleEntrada(completo models.FormatoBaseEntrada, necesario *string) 
 
 func getConsecutivoEntrada(entrada *models.Movimiento, etl bool) (outputError map[string]interface{}) {
 
-	fmt.Println("DEBUG [getConsecutivoEntrada] entrada.ConsecutivoId:", entrada)
-
 	if etl {
 		return
 	}
 
 	if entrada.ConsecutivoId == nil || *entrada.ConsecutivoId <= 0 {
 		var consecutivo models.Consecutivo
-		fmt.Println("DEBUG [getConsecutivoEntrada] Obteniendo consecutivo...")
 		outputError = consecutivos.Get("contxtEntradaCons", "Entradas Arka", &consecutivo)
 		if outputError != nil {
 			return
