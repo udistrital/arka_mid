@@ -87,7 +87,7 @@ steps:
     - push
 
 - name: go_build
-  image: golang:1.24
+  image: golang:1.25
   commands:
   - GOOS=linux GOARCH=amd64 go build -o main
   when:
