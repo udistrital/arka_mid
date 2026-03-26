@@ -29,12 +29,11 @@ func Get(contexto string, descripcion string, data *models.Consecutivo) (outputE
 		Activo:      true,
 	}
 
-	if err := Post(&data); err != nil {
+	if err := Post(data); err != nil {
 		return err
 	}
 
 	return
-
 }
 
 // Le da formato a un consecutivo, para un prefijo indicado, un formato determinado para el número del consecutivo. Se toma el año como el sufijo.

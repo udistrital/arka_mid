@@ -1,6 +1,8 @@
 package movimientosArka
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -156,10 +158,43 @@ func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]inter
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := "http://" + basePath + "movimiento"
-	if err := request.SendJson(urlcrud, "POST", &movimiento, &movimiento); err != nil {
+
+	var raw interface{}
+
+	if err := request.SendJson(urlcrud, "POST", &raw, movimiento); err != nil {
 		logs.Error(err)
-		eval := `request.SendJson(urlcrud, "POST", &movimiento, &movimiento)`
+		eval := `request.SendJson(urlcrud, "POST", &raw, movimiento)`
 		return errorCtrl.Error(funcion+eval, err, "502")
+	}
+
+	switch data := raw.(type) {
+	case map[string]interface{}:
+		b, err := json.Marshal(data)
+		if err != nil {
+			return errorCtrl.Error(funcion+"json.Marshal(data)", err, "502")
+		}
+		if err := json.Unmarshal(b, movimiento); err != nil {
+			return errorCtrl.Error(funcion+"json.Unmarshal(b, movimiento)", err, "502")
+		}
+
+	case []interface{}:
+		if len(data) == 0 {
+			err := fmt.Errorf("response vacío: arreglo sin elementos")
+			return errorCtrl.Error(funcion+"response vacío", err, "502")
+		}
+
+		// normalmente tomo el último elemento creado
+		b, err := json.Marshal(data[len(data)-1])
+		if err != nil {
+			return errorCtrl.Error(funcion+"json.Marshal(data[len(data)-1])", err, "502")
+		}
+		if err := json.Unmarshal(b, movimiento); err != nil {
+			return errorCtrl.Error(funcion+"json.Unmarshal(b, movimiento)", err, "502")
+		}
+
+	default:
+		err := fmt.Errorf("tipo inesperado de respuesta: %T", raw)
+		return errorCtrl.Error(funcion+"tipo inesperado", err, "502")
 	}
 
 	return
