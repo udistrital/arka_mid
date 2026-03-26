@@ -3,15 +3,15 @@ package movimientosArka
 import (
 	"net/url"
 
-	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetFormatoTipoMovimientoIdByCodigoAbreviacion Consulta el Id de un FormatoTipoMovimiento según el Codigo de abreviación del mismo
 func GetFormatoTipoMovimientoIdByCodigoAbreviacion(id *int, codigoAbreviacion string) (outputError map[string]interface{}) {
 
 	funcion := "GetFormatoTipoMovimientoIdByCodigoAbreviacion"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	query := "query=CodigoAbreviacion:" + url.QueryEscape(codigoAbreviacion)
 	if fm, err := GetAllFormatoTipoMovimiento(query); err != nil {
@@ -20,7 +20,7 @@ func GetFormatoTipoMovimientoIdByCodigoAbreviacion(id *int, codigoAbreviacion st
 		err := "No se encuentra el formato tipo movimiento: " + codigoAbreviacion
 		logs.Error(err)
 		eval := " - GetAllFormatoTipoMovimiento(query)"
-		return errorctrl.Error(funcion+eval, err, "500")
+		return errorCtrl.Error(funcion+eval, err, "500")
 	} else {
 		*id = fm[0].Id
 	}
@@ -32,7 +32,7 @@ func GetFormatoTipoMovimientoIdByCodigoAbreviacion(id *int, codigoAbreviacion st
 func GetEstadoMovimientoIdByNombre(id *int, nombre string) (outputError map[string]interface{}) {
 
 	funcion := "GetEstadoMovimientoIdByNombre"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	query := "query=Nombre:" + url.QueryEscape(nombre)
 	if em, err := GetAllEstadoMovimiento(query); err != nil {
@@ -41,7 +41,7 @@ func GetEstadoMovimientoIdByNombre(id *int, nombre string) (outputError map[stri
 		err := "No se encuentra el estado movimiento: " + nombre
 		logs.Error(err)
 		eval := " - GetAllEstadoMovimiento(query)"
-		return errorctrl.Error(funcion+eval, err, "500")
+		return errorCtrl.Error(funcion+eval, err, "500")
 	} else {
 		*id = em[0].Id
 	}

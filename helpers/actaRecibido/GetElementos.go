@@ -3,26 +3,26 @@ package actaRecibido
 import (
 	"strconv"
 
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetElementos Consulta una lista de elementos así como el tipo de bien y el subgrupo
 func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElemento, outputError map[string]interface{}) {
 
 	funcion := "GetElementos - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if actaId <= 0 && len(ids) == 0 {
 		err := "Se debe indicar un elemento válido"
 		logs.Error(err)
 		eval := "actaId <= 0 || len(ids) == 0"
-		return nil, errorctrl.Error(funcion+eval, err, "400")
+		return nil, errorCtrl.Error(funcion+eval, err, "400")
 	}
 
 	// Solicita información elementos acta

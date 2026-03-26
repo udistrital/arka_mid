@@ -4,7 +4,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GenerarMovimientosContables Genera los movimientos contables para una serie de cuentas y valores
@@ -12,7 +12,7 @@ func GenerarMovimientosContables(totales map[int]float64, detalleCuentas map[str
 	parDebito, parCredito, terceroIdCr, terceroIdDb int, descripcion string, ajuste bool, movimientos *[]*models.MovimientoTransaccion) (outputError map[string]interface{}) {
 
 	funcion := "GenerarMovimientosContables"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	if ajuste {
 		parDebito, parCredito = parCredito, parDebito
@@ -35,7 +35,7 @@ func ConstruirMovimientosContables(totales map[int]float64, detalleCuentas map[s
 	terceroIdCr, terceroIdDb int, descripcion string, ajuste bool, movimientos *[]*models.MovimientoTransaccion) (
 	err string, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("ConstruirMovimientosContables - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("ConstruirMovimientosContables - Unhandled Error!", "500")
 
 	var parDebito, parCredito int
 	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {

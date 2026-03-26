@@ -5,13 +5,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // Post Crea registro de traslado en estado en trámite
 func Post(traslado *models.Movimiento) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("Post - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
 	outputError = consecutivos.Get("contxtAjusteCons", "Registro Traslado Arka", &consecutivo)

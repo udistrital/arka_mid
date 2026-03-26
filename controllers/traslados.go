@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	trasladoshelper "github.com/udistrital/arka_mid/helpers/trasladosHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 type TrasladosController struct {
@@ -33,7 +33,7 @@ func (c *TrasladosController) URLMapping() {
 // @router / [post]
 func (c *TrasladosController) Post() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+	defer errorCtrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var v models.Movimiento
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
@@ -65,7 +65,7 @@ func (c *TrasladosController) Post() {
 // @router /:id [get]
 func (c *TrasladosController) GetTraslado() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+	defer errorCtrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
@@ -109,7 +109,7 @@ func (c *TrasladosController) GetTraslado() {
 // @router /funcionario/:tercero_id [get]
 func (c *TrasladosController) GetElementosFuncionario() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+	defer errorCtrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var (
 		id         int
@@ -120,13 +120,13 @@ func (c *TrasladosController) GetElementosFuncionario() {
 		if err == nil {
 			err = errors.New("se debe especificar un tercero válido")
 		}
-		panic(errorctrl.Error(`GetElementosFuncionario - c.GetInt(":tercero_id")`, err, "400"))
+		panic(errorCtrl.Error(`GetElementosFuncionario - c.GetInt(":tercero_id")`, err, "400"))
 	} else {
 		id = v
 	}
 
 	if err := trasladoshelper.GetElementosTercero(id, &inventario); err != nil {
-		panic(errorctrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosTercero(id, &inventario)", err, "404"))
+		panic(errorCtrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosTercero(id, &inventario)", err, "404"))
 	} else {
 		c.Data["json"] = inventario
 	}
@@ -146,7 +146,7 @@ func (c *TrasladosController) GetElementosFuncionario() {
 // @router / [get]
 func (c *TrasladosController) GetAll() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+	defer errorCtrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var (
 		terceroId string
@@ -156,19 +156,19 @@ func (c *TrasladosController) GetAll() {
 	)
 
 	if v := c.GetString("user", ""); v == "" {
-		panic(errorctrl.Error(`GetAll - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
+		panic(errorCtrl.Error(`GetAll - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
 	} else {
 		terceroId = v
 	}
 
 	if v, err := c.GetBool("confirmar", false); err != nil {
-		panic(errorctrl.Error(`GetAll - c.GetBool("confirmar", false)`, err, "400"))
+		panic(errorCtrl.Error(`GetAll - c.GetBool("confirmar", false)`, err, "400"))
 	} else {
 		confirmar = v
 	}
 
 	if v, err := c.GetBool("aprobar", false); err != nil {
-		panic(errorctrl.Error(`GetAll - c.GetBool("aprobar", false)`, err, "400"))
+		panic(errorCtrl.Error(`GetAll - c.GetBool("aprobar", false)`, err, "400"))
 	} else {
 		aprobar = v
 	}
@@ -195,14 +195,14 @@ func (c *TrasladosController) GetAll() {
 // @router /:id [put]
 func (c *TrasladosController) Put() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "TrasladosController")
+	defer errorCtrl.ErrorControlController(c.Controller, "TrasladosController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar un traslado válido")
 		}
-		panic(errorctrl.Error(`Put - c.GetInt(":id")`, err, "400"))
+		panic(errorCtrl.Error(`Put - c.GetInt(":id")`, err, "400"))
 	} else {
 		id = v
 	}
@@ -212,7 +212,7 @@ func (c *TrasladosController) Put() {
 		c.Ctx.Output.SetStatus(201)
 		c.Data["json"] = res
 	} else {
-		panic(errorctrl.Error("Put - trasladoshelper.AprobarTraslado(id)", err, "404"))
+		panic(errorCtrl.Error("Put - trasladoshelper.AprobarTraslado(id)", err, "404"))
 
 	}
 

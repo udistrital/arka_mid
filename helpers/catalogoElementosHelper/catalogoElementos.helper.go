@@ -10,13 +10,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetCuentasContablesSubgrupo ...
 func GetCuentasContablesSubgrupo(subgrupoId, movimientoId int, cuentas *[]models.DetalleCuentasSubgrupo) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetCuentasContablesSubgrupo - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetCuentasContablesSubgrupo - Unhandled Error!", "500")
 
 	var (
 		query         string
@@ -101,7 +101,7 @@ func fillCuentaSubgrupo(sgId int, cFinales *[]models.DetalleCuentasSubgrupo, tb 
 	ctasSg []models.CuentasSubgrupo, cuentas map[string]models.DetalleCuenta) (
 	outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("fillCuentaSubgrupo - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("fillCuentaSubgrupo - Unhandled Error!", "500")
 
 	var dCta models.DetalleCuentasSubgrupo
 	dCta.SubgrupoId = sgId
@@ -131,7 +131,7 @@ func fillCuentaSubgrupo(sgId int, cFinales *[]models.DetalleCuentasSubgrupo, tb 
 
 func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas map[string]models.DetalleCuenta) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("findCuentaSubgrupo - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("findCuentaSubgrupo - Unhandled Error!", "500")
 
 	if val, ok := cuentas[cuentaId]; ok {
 		*ctaSg = val
@@ -160,7 +160,7 @@ func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuent
 	outputError map[string]interface{}) {
 
 	funcion := "GetCuentasByMovimientoSubgrupos"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var subgrupos_ []int
 	for _, sg := range subgrupos {

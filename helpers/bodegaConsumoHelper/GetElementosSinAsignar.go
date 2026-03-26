@@ -6,12 +6,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetElementosSinAsignar - Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction("GetElementosSinAsignar - Unhandled Error", "500")
 
 	payload := "limit=-1&query=Activo:true,MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion:SAL_CONS" +
 		",MovimientoId__EstadoMovimientoId__Nombre:Salida%20Aprobada"

@@ -7,7 +7,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/depreciacionHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 const queryUD string = "query=TipoDocumentoId__Nombre:NIT,Numero:"
@@ -19,7 +19,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 	novedades_ []*models.NovedadElemento, outputError map[string]interface{}) {
 
 	funcion := "calcularAjusteMediciones"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		cuentasSubgrupo map[int]*models.CuentasSubgrupo
@@ -147,7 +147,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 	outputError map[string]interface{}) {
 
 	funcion := "consultaCuentasMp"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var idsD, idsA []int
 	var idD, idA int

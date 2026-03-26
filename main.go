@@ -1,24 +1,25 @@
 package main
 
 import (
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/plugins/cors"
-
 	_ "github.com/udistrital/arka_mid/routers"
-	apistatus "github.com/udistrital/utils_oas/apiStatusLib"
-	"github.com/udistrital/utils_oas/auditoria"
-	"github.com/udistrital/utils_oas/customerrorv2"
+
+	"github.com/udistrital/arka_mid/utils_oas/apiStatus"
+	"github.com/udistrital/arka_mid/utils_oas/auditoria"
+	"github.com/udistrital/arka_mid/utils_oas/customErrorv2"
+
+	"github.com/beego/beego/v2/server/web"
+	"github.com/beego/beego/v2/server/web/filter/cors"
 )
 
 func main() {
-	// beego.BConfig.RecoverFunc = responseformat.GlobalResponseHandler
+
 	AllowedOrigins := []string{"*.udistrital.edu.co"}
-	if beego.BConfig.RunMode == "dev" {
+	if web.BConfig.RunMode == "dev" {
 		AllowedOrigins = []string{"*"}
-		beego.BConfig.WebConfig.DirectoryIndex = true
-		beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
+		web.BConfig.WebConfig.DirectoryIndex = true
+		web.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 	}
-	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
+	web.InsertFilter("*", web.BeforeRouter, cors.Allow(&cors.Options{
 		AllowOrigins: AllowedOrigins,
 		AllowMethods: []string{"PUT", "PATCH", "GET", "POST", "OPTIONS", "DELETE"},
 		AllowHeaders: []string{"Origin", "x-requested-with",
@@ -30,8 +31,8 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length", "X-Total-Count"},
 		AllowCredentials: true,
 	}))
-	beego.ErrorController(&customerrorv2.CustomErrorController{})
-	apistatus.Init()
+	web.ErrorController(&customErrorv2.CustomErrorController{})
+	apiStatus.Init()
 	auditoria.InitMiddleware()
-	beego.Run()
+	web.Run()
 }

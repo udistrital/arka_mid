@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/ajustesHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // AjusteController operations for Ajuste
@@ -35,11 +35,11 @@ func (c *AjusteController) URLMapping() {
 // @router / [post]
 func (c *AjusteController) PostManual() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+	defer errorCtrl.ErrorControlController(c.Controller, "AjusteController")
 
 	var v *models.PreTrAjuste
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
-		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
+		panic(errorCtrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if v, err := ajustesHelper.PostAjuste(v); err != nil {
 			logs.Error(err)
@@ -61,11 +61,11 @@ func (c *AjusteController) PostManual() {
 // @router /automatico [post]
 func (c *AjusteController) PostAjuste() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+	defer errorCtrl.ErrorControlController(c.Controller, "AjusteController")
 
 	var v []*models.DetalleElemento_
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
-		panic(errorctrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
+		panic(errorCtrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
 		if v, err := ajustesHelper.GenerarAjusteAutomatico(v); err != nil {
 			logs.Error(err)
@@ -87,7 +87,7 @@ func (c *AjusteController) PostAjuste() {
 // @router /:id [get]
 func (c *AjusteController) GetOneManual() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+	defer errorCtrl.ErrorControlController(c.Controller, "AjusteController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
@@ -130,7 +130,7 @@ func (c *AjusteController) GetOneManual() {
 // @router /:id [put]
 func (c *AjusteController) Put() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "AjusteController - Unhandled Error!")
+	defer errorCtrl.ErrorControlController(c.Controller, "AjusteController - Unhandled Error!")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
@@ -173,7 +173,7 @@ func (c *AjusteController) Put() {
 // @router /automatico/elementos/:id [get]
 func (c *AjusteController) GetElementos() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+	defer errorCtrl.ErrorControlController(c.Controller, "AjusteController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
@@ -216,7 +216,7 @@ func (c *AjusteController) GetElementos() {
 // @router /automatico/:id [get]
 func (c *AjusteController) GetOneAuto() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "AjusteController")
+	defer errorCtrl.ErrorControlController(c.Controller, "AjusteController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {

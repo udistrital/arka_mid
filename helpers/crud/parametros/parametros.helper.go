@@ -1,14 +1,12 @@
 package parametros
 
-import (
-	"github.com/udistrital/utils_oas/errorctrl"
-)
+import "github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 
 // GetParametrosDebitoCredito consulta los parametros de movimientos credito y debito
 func GetParametrosDebitoCredito() (dbId, crId int, outputError map[string]interface{}) {
 
 	funcion := "GetParametrosDebitoCredito"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var query string
 

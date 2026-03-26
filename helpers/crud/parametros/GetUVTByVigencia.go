@@ -5,13 +5,13 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetUVTByVigencia(vigencia int) (uvt float64, outputError map[string]interface{}) {
 
 	funcion := "GetUVTByVigencia - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var parametros__ []models.ParametroPeriodo
 	payload := "fields=Valor&limit=1&sortby=Id&order=desc&query=Activo:true,ParametroId__CodigoAbreviacion:UVT," +

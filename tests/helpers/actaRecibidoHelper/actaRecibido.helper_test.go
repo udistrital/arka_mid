@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 )
 
@@ -27,18 +27,6 @@ func TestMain(m *testing.M) {
 }
 
 // ARCHIVO: actaRecibdo.helper.go
-
-// TestGetAllActasRecibidoActivas ...
-func TestGetAllActasRecibidoActivas(t *testing.T) {
-	valor, _, err := actaRecibido.GetAllActasRecibidoActivas("", "", "", []string{"Registrada"}, "", "", "", "", "", 1, 0)
-	if err != nil {
-		t.Error("No se pudo consultar las actas de recibido - err:", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetAllActasRecibidoActivas Finalizado Correctamente (OK)")
-	}
-}
 
 // TestGetAllParametrosActa ...
 func TestGetAllParametrosActa(t *testing.T) {

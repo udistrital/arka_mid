@@ -12,7 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // separarElementosPorModificacion Separa los elementos según se deba modificar Subgrupo, Valores, Misceláneos o Mediciones posteriores
@@ -27,7 +27,7 @@ func separarElementosPorModificacion(originales []*models.Elemento,
 	outputError map[string]interface{}) {
 
 	funcion := "separarElementosPorModificacion"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	msc = make([]*models.DetalleElemento_, 0)
 	vls = make([]*models.DetalleElemento_, 0)
@@ -64,7 +64,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 	outputError map[string]interface{}) {
 
 	funcion := "calcularAjusteMovimiento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var (
 		ids             []int
@@ -102,7 +102,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 			if cuentasSubgrupo[originales[idx].SubgrupoCatalogoId] == nil ||
 				cuentasSubgrupo[el.SubgrupoCatalogoId] == nil {
 				err := errors.New("No se pudo establecer la parametrización contable")
-				outputError = errorctrl.Error(funcion, err, "404")
+				outputError = errorCtrl.Error(funcion, err, "404")
 				return
 			}
 
@@ -202,7 +202,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 	outputError map[string]interface{}) {
 
 	funcion := "separarElementosPorSalida"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	elementosSalidas = make(map[int]*models.ElementosPorActualizarSalida)
 	for _, el := range elementos {
@@ -254,7 +254,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (
 	movimiento *models.Movimiento, trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("generarMovimientoAjuste - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("generarMovimientoAjuste - Unhandled Error!", "500")
 
 	movimiento = new(models.Movimiento)
 	detalle := new(models.FormatoAjusteAutomatico)

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 )
 
@@ -57,7 +57,7 @@ func TestGetSalida(t *testing.T) {
 // GetAsignacionSedeDependencia ...
 func TestGetSalidas(t *testing.T) {
 
-	if salidas, err := salidaHelper.GetAll(false); err != nil {
+	if salidas, _, err := salidaHelper.GetAll([]string{}, "", "", "", "", "", "", 0, 0); err != nil {
 		t.Error("No se pudo consultar las salidas", err)
 		t.Fail()
 	} else {

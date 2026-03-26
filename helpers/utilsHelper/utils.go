@@ -5,11 +5,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/astaxie/beego/logs"
-
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
-	"github.com/udistrital/utils_oas/formatdata"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func ArrayToString(a []int, delim string) string {
@@ -40,13 +37,13 @@ func FindElementoInArrayElementosMovimiento(elementos []*models.ElementosMovimie
 func FillElemento(elActa *models.DetalleElemento, elMov *models.ElementosMovimiento) (completo *models.DetalleElemento__, outputError map[string]interface{}) {
 
 	funcion := "fillElemento"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	if err := formatdata.FillStruct(elActa, &completo); err != nil {
-		logs.Error(err)
-		eval := " - formatdata.FillStruct(elActa, &completo)"
-		return nil, errorctrl.Error(funcion+eval, err, "500")
+	outputError = FillStruct(elActa, &completo)
+	if outputError != nil {
+		return nil, outputError
 	}
+
 	completo.VidaUtil = elMov.VidaUtil
 	completo.ValorResidual = elMov.ValorResidual
 

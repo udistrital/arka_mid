@@ -5,13 +5,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // Post Crea registro de baja
 func Post(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("Post - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
 	outputError = consecutivos.Get("contxtBajaCons", "Registro Baja Arka", &consecutivo)

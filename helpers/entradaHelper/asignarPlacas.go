@@ -9,12 +9,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("asignarPlacas - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("asignarPlacas - Unhandled Error!", "500")
 
 	var detalle_ []*models.DetalleElemento
 	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
@@ -89,7 +89,7 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 func checkPlacaElemento(tbPadreId int, normalizado float64, bufferTiposBien map[int]*models.TipoBien) (placa bool, errMsg string, outputError map[string]interface{}) {
 
 	funcion := "checkPlacaElemento - "
-	defer errorctrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	if tbPadreId <= 0 {
 		errMsg = "La asignación de la clase a los elementos no es correcta."
@@ -118,7 +118,7 @@ func checkPlacaElemento(tbPadreId int, normalizado float64, bufferTiposBien map[
 
 func generarPlaca(placa *string) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("generarPlaca - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("generarPlaca - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
 	if err := consecutivos.Get("contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {

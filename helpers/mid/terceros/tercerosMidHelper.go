@@ -3,13 +3,13 @@ package terceros
 import (
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetDetalleFuncionario Consulta El nombre, número de identificación, correo y cargo asociado a un funcionario
 func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionario, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetDetalleFuncionario - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetDetalleFuncionario - Unhandled Error!", "500")
 
 	DetalleFuncionario = new(models.DetalleFuncionario)
 
@@ -41,7 +41,7 @@ func GetDetalleFuncionario(id int) (DetalleFuncionario *models.DetalleFuncionari
 func GetInfoTerceroById(id int) (InfoTercero *models.InfoTercero, outputError map[string]interface{}) {
 
 	funcion := "GetInfoTerceroById"
-	defer errorctrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	InfoTercero = new(models.InfoTercero)
 

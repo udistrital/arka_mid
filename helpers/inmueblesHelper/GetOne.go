@@ -10,12 +10,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
 	outputError = actaRecibido.GetElementoById(id, &detalle.Elemento)
 	if outputError != nil {

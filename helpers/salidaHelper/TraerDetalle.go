@@ -1,7 +1,6 @@
 package salidaHelper
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 
@@ -10,15 +9,16 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
 	asignaciones map[int]models.AsignacionEspacioFisicoDependencia,
 	sedes map[string]models.EspacioFisico,
+	centrosCostos map[string]models.CentroCostos,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("traerDetalle - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
 
 	var (
 		query       string
@@ -51,36 +51,27 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		} else {
 			ubicacion = val
 		}
-	} else if salida.CentroCostosId > 0 {
-		centroCostos, outputError := movimientosArka.GetCentroCostosById(salida.CentroCostosId)
-		if outputError != nil {
-			return nil, outputError
+	} else if salida.CentroCostos != "" {
+		_, ok := centrosCostos[salida.CentroCostos]
+		if !ok {
+			payload := "query=Codigo:" + salida.CentroCostos
+			centroCostos_, err := movimientosArka.GetAllCentroCostos(payload)
+			if err != nil {
+				return nil, err
+			} else if len(centroCostos_) == 1 {
+				centrosCostos[salida.CentroCostos] = centroCostos_[0]
+			}
 		}
 
-		if centroCostos.SedeId == nil && centroCostos.DependenciaId == nil {
+		centroCostos_ := centrosCostos[salida.CentroCostos]
+		if centroCostos_.Sede == "" && centroCostos_.Dependencia == "" {
 			ubicacion = models.AsignacionEspacioFisicoDependencia{
-				DependenciaId: &models.Dependencia{Nombre: centroCostos.Nombre},
+				DependenciaId: &models.Dependencia{Nombre: centroCostos_.Nombre},
 			}
 		} else {
-			if centroCostos.SedeId != nil {
-				sede_, outputError := oikos.GetAllEspacioFisico("query=Id:" + fmt.Sprint(centroCostos.SedeId))
-				if outputError != nil {
-					return nil, outputError
-				}
-
-				if len(sede_) == 1 {
-					sede = sede_[0]
-				}
-			}
-
-			if centroCostos.DependenciaId != nil {
-				ubicacion.DependenciaId, outputError = oikos.GetDependenciaById(*centroCostos.DependenciaId)
-				if outputError != nil {
-					return nil, outputError
-				}
-			}
+			sede = models.EspacioFisico{Nombre: centroCostos_.Sede}
+			ubicacion.DependenciaId = &models.Dependencia{Nombre: centroCostos_.Dependencia}
 		}
-
 	}
 
 	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
@@ -122,11 +113,11 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		"Dependencia":             ubicacion.DependenciaId,
 		"Ubicacion":               ubicacion,
 		"FechaCreacion":           movimiento.FechaCreacion,
-		"FechaModificacion":       movimiento.FechaModificacion,
+		"FechaCorte":              movimiento.FechaCorte,
 		"Activo":                  movimiento.Activo,
 		"MovimientoPadreId":       movimiento.MovimientoPadreId,
 		"FormatoTipoMovimientoId": movimiento.FormatoTipoMovimientoId,
-		"EstadoMovimientoId":      movimiento.EstadoMovimientoId.Id,
+		"EstadoMovimientoId":      movimiento.EstadoMovimientoId,
 		"Consecutivo":             movimiento.Consecutivo,
 		"ConsecutivoId":           movimiento.ConsecutivoId,
 		"Funcionario":             funcionario,
@@ -139,7 +130,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 // GetInfoSalida Retorna el funcionario de una salida a partir del detalle del movimiento
 func GetInfoSalida(detalle string) (funcionarioId int, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetInfoSalida - Unhandled Error!", "500")
 
 	var detalle_ models.FormatoSalida
 	outputError = utilsHelper.Unmarshal(detalle, &detalle_)

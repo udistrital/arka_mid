@@ -6,13 +6,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // CreateTransaccionContable Consulta el tipo de comprobante y completa otros datos de la transacción contable
 func CreateTransaccionContable(tipoComprobante, dsc string, transaccion *models.TransaccionMovimientos) (msg string, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("CreateTransaccionContable - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("CreateTransaccionContable - Unhandled Error!", "500")
 
 	var comprobanteID string
 

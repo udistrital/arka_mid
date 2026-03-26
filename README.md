@@ -1,6 +1,6 @@
 # arka_mid
 
-definir
+Api dedicada a gestionar transacciones relacionadas con inventario y almacenamiento de bienes de la UD.
 
 ## Especificaciones Técnicas
 
@@ -69,9 +69,9 @@ Pruebas unitarias
 ```
 ## Estado CI
 
-| Develop | Relese 1.3.0 | Master |
+| Develop | Relese 2.0.0 | Master |
 | -- | -- | -- |
-| [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/develop)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/release/1.3.0)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/master)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) |
+| [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/develop)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/release/2.0.0)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) | [![Build Status](https://hubci.portaloas.udistrital.edu.co/api/badges/udistrital/arka_mid/status.svg?ref=refs/heads/master)](https://hubci.portaloas.udistrital.edu.co/udistrital/arka_mid) |
 
 ## Licencia
 

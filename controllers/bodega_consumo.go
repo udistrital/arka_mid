@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/bodegaConsumoHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // BodegaConsumoController operations for Bodega-Consumo
@@ -36,7 +36,7 @@ func (c *BodegaConsumoController) URLMapping() {
 // @router /solicitud/ [post]
 func (c *BodegaConsumoController) Post() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
 	var (
 		v         models.FormatoSolicitudBodega
@@ -44,7 +44,7 @@ func (c *BodegaConsumoController) Post() {
 	)
 
 	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
-		panic(errorctrl.Error("Post - utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v)", err, "400"))
+		panic(errorCtrl.Error("Post - utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v)", err, "400"))
 	}
 
 	if err := bodegaConsumoHelper.PostSolicitud(&v, &solicitud); err != nil {
@@ -68,7 +68,7 @@ func (c *BodegaConsumoController) Post() {
 // @router /solicitud/:id [get]
 func (c *BodegaConsumoController) GetOneSolicitud() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
 	idStr := c.Ctx.Input.Param(":id")
 	var id int
@@ -102,7 +102,7 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 // @router /solicitud/ [get]
 func (c *BodegaConsumoController) GetAllSolicitud() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
 	var (
 		tramiteOnly bool
@@ -114,7 +114,7 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 	}
 
 	if v := c.GetString("user", ""); v == "" {
-		panic(errorctrl.Error(`GetAllSolicitud - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
+		panic(errorCtrl.Error(`GetAllSolicitud - c.GetString("user", "")`, "Se debe indicar un usuario válido", "400"))
 	} else {
 		user = v
 	}
@@ -141,7 +141,7 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 // @router /elementos_sin_asignar/ [get]
 func (c *BodegaConsumoController) GetElementos() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
 	if v, err := bodegaConsumoHelper.GetElementosSinAsignar(); err != nil {
 		panic(err)
@@ -159,7 +159,7 @@ func (c *BodegaConsumoController) GetElementos() {
 // @router /aperturas_kardex/ [get]
 func (c *BodegaConsumoController) GetAperturasKardex() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
 	if v, err := bodegaConsumoHelper.GetAperturasKardex(); err != nil {
 		panic(err)
@@ -178,7 +178,7 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 // @router /existencias_kardex/ [get]
 func (c *BodegaConsumoController) GetAllExistencias() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "BodegaConsumoController")
+	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
 	if v, err := bodegaConsumoHelper.GetExistenciasKardex(); err != nil {
 		panic(err)

@@ -3,12 +3,12 @@ package bodegaConsumoHelper
 import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 func GetAperturasKardex() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetAperturasKardex - Unhandled Error", "500")
+	defer errorCtrl.ErrorControlFunction("GetAperturasKardex - Unhandled Error", "500")
 
 	Elementos = make([]map[string]interface{}, 0)
 

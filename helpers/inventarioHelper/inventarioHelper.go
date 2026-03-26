@@ -9,13 +9,13 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // GetDetalleElemento Consulta historial de un elemento dado el id del elemento en el api acta_recibido_crud
 func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetDetalleElemento - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetDetalleElemento - Unhandled Error!", "500")
 
 	var (
 		elemento           models.DetalleElemento
@@ -68,7 +68,7 @@ func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputErr
 // GetEncargado Retorna el funcionario y ubicacion actual de un elemento de acuerdo a su historial
 func GetEncargado(historial *models.Historial) (funcionarioId int, ubicacionId int, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetEncargado - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetEncargado - Unhandled Error!", "500")
 
 	if historial.Traslados != nil {
 		var detalleTr models.DetalleTraslado
@@ -93,7 +93,7 @@ func GetEncargado(historial *models.Historial) (funcionarioId int, ubicacionId i
 
 func GetUltimoValor(historial models.Historial) (valor, residual, vidaUtil float64, fechaCorte time.Time, outputError map[string]interface{}) {
 
-	defer errorctrl.ErrorControlFunction("GetUltimoValor - Unhandled Error!", "500")
+	defer errorCtrl.ErrorControlFunction("GetUltimoValor - Unhandled Error!", "500")
 
 	if len(historial.Novedades) > 0 {
 		valor = historial.Novedades[0].ValorLibros

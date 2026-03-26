@@ -3,11 +3,11 @@ package controllers
 import (
 	"errors"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/utils_oas/errorctrl"
+	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
 // TercerosController operations for Terceros
@@ -29,7 +29,7 @@ func (c *TercerosController) URLMapping() {
 // @router /:id [get]
 func (c *TercerosController) GetOne() {
 
-	defer errorctrl.ErrorControlController(c.Controller, "TercerosController")
+	defer errorCtrl.ErrorControlController(c.Controller, "TercerosController")
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
