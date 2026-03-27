@@ -45,7 +45,7 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	var resp map[string]interface{}
-	urlcrud := "http://" + basePath + "transaccion_movimientos"
+	urlcrud := basePath + "transaccion_movimientos"
 
 	logs.Info("==== INICIO %s ====", funcion)
 	logs.Info("%s -> url=%s", funcion, urlcrud)
