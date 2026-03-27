@@ -19,7 +19,7 @@ func Post(consecutivo interface{}) (outputError map[string]interface{}) {
 	funcion := "Post"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + ConsecutivosCRUD + "consecutivo"
+	urlcrud := ConsecutivosCRUD + "consecutivo"
 	response := new(models.RespuestaAPI1Interface)
 
 	if err := request.SendJson(urlcrud, "POST", response, consecutivo); err != nil {

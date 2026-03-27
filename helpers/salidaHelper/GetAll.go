@@ -12,7 +12,7 @@ import (
 )
 
 func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entrada,
-	sortby, order string, limit, offset int) (Salidas []map[string]interface{}, total string, outputError map[string]interface{}) {
+	sortby, order string, limit, page int) (Salidas []map[string]interface{}, total string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
 
@@ -35,6 +35,7 @@ func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entra
 	}
 
 	payload := "limit=" + fmt.Sprint(limit) +
+		"&offset=" + fmt.Sprint(limit*(page-1)) +
 		"&sortby=" + sortby +
 		"&order=" + order +
 		"&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS"

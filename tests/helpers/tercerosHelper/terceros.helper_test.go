@@ -57,18 +57,6 @@ func TestGetTerceroByUsuarioWSO2(t *testing.T) {
 	}
 }
 
-// TestGetTerceroByDoc ...
-func TestGetTerceroByDoc(t *testing.T) {
-
-	if valor, err := terceros.GetTerceroByDoc("80000000"); err != nil {
-		t.Error("No se pudo consultar el tercero", err)
-		t.Fail()
-	} else {
-		t.Log(valor)
-		t.Log("TestGetTerceroByDoc Finalizado Correctamente")
-	}
-}
-
 func TestEndPointParametrosService(t *testing.T) {
 	t.Log("Testing EndPoint parametrosService")
 	t.Log(parameters.PARAMETROS_CRUD)

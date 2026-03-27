@@ -21,7 +21,7 @@ func GetAllEstadoMovimiento(query string) (estados []*models.EstadoMovimiento, o
 	funcion := "GetAllEstadoMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "estado_movimiento?" + query
+	urlcrud := basePath + "estado_movimiento?" + query
 	if err := request.GetJson(urlcrud, &estados); err != nil {
 		eval := " - request.GetJson(urlcrud, &estados)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -36,7 +36,7 @@ func GetAllFormatoTipoMovimiento(query string) (formatos []*models.FormatoTipoMo
 	funcion := "GetAllFormatoTipoMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "formato_tipo_movimiento?" + query
+	urlcrud := basePath + "formato_tipo_movimiento?" + query
 	if err := request.GetJson(urlcrud, &formatos); err != nil {
 		eval := " - request.GetJson(urlcrud, &formatos)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -50,7 +50,7 @@ func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovim
 	funcion := "GetAllElementosMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "elementos_movimiento?" + query
+	urlcrud := basePath + "elementos_movimiento?" + query
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		eval := " - request.GetJson(urlcrud, &elementos)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -64,7 +64,7 @@ func GetAllSoporteMovimiento(query string) (soportes []models.SoporteMovimiento,
 	funcion := "GetAllSoporteMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "soporte_movimiento?" + query
+	urlcrud := basePath + "soporte_movimiento?" + query
 	if err := request.GetJson(urlcrud, &soportes); err != nil {
 		eval := " - request.GetJson(urlcrud, &soportes)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -78,7 +78,7 @@ func GetAllMovimiento(payload string) (movimientos []*models.Movimiento, count s
 	funcion := "GetAllMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "movimiento?" + payload
+	urlcrud := basePath + "movimiento?" + payload
 	response, err := request.GetJsonTest(urlcrud, &movimientos)
 	if err != nil {
 		eval := "request.GetJson(urlcrud, &movimientos)"
@@ -95,7 +95,7 @@ func GetAllNovedadElemento(query string) (novedades []*models.NovedadElemento, o
 	funcion := "GetAllNovedadElemento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "novedad_elemento?" + query
+	urlcrud := basePath + "novedad_elemento?" + query
 	if err := request.GetJson(urlcrud, &novedades); err != nil {
 		eval := " - request.GetJson(urlcrud, &novedades)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -110,7 +110,7 @@ func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[s
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	// Se consulta el movimiento
-	urlcrud := "http://" + basePath + "movimiento/" + strconv.Itoa(id)
+	urlcrud := basePath + "movimiento/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &movimiento); err != nil {
 		eval := " - request.GetJson(urlcrud, &movimiento)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -125,7 +125,7 @@ func GetElementosMovimientoById(id int, elemento *models.ElementosMovimiento) (o
 	funcion := "GetElementosMovimientoById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "elementos_movimiento/" + strconv.Itoa(id)
+	urlcrud := basePath + "elementos_movimiento/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &elemento); err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &elemento)"
@@ -142,7 +142,7 @@ func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]inte
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	// Se consulta el movimiento
-	urlcrud := "http://" + basePath + "tr_salida/" + strconv.Itoa(id)
+	urlcrud := basePath + "tr_salida/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &trSalida); err != nil {
 		eval := " - request.GetJson(urlcrud, &trSalida)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -157,7 +157,7 @@ func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]inter
 	funcion := "PostMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "movimiento"
+	urlcrud := basePath + "movimiento"
 
 	var raw interface{}
 
@@ -206,7 +206,7 @@ func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (outputError map[s
 	funcion := "PostSoporteMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "soporte_movimiento"
+	urlcrud := basePath + "soporte_movimiento"
 	if err := request.SendJson(urlcrud, "POST", &soporte, &soporte); err != nil {
 		logs.Error(err)
 		eval := `request.SendJson(urlcrud, "POST", &soporte, &soporte)`
@@ -222,7 +222,7 @@ func PostElementosMovimiento(elemento *models.ElementosMovimiento) (outputError 
 	funcion := "PostElementosMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "elementos_movimiento"
+	urlcrud := basePath + "elementos_movimiento"
 	err := request.SendJson(urlcrud, "POST", &elemento, &elemento)
 	if err != nil {
 		logs.Error(err, urlcrud)
@@ -239,7 +239,7 @@ func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGene
 	funcion := "PutTrSalida"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "tr_salida/"
+	urlcrud := basePath + "tr_salida/"
 	if err := request.SendJson(urlcrud, "PUT", &trResultado, &trSalida); err != nil {
 		eval := " - request.SendJson(urlcrud, \"PUT\", &trResultado, &trSalida)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -255,7 +255,7 @@ func PostTrSalida(trSalida *models.SalidaGeneral) (outputError map[string]interf
 	funcion := "PostTrSalida - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "tr_salida"
+	urlcrud := basePath + "tr_salida"
 	err := request.SendJson(urlcrud, "POST", &trSalida, &trSalida)
 	if err != nil {
 		logs.Error(err)
@@ -272,7 +272,7 @@ func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (outputError
 	funcion := "PutMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "movimiento/" + strconv.Itoa(movimientoId)
+	urlcrud := basePath + "movimiento/" + strconv.Itoa(movimientoId)
 	err := request.SendJson(urlcrud, "PUT", &movimiento, &movimiento)
 	if err != nil {
 		eval := `request.SendJson(urlcrud, "PUT", &movimientoRes, &movimiento)`
@@ -288,7 +288,7 @@ func PutRevision(revision *models.TrRevisionBaja) (ids []int, outputError map[st
 	funcion := "PutRevision"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "bajas/"
+	urlcrud := basePath + "bajas/"
 	if err := request.SendJson(urlcrud, "PUT", &ids, &revision); err != nil {
 		eval := " - request.SendJson(urlcrud, \"PUT\", &ids, &revision)"
 		return nil, errorCtrl.Error(funcion+eval, err, "500")
@@ -304,7 +304,7 @@ func PutSoporteMovimiento(soporte *models.SoporteMovimiento, soporteId int) (sop
 	funcion := "PutSoporteMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "soporte_movimiento/" + strconv.Itoa(soporteId)
+	urlcrud := basePath + "soporte_movimiento/" + strconv.Itoa(soporteId)
 	if err := request.SendJson(urlcrud, "PUT", &soporteR, &soporte); err != nil {
 		eval := " - request.SendJson(urlcrud, \"PUT\", &soporteR, &soporte)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -320,7 +320,7 @@ func PutElementosMovimiento(elementoM *models.ElementosMovimiento, elementoId in
 	funcion := "PutElementosMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "elementos_movimiento/" + strconv.Itoa(elementoId)
+	urlcrud := basePath + "elementos_movimiento/" + strconv.Itoa(elementoId)
 	if err := request.SendJson(urlcrud, "PUT", &elementoM_, &elementoM); err != nil {
 		eval := ` - request.SendJson(urlcrud, "PUT", &soporteR, &soporte)`
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -336,7 +336,7 @@ func PutNovedadElemento(novedad *models.NovedadElemento, novedadId int) (novedad
 	funcion := "PutNovedadElemento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "novedad_elemento/" + strconv.Itoa(novedadId)
+	urlcrud := basePath + "novedad_elemento/" + strconv.Itoa(novedadId)
 	if err := request.SendJson(urlcrud, "PUT", &novedad_, &novedad); err != nil {
 		eval := ` - request.SendJson(urlcrud, "PUT", &novedad_, &novedad)`
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -352,7 +352,7 @@ func PostNovedadElemento(novedad *models.NovedadElemento) (outputError map[strin
 	funcion := "PostNovedadElemento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "novedad_elemento"
+	urlcrud := basePath + "novedad_elemento"
 	err := request.SendJson(urlcrud, "POST", &novedad, &novedad)
 	if err != nil {
 		logs.Error(err, urlcrud)
@@ -369,7 +369,7 @@ func GetElementosFuncionario(funcionarioId int) (movimientos []int, outputError 
 	funcion := "GetElementosFuncionario"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "elementos_movimiento/funcionario/" + strconv.Itoa(funcionarioId)
+	urlcrud := basePath + "elementos_movimiento/funcionario/" + strconv.Itoa(funcionarioId)
 	if err := request.GetJson(urlcrud, &movimientos); err != nil {
 		eval := " - request.GetJson(urlcrud, &movimientos)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -383,7 +383,7 @@ func GetHistorialElemento(elementoId int, final bool) (historial *models.Histori
 	funcion := "GetHistorialElemento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "elementos_movimiento/historial/" + strconv.Itoa(elementoId)
+	urlcrud := basePath + "elementos_movimiento/historial/" + strconv.Itoa(elementoId)
 	urlcrud += "?final=" + strconv.FormatBool(final)
 	if err := request.GetJson(urlcrud, &historial); err != nil {
 		eval := " - request.GetJson(urlcrud, &historial)"
@@ -398,7 +398,7 @@ func GetCorteDepreciacion(fechaCorte string) (corte []models.DepreciacionElement
 	funcion := "GetCorteDepreciacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "cierre/?fechaCorte=" + fechaCorte
+	urlcrud := basePath + "cierre/?fechaCorte=" + fechaCorte
 	if err := request.GetJson(urlcrud, &corte); err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &corte)"
@@ -414,7 +414,7 @@ func AprobarCierre(cierre *models.Movimiento) (outputError map[string]interface{
 	funcion := "AprobarCierre - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "cierre/"
+	urlcrud := basePath + "cierre/"
 	if err := request.SendJson(urlcrud, "POST", &cierre, &cierre); err != nil {
 		logs.Error(err, urlcrud)
 		eval := `request.SendJson(urlcrud, "POST", &cierre, &data)`
@@ -430,7 +430,7 @@ func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputE
 	funcion := "GetEntradaByActa"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "movimiento/entrada/" + strconv.Itoa(acta_recibido_id)
+	urlcrud := basePath + "movimiento/entrada/" + strconv.Itoa(acta_recibido_id)
 	if err := request.GetJson(urlcrud, &entrada); err != nil {
 		eval := " - request.GetJson(urlcrud, &entrada)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -444,7 +444,7 @@ func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models
 	funcion := "GetTrasladosByTerceroId - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "movimiento/traslado/" + strconv.Itoa(terceroId)
+	urlcrud := basePath + "movimiento/traslado/" + strconv.Itoa(terceroId)
 	if confirmar {
 		urlcrud += "?confirmar=true"
 	}
@@ -461,7 +461,7 @@ func GetBajasByTerceroId(terceroId int, bajas *[]*models.Movimiento) (outputErro
 	funcion := "GetBajasByTerceroId - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "movimiento/baja/" + strconv.Itoa(terceroId)
+	urlcrud := basePath + "movimiento/baja/" + strconv.Itoa(terceroId)
 	if err := request.GetJson(urlcrud, &bajas); err != nil {
 		eval := "request.GetJson(urlcrud, &bajas)"
 		return errorCtrl.Error(funcion+eval, err, "502")
@@ -476,7 +476,7 @@ func GetBodegaByTerceroId(terceroId int, solicitudes *[]*models.Movimiento) (out
 	funcion := "GetBodegaByTerceroId - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "movimiento/bodega/" + strconv.Itoa(terceroId)
+	urlcrud := basePath + "movimiento/bodega/" + strconv.Itoa(terceroId)
 	if err := request.GetJson(urlcrud, &solicitudes); err != nil {
 		eval := "request.GetJson(urlcrud, &solicitudes)"
 		return errorCtrl.Error(funcion+eval, err, "502")
@@ -491,7 +491,7 @@ func GetAperturas(conSaldo bool, aperturas *[]models.Apertura) (outputError map[
 	funcion := "GetAperturas - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "tr_kardex/aperturas?ConSaldo=" + strconv.FormatBool(conSaldo)
+	urlcrud := basePath + "tr_kardex/aperturas?ConSaldo=" + strconv.FormatBool(conSaldo)
 	if err := request.GetJson(urlcrud, &aperturas); err != nil {
 		eval := "request.GetJson(urlcrud, &aperturas)"
 		return errorCtrl.Error(funcion+eval, err, "502")
@@ -505,7 +505,7 @@ func GetAllCentroCostos(payload string) (centroCostos []models.CentroCostos, out
 	funcion := "GetAllCentroCostos - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "centro_costos?" + payload
+	urlcrud := basePath + "centro_costos?" + payload
 	err := request.GetJson(urlcrud, &centroCostos)
 	if err != nil {
 		logs.Error(err)
