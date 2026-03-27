@@ -34,31 +34,32 @@ func (c *EntradaController) URLMapping() {
 // @Failure 400 the request contains incorrect syntax
 // @router / [post]
 func (c *EntradaController) Post() {
-
 	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
 
-	entradaId, _ := c.GetInt("entradaId", 0)
+	logs.Info("==== INICIO EntradaController.Post ====")
 
-	etl, _ := c.GetBool("etl", false)
+	entradaId, errEntradaID := c.GetInt("entradaId", 0)
+	etl, errETL := c.GetBool("etl", false)
+	aprobar, errAprobar := c.GetBool("aprobar", false)
 
-	aprobar, _ := c.GetBool("aprobar", false)
+	logs.Info("Query params recibidos -> entradaId: %d, etl: %v, aprobar: %v", entradaId, etl, aprobar)
+	logs.Info("Errores parseando query params -> entradaId: %v, etl: %v, aprobar: %v", errEntradaID, errETL, errAprobar)
+	logs.Info("Body crudo recibido -> %s", string(c.Ctx.Input.RequestBody))
 
 	if aprobar && entradaId > 0 {
+		logs.Info("Entró en rama de APROBACIÓN. entradaId=%d", entradaId)
 
 		var res models.ResultadoMovimiento
 		if err := entradaHelper.AprobarEntrada(entradaId, &res); err != nil {
-			if err == nil {
-				panic(map[string]interface{}{
-					"funcion": "Post - entradaHelper.AprobarEntrada(entradaId)",
-					"err":     errors.New("no se obtuvo respuesta al aprobar la entrada"),
-					"status":  "400",
-				})
-			}
+			logs.Error("Error en entradaHelper.AprobarEntrada(%d): %v", entradaId, err)
 			panic(err)
-		} else {
-			c.Data["json"] = res
 		}
+
+		logs.Info("Aprobación exitosa. Respuesta: %+v", res)
+		c.Data["json"] = res
+
 	} else if !aprobar {
+		logs.Info("Entró en rama de REGISTRO/ACTUALIZACIÓN. aprobar=%v, entradaId=%d", aprobar, entradaId)
 
 		var (
 			v       models.TransaccionEntrada
@@ -66,42 +67,74 @@ func (c *EntradaController) Post() {
 		)
 
 		if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v); err != nil {
-			panic(err)
+			logs.Error("Error deserializando body en models.TransaccionEntrada: %v", err)
+			logs.Error("Body que falló: %s", string(c.Ctx.Input.RequestBody))
+			panic(map[string]interface{}{
+				"funcion": "Post - utilsHelper.Unmarshal(RequestBody, &v)",
+				"err":     err,
+				"status":  "400",
+			})
 		}
 
+		logs.Info("Body deserializado correctamente: %+v", v)
+
 		if entradaId > 0 {
+			logs.Info("Entró en UPDATE de entrada. entradaId=%d", entradaId)
+
 			if err := entradaHelper.UpdateEntrada(&v, entradaId, &entrada); err != nil {
+				logs.Error("Error en entradaHelper.UpdateEntrada(&v, %d, &entrada): %v", entradaId, err)
+				logs.Error("Payload usado para update: %+v", v)
 				panic(err)
 			}
+
+			logs.Info("Update exitoso. Respuesta: %+v", entrada)
+
 		} else if entradaId == 0 {
+			logs.Info("Entró en REGISTRO de entrada nueva. etl=%v", etl)
+
 			if err := entradaHelper.RegistrarEntrada(&v, etl, &entrada); err != nil {
+				logs.Error("Error en entradaHelper.RegistrarEntrada(&v, %v, &entrada): %v", etl, err)
+				logs.Error("Payload usado para registro: %+v", v)
 				panic(err)
 			}
+
+			logs.Info("Registro exitoso. Respuesta: %+v", entrada)
 		}
 
 		c.Data["json"] = entrada
+	} else {
+		logs.Error("Caso no contemplado en Post. entradaId=%d, aprobar=%v, etl=%v", entradaId, aprobar, etl)
+		panic(map[string]interface{}{
+			"funcion": "Post - validación de flujo",
+			"err":     errors.New("combinación de parámetros no válida"),
+			"status":  "400",
+		})
 	}
 
+	logs.Info("Respuesta final Post: %+v", c.Data["json"])
+	logs.Info("==== FIN EntradaController.Post ====")
 	c.ServeJSON()
 }
 
 // GetOne ...
 // @Title GetOne
-// @Description get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada
+// @Description get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya fue aprobada
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200 {object} models.DetalleEntrada
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *EntradaController) GetOne() {
-
 	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
+
+	logs.Info("==== INICIO EntradaController.GetOne ====")
+	logs.Info("Path param recibido :id -> %s", c.Ctx.Input.Param(":id"))
 
 	var id int
 	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
 		if err == nil {
 			err = errors.New("se debe especificar una entrada válida")
 		}
-		logs.Error(err)
+		logs.Error("Error obteniendo/parsing :id. Valor recibido=%s, error=%v", c.Ctx.Input.Param(":id"), err)
 		panic(map[string]interface{}{
 			"funcion": `GetOne - c.GetInt(":id")`,
 			"err":     err,
@@ -111,19 +144,27 @@ func (c *EntradaController) GetOne() {
 		id = v
 	}
 
-	if respuesta, err := entradaHelper.DetalleEntrada(id); err == nil || respuesta != nil {
+	logs.Info("Consultando detalle de entrada con id=%d", id)
+
+	respuesta, err := entradaHelper.DetalleEntrada(id)
+	if err == nil || respuesta != nil {
+		logs.Info("DetalleEntrada respuesta -> err: %v, respuesta: %+v", err, respuesta)
 		c.Data["json"] = respuesta
 	} else {
+		logs.Error("Error en entradaHelper.DetalleEntrada(%d): %v", id, err)
+
 		if err != nil {
 			panic(err)
 		}
 
 		panic(map[string]interface{}{
 			"funcion": "GetOne - entradaHelper.DetalleEntrada(id)",
-			"err":     errors.New("no se obtuvo respuesta al consultar la anetrada"),
+			"err":     errors.New("no se obtuvo respuesta al consultar la entrada"),
 			"status":  "404",
 		})
 	}
 
+	logs.Info("Respuesta final GetOne: %+v", c.Data["json"])
+	logs.Info("==== FIN EntradaController.GetOne ====")
 	c.ServeJSON()
 }
