@@ -16,7 +16,7 @@ func GetTercerosByTipo(tipo string, id int, terceros interface{}) (outputError m
 	funcion := "GetTercerosByTipo"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + tercerosMID + "tipo/" + tipo
+	urlcrud := tercerosMID + "tipo/" + tipo
 	if id > 0 {
 		urlcrud += "/" + strconv.Itoa(id)
 	}

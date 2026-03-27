@@ -17,7 +17,7 @@ func DataUsuario(usuarioWSO2 string) (dataUsuario models.UsuarioAutenticacion, o
 	funcion := "DataUsuario - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	url := "http://" + basePath + "token/userRol"
+	url := basePath + "token/userRol"
 	req := models.UsuarioDataRequest{User: usuarioWSO2}
 	// logs.Debug("url:", url, "- req:", req)
 	if err := request.SendJson(url, "POST", &dataUsuario, &req); err == nil {

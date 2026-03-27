@@ -20,7 +20,7 @@ func GetTransaccion(id int, criteria string, detail bool) (transaccion *models.T
 	funcion := "GetTransaccion"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "transaccion_movimientos/" + criteria + "/" + strconv.Itoa(id)
+	urlcrud := basePath + "transaccion_movimientos/" + criteria + "/" + strconv.Itoa(id)
 	if detail {
 		urlcrud += "?detailed=true"
 	}
