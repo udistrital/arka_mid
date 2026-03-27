@@ -65,7 +65,7 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 	}()
 
 	var terceros []*models.Tercero
-	urltercero := "http://" + path + "tercero"
+	urltercero := path + "tercero"
 	urltercero += "?fields=Id,NombreCompleto,TipoContribuyenteId"
 	urltercero += "&query=Activo:true,UsuarioWSO2:" + usuario
 	// logs.Info(urltercero)

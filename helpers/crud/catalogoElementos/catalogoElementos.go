@@ -18,7 +18,7 @@ func GetAllCuentasSubgrupo(query string) (elementos []*models.CuentasSubgrupo, o
 	funcion := "GetAllCuentasSubgrupo"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "cuentas_subgrupo?" + query
+	urlcrud := basePath + "cuentas_subgrupo?" + query
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		logs.Error(err)
 		eval := " - request.GetJson(urlcrud, &elementos)"
@@ -34,7 +34,7 @@ func GetTrCuentasSubgrupo(id, movimientoId int, cuentas *[]models.CuentasSubgrup
 	funcion := "GetTrCuentasSubgrupo - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "tr_cuentas_subgrupo/" + strconv.Itoa(id)
+	urlcrud := basePath + "tr_cuentas_subgrupo/" + strconv.Itoa(id)
 	if movimientoId > 0 {
 		urlcrud += "?movimientoId=" + strconv.Itoa(movimientoId)
 	}
@@ -54,7 +54,7 @@ func GetAllDetalleSubgrupo(query string) (detalle []*models.DetalleSubgrupo, out
 	funcion := "GetAllDetalleSubgrupo"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "detalle_subgrupo?" + query
+	urlcrud := basePath + "detalle_subgrupo?" + query
 	if err := request.GetJson(urlcrud, &detalle); err != nil {
 		logs.Error(err)
 		eval := " - request.GetJson(urlcrud, &detalle)"
@@ -70,7 +70,7 @@ func GetAllTipoBien(query string, tiposBien *[]models.TipoBien) (outputError map
 	funcion := "GetAllTipoBien - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "tipo_bien?" + query
+	urlcrud := basePath + "tipo_bien?" + query
 	if err := request.GetJson(urlcrud, &tiposBien); err != nil {
 		logs.Error(urlcrud, err)
 		eval := "request.GetJson(urlcrud, &detalle)"
@@ -86,7 +86,7 @@ func GetTipoBienById(id int, tipoBien *models.TipoBien) (outputError map[string]
 	funcion := "GetTipoBienById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "tipo_bien/" + strconv.Itoa(id)
+	urlcrud := basePath + "tipo_bien/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &tipoBien); err != nil {
 		logs.Error(err)
 		eval := "request.GetJson(urlcrud, &tipoBien)"
@@ -102,7 +102,7 @@ func GetSubgrupoById(id int) (subgrupo models.Subgrupo, outputError map[string]i
 	funcion := "GetSubgrupoById - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "subgrupo/" + strconv.Itoa(id)
+	urlcrud := basePath + "subgrupo/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &subgrupo); err != nil {
 		logs.Error(err)
 		eval := "request.GetJson(urlcrud, &subgrupo)"
@@ -118,7 +118,7 @@ func GetAllElemento(payload string, elementos *[]models.ElementoCatalogo) (outpu
 	funcion := "GetAllElemento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "elemento?" + payload
+	urlcrud := basePath + "elemento?" + payload
 	if err := request.GetJson(urlcrud, &elementos); err != nil {
 		logs.Error(err)
 		eval := "request.GetJson(urlcrud, &elementos)"

@@ -18,7 +18,7 @@ func GetCuentaContable(cuentaContableId string) (cuentaContable *models.CuentaCo
 	funcion := "GetCuentaContable"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "nodo_cuenta_contable/" + cuentaContableId
+	urlcrud := basePath + "nodo_cuenta_contable/" + cuentaContableId
 	var data models.RespuestaAPI2obj
 	if err := request.GetJson(urlcrud, &data); err != nil || data.Code != 200 {
 		if data.Message == "document-no-found" {
@@ -39,7 +39,7 @@ func GetTipoComprobante(tipoDocumento string) (tipoComprobante *models.TipoCompr
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var data models.RespuestaAPI2arr
-	urlcrud := "http://" + basePath + "tipo_comprobante"
+	urlcrud := basePath + "tipo_comprobante"
 	if err := request.GetJson(urlcrud, &data); err != nil || data.Code != 200 {
 		eval := " - request.GetJson(urlcrud, &data)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -72,7 +72,7 @@ func GetComprobante(tipoDocumento string, id *string) (outputError map[string]in
 		comprobantes []*models.Comprobante
 	)
 
-	urlcrud := "http://" + basePath + "comprobante"
+	urlcrud := basePath + "comprobante"
 	if err := request.GetJson(urlcrud, &data); err != nil || data.Code != 200 {
 		eval := " - request.GetJson(urlcrud, &data)"
 		return errorCtrl.Error(funcion+eval, err, "502")

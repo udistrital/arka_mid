@@ -23,7 +23,7 @@ func GetCargoFuncionario(id int) (cargo []*models.Parametro, outputError map[str
 	}()
 
 	// Consulta cargo
-	urlcrud := "http://" + basePath + "propiedad/cargo/" + strconv.Itoa(id)
+	urlcrud := basePath + "propiedad/cargo/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &cargo); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -44,7 +44,7 @@ func GetDocumentoTercero(id int) (documento []*models.DatosIdentificacion, outpu
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	// Consulta documento
-	urlcrud := "http://" + basePath + "propiedad/documento/" + strconv.Itoa(id)
+	urlcrud := basePath + "propiedad/documento/" + strconv.Itoa(id)
 	if err := request.GetJson(urlcrud, &documento); err != nil {
 		eval := " - request.GetJson(urlcrud, &documento)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
