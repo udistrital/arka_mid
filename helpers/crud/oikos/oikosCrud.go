@@ -18,7 +18,7 @@ func GetAllAsignacion(payload string) (asignaciones []models.AsignacionEspacioFi
 	funcion := "GetAllAsignacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "asignacion_espacio_fisico_dependencia?" + payload
+	urlcrud := basePath + "asignacion_espacio_fisico_dependencia?" + payload
 	_, err := request.GetJsonTest(urlcrud, &asignaciones)
 	if err != nil {
 		logs.Info(urlcrud)
@@ -34,7 +34,7 @@ func GetAllEspacioFisico(payload string) (espacios []models.EspacioFisico, outpu
 	funcion := "GetAllEspacioFisico - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "espacio_fisico?" + payload
+	urlcrud := basePath + "espacio_fisico?" + payload
 	err := request.GetJson(urlcrud, &espacios)
 	if err != nil {
 		logs.Error(err)
@@ -50,7 +50,7 @@ func GetAllEspacioFisicoCampo(payload string) (espacios []models.EspacioFisicoCa
 	funcion := "GetAllEspacioFisicoCampo - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "espacio_fisico_campo?" + payload
+	urlcrud := basePath + "espacio_fisico_campo?" + payload
 	err := request.GetJson(urlcrud, &espacios)
 	if err != nil {
 		logs.Error(err)
@@ -89,7 +89,7 @@ func GetDependenciaById(id int) (dependencia *models.Dependencia, outputError ma
 	funcion := "GetDependenciaById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := "http://" + basePath + "dependencia/" + strconv.Itoa(id)
+	urlcrud := basePath + "dependencia/" + strconv.Itoa(id)
 	err := request.GetJson(urlcrud, &dependencia)
 	if err != nil {
 		eval := "request.GetJson(urlcrud, &dependencia)"

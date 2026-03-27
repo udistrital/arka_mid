@@ -45,26 +45,28 @@ steps:
     - push
 
 - name: go_run_test
-  failure: ignore
-  image: golang:1.18
+  image: golang:1.25
   commands:
-  - go get -t
-  - go get github.com/smartystreets/goconvey/convey
-  - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.41.1
-  - go get github.com/axw/gocov/...
-  - go get github.com/AlekSi/gocov-xml
-  - go get -u github.com/jstemmer/go-junit-report
-  - golangci-lint run ./... | tee report.xml
-  # - gocov test ./... | gocov-xml > coverage.xml
-  # - go test -v ./... | go-junit-report > test.xml
+    - go vet ./...
+    - go fmt ./... && git diff --exit-code || (echo "Go fmt detected formatting issues! Please run 'go fmt' to format your code." && exit 1)
+    - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    - golangci-lint run --out-format checkstyle --timeout=5m > lint_report.xml || true
+    - cat lint_report.xml
+    # - go install github.com/axw/gocov/...@latest
+    # - go install github.com/AlekSi/gocov-xml@latest
+    # - gocov test ./... | gocov-xml > coverage.xml
+    # - cat coverage.xml
+    # - go install github.com/jstemmer/go-junit-report@latest
+    # - go test -v ./... | go-junit-report > test_report.xml
+    # - cat test_report.xml
   when:
     branch:
-    - develop
-    - feature/*
-    - hotfix/*
-    - release/*
+      - feature/*
+      - develop
+      - release/*
+      - hotfix/*
     event:
-    - push
+      - push
 
 - name: run_sonar_scanner
   image: sonarsource/sonar-scanner-cli:latest
@@ -87,7 +89,7 @@ steps:
     - push
 
 - name: go_build
-  image: golang:1.24
+  image: golang:1.25
   commands:
   - GOOS=linux GOARCH=amd64 go build -o main
   when:
@@ -139,76 +141,34 @@ steps:
     event:
     - push
 
-- name: update_aws_ecs
-  image: golang:1.18
+- name: update_ecs_service
+  image: amazon/aws-cli:latest
   environment:
     AWS_ACCESS_KEY_ID:
       from_secret: AWS_ACCESS_KEY_ID
     AWS_SECRET_ACCESS_KEY:
       from_secret: AWS_SECRET_ACCESS_KEY
-    AWS_CONTAINER:
-      from_secret: AWS_CONTAINER
+    AWS_DEFAULT_REGION:
+      from_secret: AWS_REGION
   commands:
   - case ${DRONE_BRANCH} in
-       release/*)
-         AMBIENTE=test
-         CLUSTER=test
-         MYCONTAINER=$${AWS_CONTAINER}/${DRONE_REPO##udistrital/}:release
-         ;;
-       master)
-         AMBIENTE=prod
-         CLUSTER=oas
-         MYCONTAINER=$${AWS_CONTAINER}/${DRONE_REPO##udistrital/}:latest
-         ;;
+    master)
+    SUFFIX=prod
+    CLUSTER=oas
+      ;;
+    *)
+    SUFFIX=test
+    CLUSTER=test
+      ;;
     esac
-  - AWS_REGION=us-east-1
-  - SERVICE=${DRONE_REPO##udistrital/}_$AMBIENTE
-  - container_name=${DRONE_REPO##udistrital/}
-  - apt-get update
-  - apt-get install unzip
-  - wget https://github.com/Autodesk/go-awsecs/releases/download/v1.1/update-aws-ecs-service-linux-amd64.zip
-  - unzip update-aws-ecs-service-linux-amd64.zip -d /go/bin
-  - AWS_ACCESS_KEY_ID=$${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=$${AWS_SECRET_ACCESS_KEY} AWS_REGION=$AWS_REGION
-    $GOPATH/bin/update-aws-ecs-service -cluster $CLUSTER -service $SERVICE -container-image $MYCONTAINER
+  - aws ecs update-service
+    --cluster $${CLUSTER}
+    --service $${DRONE_REPO_NAME}_$${SUFFIX}
+    --force-new-deployment
+    --query "service.deployments[0].id"
   when:
     branch:
-    - release/*
-    - master
+      - release/*
+      - master
     event:
-    - push
-
-- name: notify_telegram
-  failure: ignore
-  image: appleboy/drone-telegram
-  settings:
-    token:
-      from_secret: telegram_token
-    to:
-      from_secret: telegram_to
-    format: html
-    message: >
-      {{#success build.status}}
-        ✅ <a href="{{build.link}}">SUCCESS</a> <b>Build #{{build.number}}</b>
-        <b>type: </b><code>{{ build.event }}</code>
-        <b>Repo: </b><code>{{repo.name}}</code>
-        <b>Branch: </b><code>{{commit.branch}}</code>
-        <b>Commit: </b><a href="{{commit.link}}">{{truncate commit.sha 7}}</a>
-        <b>Autor: </b>{{commit.author}} <code>&#128526 </code>
-      {{else}}
-        ❌ <a href="{{build.link}}">FAILURE</a> <b>Build #{{build.number}}</b>
-        <b>type: </b><code>{{ build.event }}</code>
-        <b>Repo: </b><code>{{repo.name}}</code>
-        <b>Branch: </b><code>{{commit.branch}}</code>
-        <b>Commit: </b><a href="{{commit.link}}">{{truncate commit.sha 7}}</a>
-        <b>Autor: </b>{{commit.author}} <code>&#128549 </code>
-      {{/success}}
-  when:
-    branch:
-    - develop
-    - release/*
-    - master
-    event:
-    - push
-    status:
-    - failure
-    - success
+      - push

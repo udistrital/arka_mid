@@ -28,7 +28,7 @@ func GetContrato(contratoId int, vigencia string, contrato *models.InformacionCo
 		return e.Error(funcion+context, err, fmt.Sprint(http.StatusBadRequest))
 	}
 
-	urlCrud := "http://" + basePath + fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
+	urlCrud := basePath + fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
 	err := request.GetJsonWSO2(urlCrud, &contrato)
 	if err != nil {
 		logs.Error(err, urlCrud)
@@ -45,7 +45,7 @@ func GetTipoContratoById(tipoContratoId string, tipoContrato interface{}) (outpu
 	const funcion = "GetTipoContratoById - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
-	urlcrud := "http://" + basePath + "tipo_contrato/" + tipoContratoId
+	urlcrud := basePath + "tipo_contrato/" + tipoContratoId
 	err := request.GetJsonWSO2(urlcrud, &tipoContrato)
 	if err != nil {
 		logs.Error(err, urlcrud)

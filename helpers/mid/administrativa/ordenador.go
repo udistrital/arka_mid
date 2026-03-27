@@ -17,7 +17,7 @@ func GetOrdenadores(id int, ordenadores interface{}) (outputError map[string]int
 	funcion := "GetOrdenadores - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + administrativa_amazon + "ordenadores"
+	urlcrud := administrativa_amazon + "ordenadores"
 	if id > 0 {
 		urlcrud += "/" + strconv.Itoa(id)
 	}

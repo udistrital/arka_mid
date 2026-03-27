@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"github.com/beego/beego/v2/core/logs"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -21,51 +22,74 @@ func RegistrarEntrada(data *models.TransaccionEntrada, etl bool, resultado *mode
 		EstadoMovimientoId:      &models.EstadoMovimiento{},
 	}
 
+	logs.Info("DEBUG [RegistrarEntrada] PASO 1: GetEstadoMovimientoIdByNombre")
 	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
 	if outputError != nil {
+		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 1: %v", outputError)
 		return
 	}
+	logs.Info("DEBUG [RegistrarEntrada] PASO 1 OK - EstadoId: %d", resultado.Movimiento.EstadoMovimientoId.Id)
 
+	logs.Info("DEBUG [RegistrarEntrada] PASO 2: GetFormatoTipoMovimientoIdByCodigoAbreviacion(%s)", data.FormatoTipoMovimientoId)
 	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
 	if outputError != nil {
+		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 2: %v", outputError)
 		return
 	}
+	logs.Info("DEBUG [RegistrarEntrada] PASO 2 OK - FormatoId: %d", resultado.Movimiento.FormatoTipoMovimientoId.Id)
 
+	logs.Info("DEBUG [RegistrarEntrada] PASO 3: crearDetalleEntrada")
 	outputError = crearDetalleEntrada(data.Detalle, &resultado.Movimiento.Detalle)
 	if outputError != nil {
+		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 3: %v", outputError)
 		return
 	}
+	logs.Info("DEBUG [RegistrarEntrada] PASO 3 OK")
 
 	var acta models.TransaccionActaRecibido
 	if data.Detalle.ActaRecibidoId > 0 {
+		logs.Info("DEBUG [RegistrarEntrada] PASO 4: GetTransaccionActaRecibidoById(%d)", data.Detalle.ActaRecibidoId)
 		outputError = actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, false, &acta)
 		if outputError != nil {
+			logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 4: %v", outputError)
 			return
 		} else if acta.UltimoEstado.EstadoActaId.CodigoAbreviacion != "Aceptada" {
+			logs.Warn("DEBUG [RegistrarEntrada] PASO 4: Acta no aceptada, estado: %s", acta.UltimoEstado.EstadoActaId.CodigoAbreviacion)
 			resultado.Error = "El acta asociada no está en estado aceptada y no se puede continuar."
 			return
 		}
+		logs.Info("DEBUG [RegistrarEntrada] PASO 4 OK")
 	}
 
+	logs.Info("DEBUG [RegistrarEntrada] PASO 5: getConsecutivoEntrada")
 	outputError = getConsecutivoEntrada(&resultado.Movimiento, etl)
 	if outputError != nil {
+		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 5: %v", outputError)
 		return
 	}
+	logs.Info("DEBUG [RegistrarEntrada] PASO 5 OK - Consecutivo: %v", resultado.Movimiento.Consecutivo)
 
 	if data.Detalle.ActaRecibidoId > 0 {
+		logs.Info("DEBUG [RegistrarEntrada] PASO 6: asignarPlacas")
 		resultado.Error, outputError = asignarPlacas(data.Detalle.ActaRecibidoId, &acta.Elementos)
 		if outputError != nil || resultado.Error != "" {
+			logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 6: err=%v, error=%s", outputError, resultado.Error)
 			return
 		} else if len(acta.Elementos) == 0 {
 			resultado.Error = "No se encontraron elementos asociados al acta."
+			logs.Error("DEBUG [RegistrarEntrada] PASO 6: Sin elementos")
 			return
 		}
+		logs.Info("DEBUG [RegistrarEntrada] PASO 6 OK")
 	}
 
+	logs.Info("DEBUG [RegistrarEntrada] PASO 7: PostMovimiento")
 	outputError = movimientosArka.PostMovimiento(&resultado.Movimiento)
 	if outputError != nil {
+		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 7: %v", outputError)
 		return
 	}
+	logs.Info("DEBUG [RegistrarEntrada] PASO 7 OK - MovimientoId: %d", resultado.Movimiento.Id)
 
 	if data.SoporteMovimientoId > 0 {
 		soporte := models.SoporteMovimiento{
