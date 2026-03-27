@@ -12,7 +12,7 @@ func GetSupervisor(id int, supervisores interface{}) (outputError map[string]int
 	funcion := "GetSupervisor"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + administrativa_amazon + "supervisor_contrato"
+	urlcrud := administrativa_amazon + "supervisor_contrato"
 	if id > 0 {
 		urlcrud += "/" + strconv.Itoa(id)
 	}
@@ -29,7 +29,7 @@ func GetAllDependenciaSIC(payload string, dependencias *[]interface{}) (outputEr
 	funcion := "GetAllDependenciaSIC - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + administrativa_amazon + "dependencia_SIC?" + payload
+	urlcrud := administrativa_amazon + "dependencia_SIC?" + payload
 	if err := request.GetJson(urlcrud, &dependencias); err != nil {
 		logs.Error(urlcrud + ", " + err.Error())
 		eval := "request.GetJson(urlcrud, &supervisores)"

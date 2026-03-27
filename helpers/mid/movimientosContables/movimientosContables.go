@@ -19,7 +19,7 @@ func GetTransaccion(id int, criteria string, detail bool) (transaccion *models.T
 	funcion := "GetTransaccion"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "transaccion_movimientos/" + criteria + "/" + strconv.Itoa(id)
+	urlcrud := basePath + "transaccion_movimientos/" + criteria + "/" + strconv.Itoa(id)
 	if detail {
 		urlcrud += "?detailed=true"
 	}
@@ -39,7 +39,7 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	var resp map[string]interface{}
-	urlcrud := "http://" + basePath + "transaccion_movimientos"
+	urlcrud := basePath + "transaccion_movimientos"
 	if err := request.SendJson(urlcrud, "POST", &resp, &tr); err != nil {
 		eval := ` - request.SendJson(urlcrud, "POST", &resp, &tr)`
 		return nil, errorCtrl.Error(funcion+eval, err, "502")

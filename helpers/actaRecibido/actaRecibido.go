@@ -26,7 +26,6 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 	)
 
 	var path, _ = beego.AppConfig.String("actaRecibidoService")
-	path = "http://" + path
 	urlActasEstadoActa := path + "estado_acta?limit=-1"
 	if _, err := request.GetJsonTest(urlActasEstadoActa, &EstadoActa); err != nil {
 		logs.Error(err)

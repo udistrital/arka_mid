@@ -19,7 +19,7 @@ func GetAllParametro(query string) (parametros []*models.Parametro, outputError 
 	funcion := "GetAllParametro"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "parametro?" + query
+	urlcrud := basePath + "parametro?" + query
 	response := new(models.RespuestaAPI1Arr)
 	if err := request.GetJson(urlcrud, &response); err != nil {
 		eval := " - request.GetJson(urlcrud, &response)"
@@ -36,7 +36,7 @@ func GetParametroById(id int, parametro interface{}) (outputError map[string]int
 	funcion := "GetAllParametro - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "parametro/" + strconv.Itoa(id)
+	urlcrud := basePath + "parametro/" + strconv.Itoa(id)
 	response := new(models.RespuestaAPI1Interface)
 	if err := request.GetJson(urlcrud, &response); err != nil {
 		eval := "request.GetJson(urlcrud, &response)"
@@ -56,7 +56,7 @@ func GetAllParametroPeriodo(payload string, parametros *[]models.ParametroPeriod
 	funcion := "GetAllParametroPeriodo - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := "http://" + basePath + "parametro_periodo?" + payload
+	urlcrud := basePath + "parametro_periodo?" + payload
 	response := new(models.RespuestaAPI1Arr)
 	if err := request.GetJson(urlcrud, &response); err != nil {
 		eval := "request.GetJson(urlcrud, &response)"

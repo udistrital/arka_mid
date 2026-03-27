@@ -83,7 +83,7 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 	params.Add("fields", "Detalle")
 	params.Add("limit", "-1")
 	path, _ := beego.AppConfig.String("movimientosArkaService")
-	urlRespuestaAPI := "http://" + path + "movimiento?" + params.Encode()
+	urlRespuestaAPI := path + "movimiento?" + params.Encode()
 	if _, err := request.GetJsonTest(urlRespuestaAPI, &RespuestaAPI); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -140,7 +140,7 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 	params.Add("query", "TipoBienId__NecesitaPoliza:True,Activo:True")
 	params.Add("limit", "-1")
 	path, _ := beego.AppConfig.String("catalogoElementosService")
-	urlSubgrupos := "http://" + path + "detalle_subgrupo?" + params.Encode()
+	urlSubgrupos := path + "detalle_subgrupo?" + params.Encode()
 	if _, err := request.GetJsonTest(urlSubgrupos, &Respuesta); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
@@ -227,7 +227,7 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 	}
 
 	path, _ := beego.AppConfig.String("actaRecibidoService")
-	urlElementosSubgrupos := "http://" + path + "elemento?" + params.Encode()
+	urlElementosSubgrupos := path + "elemento?" + params.Encode()
 	//logs.Debug(urlElementosSubgrupos)
 	if _, err := request.GetJsonTest(urlElementosSubgrupos, &Respuest); err != nil {
 		logs.Error(err)
