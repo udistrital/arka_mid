@@ -43,7 +43,7 @@ func CalcularMovimientosContables(
 	var parDb int
 	var uvt float64 = 1
 
-	payloadDetalleSubgrupo := "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
+	payloadDetalleSubgrupoBase := "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 
 	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		logs.Error("CalcularMovimientosContables -> GetParametrosDebitoCredito err=%v", err)
@@ -78,10 +78,11 @@ func CalcularMovimientosContables(
 		}
 
 		if _, ok := subgrupos[el.SubgrupoCatalogoId]; !ok {
-			logs.Info("CalcularMovimientosContables -> consultando detalle subgrupo para SubgrupoCatalogoId=%d", el.SubgrupoCatalogoId)
+			payloadDetalleSubgrupo := payloadDetalleSubgrupoBase + strconv.Itoa(el.SubgrupoCatalogoId)
+			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetAllDetalleSubgrupo payload=%s", payloadDetalleSubgrupo)
 
-			sg, outputError := catalogoElementos.GetAllDetalleSubgrupo(payloadDetalleSubgrupo + strconv.Itoa(el.SubgrupoCatalogoId))
-			logs.Info("CalcularMovimientosContables -> GetAllDetalleSubgrupo outputError=%v len=%d", outputError, len(sg))
+			sg, outputError := catalogoElementos.GetAllDetalleSubgrupo(payloadDetalleSubgrupo)
+			logs.Info("CalcularMovimientosContables -> DEBUG GetAllDetalleSubgrupo outputError=%v len=%d", outputError, len(sg))
 			if outputError != nil {
 				return "", outputError
 			}
@@ -91,7 +92,7 @@ func CalcularMovimientosContables(
 			}
 
 			subgrupos[el.SubgrupoCatalogoId] = *sg[0]
-			logs.Info("CalcularMovimientosContables -> detalle subgrupo cargado=%+v", subgrupos[el.SubgrupoCatalogoId])
+			logs.Info("CalcularMovimientosContables -> DEBUG detalleSubgrupoSeleccionado=%+v", subgrupos[el.SubgrupoCatalogoId])
 		}
 
 		detalleSg := subgrupos[el.SubgrupoCatalogoId]
@@ -109,11 +110,11 @@ func CalcularMovimientosContables(
 		}
 
 		if el.TipoBienId == 0 {
-			logs.Info("CalcularMovimientosContables -> TipoBienId=0, calculando por valor. tipoBienPadre=%d valorUnitario=%v uvt=%v",
+			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetTipoBienIdByValor tipoBienPadre=%d valorUnitario=%v uvt=%v",
 				detalleSg.TipoBienId.Id, el.ValorUnitario, uvt)
 
 			tb, outputError := catalogoElementos.GetTipoBienIdByValor(detalleSg.TipoBienId.Id, el.ValorUnitario/uvt, tiposBien)
-			logs.Info("CalcularMovimientosContables -> GetTipoBienIdByValor tb=%d outputError=%v", tb, outputError)
+			logs.Info("CalcularMovimientosContables -> DEBUG GetTipoBienIdByValor tb=%d outputError=%v", tb, outputError)
 			if outputError != nil {
 				return "", outputError
 			}
@@ -127,9 +128,11 @@ func CalcularMovimientosContables(
 		} else {
 			if _, ok := tiposBien[el.TipoBienId]; !ok {
 				var tipoBien models.TipoBien
+				logs.Info("CalcularMovimientosContables -> DEBUG helper=GetTipoBienById TipoBienId=%d", el.TipoBienId)
+
 				outputError = catalogoElementos.GetTipoBienById(el.TipoBienId, &tipoBien)
-				logs.Info("CalcularMovimientosContables -> GetTipoBienById TipoBienId=%d outputError=%v tipoBien=%+v",
-					el.TipoBienId, outputError, tipoBien)
+				logs.Info("CalcularMovimientosContables -> DEBUG GetTipoBienById outputError=%v tipoBien=%+v",
+					outputError, tipoBien)
 				if outputError != nil {
 					return "", outputError
 				}
@@ -149,25 +152,37 @@ func CalcularMovimientosContables(
 		}
 
 		if _, ok := cuentasSg[el.SubgrupoCatalogoId]; !ok {
-			payload := payloadCuentas(el.SubgrupoCatalogoId, movId)
-			logs.Info("CalcularMovimientosContables -> consultando cuentas por subgrupo/tipo movimiento payload=%s", payload)
+			payloadCtas := payloadCuentas(el.SubgrupoCatalogoId)
+			logs.Info("CalcularMovimientosContables -> DEBUG criterios parametrizacion: SubgrupoCatalogoId=%d", el.SubgrupoCatalogoId)
+			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetAllCuentasSubgrupo payload=%s", payloadCtas)
 
-			cst, outputError := catalogoElementos.GetAllCuentasSubgrupo(payload)
-			logs.Info("CalcularMovimientosContables -> GetAllCuentasSubgrupo outputError=%v len=%d", outputError, len(cst))
+			cst, outputError := catalogoElementos.GetAllCuentasSubgrupo(payloadCtas)
+			logs.Info("CalcularMovimientosContables -> DEBUG GetAllCuentasSubgrupo outputError=%v len=%d", outputError, len(cst))
 			if outputError != nil {
 				return "", outputError
 			}
+
 			if len(cst) == 0 {
-				logs.Error("CalcularMovimientosContables -> no hay parametrización contable para subgrupo=%d tipoMovimiento=%d", el.SubgrupoCatalogoId, movId)
+				logs.Error("CalcularMovimientosContables -> no hay parametrización contable para subgrupo=%d payload=%s",
+					el.SubgrupoCatalogoId, payloadCtas)
 				return "No se pudo establecer la parametrización contable para la clase: " + detalleSg.SubgrupoId.Codigo, nil
 			}
+
+			for idx, cfg := range cst {
+				if cfg != nil {
+					logs.Info("CalcularMovimientosContables -> DEBUG cst[%d]=%+v", idx, *cfg)
+				} else {
+					logs.Warn("CalcularMovimientosContables -> DEBUG cst[%d]=nil", idx)
+				}
+			}
+
 			if len(cst) > 1 {
-				logs.Warn("CalcularMovimientosContables -> se encontraron %d parametrizaciones para subgrupo=%d tipoMovimiento=%d. Se tomará la primera.",
-					len(cst), el.SubgrupoCatalogoId, movId)
+				logs.Warn("CalcularMovimientosContables -> se encontraron %d parametrizaciones para subgrupo=%d. Se tomará la primera.",
+					len(cst), el.SubgrupoCatalogoId)
 			}
 
 			cuentasSg[el.SubgrupoCatalogoId] = *cst[0]
-			logs.Info("CalcularMovimientosContables -> cuentas por subgrupo=%+v", cuentasSg[el.SubgrupoCatalogoId])
+			logs.Info("CalcularMovimientosContables -> DEBUG parametrizacionSeleccionada=%+v", cuentasSg[el.SubgrupoCatalogoId])
 		}
 
 		cuentaCfg := cuentasSg[el.SubgrupoCatalogoId]
@@ -184,10 +199,14 @@ func CalcularMovimientosContables(
 			return "La parametrización contable no tiene cuenta débito. Contacte soporte.", nil
 		}
 
+		logs.Info("CalcularMovimientosContables -> DEBUG cuentaCreditoID=%s cuentaDebitoID=%s",
+			cuentaCfg.CuentaCreditoId, cuentaCfg.CuentaDebitoId)
+
 		if _, ok := cuentas[cuentaCfg.CuentaCreditoId]; !ok {
+			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetCuentaContable tipo=credito id=%s", cuentaCfg.CuentaCreditoId)
+
 			cr, outputError := cuentasContables.GetCuentaContable(cuentaCfg.CuentaCreditoId)
-			logs.Info("CalcularMovimientosContables -> GetCuentaContable crédito=%s outputError=%v cuenta=%+v",
-				cuentaCfg.CuentaCreditoId, outputError, cr)
+			logs.Info("CalcularMovimientosContables -> DEBUG GetCuentaContable credito outputError=%v cuenta=%+v", outputError, cr)
 			if outputError != nil {
 				return "", outputError
 			}
@@ -200,9 +219,10 @@ func CalcularMovimientosContables(
 		}
 
 		if _, ok := cuentas[cuentaCfg.CuentaDebitoId]; !ok {
+			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetCuentaContable tipo=debito id=%s", cuentaCfg.CuentaDebitoId)
+
 			db, outputError := cuentasContables.GetCuentaContable(cuentaCfg.CuentaDebitoId)
-			logs.Info("CalcularMovimientosContables -> GetCuentaContable débito=%s outputError=%v cuenta=%+v",
-				cuentaCfg.CuentaDebitoId, outputError, db)
+			logs.Info("CalcularMovimientosContables -> DEBUG GetCuentaContable debito outputError=%v cuenta=%+v", outputError, db)
 			if outputError != nil {
 				return "", outputError
 			}
@@ -264,7 +284,10 @@ func fillMovimiento(valor float64, dsc string, terceroId, tipoMov int, cuenta mo
 	logs.Info("fillMovimiento -> movimiento construido=%+v", *movimiento)
 }
 
-func payloadCuentas(sg, mov int) string {
-	return "limit=1&sortby=Id&order=desc&fields=CuentaDebitoId,CuentaCreditoId&query=Activo:true,SubgrupoId__Id:" +
-		strconv.Itoa(sg) + ",TipoMovimientoId:" + strconv.Itoa(mov)
+func payloadCuentas(sg int) string {
+	payload := "limit=1&sortby=Id&order=desc&fields=CuentaDebitoId,CuentaCreditoId&query=Activo:true,SubgrupoId__Id:" +
+		strconv.Itoa(sg)
+
+	logs.Info("payloadCuentas -> sg=%d payload=%s", sg, payload)
+	return payload
 }
