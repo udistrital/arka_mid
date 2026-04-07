@@ -2,14 +2,11 @@ package asientoContable
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
-	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
-	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 )
 
@@ -48,14 +45,6 @@ func CalcularMovimientosContables(
 
 	payloadDetalleSubgrupo := "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 
-	// if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
-	// 	return "", err
-	// } else if uvt_ == 0 {
-	// 	return "No se pudo consultar el valor del UVT. Intente más tarde o contacte soporte.", nil
-	// } else {
-	// 	uvt = uvt_
-	// }
-
 	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
 		logs.Error("CalcularMovimientosContables -> GetParametrosDebitoCredito err=%v", err)
 		return "", err
@@ -66,11 +55,9 @@ func CalcularMovimientosContables(
 	}
 
 	tiposBien := make(map[int]models.TipoBien)
-	cuentasSgTb := make(map[int]map[int]models.CuentasSubgrupo)
+	cuentasSg := make(map[int]models.CuentasSubgrupo)
 	totalesCr := make(map[string]float64)
 	totalesDb := make(map[string]float64)
-	var actasConflicto []int
-	var subgruposConflicto []string
 
 	for i, el := range elementos {
 		if el == nil {
@@ -137,7 +124,6 @@ func CalcularMovimientosContables(
 
 			el.TipoBienId = tb
 			logs.Info("CalcularMovimientosContables -> TipoBienId asignado automáticamente=%d", el.TipoBienId)
-
 		} else {
 			if _, ok := tiposBien[el.TipoBienId]; !ok {
 				var tipoBien models.TipoBien
@@ -157,69 +143,44 @@ func CalcularMovimientosContables(
 			}
 
 			if tiposBien[el.TipoBienId].TipoBienPadreId.Id != detalleSg.TipoBienId.Id {
-				logs.Error("CalcularMovimientosContables -> conflicto tipo bien. TipoBienId=%d TipoBienPadreId=%d esperado=%d",
-					el.TipoBienId, tiposBien[el.TipoBienId].TipoBienPadreId.Id, detalleSg.TipoBienId.Id)
-
-				var elemento models.Elemento
-				outputError = actaRecibido.GetElementoById(el.Id, &elemento)
-				logs.Info("CalcularMovimientosContables -> GetElementoById Id=%d outputError=%v elemento=%+v",
-					el.Id, outputError, elemento)
-				if outputError != nil {
-					return "", outputError
-				}
-
-				if elemento.ActaRecibidoId == nil {
-					logs.Error("CalcularMovimientosContables -> ActaRecibidoId nil en elemento consultado. elemento=%+v", elemento)
-					return "No se pudo validar el acta asociada al elemento. Contacte soporte.", nil
-				}
-
-				exists := containsInt(actasConflicto, elemento.ActaRecibidoId.Id)
-				if !exists {
-					actasConflicto = append(actasConflicto, elemento.ActaRecibidoId.Id)
-					logs.Info("CalcularMovimientosContables -> acta agregada a conflicto=%d", elemento.ActaRecibidoId.Id)
-				}
-				continue
+				logs.Warn("CalcularMovimientosContables -> se omite validación de tipo de bien. TipoBienId=%d TipoBienPadreId=%d esperado=%d elemento=%+v",
+					el.TipoBienId, tiposBien[el.TipoBienId].TipoBienPadreId.Id, detalleSg.TipoBienId.Id, *el)
 			}
 		}
 
-		if cuentasSgTb[el.SubgrupoCatalogoId] == nil {
-			cuentasSgTb[el.SubgrupoCatalogoId] = make(map[int]models.CuentasSubgrupo)
-			logs.Info("CalcularMovimientosContables -> mapa cuentasSgTb inicializado para subgrupo=%d", el.SubgrupoCatalogoId)
-		}
-
-		if _, ok := cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId]; !ok {
-			payload := payloadCuentas(el.SubgrupoCatalogoId, el.TipoBienId, movId, sMovId)
-			logs.Info("CalcularMovimientosContables -> consultando cuentas subgrupo payload=%s", payload)
+		if _, ok := cuentasSg[el.SubgrupoCatalogoId]; !ok {
+			payload := payloadCuentas(el.SubgrupoCatalogoId, movId)
+			logs.Info("CalcularMovimientosContables -> consultando cuentas por subgrupo/tipo movimiento payload=%s", payload)
 
 			cst, outputError := catalogoElementos.GetAllCuentasSubgrupo(payload)
 			logs.Info("CalcularMovimientosContables -> GetAllCuentasSubgrupo outputError=%v len=%d", outputError, len(cst))
 			if outputError != nil {
 				return "", outputError
 			}
-			if len(cst) == 1 {
-				cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId] = *cst[0]
-				logs.Info("CalcularMovimientosContables -> cuentas subgrupo-tipo bien=%+v", cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId])
-			} else {
-				exists := containsString(subgruposConflicto, detalleSg.SubgrupoId.Codigo)
-				if !exists {
-					subgruposConflicto = append(subgruposConflicto, detalleSg.SubgrupoId.Codigo)
-					logs.Info("CalcularMovimientosContables -> subgrupo en conflicto agregado=%s", detalleSg.SubgrupoId.Codigo)
-				}
-				continue
+			if len(cst) == 0 {
+				logs.Error("CalcularMovimientosContables -> no hay parametrización contable para subgrupo=%d tipoMovimiento=%d", el.SubgrupoCatalogoId, movId)
+				return "No se pudo establecer la parametrización contable para la clase: " + detalleSg.SubgrupoId.Codigo, nil
 			}
+			if len(cst) > 1 {
+				logs.Warn("CalcularMovimientosContables -> se encontraron %d parametrizaciones para subgrupo=%d tipoMovimiento=%d. Se tomará la primera.",
+					len(cst), el.SubgrupoCatalogoId, movId)
+			}
+
+			cuentasSg[el.SubgrupoCatalogoId] = *cst[0]
+			logs.Info("CalcularMovimientosContables -> cuentas por subgrupo=%+v", cuentasSg[el.SubgrupoCatalogoId])
 		}
 
-		cuentaCfg := cuentasSgTb[el.SubgrupoCatalogoId][el.TipoBienId]
+		cuentaCfg := cuentasSg[el.SubgrupoCatalogoId]
 
 		if cuentaCfg.CuentaCreditoId == "" {
-			logs.Error("CalcularMovimientosContables -> CuentaCreditoId vacío. subgrupo=%d tipoBien=%d config=%+v",
-				el.SubgrupoCatalogoId, el.TipoBienId, cuentaCfg)
+			logs.Error("CalcularMovimientosContables -> CuentaCreditoId vacío. subgrupo=%d config=%+v",
+				el.SubgrupoCatalogoId, cuentaCfg)
 			return "La parametrización contable no tiene cuenta crédito. Contacte soporte.", nil
 		}
 
 		if cuentaCfg.CuentaDebitoId == "" {
-			logs.Error("CalcularMovimientosContables -> CuentaDebitoId vacío. subgrupo=%d tipoBien=%d config=%+v",
-				el.SubgrupoCatalogoId, el.TipoBienId, cuentaCfg)
+			logs.Error("CalcularMovimientosContables -> CuentaDebitoId vacío. subgrupo=%d config=%+v",
+				el.SubgrupoCatalogoId, cuentaCfg)
 			return "La parametrización contable no tiene cuenta débito. Contacte soporte.", nil
 		}
 
@@ -258,16 +219,6 @@ func CalcularMovimientosContables(
 
 		logs.Info("CalcularMovimientosContables -> acumulados crédito=%+v", totalesCr)
 		logs.Info("CalcularMovimientosContables -> acumulados débito=%+v", totalesDb)
-	}
-
-	if len(actasConflicto) > 0 {
-		logs.Error("CalcularMovimientosContables -> actasConflicto=%v", actasConflicto)
-		return "El tipo bien asignado manualmente no corresponde a la clase correspondiente. Revise las siguientes actas: " + utilsHelper.ArrayToString(actasConflicto, ", "), nil
-	}
-
-	if len(subgruposConflicto) > 0 {
-		logs.Error("CalcularMovimientosContables -> subgruposConflicto=%v", subgruposConflicto)
-		return "No se pudo establecer la parametrización contable de las siguientes clases: " + strings.Join(subgruposConflicto, ", "), nil
 	}
 
 	for cta, val := range totalesCr {
@@ -313,26 +264,7 @@ func fillMovimiento(valor float64, dsc string, terceroId, tipoMov int, cuenta mo
 	logs.Info("fillMovimiento -> movimiento construido=%+v", *movimiento)
 }
 
-func payloadCuentas(sg, tb, mov, sMov int) string {
-	return "fields=CuentaDebitoId,CuentaCreditoId&query=Activo:true,SubgrupoId__Id:" +
-		strconv.Itoa(sg) + ",TipoBienId__Id:" + strconv.Itoa(tb) + ",TipoMovimientoId:" + strconv.Itoa(mov) +
-		",SubtipoMovimientoId:" + strconv.Itoa(sMov)
-}
-
-func containsInt(s []int, e int) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
-func containsString(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
+func payloadCuentas(sg, mov int) string {
+	return "limit=1&sortby=Id&order=desc&fields=CuentaDebitoId,CuentaCreditoId&query=Activo:true,SubgrupoId__Id:" +
+		strconv.Itoa(sg) + ",TipoMovimientoId:" + strconv.Itoa(mov)
 }

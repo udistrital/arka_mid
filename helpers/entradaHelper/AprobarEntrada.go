@@ -236,8 +236,19 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 		query := "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
 		logs.Info("getElementosEntrada -> consultando elementos por acta query=%s", query)
 
-		elementos, outputError = actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
+		elementos, outputError = actaRecibido.GetAllElemento(
+			query,
+			"Id,ActaRecibidoId,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId",
+			"SubgrupoCatalogoId",
+			"desc",
+			"",
+			"-1",
+		)
 		logs.Info("getElementosEntrada -> GetAllElemento len=%d outputError=%v", len(elementos), outputError)
+
+		if outputError != nil {
+			return
+		}
 
 		if len(elementos) == 0 {
 			resultado.Error = errNoElementos
@@ -446,7 +457,7 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	return
 }
 
-// descripcionMovimientoContable Genera la descipción de cada uno de los movimientos contables asociados a una entrada.
+// descripcionMovimientoContable Genera la descripción de cada uno de los movimientos contables asociados a una entrada.
 func descripcionMovimientoContable(detalle string) (detalle_ string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("descripcionMovimientoContable - Unhandled Error!", "500")
 
