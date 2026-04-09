@@ -213,6 +213,26 @@
                 }
             }
         },
+        "/acta_recibido/plantilla": {
+            "get": {
+                "tags": [
+                    "acta_recibido"
+                ],
+                "description": "Retorna la plantilla Excel para cargue masivo de elementos",
+                "operationId": "ActaRecibidoController.Descargar plantilla de cargue masivo",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.PlantillaArchivoResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server"
+                    }
+                }
+            }
+        },
         "/ajustes/": {
             "post": {
                 "tags": [
@@ -1129,7 +1149,7 @@
                 "tags": [
                     "entrada"
                 ],
-                "description": "get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya  fue aprobada",
+                "description": "get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya fue aprobada",
                 "operationId": "EntradaController.GetOne",
                 "parameters": [
                     {
@@ -3838,6 +3858,24 @@
                 },
                 "TipoParametroId": {
                     "$ref": "#/definitions/models.TipoParametro"
+                }
+            }
+        },
+        "models.PlantillaArchivoResponse": {
+            "title": "PlantillaArchivoResponse",
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },
