@@ -24,6 +24,7 @@ func (c *ActaRecibidoController) URLMapping() {
 	c.Mapping("GetParametros", c.GetParametros)
 	c.Mapping("GetElementosActa", c.GetElementosActa)
 	c.Mapping("GetAllActas", c.GetAllActas)
+	c.Mapping("GetPlantilla", c.GetPlantilla)
 }
 
 // Post ...
@@ -73,6 +74,26 @@ func (c *ActaRecibidoController) GetParametros() {
 	c.ServeJSON()
 }
 
+// GetPlantilla ...
+// @Title Descargar plantilla de cargue masivo
+// @Description Retorna la plantilla Excel para cargue masivo de elementos
+// @Success 200 {object} models.PlantillaArchivoResponse
+// @Failure 500 internal server
+// @router /plantilla [get]
+func (c *ActaRecibidoController) GetPlantilla() {
+
+	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
+
+	if plantilla, err := actaRecibido.GetPlantillaCargaMasiva(); err != nil {
+		panic(err)
+	} else {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = plantilla
+	}
+
+	c.ServeJSON()
+}
+
 // GetElementosActa ...
 // @Title Get Elementos
 // @Description get Elementos by id
@@ -103,7 +124,6 @@ func (c *ActaRecibidoController) GetElementosActa() {
 			"status":  "400",
 		})
 	}
-	// fmt.Printf("id: %v\n", id)
 
 	if v, err := actaRecibido.GetElementos(id, nil); err == nil {
 		if v != nil {
