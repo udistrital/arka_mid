@@ -30,6 +30,16 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 	logs.Info("==== INICIO entradaHelper.AprobarEntrada ====")
 	logs.Info("AprobarEntrada -> entradaId=%d", entradaId)
 
+	if resultado_ == nil {
+		outputError = map[string]interface{}{
+			"funcion": "AprobarEntrada - resultado_",
+			"err":     "resultado_ nil",
+			"status":  "500",
+		}
+		logs.Error("AprobarEntrada -> resultado_ nil")
+		return
+	}
+
 	formato, outputError := getFormato(entradaId, resultado_)
 	logs.Info("AprobarEntrada -> getFormato outputError=%v resultado.Error=%q formato=%+v", outputError, resultado_.Error, formato)
 	if outputError != nil || resultado_.Error != "" {
@@ -85,6 +95,16 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 	logs.Info("==== INICIO getFormato ====")
 	logs.Info("getFormato -> entradaId=%d", entradaId)
 
+	if resultado == nil {
+		logs.Error("getFormato -> resultado nil")
+		outputError = map[string]interface{}{
+			"funcion": "getFormato - resultado",
+			"err":     "resultado nil",
+			"status":  "500",
+		}
+		return
+	}
+
 	movimiento, outputError := movimientosArka.GetMovimientoById(entradaId)
 	logs.Info("getFormato -> GetMovimientoById outputError=%v movimiento=%+v", outputError, movimiento)
 
@@ -92,6 +112,7 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 		logs.Error("getFormato -> error consultando movimiento")
 		return
 	}
+
 	if movimiento == nil {
 		logs.Error("getFormato -> movimiento nil")
 		outputError = map[string]interface{}{
@@ -101,8 +122,34 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 		}
 		return
 	}
+
+	if movimiento.EstadoMovimientoId == nil {
+		logs.Error("getFormato -> EstadoMovimientoId nil en movimiento Id=%d", movimiento.Id)
+		outputError = map[string]interface{}{
+			"funcion": "getFormato - EstadoMovimientoId",
+			"err":     "EstadoMovimientoId nil",
+			"status":  "500",
+		}
+		return
+	}
+
+	if movimiento.FormatoTipoMovimientoId == nil {
+		logs.Error("getFormato -> FormatoTipoMovimientoId nil en movimiento Id=%d", movimiento.Id)
+		outputError = map[string]interface{}{
+			"funcion": "getFormato - FormatoTipoMovimientoId",
+			"err":     "FormatoTipoMovimientoId nil",
+			"status":  "500",
+		}
+		return
+	}
+
 	if movimiento.EstadoMovimientoId.Nombre != "Entrada En Trámite" {
 		logs.Error("getFormato -> estado inválido: %q", movimiento.EstadoMovimientoId.Nombre)
+		outputError = map[string]interface{}{
+			"funcion": "getFormato - EstadoMovimientoId.Nombre",
+			"err":     "el movimiento no está en estado 'Entrada En Trámite'",
+			"status":  "400",
+		}
 		return
 	}
 
@@ -125,6 +172,10 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada Aprobada")
 	logs.Info("getFormato -> GetEstadoMovimientoIdByNombre outputError=%v nuevoEstadoId=%d",
 		outputError, resultado.Movimiento.EstadoMovimientoId.Id)
+	if outputError != nil {
+		return
+	}
+
 	logs.Info("==== FIN getFormato ====")
 	return
 }
@@ -185,8 +236,19 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 		query := "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
 		logs.Info("getElementosEntrada -> consultando elementos por acta query=%s", query)
 
-		elementos, outputError = actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
+		elementos, outputError = actaRecibido.GetAllElemento(
+			query,
+			"Id,ActaRecibidoId,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId",
+			"SubgrupoCatalogoId",
+			"desc",
+			"",
+			"-1",
+		)
 		logs.Info("getElementosEntrada -> GetAllElemento len=%d outputError=%v", len(elementos), outputError)
+
+		if outputError != nil {
+			return
+		}
 
 		if len(elementos) == 0 {
 			resultado.Error = errNoElementos
@@ -280,22 +342,71 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	logs.Info("==== INICIO contabilidadEntrada ====")
 	logs.Info("contabilidadEntrada -> terceroId=%d len(elementos)=%d formatoEntrada=%+v", terceroId, len(elementos), formatoEntrada)
 
-	if len(elementos) == 0 {
-		logs.Error("contabilidadEntrada -> len(elementos)=0")
+	if resultado_ == nil {
+		outputError = map[string]interface{}{
+			"funcion": "contabilidadEntrada - resultado_",
+			"err":     "resultado_ nil",
+			"status":  "500",
+		}
 		return
 	}
 
+	if resultado_.Movimiento.ConsecutivoId == nil {
+		outputError = map[string]interface{}{
+			"funcion": "contabilidadEntrada - ConsecutivoId",
+			"err":     "ConsecutivoId nil",
+			"status":  "500",
+		}
+		return
+	}
+
+	if resultado_.Movimiento.FormatoTipoMovimientoId == nil {
+		logs.Error("contabilidadEntrada -> FormatoTipoMovimientoId nil. Movimiento=%+v", resultado_.Movimiento)
+		outputError = map[string]interface{}{
+			"funcion": "contabilidadEntrada - FormatoTipoMovimientoId",
+			"err":     "FormatoTipoMovimientoId nil",
+			"status":  "500",
+		}
+		return
+	}
+
+	if resultado_.Movimiento.FormatoTipoMovimientoId.Id == 0 {
+		logs.Error("contabilidadEntrada -> FormatoTipoMovimientoId.Id=0. Movimiento=%+v", resultado_.Movimiento)
+		outputError = map[string]interface{}{
+			"funcion": "contabilidadEntrada - FormatoTipoMovimientoId.Id",
+			"err":     "FormatoTipoMovimientoId.Id en 0",
+			"status":  "500",
+		}
+		return
+	}
+
+	if len(elementos) == 0 {
+		logs.Error("contabilidadEntrada -> len(elementos)=0")
+		outputError = map[string]interface{}{
+			"funcion": "contabilidadEntrada - elementos",
+			"err":     "no hay elementos para contabilizar",
+			"status":  "400",
+		}
+		return
+	}
+
+	logs.Info("contabilidadEntrada -> Movimiento=%+v", resultado_.Movimiento)
 	logs.Info("contabilidadEntrada -> detalle movimiento crudo=%s", resultado_.Movimiento.Detalle)
+
 	detalleContable, outputError := descripcionMovimientoContable(resultado_.Movimiento.Detalle)
 	logs.Info("contabilidadEntrada -> descripcionMovimientoContable detalleContable=%q outputError=%v", detalleContable, outputError)
 	if outputError != nil {
 		return
 	}
 
-	var transaccion = models.TransaccionMovimientos{ConsecutivoId: *resultado_.Movimiento.ConsecutivoId}
+	var transaccion = models.TransaccionMovimientos{
+		ConsecutivoId: *resultado_.Movimiento.ConsecutivoId,
+	}
 	bufferCuentas := make(map[string]models.CuentaContable)
 
+	logs.Info("contabilidadEntrada -> FormatoTipoMovimientoId=%+v", resultado_.Movimiento.FormatoTipoMovimientoId)
 	logs.Info("contabilidadEntrada -> antes de CalcularMovimientosContables, transaccion=%+v", transaccion)
+
 	resultado_.Error, outputError = asientoContable.CalcularMovimientosContables(
 		elementos,
 		detalleContable,
@@ -328,6 +439,10 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	resultado_.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
 	logs.Info("contabilidadEntrada -> GetDetalleContable outputError=%v movimientosDetalle=%+v",
 		outputError, resultado_.TransaccionContable.Movimientos)
+	if outputError != nil {
+		logs.Error("contabilidadEntrada -> aborta en GetDetalleContable")
+		return
+	}
 
 	logs.Info("contabilidadEntrada -> ANTES de PostTrContable transaccion=%+v", transaccion)
 	postRes, outputError := movimientosContables.PostTrContable(&transaccion)
@@ -335,13 +450,14 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 
 	if outputError != nil {
 		logs.Error("contabilidadEntrada -> error en PostTrContable: %v", outputError)
+		return
 	}
 
 	logs.Info("==== FIN contabilidadEntrada ====")
 	return
 }
 
-// descripcionMovimientoContable Genera la descipción de cada uno de los movimientos contables asociados a una entrada.
+// descripcionMovimientoContable Genera la descripción de cada uno de los movimientos contables asociados a una entrada.
 func descripcionMovimientoContable(detalle string) (detalle_ string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("descripcionMovimientoContable - Unhandled Error!", "500")
 
