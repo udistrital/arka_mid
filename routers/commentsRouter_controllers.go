@@ -43,6 +43,15 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ActaRecibidoController"],
+		beego.ControllerComments{
+			Method:           "GetPlantilla",
+			Router:           "/plantilla",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 	beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:AjusteController"],
 		beego.ControllerComments{
 			Method:           "PostManual",
