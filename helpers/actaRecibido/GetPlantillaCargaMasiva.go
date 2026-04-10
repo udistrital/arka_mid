@@ -83,6 +83,8 @@ func addHojaCargaMasiva(file *xlsx.File) map[string]interface{} {
 
 	// Encabezados compatibles con el parser actual + nuevos campos para seriales
 	headers := []string{
+		"Serial Clase",
+		"Tipo Bien",
 		"Nombre",
 		"Marca",
 		"Serie",
@@ -94,8 +96,6 @@ func addHojaCargaMasiva(file *xlsx.File) map[string]interface{} {
 		"Porcentaje IVA",
 		"Valor IVA",
 		"Valor Total",
-		"Serial Clase",
-		"Tipo Bien",
 	}
 
 	headerRow := sheet.AddRow()
@@ -107,6 +107,8 @@ func addHojaCargaMasiva(file *xlsx.File) map[string]interface{} {
 	// Fila ejemplo
 	exampleRow := sheet.AddRow()
 	exampleValues := []string{
+		"010001 - COMPUTO - (DEV)",
+		"CONSUMO",
 		"Portátil",
 		"Lenovo",
 		"ABC123456",
@@ -118,8 +120,6 @@ func addHojaCargaMasiva(file *xlsx.File) map[string]interface{} {
 		"0.19",
 		"665000",
 		"4165000",
-		"010101",
-		"CONSUMO",
 	}
 
 	for _, v := range exampleValues {
@@ -153,10 +153,7 @@ func addHojaCatalogos(file *xlsx.File, detalles []*models.DetalleSubgrupo, tipos
 	rowTituloClases.AddCell().Value = "CLASES"
 
 	rowHeaderClases := sheet.AddRow()
-	rowHeaderClases.AddCell().Value = "Serial Clase"
 	rowHeaderClases.AddCell().Value = "Clase"
-	rowHeaderClases.AddCell().Value = "Serial Tipo Bien Asociado"
-	rowHeaderClases.AddCell().Value = "Tipo Bien Asociado"
 
 	for _, d := range detalles {
 		if d == nil {
@@ -165,24 +162,12 @@ func addHojaCatalogos(file *xlsx.File, detalles []*models.DetalleSubgrupo, tipos
 
 		row := sheet.AddRow()
 
-		serialClase := strconv.Itoa(d.Id)
 		clase := ""
-		serialTipoBien := ""
-		tipoBien := ""
 
 		if d.SubgrupoId != nil {
 			clase = d.SubgrupoId.Codigo + " - " + d.SubgrupoId.Nombre
 		}
-
-		if d.TipoBienId != nil {
-			serialTipoBien = strconv.Itoa(d.TipoBienId.Id)
-			tipoBien = d.TipoBienId.Nombre
-		}
-
-		row.AddCell().Value = serialClase
 		row.AddCell().Value = clase
-		row.AddCell().Value = serialTipoBien
-		row.AddCell().Value = tipoBien
 	}
 
 	// Separación visual
@@ -196,7 +181,6 @@ func addHojaCatalogos(file *xlsx.File, detalles []*models.DetalleSubgrupo, tipos
 	rowTituloTipos.AddCell().Value = "TIPOS DE BIEN"
 
 	rowHeaderTipos := sheet.AddRow()
-	rowHeaderTipos.AddCell().Value = "Serial Tipo Bien"
 	rowHeaderTipos.AddCell().Value = "Tipo Bien"
 
 	for _, tb := range tiposBien {
@@ -239,7 +223,6 @@ func addHojaCatalogos(file *xlsx.File, detalles []*models.DetalleSubgrupo, tipos
 
 	rowHeaderUnidades := sheet.AddRow()
 	rowHeaderUnidades.AddCell().Value = "Unidad de Medida"
-	rowHeaderUnidades.AddCell().Value = "Id"
 
 	for _, unidad := range unidades {
 		if unidad == nil {
@@ -248,7 +231,6 @@ func addHojaCatalogos(file *xlsx.File, detalles []*models.DetalleSubgrupo, tipos
 
 		row := sheet.AddRow()
 		row.AddCell().Value = unidad.Nombre
-		row.AddCell().Value = strconv.Itoa(unidad.Id)
 	}
 
 	// Ajuste básico de ancho
