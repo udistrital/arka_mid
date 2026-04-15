@@ -3,16 +3,37 @@ package actaRecibido
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/tealeg/xlsx"
 
-	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
-	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
+
+const (
+	nombreHojaCargaMasiva = "CargaMasiva"
+	nombreHojaCatalogos   = "Catalogos"
+	filasEjemploPlantilla = 12
+)
+
+var headersCargaMasiva = []string{
+	"Serial Clase",
+	"Tipo Bien",
+	"Nombre",
+	"Marca",
+	"Serie",
+	"Cantidad",
+	"Unidad de Medida",
+	"Valor Unitario",
+	"Subtotal",
+	"Descuento",
+	"Porcentaje IVA",
+	"Valor IVA",
+	"Valor Total",
+}
 
 // GetPlantillaCargaMasiva genera la plantilla Excel para cargue masivo de elementos
 // y la retorna serializada en base64.
@@ -20,42 +41,18 @@ func GetPlantillaCargaMasiva() (respuesta *models.PlantillaArchivoResponse, outp
 	funcion := "GetPlantillaCargaMasiva - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	// Consultar catálogos necesarios
-	detalles, err := catalogoElementos.GetAllDetalleSubgrupo("limit=-1&query=Activo:true")
-	if err != nil {
-		return nil, err
-	}
+	catalogos := getPlantillaCatalogosMock()
 
-	var tiposBien []models.TipoBien
-	if err := catalogoElementos.GetAllTipoBien("limit=-1&query=Activo:true", &tiposBien); err != nil {
-		return nil, err
-	}
-
-	var ivas []models.Iva
-	if err := parametros.GetAllIVAByPeriodo(strconv.Itoa(time.Now().Year()), &ivas); err != nil {
-		return nil, err
-	}
-
-	const payloadUnidades = "limit=-1&fields=Id,Nombre&sortby=Nombre&order=asc&query=TipoParametroId__CodigoAbreviacion__in:L|M|T|C|S"
-	unidades, err := parametros.GetAllParametro(payloadUnidades)
-	if err != nil {
-		return nil, err
-	}
-
-	// Crear workbook
 	file := xlsx.NewFile()
 
-	// Hoja principal
-	if err := addHojaCargaMasiva(file); err != nil {
+	if err := addHojaCargaMasiva(file, catalogos); err != nil {
 		return nil, err
 	}
 
-	// Hoja de catálogos
-	if err := addHojaCatalogos(file, detalles, tiposBien, ivas, unidades); err != nil {
+	if err := addHojaCatalogos(file, catalogos); err != nil {
 		return nil, err
 	}
 
-	// Serializar a bytes
 	var buffer bytes.Buffer
 	if err := file.Write(&buffer); err != nil {
 		return nil, errorCtrl.Error(funcion+"file.Write(&buffer)", err, "500")
@@ -71,131 +68,114 @@ func GetPlantillaCargaMasiva() (respuesta *models.PlantillaArchivoResponse, outp
 	return respuesta, nil
 }
 
-// addHojaCargaMasiva crea la hoja principal con los encabezados de cargue.
-func addHojaCargaMasiva(file *xlsx.File) map[string]interface{} {
+// addHojaCargaMasiva crea la hoja principal con los encabezados y deja embebidas
+// las fórmulas equivalentes a la plantilla de referencia:
+//   - Subtotal     = Cantidad * (Valor Unitario - Descuento)
+//   - Valor IVA    = Subtotal * Porcentaje IVA
+//   - Valor Total  = Subtotal + Valor IVA
+//
+// En esta plantilla dichas columnas se desplazan por la presencia de
+// "Serial Clase" y "Tipo Bien" al inicio, por eso las fórmulas se escriben en:
+//   - I: Subtotal
+//   - L: Valor IVA
+//   - M: Valor Total
+func addHojaCargaMasiva(file *xlsx.File, catalogos plantillaCatalogosMock) map[string]interface{} {
 	funcion := "addHojaCargaMasiva - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	sheet, err := file.AddSheet("CargaMasiva")
+	sheet, err := file.AddSheet(nombreHojaCargaMasiva)
 	if err != nil {
 		return errorCtrl.Error(funcion+"file.AddSheet(CargaMasiva)", err, "500")
 	}
 
-	// Encabezados compatibles con el parser actual + nuevos campos para seriales
-	headers := []string{
-		"Serial Clase",
-		"Tipo Bien",
-		"Nombre",
-		"Marca",
-		"Serie",
-		"Cantidad",
-		"Unidad de Medida",
-		"Valor Unitario",
-		"Subtotal",
-		"Descuento",
-		"Porcentaje IVA",
-		"Valor IVA",
-		"Valor Total",
-	}
-
 	headerRow := sheet.AddRow()
-	for _, h := range headers {
-		cell := headerRow.AddCell()
-		cell.Value = h
+	for _, header := range headersCargaMasiva {
+		headerRow.AddCell().Value = header
 	}
 
-	// Fila ejemplo
-	exampleRow := sheet.AddRow()
-	exampleValues := []string{
-		"010001 - COMPUTO - (DEV)",
-		"CONSUMO",
-		"Portátil",
-		"Lenovo",
-		"ABC123456",
-		"1",
-		"UNIDAD",
-		"3500000",
-		"3500000",
-		"0",
-		"0.19",
-		"665000",
-		"4165000",
+	for i := 0; i < filasEjemploPlantilla; i++ {
+		filaExcel := i + 2
+		row := sheet.AddRow()
+
+		clase := catalogos.Clases[i%len(catalogos.Clases)]
+		tipo := catalogos.Tipos[i%len(catalogos.Tipos)]
+		unidad := catalogos.Unidades[i%len(catalogos.Unidades)]
+		iva := catalogos.Ivas[len(catalogos.Ivas)-1]
+
+		row.AddCell().Value = clase.Codigo + " - " + clase.Nombre
+		row.AddCell().Value = tipo.Nombre
+		row.AddCell().Value = fmt.Sprintf("Elemento %d", i+1)
+		row.AddCell().Value = fmt.Sprintf("Marca %d", (i*2)+1)
+		row.AddCell().Value = fmt.Sprintf("SERIE%d", i+1)
+		row.AddCell().Value = "1"
+		row.AddCell().Value = unidad.Nombre
+		row.AddCell().Value = strconv.Itoa((i + 1) * 50000)
+
+		subtotalCell := row.AddCell()
+		subtotalCell.SetFormula(fmt.Sprintf("F%d*(H%d-J%d)", filaExcel, filaExcel, filaExcel))
+
+		row.AddCell().Value = "0"
+		row.AddCell().Value = formatIVADecimal(iva.Tarifa)
+
+		valorIVACell := row.AddCell()
+		valorIVACell.SetFormula(fmt.Sprintf("I%d*K%d", filaExcel, filaExcel))
+
+		valorTotalCell := row.AddCell()
+		valorTotalCell.SetFormula(fmt.Sprintf("I%d+L%d", filaExcel, filaExcel))
 	}
 
-	for _, v := range exampleValues {
-		cell := exampleRow.AddCell()
-		cell.Value = v
-	}
-
-	// Ajuste básico de ancho de columnas
-	_ = sheet.SetColWidth(0, 0, 30)  // Nombre
-	_ = sheet.SetColWidth(1, 2, 20)  // Marca, Serie
-	_ = sheet.SetColWidth(3, 10, 18) // Numéricas
-	_ = sheet.SetColWidth(11, 14, 28)
+	_ = sheet.SetColWidth(0, 0, 30)  // Serial Clase
+	_ = sheet.SetColWidth(1, 1, 22)  // Tipo Bien
+	_ = sheet.SetColWidth(2, 2, 28)  // Nombre
+	_ = sheet.SetColWidth(3, 4, 20)  // Marca, Serie
+	_ = sheet.SetColWidth(5, 5, 12)  // Cantidad
+	_ = sheet.SetColWidth(6, 6, 20)  // Unidad de Medida
+	_ = sheet.SetColWidth(7, 12, 16) // Valores
 
 	return nil
 }
 
-// addHojaCatalogos crea la hoja con catálogos de apoyo para el diligenciamiento.
-func addHojaCatalogos(file *xlsx.File, detalles []*models.DetalleSubgrupo, tiposBien []models.TipoBien, ivas []models.Iva, unidades []*models.Parametro) map[string]interface{} {
+// addHojaCatalogos crea la hoja con catálogos de apoyo para el diligenciamiento,
+// alimentada exclusivamente desde estructuras mockeadas en código.
+func addHojaCatalogos(file *xlsx.File, catalogos plantillaCatalogosMock) map[string]interface{} {
 	funcion := "addHojaCatalogos - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	sheet, err := file.AddSheet("Catalogos")
+	sheet, err := file.AddSheet(nombreHojaCatalogos)
 	if err != nil {
 		return errorCtrl.Error(funcion+"file.AddSheet(Catalogos)", err, "500")
 	}
 
-	// =========================
-	// Sección: Clases
-	// =========================
 	rowTituloClases := sheet.AddRow()
 	rowTituloClases.AddCell().Value = "CLASES"
 
 	rowHeaderClases := sheet.AddRow()
 	rowHeaderClases.AddCell().Value = "Clase"
 
-	for _, d := range detalles {
-		if d == nil {
-			continue
-		}
-
+	for _, clase := range catalogos.Clases {
 		row := sheet.AddRow()
-
-		clase := ""
-
-		if d.SubgrupoId != nil {
-			clase = d.SubgrupoId.Codigo + " - " + d.SubgrupoId.Nombre
-		}
-		row.AddCell().Value = clase
+		row.AddCell().Value = clase.Codigo + " - " + clase.Nombre
 	}
 
-	// Separación visual
 	sheet.AddRow()
 	sheet.AddRow()
 
-	// =========================
-	// Sección: Tipos de bien
-	// =========================
 	rowTituloTipos := sheet.AddRow()
 	rowTituloTipos.AddCell().Value = "TIPOS DE BIEN"
 
 	rowHeaderTipos := sheet.AddRow()
+	rowHeaderTipos.AddCell().Value = "Id"
 	rowHeaderTipos.AddCell().Value = "Tipo Bien"
 
-	for _, tb := range tiposBien {
+	for _, tipo := range catalogos.Tipos {
 		row := sheet.AddRow()
-		row.AddCell().Value = strconv.Itoa(tb.Id)
-		row.AddCell().Value = tb.Nombre
+		row.AddCell().Value = strconv.Itoa(tipo.Id)
+		row.AddCell().Value = tipo.Nombre
 	}
 
-	// Separación visual
 	sheet.AddRow()
 	sheet.AddRow()
 
-	// =========================
-	// Sección: IVA
-	// =========================
 	rowTituloIVA := sheet.AddRow()
 	rowTituloIVA.AddCell().Value = "IVA"
 
@@ -203,40 +183,28 @@ func addHojaCatalogos(file *xlsx.File, detalles []*models.DetalleSubgrupo, tipos
 	rowHeaderIVA.AddCell().Value = "Porcentaje IVA"
 	rowHeaderIVA.AddCell().Value = "Tarifa"
 
-	for _, iva := range ivas {
+	for _, iva := range catalogos.Ivas {
 		row := sheet.AddRow()
-		// El parser actual interpreta el valor como float y lo multiplica por 100,
-		// por eso en plantilla conviene mostrar 0.19, 0.05, etc.
 		row.AddCell().Value = formatIVADecimal(iva.Tarifa)
 		row.AddCell().Value = strconv.Itoa(iva.Tarifa)
 	}
 
-	// Separación visual
 	sheet.AddRow()
 	sheet.AddRow()
 
-	// =========================
-	// Sección: Unidades de medida
-	// =========================
 	rowTituloUnidades := sheet.AddRow()
 	rowTituloUnidades.AddCell().Value = "UNIDADES DE MEDIDA"
 
 	rowHeaderUnidades := sheet.AddRow()
 	rowHeaderUnidades.AddCell().Value = "Unidad de Medida"
 
-	for _, unidad := range unidades {
-		if unidad == nil {
-			continue
-		}
-
+	for _, unidad := range catalogos.Unidades {
 		row := sheet.AddRow()
 		row.AddCell().Value = unidad.Nombre
 	}
 
-	// Ajuste básico de ancho
-	_ = sheet.SetColWidth(0, 0, 22)
+	_ = sheet.SetColWidth(0, 0, 24)
 	_ = sheet.SetColWidth(1, 1, 45)
-	_ = sheet.SetColWidth(2, 3, 24)
 
 	return nil
 }
