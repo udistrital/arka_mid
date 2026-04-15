@@ -115,7 +115,8 @@ func addHojaCargaMasiva(file *xlsx.File, catalogos plantillaCatalogosMock) map[s
 		subtotalCell.SetFormula(fmt.Sprintf("F%d*(H%d-J%d)", filaExcel, filaExcel, filaExcel))
 
 		row.AddCell().Value = "0"
-		row.AddCell().Value = formatIVADecimal(iva.Tarifa)
+		ivaCell := row.AddCell()
+		setIVAPercentageCell(ivaCell, iva.Tarifa)
 
 		valorIVACell := row.AddCell()
 		valorIVACell.SetFormula(fmt.Sprintf("I%d*K%d", filaExcel, filaExcel))
@@ -185,7 +186,9 @@ func addHojaCatalogos(file *xlsx.File, catalogos plantillaCatalogosMock) map[str
 
 	for _, iva := range catalogos.Ivas {
 		row := sheet.AddRow()
-		row.AddCell().Value = formatIVADecimal(iva.Tarifa)
+		ivaCell := row.AddCell()
+		setIVAPercentageCell(ivaCell, iva.Tarifa)
+
 		row.AddCell().Value = strconv.Itoa(iva.Tarifa)
 	}
 
@@ -209,14 +212,8 @@ func addHojaCatalogos(file *xlsx.File, catalogos plantillaCatalogosMock) map[str
 	return nil
 }
 
-// formatIVADecimal convierte una tarifa entera (19, 5, 0)
-// al formato decimal esperado por el parser actual ("0.19", "0.05", "0.00").
-func formatIVADecimal(tarifa int) string {
-	if tarifa <= 0 {
-		return "0.00"
-	}
-	if tarifa < 10 {
-		return "0.0" + strconv.Itoa(tarifa)
-	}
-	return "0." + strconv.Itoa(tarifa)
+func setIVAPercentageCell(cell *xlsx.Cell, tarifa int) {
+	valor := float64(tarifa) / 100.0
+	cell.SetFloat(valor)
+	cell.NumFmt = "0%"
 }
