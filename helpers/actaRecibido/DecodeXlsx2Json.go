@@ -3,6 +3,7 @@ package actaRecibido
 import (
 	"io"
 	"mime/multipart"
+	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/tealeg/xlsx"
@@ -45,7 +46,7 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 
 	resultado = make(map[string]interface{})
 
-	validar_campos := []string{"Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Porcentaje IVA", "Valor IVA", "Valor Total"}
+	validar_campos := []string{"Serial Clase", "Tipo Bien", "Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Porcentaje IVA", "Valor IVA", "Valor Total"}
 	elementos := make([]*models.PlantillaActa, 0)
 	for s, sheet := range xlFile.Sheets {
 
@@ -87,6 +88,24 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 
 						if i == indexes["Nombre"] {
 							fila.Nombre = cell.String()
+						}
+
+						if i == indexes["Serial Clase"] {
+							serialClaseId, ok := getSerialClaseID(cell.String())
+							if !ok {
+								resultado["Mensaje"] = "errorPlantillaActa"
+								return resultado, nil
+							}
+							fila.SerialClaseId = serialClaseId
+						}
+
+						if i == indexes["Tipo Bien"] {
+							tipoBienId, ok := getTipoBienID(cell.String())
+							if !ok {
+								resultado["Mensaje"] = "errorPlantillaActa"
+								return resultado, nil
+							}
+							fila.TipoBienId = tipoBienId
 						}
 
 						if i == indexes["Marca"] {
@@ -173,4 +192,30 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 	resultado["Elementos"] = elementos
 
 	return resultado, nil
+}
+
+func getSerialClaseID(value string) (int, bool) {
+	switch strings.TrimSpace(value) {
+	case "A":
+		return 1, true
+	case "b":
+		return 2, true
+	case "c":
+		return 3, true
+	default:
+		return 0, false
+	}
+}
+
+func getTipoBienID(value string) (int, bool) {
+	switch strings.TrimSpace(value) {
+	case "a":
+		return 4, true
+	case "b":
+		return 5, true
+	case "c":
+		return 6, true
+	default:
+		return 0, false
+	}
 }
