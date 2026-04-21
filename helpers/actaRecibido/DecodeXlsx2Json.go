@@ -203,7 +203,7 @@ func getSerialClaseID(value string) (int, bool) {
 	case "c":
 		return 3, true
 	default:
-		return 0, false
+		return 0, true
 	}
 }
 
@@ -216,6 +216,6 @@ func getTipoBienID(value string) (int, bool) {
 	case "c":
 		return 6, true
 	default:
-		return 0, false
+		return 0, true
 	}
 }
