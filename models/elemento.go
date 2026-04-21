@@ -4,6 +4,7 @@ import "time"
 
 type PlantillaActa struct {
 	Id                 int
+	SerialClaseId      int
 	Nombre             string
 	Marca              string
 	Serie              string
@@ -12,6 +13,7 @@ type PlantillaActa struct {
 	ValorUnitario      float64
 	Subtotal           float64
 	Descuento          float64
+	TipoBienId         int
 	PorcentajeIvaId    *int
 	ValorIva           float64
 	ValorTotal         float64

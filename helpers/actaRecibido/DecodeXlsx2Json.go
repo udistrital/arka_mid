@@ -3,6 +3,7 @@ package actaRecibido
 import (
 	"io"
 	"mime/multipart"
+	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/tealeg/xlsx"
@@ -45,7 +46,7 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 
 	resultado = make(map[string]interface{})
 
-	validar_campos := []string{"Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Porcentaje IVA", "Valor IVA", "Valor Total"}
+	validar_campos := []string{"Serial Clase", "Tipo Bien", "Nombre", "Marca", "Serie", "Cantidad", "Unidad de Medida", "Valor Unitario", "Subtotal", "Descuento", "Porcentaje IVA", "Valor IVA", "Valor Total"}
 	elementos := make([]*models.PlantillaActa, 0)
 	for s, sheet := range xlFile.Sheets {
 
@@ -87,6 +88,24 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 
 						if i == indexes["Nombre"] {
 							fila.Nombre = cell.String()
+						}
+
+						if i == indexes["Serial Clase"] {
+							serialClaseId, ok := getSerialClaseID(cell.String())
+							if !ok {
+								resultado["Mensaje"] = "errorPlantillaActa"
+								return resultado, nil
+							}
+							fila.SerialClaseId = serialClaseId
+						}
+
+						if i == indexes["Tipo Bien"] {
+							tipoBienId, ok := getTipoBienID(cell.String())
+							if !ok {
+								resultado["Mensaje"] = "errorPlantillaActa"
+								return resultado, nil
+							}
+							fila.TipoBienId = tipoBienId
 						}
 
 						if i == indexes["Marca"] {
@@ -173,4 +192,32 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 	resultado["Elementos"] = elementos
 
 	return resultado, nil
+}
+
+func getSerialClaseID(value string) (int, bool) {
+	switch strings.ToUpper(strings.TrimSpace(value)) {
+	case "010101 - COMPUTO - (DEV)":
+		return 53504, true
+	case "242424 - EQUIPO Y MAQUINARIA PARA COMPUTACION - (CTRL)":
+		return 53555, true
+	case "505050 - ELEMENTO CONSUMO ALMACEN - (CONS)":
+		return 53597, true
+	default:
+		return 0, false
+	}
+}
+
+func getTipoBienID(value string) (int, bool) {
+	switch strings.ToUpper(strings.TrimSpace(value)) {
+	case "DEVOLUTIVO":
+		return 10, true
+	case "CONSUMO":
+		return 12, true
+	case "CONSUMO CONTROLADO":
+		return 9, true
+	case "SERVICIO":
+		return 19, true
+	default:
+		return 0, false
+	}
 }
