@@ -195,27 +195,29 @@ func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, output
 }
 
 func getSerialClaseID(value string) (int, bool) {
-	switch strings.TrimSpace(value) {
-	case "A":
-		return 1, true
-	case "b":
-		return 2, true
-	case "c":
-		return 3, true
+	switch strings.ToUpper(strings.TrimSpace(value)) {
+	case "010101 - COMPUTO - (DEV)":
+		return 53504, true
+	case "242424 - EQUIPO Y MAQUINARIA PARA COMPUTACION - (CTRL)":
+		return 53555, true
+	case "505050 - ELEMENTO CONSUMO ALMACEN - (CONS)":
+		return 53597, true
 	default:
-		return 0, true
+		return 0, false
 	}
 }
 
 func getTipoBienID(value string) (int, bool) {
-	switch strings.TrimSpace(value) {
-	case "a":
-		return 4, true
-	case "b":
-		return 5, true
-	case "c":
-		return 6, true
+	switch strings.ToUpper(strings.TrimSpace(value)) {
+	case "DEVOLUTIVO":
+		return 10, true
+	case "CONSUMO":
+		return 12, true
+	case "CONSUMO CONTROLADO":
+		return 9, true
+	case "SERVICIO":
+		return 19, true
 	default:
-		return 0, true
+		return 0, false
 	}
 }
