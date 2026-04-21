@@ -203,7 +203,7 @@ func getSerialClaseID(value string) (int, bool) {
 	case "505050 - ELEMENTO CONSUMO ALMACEN - (CONS)":
 		return 53597, true
 	default:
-		return 0, false
+		return 0, true
 	}
 }
 
@@ -218,6 +218,6 @@ func getTipoBienID(value string) (int, bool) {
 	case "SERVICIO":
 		return 19, true
 	default:
-		return 0, false
+		return 0, true
 	}
 }
