@@ -3922,6 +3922,33 @@
                 }
             }
         },
+        "models.ReporteExcelBase64Response": {
+            "title": "ReporteExcelBase64Response",
+            "type": "object",
+            "properties": {
+                "archivo_base64": {
+                    "type": "string"
+                },
+                "nombre_archivo": {
+                    "type": "string"
+                },
+                "tipo_archivo": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ReporteFechasRequest": {
+            "title": "ReporteFechasRequest",
+            "type": "object",
+            "properties": {
+                "fecha_final": {
+                    "type": "string"
+                },
+                "fecha_inicial": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ResultadoMovimiento": {
             "title": "ResultadoMovimiento",
             "type": "object",
