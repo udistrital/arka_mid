@@ -81,7 +81,9 @@ func init() {
 			),
 		),
 		beego.NSNamespace("/reportes",
-			beego.NSRouter("/elementos", &controllers.ReportesController{}, "post:PostReporteElementos"),
+			beego.NSInclude(
+				&controllers.ReportesController{},
+			),
 		),
 	)
 

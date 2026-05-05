@@ -358,6 +358,15 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:ReportesController"],
+		beego.ControllerComments{
+			Method:           "PostReporteElementos",
+			Router:           "/elementos",
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 	beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:SalidaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:SalidaController"],
 		beego.ControllerComments{
 			Method:           "Post",

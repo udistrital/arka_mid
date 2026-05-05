@@ -24,6 +24,7 @@ func (c *ReportesController) URLMapping() {
 // @Param	body	body	models.ReporteFechasRequest	true	"Rango de fechas del reporte"
 // @Success 200 {object} models.ReporteExcelBase64Response
 // @Failure 400 error en los datos de entrada
+// @router /elementos [post]
 func (c *ReportesController) PostReporteElementos() {
 	defer errorCtrl.ErrorControlController(c.Controller, "ReportesController")
 
