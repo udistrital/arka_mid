@@ -80,6 +80,9 @@ func init() {
 				&controllers.AvaluoController{},
 			),
 		),
+		beego.NSNamespace("/reportes",
+			beego.NSRouter("/elementos", &controllers.ReportesController{}, "post:PostReporteElementos"),
+		),
 	)
 
 	beego.AddNamespace(ns)
