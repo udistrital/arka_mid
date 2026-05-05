@@ -1388,6 +1388,37 @@
                 }
             }
         },
+        "/reportes/elementos": {
+            "post": {
+                "tags": [
+                    "reportes"
+                ],
+                "description": "Genera un reporte base64 en formato Excel para un rango de fechas.",
+                "operationId": "ReportesController.PostReporteElementos",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Rango de fechas del reporte",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ReporteFechasRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ReporteExcelBase64Response"
+                        }
+                    },
+                    "400": {
+                        "description": "error en los datos de entrada"
+                    }
+                }
+            }
+        },
         "/salida/": {
             "get": {
                 "tags": [
@@ -4518,6 +4549,10 @@
         {
             "name": "avaluo",
             "description": "AvaluoController operations for Avaluo\n"
+        },
+        {
+            "name": "reportes",
+            "description": "ReportesController operations for reportes\n"
         }
     ]
 }
