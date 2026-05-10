@@ -2,6 +2,7 @@ package terceros
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -43,6 +44,7 @@ func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificaci
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	// Consulta correo
+	query = strings.TrimPrefix(query, "?")
 	urlcrud := basePath + "datos_identificacion?" + query
 	if err := request.GetJson(urlcrud, &datosId); err != nil {
 		logs.Error(err)
