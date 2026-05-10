@@ -11,10 +11,10 @@ import (
 
 	"github.com/tealeg/xlsx"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/entradaHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
@@ -264,11 +264,6 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 		return nil, nil
 	}
 
-	detalleEntrada, outputError := entradaHelper.DetalleEntrada(movimiento.Id)
-	if outputError != nil {
-		return nil, outputError
-	}
-
 	var formato models.FormatoBaseEntrada
 	outputError = utilsHelper.Unmarshal(movimiento.Detalle, &formato)
 	if outputError != nil {
@@ -294,7 +289,7 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 	entrada = &entradaReporteData{
 		Movimiento:          movimiento,
 		Formato:             formato,
-		TransaccionContable: extractTransaccionContable(detalleEntrada),
+		TransaccionContable: consultarTransaccionContableEntrada(movimiento),
 		Elementos:           elementos,
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
 	}
@@ -358,25 +353,21 @@ func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*m
 	return ordenarElementosPorIds(elementosActaIds, elementos), nil
 }
 
-func extractTransaccionContable(detalle map[string]interface{}) *models.InfoTransaccionContable {
-	if detalle == nil {
+func consultarTransaccionContableEntrada(movimiento *models.Movimiento) *models.InfoTransaccionContable {
+	if movimiento == nil || movimiento.EstadoMovimientoId == nil || movimiento.ConsecutivoId == nil || *movimiento.ConsecutivoId <= 0 {
 		return nil
 	}
 
-	transaccion, ok := detalle["TransaccionContable"]
-	if !ok || transaccion == nil {
+	if movimiento.EstadoMovimientoId.Nombre != "Entrada Aprobada" && movimiento.EstadoMovimientoId.Nombre != "Entrada Con Salida" {
 		return nil
 	}
 
-	switch value := transaccion.(type) {
-	case models.InfoTransaccionContable:
-		result := value
-		return &result
-	case *models.InfoTransaccionContable:
-		return value
-	default:
+	transaccion, outputError := asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
+	if outputError != nil {
 		return nil
 	}
+
+	return &transaccion
 }
 
 func collectSubgrupoIDs(elementos []*models.DetalleElemento) []int {
