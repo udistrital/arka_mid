@@ -28,7 +28,7 @@ func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero,
 		return nil, errorCtrl.Error(funcion+eval, err, "500")
 	}
 
-	urlcrud := "?limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero)
+	urlcrud := "limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero) + ",TipoDocumentoId__Id__in:3|6|7"
 	if datosId, err := GetAllDatosIdentificacion(urlcrud); err != nil {
 		return nil, err
 	} else {
