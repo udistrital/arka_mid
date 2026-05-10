@@ -15,6 +15,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
@@ -31,6 +32,15 @@ type entradaReporteData struct {
 	Formato             models.FormatoBaseEntrada
 	TransaccionContable *models.InfoTransaccionContable
 	Elementos           []*models.DetalleElemento
+	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
+	SalidasPorElemento  map[int]*salidaReporteData
+}
+
+type salidaReporteData struct {
+	Movimiento          *models.Movimiento
+	TransaccionContable *models.InfoTransaccionContable
+	FuncionarioAsignado string
+	TrasladosAsociados  string
 	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
 }
 
@@ -68,6 +78,17 @@ type reporteElementoEntradaRow struct {
 	ElementoFechaModificacion          time.Time
 	CuentaDebitoEntrada                string
 	CuentaCreditoEntrada               string
+	SalidaID                           int
+	SalidaConsecutivo                  string
+	SalidaEstado                       string
+	SalidaFechaCreacion                time.Time
+	SalidaFechaCorte                   *time.Time
+	SalidaFuncionarioAsignado          string
+	SalidaConceptoTransaccionContable  string
+	SalidaFechaTransaccionContable     time.Time
+	TrasladosAsociados                 string
+	CuentaDebitoSalida                 string
+	CuentaCreditoSalida                string
 }
 
 var (
@@ -105,6 +126,17 @@ var (
 		"elemento_fecha_modificacion",
 		"cuenta_debito_entrada",
 		"cuenta_credito_entrada",
+		"salida_id",
+		"salida_consecutivo",
+		"salida_estado",
+		"salida_fecha_creacion",
+		"salida_fecha_corte",
+		"salida_funcionario_asignado",
+		"salida_concepto_transaccion_contable",
+		"salida_fecha_transaccion_contable",
+		"traslados_asociados",
+		"cuenta_debito_salida",
+		"cuenta_credito_salida",
 	}
 
 	consultarEntradasReporteData = consultarEntradasReporteDataDefault
@@ -275,6 +307,11 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 		return nil, outputError
 	}
 
+	salidasPorElemento, outputError := resolverSalidasPorElemento(elementos)
+	if outputError != nil {
+		return nil, outputError
+	}
+
 	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
 	if movimiento.FormatoTipoMovimientoId != nil && movimiento.FormatoTipoMovimientoId.Id > 0 {
 		subgrupos := collectSubgrupoIDs(elementos)
@@ -292,6 +329,7 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 		TransaccionContable: consultarTransaccionContableEntrada(movimiento),
 		Elementos:           elementos,
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
+		SalidasPorElemento:  salidasPorElemento,
 	}
 
 	return entrada, nil
@@ -354,11 +392,19 @@ func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*m
 }
 
 func consultarTransaccionContableEntrada(movimiento *models.Movimiento) *models.InfoTransaccionContable {
+	return consultarTransaccionContableMovimiento(movimiento, "Entrada Aprobada", "Entrada Con Salida")
+}
+
+func consultarTransaccionContableSalida(movimiento *models.Movimiento) *models.InfoTransaccionContable {
+	return consultarTransaccionContableMovimiento(movimiento, "Salida Aprobada")
+}
+
+func consultarTransaccionContableMovimiento(movimiento *models.Movimiento, estadosPermitidos ...string) *models.InfoTransaccionContable {
 	if movimiento == nil || movimiento.EstadoMovimientoId == nil || movimiento.ConsecutivoId == nil || *movimiento.ConsecutivoId <= 0 {
 		return nil
 	}
 
-	if movimiento.EstadoMovimientoId.Nombre != "Entrada Aprobada" && movimiento.EstadoMovimientoId.Nombre != "Entrada Con Salida" {
+	if !movimientoTieneEstado(movimiento, estadosPermitidos...) {
 		return nil
 	}
 
@@ -368,6 +414,103 @@ func consultarTransaccionContableEntrada(movimiento *models.Movimiento) *models.
 	}
 
 	return &transaccion
+}
+
+func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPorElemento map[int]*salidaReporteData, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("resolverSalidasPorElemento - Unhandled Error!", "500")
+
+	salidasPorElemento = make(map[int]*salidaReporteData)
+	if len(elementos) == 0 {
+		return salidasPorElemento, nil
+	}
+
+	subgrupoPorElemento := make(map[int]int)
+	elementosActaIDs := make([]int, 0, len(elementos))
+	for _, elemento := range elementos {
+		if elemento == nil || elemento.Id <= 0 {
+			continue
+		}
+		elementosActaIDs = append(elementosActaIDs, elemento.Id)
+		subgrupoID, _, _ := subgrupoInfo(elemento)
+		subgrupoPorElemento[elemento.Id] = subgrupoID
+	}
+	if len(elementosActaIDs) == 0 {
+		return salidasPorElemento, nil
+	}
+
+	params := url.Values{}
+	params.Add("limit", "-1")
+	params.Add("sortby", "Id")
+	params.Add("order", "desc")
+	params.Add("fields", "Id,ElementoActaId")
+	params.Add("query", "ElementoActaId__in:"+utilsHelper.ArrayToString(elementosActaIDs, "|"))
+	elementosMovimiento, outputError := movimientosArka.GetAllElementosMovimiento(params.Encode())
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	ultimoMovimientoPorElemento := make(map[int]*models.ElementosMovimiento)
+	for _, elementoMovimiento := range elementosMovimiento {
+		if elementoMovimiento == nil || elementoMovimiento.ElementoActaId == nil || *elementoMovimiento.ElementoActaId <= 0 {
+			continue
+		}
+		elementoActaID := *elementoMovimiento.ElementoActaId
+		if _, ok := ultimoMovimientoPorElemento[elementoActaID]; ok {
+			continue
+		}
+		ultimoMovimientoPorElemento[elementoActaID] = elementoMovimiento
+	}
+
+	for _, elementoActaID := range elementosActaIDs {
+		elementoMovimiento := ultimoMovimientoPorElemento[elementoActaID]
+		if elementoMovimiento == nil {
+			continue
+		}
+
+		historial, outputError := movimientosArka.GetHistorialElemento(elementoMovimiento.Id, true)
+		if outputError != nil {
+			return nil, outputError
+		}
+		if historial == nil || historial.Salida == nil {
+			continue
+		}
+
+		salida, outputError := construirSalidaReporteData(historial, subgrupoPorElemento[elementoActaID])
+		if outputError != nil {
+			return nil, outputError
+		}
+		if salida != nil {
+			salidasPorElemento[elementoActaID] = salida
+		}
+	}
+
+	return salidasPorElemento, nil
+}
+
+func construirSalidaReporteData(historial *models.Historial, subgrupoID int) (salida *salidaReporteData, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("construirSalidaReporteData - Unhandled Error!", "500")
+
+	if historial == nil || historial.Salida == nil {
+		return nil, nil
+	}
+
+	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
+	if historial.Salida.FormatoTipoMovimientoId != nil && historial.Salida.FormatoTipoMovimientoId.Id > 0 && subgrupoID > 0 {
+		outputError = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(historial.Salida.FormatoTipoMovimientoId.Id, []int{subgrupoID}, cuentasPorSubgrupo)
+		if outputError != nil {
+			return nil, outputError
+		}
+	}
+
+	salida = &salidaReporteData{
+		Movimiento:          historial.Salida,
+		TransaccionContable: consultarTransaccionContableSalida(historial.Salida),
+		FuncionarioAsignado: funcionarioSalidaLabel(historial.Salida),
+		TrasladosAsociados:  trasladosAsociadosLabel(historial.Traslados),
+		CuentasPorSubgrupo:  cuentasPorSubgrupo,
+	}
+
+	return salida, nil
 }
 
 func collectSubgrupoIDs(elementos []*models.DetalleElemento) []int {
@@ -431,6 +574,11 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 			}
 
 			movimientoCuenta := entrada.CuentasPorSubgrupo[subgrupoID]
+			salida := entrada.SalidasPorElemento[elemento.Id]
+			salidaCuenta := models.CuentasSubgrupo{}
+			if salida != nil {
+				salidaCuenta = salida.CuentasPorSubgrupo[subgrupoID]
+			}
 			row := &reporteElementoEntradaRow{
 				EntradaID:                          entrada.Movimiento.Id,
 				EntradaConsecutivo:                 stringPtrValue(entrada.Movimiento.Consecutivo),
@@ -465,6 +613,17 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				ElementoFechaModificacion:          elemento.FechaModificacion,
 				CuentaDebitoEntrada:                resolveCuentaMovimientoLabel(movimientoCuenta.CuentaDebitoId, entrada.TransaccionContable, true),
 				CuentaCreditoEntrada:               resolveCuentaMovimientoLabel(movimientoCuenta.CuentaCreditoId, entrada.TransaccionContable, false),
+				SalidaID:                           movimientoID(salida),
+				SalidaConsecutivo:                  movimientoConsecutivo(salida),
+				SalidaEstado:                       movimientoEstado(salida),
+				SalidaFechaCreacion:                movimientoFechaCreacion(salida),
+				SalidaFechaCorte:                   movimientoFechaCorte(salida),
+				SalidaFuncionarioAsignado:          salidaFuncionario(salida),
+				SalidaConceptoTransaccionContable:  movimientoTransaccionConcepto(salida),
+				SalidaFechaTransaccionContable:     movimientoTransaccionFecha(salida),
+				TrasladosAsociados:                 movimientoTraslados(salida),
+				CuentaDebitoSalida:                 resolveCuentaMovimientoLabel(salidaCuenta.CuentaDebitoId, transaccionContableSalida(salida), true),
+				CuentaCreditoSalida:                resolveCuentaMovimientoLabel(salidaCuenta.CuentaCreditoId, transaccionContableSalida(salida), false),
 			}
 			rows = append(rows, row)
 		}
@@ -513,6 +672,17 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 		timeCell(rowData.ElementoFechaModificacion),
 		rowData.CuentaDebitoEntrada,
 		rowData.CuentaCreditoEntrada,
+		optionalIntCell(rowData.SalidaID),
+		rowData.SalidaConsecutivo,
+		rowData.SalidaEstado,
+		timeCell(rowData.SalidaFechaCreacion),
+		timePtrCell(rowData.SalidaFechaCorte),
+		rowData.SalidaFuncionarioAsignado,
+		rowData.SalidaConceptoTransaccionContable,
+		timeCell(rowData.SalidaFechaTransaccionContable),
+		rowData.TrasladosAsociados,
+		rowData.CuentaDebitoSalida,
+		rowData.CuentaCreditoSalida,
 	}
 
 	for _, value := range values {
@@ -572,6 +742,153 @@ func detalleCuentaLabel(cuenta *models.DetalleCuenta) string {
 	return cuenta.Id
 }
 
+func funcionarioSalidaLabel(movimiento *models.Movimiento) string {
+	if movimiento == nil {
+		return ""
+	}
+
+	var formato models.FormatoSalida
+	if outputError := utilsHelper.Unmarshal(movimiento.Detalle, &formato); outputError != nil {
+		return ""
+	}
+	if formato.Funcionario <= 0 {
+		return ""
+	}
+
+	tercero, outputError := terceros.GetNombreTerceroById(formato.Funcionario)
+	if outputError != nil || tercero == nil {
+		return strconv.Itoa(formato.Funcionario)
+	}
+
+	return identificacionTerceroLabel(tercero)
+}
+
+func identificacionTerceroLabel(tercero *models.IdentificacionTercero) string {
+	if tercero == nil {
+		return ""
+	}
+	if tercero.Numero != "" && tercero.NombreCompleto != "" {
+		return tercero.Numero + " - " + tercero.NombreCompleto
+	}
+	if tercero.NombreCompleto != "" {
+		return tercero.NombreCompleto
+	}
+	if tercero.Numero != "" {
+		return tercero.Numero
+	}
+	if tercero.Id > 0 {
+		return strconv.Itoa(tercero.Id)
+	}
+	return ""
+}
+
+func trasladosAsociadosLabel(traslados []*models.Movimiento) string {
+	if len(traslados) == 0 {
+		return ""
+	}
+
+	labels := make([]string, 0, len(traslados))
+	for _, traslado := range traslados {
+		if traslado == nil {
+			continue
+		}
+
+		label := stringPtrValue(traslado.Consecutivo)
+		if label == "" && traslado.Id > 0 {
+			label = strconv.Itoa(traslado.Id)
+		}
+		if label != "" {
+			labels = append(labels, label)
+		}
+	}
+
+	return strings.Join(labels, " | ")
+}
+
+func movimientoTieneEstado(movimiento *models.Movimiento, estadosPermitidos ...string) bool {
+	if movimiento == nil || movimiento.EstadoMovimientoId == nil {
+		return false
+	}
+
+	for _, estado := range estadosPermitidos {
+		if movimiento.EstadoMovimientoId.Nombre == estado {
+			return true
+		}
+	}
+
+	return false
+}
+
+func movimientoID(salida *salidaReporteData) int {
+	if salida == nil || salida.Movimiento == nil {
+		return 0
+	}
+	return salida.Movimiento.Id
+}
+
+func movimientoConsecutivo(salida *salidaReporteData) string {
+	if salida == nil || salida.Movimiento == nil {
+		return ""
+	}
+	return stringPtrValue(salida.Movimiento.Consecutivo)
+}
+
+func movimientoEstado(salida *salidaReporteData) string {
+	if salida == nil || salida.Movimiento == nil {
+		return ""
+	}
+	return estadoMovimientoNombre(salida.Movimiento)
+}
+
+func movimientoFechaCreacion(salida *salidaReporteData) time.Time {
+	if salida == nil || salida.Movimiento == nil {
+		return time.Time{}
+	}
+	return salida.Movimiento.FechaCreacion
+}
+
+func movimientoFechaCorte(salida *salidaReporteData) *time.Time {
+	if salida == nil || salida.Movimiento == nil {
+		return nil
+	}
+	return salida.Movimiento.FechaCorte
+}
+
+func salidaFuncionario(salida *salidaReporteData) string {
+	if salida == nil {
+		return ""
+	}
+	return salida.FuncionarioAsignado
+}
+
+func movimientoTransaccionConcepto(salida *salidaReporteData) string {
+	if salida == nil {
+		return ""
+	}
+	return transaccionConcepto(salida.TransaccionContable)
+}
+
+func movimientoTransaccionFecha(salida *salidaReporteData) time.Time {
+	if salida == nil {
+		return time.Time{}
+	}
+	return transaccionFecha(salida.TransaccionContable)
+}
+
+func movimientoTraslados(salida *salidaReporteData) string {
+	if salida == nil {
+		return ""
+	}
+	return salida.TrasladosAsociados
+}
+
+func transaccionContableSalida(salida *salidaReporteData) *models.InfoTransaccionContable {
+	if salida == nil {
+		return nil
+	}
+	return salida.TransaccionContable
+}
+
 func subgrupoInfo(elemento *models.DetalleElemento) (id int, codigo, nombre string) {
 	if elemento == nil || elemento.SubgrupoCatalogoId == nil || elemento.SubgrupoCatalogoId.SubgrupoId == nil {
 		return 0, "", ""
@@ -618,6 +935,13 @@ func stringPtrValue(value *string) string {
 	return *value
 }
 
+func optionalIntCell(value int) string {
+	if value <= 0 {
+		return ""
+	}
+	return strconv.Itoa(value)
+}
+
 func floatCell(value float64) string {
 	return strconv.FormatFloat(value, 'f', -1, 64)
 }
@@ -643,4 +967,6 @@ func setColumnWidths(hoja *xlsx.Sheet) {
 	_ = hoja.SetColWidth(21, 27, 20)
 	_ = hoja.SetColWidth(28, 30, 22)
 	_ = hoja.SetColWidth(31, 32, 36)
+	_ = hoja.SetColWidth(33, 40, 24)
+	_ = hoja.SetColWidth(41, 43, 36)
 }
