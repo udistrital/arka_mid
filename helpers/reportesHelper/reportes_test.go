@@ -11,25 +11,125 @@ import (
 )
 
 func TestGenerarReporteElementos(t *testing.T) {
-	mockConsultarElementosReporte(t, []*models.DetalleElemento{
+	mockConsultarEntradasReporteData(t, []*entradaReporteData{
 		{
-			Id:            101,
-			Nombre:        "Elemento Uno",
-			Cantidad:      2,
-			Marca:         "Marca A",
-			Serie:         "SERIE-001",
-			UnidadMedida:  1,
-			ValorUnitario: 1500,
-			Subtotal:      3000,
-			ValorTotal:    3000,
-			Activo:        true,
-			FechaCreacion: time.Date(2026, 1, 10, 8, 30, 0, 0, time.UTC),
+			Movimiento: &models.Movimiento{
+				Id:            7995,
+				Consecutivo:   stringPtr("ENT-7995"),
+				FechaCreacion: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+				EstadoMovimientoId: &models.EstadoMovimiento{
+					Nombre: "Entrada Aprobada",
+				},
+			},
+			Formato: models.FormatoBaseEntrada{
+				ActaRecibidoId: 555,
+			},
+			TransaccionContable: &models.InfoTransaccionContable{
+				Concepto: "Entrada Almacén",
+				Fecha:    time.Date(2026, 5, 9, 11, 0, 0, 0, time.UTC),
+				Movimientos: []*models.DetalleMovimientoContable{
+					{
+						Cuenta: &models.DetalleCuenta{
+							Id:     "cta-db-1",
+							Codigo: "151001",
+							Nombre: "Equipo de cómputo",
+						},
+						Debito: 2500,
+					},
+					{
+						Cuenta: &models.DetalleCuenta{
+							Id:     "cta-cr-1",
+							Codigo: "240801",
+							Nombre: "Bienes recibidos",
+						},
+						Credito: 2500,
+					},
+				},
+			},
+			Elementos: []*models.DetalleElemento{
+				{
+					Id:            101,
+					Nombre:        "Elemento Uno",
+					Cantidad:      2,
+					Marca:         "Marca A",
+					Serie:         "SERIE-001",
+					UnidadMedida:  1,
+					ValorUnitario: 1250,
+					Subtotal:      2500,
+					ValorTotal:    2500,
+					Activo:        true,
+					Placa:         "PL-001",
+					FechaCreacion: time.Date(2026, 5, 9, 10, 15, 0, 0, time.UTC),
+					ActaRecibidoId: &models.ActaRecibido{
+						Id: 555,
+					},
+					SubgrupoCatalogoId: &models.DetalleSubgrupo{
+						SubgrupoId: &models.Subgrupo{
+							Id:     9,
+							Codigo: "SG-09",
+							Nombre: "Computadores",
+						},
+					},
+					TipoBienId: &models.TipoBien{
+						Id:     3,
+						Nombre: "Devolutivo",
+					},
+				},
+			},
+			CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{
+				9: {
+					CuentaDebitoId:  "cta-db-1",
+					CuentaCreditoId: "cta-cr-1",
+				},
+			},
+			SalidasPorElemento: map[int]*salidaReporteData{
+				101: {
+					Movimiento: &models.Movimiento{
+						Id:            9001,
+						Consecutivo:   stringPtr("SAL-9001"),
+						FechaCreacion: time.Date(2026, 5, 10, 14, 0, 0, 0, time.UTC),
+						EstadoMovimientoId: &models.EstadoMovimiento{
+							Nombre: "Salida Aprobada",
+						},
+					},
+					FuncionarioAsignado: "12345 - Funcionario Uno",
+					TrasladosAsociados:  "TRS-1001",
+					TransaccionContable: &models.InfoTransaccionContable{
+						Concepto: "Salida Almacén",
+						Fecha:    time.Date(2026, 5, 10, 15, 0, 0, 0, time.UTC),
+						Movimientos: []*models.DetalleMovimientoContable{
+							{
+								Cuenta: &models.DetalleCuenta{
+									Id:     "cta-db-sal-1",
+									Codigo: "839090",
+									Nombre: "Responsabilidades en proceso",
+								},
+								Debito: 2500,
+							},
+							{
+								Cuenta: &models.DetalleCuenta{
+									Id:     "cta-cr-sal-1",
+									Codigo: "151001",
+									Nombre: "Equipo de cómputo",
+								},
+								Credito: 2500,
+							},
+						},
+					},
+					CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{
+						9: {
+							CuentaDebitoId:  "cta-db-sal-1",
+							CuentaCreditoId: "cta-cr-sal-1",
+						},
+					},
+				},
+			},
 		},
 	})
 
 	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
-		FechaInicial: "2026-01-01",
-		FechaFinal:   "2026-01-31",
+		FechaInicial: "2026-05-01",
+		FechaFinal:   "2026-05-31",
 	})
 	if err != nil {
 		t.Fatalf("GenerarReporteElementos retornó error: %v", err)
@@ -37,10 +137,6 @@ func TestGenerarReporteElementos(t *testing.T) {
 
 	if respuesta == nil {
 		t.Fatal("GenerarReporteElementos retornó respuesta nil")
-	}
-
-	if respuesta.ArchivoBase64 == "" {
-		t.Fatal("ArchivoBase64 no debe ser vacío")
 	}
 
 	contenido, decodeErr := base64.StdEncoding.DecodeString(respuesta.ArchivoBase64)
@@ -57,25 +153,42 @@ func TestGenerarReporteElementos(t *testing.T) {
 		t.Fatalf("se esperaba una hoja, se obtuvieron %d", len(archivo.Sheets))
 	}
 
-	if len(archivo.Sheets[0].Rows) == 0 {
-		t.Fatal("se esperaba al menos una fila de encabezado")
-	}
-
-	valor := archivo.Sheets[0].Rows[0].Cells[0].String()
-	if valor != "Id" {
-		t.Fatalf("encabezado inesperado: %q", valor)
-	}
-
-	if len(archivo.Sheets[0].Rows[0].Cells) != len(reporteElementosHeaders) {
-		t.Fatalf("número de columnas inesperado: %d", len(archivo.Sheets[0].Rows[0].Cells))
-	}
-
 	if len(archivo.Sheets[0].Rows) != 2 {
-		t.Fatalf("se esperaban encabezado y una fila de datos, se obtuvieron %d filas", len(archivo.Sheets[0].Rows))
+		t.Fatalf("se esperaban 2 filas, se obtuvieron %d", len(archivo.Sheets[0].Rows))
 	}
 
-	if nombre := archivo.Sheets[0].Rows[1].Cells[1].String(); nombre != "Elemento Uno" {
-		t.Fatalf("nombre de elemento inesperado: %q", nombre)
+	headers := archivo.Sheets[0].Rows[0]
+	if headers.Cells[0].String() != "entrada_id" {
+		t.Fatalf("encabezado inesperado en la primera columna: %q", headers.Cells[0].String())
+	}
+
+	dataRow := archivo.Sheets[0].Rows[1]
+	if dataRow.Cells[0].String() != "7995" {
+		t.Fatalf("entrada_id inesperado: %q", dataRow.Cells[0].String())
+	}
+	if dataRow.Cells[9].String() != "Elemento Uno" {
+		t.Fatalf("elemento_nombre inesperado: %q", dataRow.Cells[9].String())
+	}
+	if dataRow.Cells[31].String() != "151001 - Equipo de cómputo" {
+		t.Fatalf("cuenta_debito_entrada inesperada: %q", dataRow.Cells[31].String())
+	}
+	if dataRow.Cells[32].String() != "240801 - Bienes recibidos" {
+		t.Fatalf("cuenta_credito_entrada inesperada: %q", dataRow.Cells[32].String())
+	}
+	if dataRow.Cells[33].String() != "9001" {
+		t.Fatalf("salida_id inesperado: %q", dataRow.Cells[33].String())
+	}
+	if dataRow.Cells[38].String() != "12345 - Funcionario Uno" {
+		t.Fatalf("salida_funcionario_asignado inesperado: %q", dataRow.Cells[38].String())
+	}
+	if dataRow.Cells[41].String() != "TRS-1001" {
+		t.Fatalf("traslados_asociados inesperado: %q", dataRow.Cells[41].String())
+	}
+	if dataRow.Cells[42].String() != "839090 - Responsabilidades en proceso" {
+		t.Fatalf("cuenta_debito_salida inesperada: %q", dataRow.Cells[42].String())
+	}
+	if dataRow.Cells[43].String() != "151001 - Equipo de cómputo" {
+		t.Fatalf("cuenta_credito_salida inesperada: %q", dataRow.Cells[43].String())
 	}
 }
 
@@ -94,7 +207,7 @@ func TestGenerarReporteElementosFechaFinalMenor(t *testing.T) {
 }
 
 func TestExcelGeneradoEsBinarioValido(t *testing.T) {
-	mockConsultarElementosReporte(t, []*models.DetalleElemento{})
+	mockConsultarEntradasReporteData(t, []*entradaReporteData{})
 
 	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
 		FechaInicial: "2026-03-01",
@@ -114,15 +227,19 @@ func TestExcelGeneradoEsBinarioValido(t *testing.T) {
 	}
 }
 
-func mockConsultarElementosReporte(t *testing.T, elementos []*models.DetalleElemento) {
+func mockConsultarEntradasReporteData(t *testing.T, entradas []*entradaReporteData) {
 	t.Helper()
 
-	original := consultarElementosReporte
-	consultarElementosReporte = func(fechaInicial, fechaFinal time.Time) ([]*models.DetalleElemento, map[string]interface{}) {
-		return elementos, nil
+	original := consultarEntradasReporteData
+	consultarEntradasReporteData = func(fechaInicial, fechaFinal time.Time) ([]*entradaReporteData, map[string]interface{}) {
+		return entradas, nil
 	}
 
 	t.Cleanup(func() {
-		consultarElementosReporte = original
+		consultarEntradasReporteData = original
 	})
+}
+
+func stringPtr(value string) *string {
+	return &value
 }
