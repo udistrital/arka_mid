@@ -82,6 +82,48 @@ func TestGenerarReporteElementos(t *testing.T) {
 					CuentaCreditoId: "cta-cr-1",
 				},
 			},
+			SalidasPorElemento: map[int]*salidaReporteData{
+				101: {
+					Movimiento: &models.Movimiento{
+						Id:            9001,
+						Consecutivo:   stringPtr("SAL-9001"),
+						FechaCreacion: time.Date(2026, 5, 10, 14, 0, 0, 0, time.UTC),
+						EstadoMovimientoId: &models.EstadoMovimiento{
+							Nombre: "Salida Aprobada",
+						},
+					},
+					FuncionarioAsignado: "12345 - Funcionario Uno",
+					TrasladosAsociados:  "TRS-1001",
+					TransaccionContable: &models.InfoTransaccionContable{
+						Concepto: "Salida Almacén",
+						Fecha:    time.Date(2026, 5, 10, 15, 0, 0, 0, time.UTC),
+						Movimientos: []*models.DetalleMovimientoContable{
+							{
+								Cuenta: &models.DetalleCuenta{
+									Id:     "cta-db-sal-1",
+									Codigo: "839090",
+									Nombre: "Responsabilidades en proceso",
+								},
+								Debito: 2500,
+							},
+							{
+								Cuenta: &models.DetalleCuenta{
+									Id:     "cta-cr-sal-1",
+									Codigo: "151001",
+									Nombre: "Equipo de cómputo",
+								},
+								Credito: 2500,
+							},
+						},
+					},
+					CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{
+						9: {
+							CuentaDebitoId:  "cta-db-sal-1",
+							CuentaCreditoId: "cta-cr-sal-1",
+						},
+					},
+				},
+			},
 		},
 	})
 
@@ -132,6 +174,21 @@ func TestGenerarReporteElementos(t *testing.T) {
 	}
 	if dataRow.Cells[32].String() != "240801 - Bienes recibidos" {
 		t.Fatalf("cuenta_credito_entrada inesperada: %q", dataRow.Cells[32].String())
+	}
+	if dataRow.Cells[33].String() != "9001" {
+		t.Fatalf("salida_id inesperado: %q", dataRow.Cells[33].String())
+	}
+	if dataRow.Cells[38].String() != "12345 - Funcionario Uno" {
+		t.Fatalf("salida_funcionario_asignado inesperado: %q", dataRow.Cells[38].String())
+	}
+	if dataRow.Cells[41].String() != "TRS-1001" {
+		t.Fatalf("traslados_asociados inesperado: %q", dataRow.Cells[41].String())
+	}
+	if dataRow.Cells[42].String() != "839090 - Responsabilidades en proceso" {
+		t.Fatalf("cuenta_debito_salida inesperada: %q", dataRow.Cells[42].String())
+	}
+	if dataRow.Cells[43].String() != "151001 - Equipo de cómputo" {
+		t.Fatalf("cuenta_credito_salida inesperada: %q", dataRow.Cells[43].String())
 	}
 }
 
