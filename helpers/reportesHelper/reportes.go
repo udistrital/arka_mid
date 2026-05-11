@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/tealeg/xlsx"
@@ -25,6 +26,8 @@ const (
 	dateLayout     = "2006-01-02"
 	dateTimeLayout = "2006-01-02 15:04:05"
 	sheetName      = "EntradasElementos"
+	historyWorkers = 8
+	salidaWorkers  = 6
 )
 
 type entradaReporteData struct {
@@ -41,6 +44,13 @@ type salidaReporteData struct {
 	TransaccionContable *models.InfoTransaccionContable
 	FuncionarioAsignado string
 	TrasladosAsociados  string
+	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
+}
+
+type salidaReporteBaseData struct {
+	Movimiento          *models.Movimiento
+	TransaccionContable *models.InfoTransaccionContable
+	FuncionarioAsignado string
 	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
 }
 
@@ -461,52 +471,206 @@ func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPor
 		ultimoMovimientoPorElemento[elementoActaID] = elementoMovimiento
 	}
 
-	for _, elementoActaID := range elementosActaIDs {
-		elementoMovimiento := ultimoMovimientoPorElemento[elementoActaID]
-		if elementoMovimiento == nil {
-			continue
-		}
+	historialesPorElemento, outputError := consultarHistorialesElementos(ultimoMovimientoPorElemento)
+	if outputError != nil {
+		return nil, outputError
+	}
 
-		historial, outputError := movimientosArka.GetHistorialElemento(elementoMovimiento.Id, true)
-		if outputError != nil {
-			return nil, outputError
-		}
+	salidasDescriptor := make(map[int]*salidaReporteBaseData)
+	subgruposPorSalida := make(map[int]map[int]struct{})
+	for _, elementoActaID := range elementosActaIDs {
+		historial := historialesPorElemento[elementoActaID]
 		if historial == nil || historial.Salida == nil {
 			continue
 		}
 
-		salida, outputError := construirSalidaReporteData(historial, subgrupoPorElemento[elementoActaID])
-		if outputError != nil {
-			return nil, outputError
+		salidaID := historial.Salida.Id
+		if salidaID <= 0 {
+			continue
 		}
-		if salida != nil {
-			salidasPorElemento[elementoActaID] = salida
+
+		if _, ok := salidasDescriptor[salidaID]; !ok {
+			salidasDescriptor[salidaID] = &salidaReporteBaseData{
+				Movimiento: historial.Salida,
+			}
+		}
+		if _, ok := subgruposPorSalida[salidaID]; !ok {
+			subgruposPorSalida[salidaID] = make(map[int]struct{})
+		}
+		if subgrupoID := subgrupoPorElemento[elementoActaID]; subgrupoID > 0 {
+			subgruposPorSalida[salidaID][subgrupoID] = struct{}{}
+		}
+	}
+
+	salidasBasePorID, outputError := construirSalidasReporteBaseData(salidasDescriptor, subgruposPorSalida)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	for _, elementoActaID := range elementosActaIDs {
+		historial := historialesPorElemento[elementoActaID]
+		if historial == nil || historial.Salida == nil {
+			continue
+		}
+
+		base := salidasBasePorID[historial.Salida.Id]
+		if base == nil {
+			continue
+		}
+
+		salidasPorElemento[elementoActaID] = &salidaReporteData{
+			Movimiento:          base.Movimiento,
+			TransaccionContable: base.TransaccionContable,
+			FuncionarioAsignado: base.FuncionarioAsignado,
+			TrasladosAsociados:  trasladosAsociadosLabel(historial.Traslados),
+			CuentasPorSubgrupo:  base.CuentasPorSubgrupo,
 		}
 	}
 
 	return salidasPorElemento, nil
 }
 
-func construirSalidaReporteData(historial *models.Historial, subgrupoID int) (salida *salidaReporteData, outputError map[string]interface{}) {
-	defer errorCtrl.ErrorControlFunction("construirSalidaReporteData - Unhandled Error!", "500")
+func consultarHistorialesElementos(ultimoMovimientoPorElemento map[int]*models.ElementosMovimiento) (historialesPorElemento map[int]*models.Historial, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarHistorialesElementos - Unhandled Error!", "500")
 
-	if historial == nil || historial.Salida == nil {
+	historialesPorElemento = make(map[int]*models.Historial, len(ultimoMovimientoPorElemento))
+	if len(ultimoMovimientoPorElemento) == 0 {
+		return historialesPorElemento, nil
+	}
+
+	type historialResult struct {
+		elementoActaID int
+		historial      *models.Historial
+		outputError    map[string]interface{}
+	}
+
+	results := make(chan historialResult, len(ultimoMovimientoPorElemento))
+	sem := make(chan struct{}, historyWorkers)
+	var wg sync.WaitGroup
+
+	for elementoActaID, elementoMovimiento := range ultimoMovimientoPorElemento {
+		if elementoMovimiento == nil || elementoMovimiento.Id <= 0 {
+			continue
+		}
+
+		wg.Add(1)
+		go func(elementoActaID int, elementoMovimientoID int) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			historial, outputError := movimientosArka.GetHistorialElemento(elementoMovimientoID, true)
+			results <- historialResult{
+				elementoActaID: elementoActaID,
+				historial:      historial,
+				outputError:    outputError,
+			}
+		}(elementoActaID, elementoMovimiento.Id)
+	}
+
+	wg.Wait()
+	close(results)
+
+	for result := range results {
+		if result.outputError != nil {
+			if outputError == nil {
+				outputError = result.outputError
+			}
+			continue
+		}
+		historialesPorElemento[result.elementoActaID] = result.historial
+	}
+
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	return historialesPorElemento, nil
+}
+
+func construirSalidasReporteBaseData(
+	salidasDescriptor map[int]*salidaReporteBaseData,
+	subgruposPorSalida map[int]map[int]struct{},
+) (salidasBasePorID map[int]*salidaReporteBaseData, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("construirSalidasReporteBaseData - Unhandled Error!", "500")
+
+	salidasBasePorID = make(map[int]*salidaReporteBaseData, len(salidasDescriptor))
+	if len(salidasDescriptor) == 0 {
+		return salidasBasePorID, nil
+	}
+
+	type salidaResult struct {
+		salidaID    int
+		salida      *salidaReporteBaseData
+		outputError map[string]interface{}
+	}
+
+	results := make(chan salidaResult, len(salidasDescriptor))
+	sem := make(chan struct{}, salidaWorkers)
+	var wg sync.WaitGroup
+
+	for salidaID, descriptor := range salidasDescriptor {
+		if descriptor == nil || descriptor.Movimiento == nil {
+			continue
+		}
+
+		subgrupos := subgrupoSetToSlice(subgruposPorSalida[salidaID])
+		wg.Add(1)
+		go func(salidaID int, movimiento *models.Movimiento, subgrupos []int) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			salida, outputError := construirSalidaReporteBaseData(movimiento, subgrupos)
+			results <- salidaResult{
+				salidaID:    salidaID,
+				salida:      salida,
+				outputError: outputError,
+			}
+		}(salidaID, descriptor.Movimiento, subgrupos)
+	}
+
+	wg.Wait()
+	close(results)
+
+	for result := range results {
+		if result.outputError != nil {
+			if outputError == nil {
+				outputError = result.outputError
+			}
+			continue
+		}
+		if result.salida != nil {
+			salidasBasePorID[result.salidaID] = result.salida
+		}
+	}
+
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	return salidasBasePorID, nil
+}
+
+func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []int) (salida *salidaReporteBaseData, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("construirSalidaReporteBaseData - Unhandled Error!", "500")
+
+	if movimiento == nil {
 		return nil, nil
 	}
 
 	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
-	if historial.Salida.FormatoTipoMovimientoId != nil && historial.Salida.FormatoTipoMovimientoId.Id > 0 && subgrupoID > 0 {
-		outputError = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(historial.Salida.FormatoTipoMovimientoId.Id, []int{subgrupoID}, cuentasPorSubgrupo)
+	if movimiento.FormatoTipoMovimientoId != nil && movimiento.FormatoTipoMovimientoId.Id > 0 && len(subgrupos) > 0 {
+		outputError = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(movimiento.FormatoTipoMovimientoId.Id, subgrupos, cuentasPorSubgrupo)
 		if outputError != nil {
 			return nil, outputError
 		}
 	}
 
-	salida = &salidaReporteData{
-		Movimiento:          historial.Salida,
-		TransaccionContable: consultarTransaccionContableSalida(historial.Salida),
-		FuncionarioAsignado: funcionarioSalidaLabel(historial.Salida),
-		TrasladosAsociados:  trasladosAsociadosLabel(historial.Traslados),
+	salida = &salidaReporteBaseData{
+		Movimiento:          movimiento,
+		TransaccionContable: consultarTransaccionContableSalida(movimiento),
+		FuncionarioAsignado: funcionarioSalidaLabel(movimiento),
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
 	}
 
@@ -551,6 +715,21 @@ func ordenarElementosPorIds(ids []int, elementos []*models.DetalleElemento) []*m
 	}
 
 	return ordenados
+}
+
+func subgrupoSetToSlice(subgrupoSet map[int]struct{}) []int {
+	if len(subgrupoSet) == 0 {
+		return nil
+	}
+
+	subgrupos := make([]int, 0, len(subgrupoSet))
+	for subgrupoID := range subgrupoSet {
+		if subgrupoID > 0 {
+			subgrupos = append(subgrupos, subgrupoID)
+		}
+	}
+
+	return subgrupos
 }
 
 func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteElementoEntradaRow {
