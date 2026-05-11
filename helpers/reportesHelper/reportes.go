@@ -28,6 +28,7 @@ const (
 	sheetName      = "EntradasElementos"
 	historyWorkers = 8
 	salidaWorkers  = 6
+	decimalNumFmt  = "#.##0,00"
 )
 
 type entradaReporteData struct {
@@ -817,56 +818,59 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	}
 
 	row := hoja.AddRow()
-	values := []string{
-		strconv.Itoa(rowData.EntradaID),
-		rowData.EntradaConsecutivo,
-		rowData.EntradaEstado,
-		timeCell(rowData.EntradaFechaCreacion),
-		timePtrCell(rowData.EntradaFechaCorte),
-		strconv.Itoa(rowData.EntradaActaRecibidoID),
-		rowData.EntradaConceptoTransaccionContable,
-		timeCell(rowData.EntradaFechaTransaccionContable),
-		strconv.Itoa(rowData.ElementoID),
-		rowData.ElementoNombre,
-		strconv.Itoa(rowData.ElementoCantidad),
-		rowData.ElementoMarca,
-		rowData.ElementoSerie,
-		strconv.Itoa(rowData.ElementoUnidadMedida),
-		floatCell(rowData.ElementoValorUnitario),
-		floatCell(rowData.ElementoSubtotal),
-		floatCell(rowData.ElementoDescuento),
-		floatCell(rowData.ElementoValorTotal),
-		strconv.Itoa(rowData.ElementoPorcentajeIvaID),
-		floatCell(rowData.ElementoValorIva),
-		floatCell(rowData.ElementoValorFinal),
-		strconv.Itoa(rowData.ElementoSubgrupoID),
-		rowData.ElementoSubgrupoCodigo,
-		rowData.ElementoSubgrupoNombre,
-		strconv.Itoa(rowData.ElementoTipoBienID),
-		rowData.ElementoTipoBienNombre,
-		strconv.Itoa(rowData.ElementoActaRecibidoID),
-		rowData.ElementoPlaca,
-		strconv.FormatBool(rowData.ElementoActivo),
-		timeCell(rowData.ElementoFechaCreacion),
-		timeCell(rowData.ElementoFechaModificacion),
-		rowData.CuentaDebitoEntrada,
-		rowData.CuentaCreditoEntrada,
-		optionalIntCell(rowData.SalidaID),
-		rowData.SalidaConsecutivo,
-		rowData.SalidaEstado,
-		timeCell(rowData.SalidaFechaCreacion),
-		timePtrCell(rowData.SalidaFechaCorte),
-		rowData.SalidaFuncionarioAsignado,
-		rowData.SalidaConceptoTransaccionContable,
-		timeCell(rowData.SalidaFechaTransaccionContable),
-		rowData.TrasladosAsociados,
-		rowData.CuentaDebitoSalida,
-		rowData.CuentaCreditoSalida,
-	}
+	addStringCell(row, strconv.Itoa(rowData.EntradaID))
+	addStringCell(row, rowData.EntradaConsecutivo)
+	addStringCell(row, rowData.EntradaEstado)
+	addStringCell(row, timeCell(rowData.EntradaFechaCreacion))
+	addStringCell(row, timePtrCell(rowData.EntradaFechaCorte))
+	addStringCell(row, strconv.Itoa(rowData.EntradaActaRecibidoID))
+	addStringCell(row, rowData.EntradaConceptoTransaccionContable)
+	addStringCell(row, timeCell(rowData.EntradaFechaTransaccionContable))
+	addStringCell(row, strconv.Itoa(rowData.ElementoID))
+	addStringCell(row, rowData.ElementoNombre)
+	addStringCell(row, strconv.Itoa(rowData.ElementoCantidad))
+	addStringCell(row, rowData.ElementoMarca)
+	addStringCell(row, rowData.ElementoSerie)
+	addStringCell(row, strconv.Itoa(rowData.ElementoUnidadMedida))
+	addDecimalCell(row, rowData.ElementoValorUnitario)
+	addDecimalCell(row, rowData.ElementoSubtotal)
+	addDecimalCell(row, rowData.ElementoDescuento)
+	addDecimalCell(row, rowData.ElementoValorTotal)
+	addStringCell(row, strconv.Itoa(rowData.ElementoPorcentajeIvaID))
+	addDecimalCell(row, rowData.ElementoValorIva)
+	addDecimalCell(row, rowData.ElementoValorFinal)
+	addStringCell(row, strconv.Itoa(rowData.ElementoSubgrupoID))
+	addStringCell(row, rowData.ElementoSubgrupoCodigo)
+	addStringCell(row, rowData.ElementoSubgrupoNombre)
+	addStringCell(row, strconv.Itoa(rowData.ElementoTipoBienID))
+	addStringCell(row, rowData.ElementoTipoBienNombre)
+	addStringCell(row, strconv.Itoa(rowData.ElementoActaRecibidoID))
+	addStringCell(row, rowData.ElementoPlaca)
+	addStringCell(row, strconv.FormatBool(rowData.ElementoActivo))
+	addStringCell(row, timeCell(rowData.ElementoFechaCreacion))
+	addStringCell(row, timeCell(rowData.ElementoFechaModificacion))
+	addStringCell(row, rowData.CuentaDebitoEntrada)
+	addStringCell(row, rowData.CuentaCreditoEntrada)
+	addStringCell(row, optionalIntCell(rowData.SalidaID))
+	addStringCell(row, rowData.SalidaConsecutivo)
+	addStringCell(row, rowData.SalidaEstado)
+	addStringCell(row, timeCell(rowData.SalidaFechaCreacion))
+	addStringCell(row, timePtrCell(rowData.SalidaFechaCorte))
+	addStringCell(row, rowData.SalidaFuncionarioAsignado)
+	addStringCell(row, rowData.SalidaConceptoTransaccionContable)
+	addStringCell(row, timeCell(rowData.SalidaFechaTransaccionContable))
+	addStringCell(row, rowData.TrasladosAsociados)
+	addStringCell(row, rowData.CuentaDebitoSalida)
+	addStringCell(row, rowData.CuentaCreditoSalida)
+}
 
-	for _, value := range values {
-		row.AddCell().SetString(value)
-	}
+func addStringCell(row *xlsx.Row, value string) {
+	row.AddCell().SetString(value)
+}
+
+func addDecimalCell(row *xlsx.Row, value float64) {
+	cell := row.AddCell()
+	cell.SetFloatWithFormat(value, decimalNumFmt)
 }
 
 func resolveCuentaMovimientoLabel(cuentaID string, transaccion *models.InfoTransaccionContable, debito bool) string {
