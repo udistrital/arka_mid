@@ -190,6 +190,15 @@ func TestGenerarReporteElementos(t *testing.T) {
 	if dataRow.Cells[43].String() != "151001 - Equipo de cómputo" {
 		t.Fatalf("cuenta_credito_salida inesperada: %q", dataRow.Cells[43].String())
 	}
+	if dataRow.Cells[14].Type() != xlsx.CellTypeNumeric {
+		t.Fatalf("elemento_valor_unitario debe ser numérico, se obtuvo tipo %v", dataRow.Cells[14].Type())
+	}
+	if dataRow.Cells[14].GetNumberFormat() != decimalNumFmt {
+		t.Fatalf("formato numérico inesperado para elemento_valor_unitario: %q", dataRow.Cells[14].GetNumberFormat())
+	}
+	if dataRow.Cells[14].Value != "1250" {
+		t.Fatalf("valor interno inesperado para elemento_valor_unitario: %q", dataRow.Cells[14].Value)
+	}
 }
 
 func TestGenerarReporteElementosFechaFinalMenor(t *testing.T) {
