@@ -14,8 +14,10 @@ import (
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
+	crudActaRecibido "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
+	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -28,6 +30,7 @@ const (
 	sheetName      = "EntradasElementos"
 	historyWorkers = 8
 	salidaWorkers  = 6
+	decimalNumFmt  = "#.##0,00"
 )
 
 type entradaReporteData struct {
@@ -37,6 +40,9 @@ type entradaReporteData struct {
 	Elementos           []*models.DetalleElemento
 	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
 	SalidasPorElemento  map[int]*salidaReporteData
+	Proveedor           string
+	FacturaConsecutivo  string
+	FacturaFecha        time.Time
 }
 
 type salidaReporteData struct {
@@ -45,6 +51,8 @@ type salidaReporteData struct {
 	FuncionarioAsignado string
 	TrasladosAsociados  string
 	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
+	Sede                string
+	Dependencia         string
 }
 
 type salidaReporteBaseData struct {
@@ -52,101 +60,96 @@ type salidaReporteBaseData struct {
 	TransaccionContable *models.InfoTransaccionContable
 	FuncionarioAsignado string
 	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
+	Sede                string
+	Dependencia         string
 }
 
 type reporteElementoEntradaRow struct {
-	EntradaID                          int
-	EntradaConsecutivo                 string
-	EntradaEstado                      string
-	EntradaFechaCreacion               time.Time
-	EntradaFechaCorte                  *time.Time
-	EntradaActaRecibidoID              int
-	EntradaConceptoTransaccionContable string
-	EntradaFechaTransaccionContable    time.Time
-	ElementoID                         int
-	ElementoNombre                     string
-	ElementoCantidad                   int
-	ElementoMarca                      string
-	ElementoSerie                      string
-	ElementoUnidadMedida               int
-	ElementoValorUnitario              float64
-	ElementoSubtotal                   float64
-	ElementoDescuento                  float64
-	ElementoValorTotal                 float64
-	ElementoPorcentajeIvaID            int
-	ElementoValorIva                   float64
-	ElementoValorFinal                 float64
-	ElementoSubgrupoID                 int
-	ElementoSubgrupoCodigo             string
-	ElementoSubgrupoNombre             string
-	ElementoTipoBienID                 int
-	ElementoTipoBienNombre             string
-	ElementoActaRecibidoID             int
-	ElementoPlaca                      string
-	ElementoActivo                     bool
-	ElementoFechaCreacion              time.Time
-	ElementoFechaModificacion          time.Time
-	CuentaDebitoEntrada                string
-	CuentaCreditoEntrada               string
-	SalidaID                           int
-	SalidaConsecutivo                  string
-	SalidaEstado                       string
-	SalidaFechaCreacion                time.Time
-	SalidaFechaCorte                   *time.Time
-	SalidaFuncionarioAsignado          string
-	SalidaConceptoTransaccionContable  string
-	SalidaFechaTransaccionContable     time.Time
-	TrasladosAsociados                 string
-	CuentaDebitoSalida                 string
-	CuentaCreditoSalida                string
+	// Columnas según lista solicitada
+	ElementoNombre            string
+	ElementoMarca             string
+	ElementoSerie             string
+	ElementoPlaca             string
+	ElementoCantidad          int
+	ElementoValorUnitario     float64
+	ElementoValorTotal        float64
+	ElementoPorcentajeIvaID   int
+	ElementoValorIva          float64
+	ElementoValorFinal        float64
+	ElementoSubgrupoNombre    string
+	EntradaProveedor          string
+	EntradaFacturaConsecutivo string
+	EntradaFacturaFecha       time.Time
+	ElementoVidaUtilCatalogo  float64
+	TipoEntrada               string
+	EntradaFechaCreacion      time.Time
+	EntradaConsecutivo        string
+	CuentaDebitoEntrada       string
+	CuentaCreditoEntrada      string
+	SalidaFechaCreacion       time.Time
+	SalidaConsecutivo         string
+	SalidaFuncionarioAsignado string
+	SalidaSede                string
+	SalidaDependencia         string
+	CuentaDebitoSalida        string
+	CuentaCreditoSalida       string
+
+	// Columnas existentes que no están en la lista (al final)
+	EntradaEstado          string
+	EntradaActaRecibidoID  int
+	ElementoSubtotal       float64
+	ElementoDescuento      float64
+	ElementoSubgrupoCodigo string
+	ElementoTipoBienNombre string
+	SalidaEstado           string
+	SalidaFechaCorte       *time.Time
 }
 
 var (
 	reporteElementosHeaders = []string{
-		"entrada_id",
-		"entrada_consecutivo",
+		"Vigencia",
+		"Periodo",
+		"Nombre / Descripción",
+		"Marca",
+		"Serie",
+		"Placa",
+		"Cantidad",
+		"Valor unitario",
+		"VALOR TOTAL FACTURA",
+		"Porcentaje IVA",
+		"IVA",
+		"Total más IVA",
+		"Clase",
+		"Proveedor",
+		"Consecutivo Factura",
+		"Fecha Factura",
+		"Vida útil (años)",
+		"Tipo de entrada",
+		"Fecha entrada",
+		"Consecutivo Entrada",
+		"Cuenta débito entrada",
+		"Cuenta crédito entrada",
+		"Fecha salida",
+		"Consecutivo salida",
+		"Funcionario asignado",
+		"Sede",
+		"Cod. Sede Centro Costo",
+		"Dependencia",
+		"Cod. Dependencia Centro Costo",
+		"Cod. Ubicación Centro Costo",
+		"Cuenta débito salida",
+		"Cuenta crédito salida",
+		"Fecha depreciación",
+		"Meses transcurridos",
+		"Vida útil",
 		"entrada_estado",
-		"entrada_fecha_creacion",
-		"entrada_fecha_corte",
 		"entrada_acta_recibido_id",
-		"entrada_concepto_transaccion_contable",
-		"entrada_fecha_transaccion_contable",
-		"elemento_id",
-		"elemento_nombre",
-		"elemento_cantidad",
-		"elemento_marca",
-		"elemento_serie",
-		"elemento_unidad_medida",
-		"elemento_valor_unitario",
 		"elemento_subtotal",
 		"elemento_descuento",
-		"elemento_valor_total",
-		"elemento_porcentaje_iva_id",
-		"elemento_valor_iva",
-		"elemento_valor_final",
-		"elemento_subgrupo_id",
 		"elemento_subgrupo_codigo",
-		"elemento_subgrupo_nombre",
-		"elemento_tipo_bien_id",
-		"elemento_tipo_bien_nombre",
-		"elemento_acta_recibido_id",
-		"elemento_placa",
-		"elemento_activo",
-		"elemento_fecha_creacion",
-		"elemento_fecha_modificacion",
-		"cuenta_debito_entrada",
-		"cuenta_credito_entrada",
-		"salida_id",
-		"salida_consecutivo",
+		"Tipo de bien",
 		"salida_estado",
-		"salida_fecha_creacion",
 		"salida_fecha_corte",
-		"salida_funcionario_asignado",
-		"salida_concepto_transaccion_contable",
-		"salida_fecha_transaccion_contable",
-		"traslados_asociados",
-		"cuenta_debito_salida",
-		"cuenta_credito_salida",
 	}
 
 	consultarEntradasReporteData = consultarEntradasReporteDataDefault
@@ -317,6 +320,11 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 		return nil, outputError
 	}
 
+	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntrada(formato)
+	if outputError != nil {
+		return nil, outputError
+	}
+
 	salidasPorElemento, outputError := resolverSalidasPorElemento(elementos)
 	if outputError != nil {
 		return nil, outputError
@@ -340,9 +348,107 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 		Elementos:           elementos,
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
 		SalidasPorElemento:  salidasPorElemento,
+		Proveedor:           proveedor,
+		FacturaConsecutivo:  facturaConsecutivo,
+		FacturaFecha:        facturaFecha,
 	}
 
 	return entrada, nil
+}
+
+func consultarMetadataEntrada(formato models.FormatoBaseEntrada) (proveedor, facturaConsecutivo string, facturaFecha time.Time, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarMetadataEntrada - Unhandled Error!", "500")
+
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		firstErr map[string]interface{}
+	)
+
+	setErr := func(err map[string]interface{}) {
+		if err == nil {
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	if formato.ActaRecibidoId > 0 {
+		wg.Add(1)
+		go func(actaRecibidoID int) {
+			defer wg.Done()
+			proveedor_, err := consultarProveedorActa(actaRecibidoID)
+			if err != nil {
+				setErr(err)
+				return
+			}
+			mu.Lock()
+			proveedor = proveedor_
+			mu.Unlock()
+		}(formato.ActaRecibidoId)
+	}
+
+	if formato.Factura > 0 {
+		wg.Add(1)
+		go func(facturaID int) {
+			defer wg.Done()
+			consecutivo, fecha, err := consultarFacturaSoporte(facturaID)
+			if err != nil {
+				setErr(err)
+				return
+			}
+			mu.Lock()
+			facturaConsecutivo = consecutivo
+			facturaFecha = fecha
+			mu.Unlock()
+		}(formato.Factura)
+	}
+
+	wg.Wait()
+	if firstErr != nil {
+		return "", "", time.Time{}, firstErr
+	}
+
+	return proveedor, facturaConsecutivo, facturaFecha, nil
+}
+
+func consultarProveedorActa(actaRecibidoID int) (proveedor string, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarProveedorActa - Unhandled Error!", "500")
+
+	if actaRecibidoID <= 0 {
+		return "", nil
+	}
+
+	historicos, outputError := crudActaRecibido.GetAllHistoricoActa("ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID), "", "Id", "desc", "", "1")
+	if outputError != nil || len(historicos) == 0 || historicos[0].ProveedorId <= 0 {
+		return "", outputError
+	}
+
+	tercero, outputError := terceros.GetNombreTerceroById(historicos[0].ProveedorId)
+	if outputError != nil {
+		return "", outputError
+	}
+
+	return identificacionTerceroLabel(tercero), nil
+}
+
+func consultarFacturaSoporte(facturaID int) (consecutivo string, fecha time.Time, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarFacturaSoporte - Unhandled Error!", "500")
+
+	if facturaID <= 0 {
+		return "", time.Time{}, nil
+	}
+
+	var soporte models.SoporteActa
+	outputError = crudActaRecibido.GetSoporteById(facturaID, &soporte)
+	if outputError != nil {
+		return "", time.Time{}, outputError
+	}
+
+	return soporte.Consecutivo, soporte.FechaSoporte, nil
 }
 
 func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*models.DetalleElemento, outputError map[string]interface{}) {
@@ -524,6 +630,8 @@ func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPor
 			FuncionarioAsignado: base.FuncionarioAsignado,
 			TrasladosAsociados:  trasladosAsociadosLabel(historial.Traslados),
 			CuentasPorSubgrupo:  base.CuentasPorSubgrupo,
+			Sede:                base.Sede,
+			Dependencia:         base.Dependencia,
 		}
 	}
 
@@ -659,6 +767,8 @@ func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []i
 		return nil, nil
 	}
 
+	sede, dependencia := salidaUbicacionInfo(movimiento)
+
 	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
 	if movimiento.FormatoTipoMovimientoId != nil && movimiento.FormatoTipoMovimientoId.Id > 0 && len(subgrupos) > 0 {
 		outputError = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(movimiento.FormatoTipoMovimientoId.Id, subgrupos, cuentasPorSubgrupo)
@@ -672,6 +782,8 @@ func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []i
 		TransaccionContable: consultarTransaccionContableSalida(movimiento),
 		FuncionarioAsignado: funcionarioSalidaLabel(movimiento),
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
+		Sede:                sede,
+		Dependencia:         dependencia,
 	}
 
 	return salida, nil
@@ -746,11 +858,7 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 			}
 
 			subgrupoID, subgrupoCodigo, subgrupoNombre := subgrupoInfo(elemento)
-			tipoBienID, tipoBienNombre := tipoBienInfo(elemento)
-			actaRecibidoID := 0
-			if elemento.ActaRecibidoId != nil {
-				actaRecibidoID = elemento.ActaRecibidoId.Id
-			}
+			_, tipoBienNombre := tipoBienInfo(elemento)
 
 			movimientoCuenta := entrada.CuentasPorSubgrupo[subgrupoID]
 			salida := entrada.SalidasPorElemento[elemento.Id]
@@ -759,50 +867,41 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				salidaCuenta = salida.CuentasPorSubgrupo[subgrupoID]
 			}
 			row := &reporteElementoEntradaRow{
-				EntradaID:                          entrada.Movimiento.Id,
-				EntradaConsecutivo:                 stringPtrValue(entrada.Movimiento.Consecutivo),
-				EntradaEstado:                      estadoMovimientoNombre(entrada.Movimiento),
-				EntradaFechaCreacion:               entrada.Movimiento.FechaCreacion,
-				EntradaFechaCorte:                  entrada.Movimiento.FechaCorte,
-				EntradaActaRecibidoID:              entrada.Formato.ActaRecibidoId,
-				EntradaConceptoTransaccionContable: transaccionConcepto(entrada.TransaccionContable),
-				EntradaFechaTransaccionContable:    transaccionFecha(entrada.TransaccionContable),
-				ElementoID:                         elemento.Id,
-				ElementoNombre:                     elemento.Nombre,
-				ElementoCantidad:                   elemento.Cantidad,
-				ElementoMarca:                      elemento.Marca,
-				ElementoSerie:                      elemento.Serie,
-				ElementoUnidadMedida:               elemento.UnidadMedida,
-				ElementoValorUnitario:              elemento.ValorUnitario,
-				ElementoSubtotal:                   elemento.Subtotal,
-				ElementoDescuento:                  elemento.Descuento,
-				ElementoValorTotal:                 elemento.ValorTotal,
-				ElementoPorcentajeIvaID:            elemento.PorcentajeIvaId,
-				ElementoValorIva:                   elemento.ValorIva,
-				ElementoValorFinal:                 elemento.ValorFinal,
-				ElementoSubgrupoID:                 subgrupoID,
-				ElementoSubgrupoCodigo:             subgrupoCodigo,
-				ElementoSubgrupoNombre:             subgrupoNombre,
-				ElementoTipoBienID:                 tipoBienID,
-				ElementoTipoBienNombre:             tipoBienNombre,
-				ElementoActaRecibidoID:             actaRecibidoID,
-				ElementoPlaca:                      elemento.Placa,
-				ElementoActivo:                     elemento.Activo,
-				ElementoFechaCreacion:              elemento.FechaCreacion,
-				ElementoFechaModificacion:          elemento.FechaModificacion,
-				CuentaDebitoEntrada:                resolveCuentaMovimientoLabel(movimientoCuenta.CuentaDebitoId, entrada.TransaccionContable, true),
-				CuentaCreditoEntrada:               resolveCuentaMovimientoLabel(movimientoCuenta.CuentaCreditoId, entrada.TransaccionContable, false),
-				SalidaID:                           movimientoID(salida),
-				SalidaConsecutivo:                  movimientoConsecutivo(salida),
-				SalidaEstado:                       movimientoEstado(salida),
-				SalidaFechaCreacion:                movimientoFechaCreacion(salida),
-				SalidaFechaCorte:                   movimientoFechaCorte(salida),
-				SalidaFuncionarioAsignado:          salidaFuncionario(salida),
-				SalidaConceptoTransaccionContable:  movimientoTransaccionConcepto(salida),
-				SalidaFechaTransaccionContable:     movimientoTransaccionFecha(salida),
-				TrasladosAsociados:                 movimientoTraslados(salida),
-				CuentaDebitoSalida:                 resolveCuentaMovimientoLabel(salidaCuenta.CuentaDebitoId, transaccionContableSalida(salida), true),
-				CuentaCreditoSalida:                resolveCuentaMovimientoLabel(salidaCuenta.CuentaCreditoId, transaccionContableSalida(salida), false),
+				EntradaConsecutivo:        stringPtrValue(entrada.Movimiento.Consecutivo),
+				EntradaEstado:             estadoMovimientoNombre(entrada.Movimiento),
+				EntradaFechaCreacion:      entrada.Movimiento.FechaCreacion,
+				EntradaActaRecibidoID:     entrada.Formato.ActaRecibidoId,
+				EntradaProveedor:          entrada.Proveedor,
+				EntradaFacturaConsecutivo: entrada.FacturaConsecutivo,
+				EntradaFacturaFecha:       entrada.FacturaFecha,
+				TipoEntrada:               tipoEntradaNombre(entrada.Movimiento),
+				ElementoNombre:            elemento.Nombre,
+				ElementoCantidad:          elemento.Cantidad,
+				ElementoMarca:             elemento.Marca,
+				ElementoSerie:             elemento.Serie,
+				ElementoValorUnitario:     elemento.ValorUnitario,
+				ElementoSubtotal:          elemento.Subtotal,
+				ElementoDescuento:         elemento.Descuento,
+				ElementoValorTotal:        elemento.ValorTotal,
+				ElementoPorcentajeIvaID:   elemento.PorcentajeIvaId,
+				ElementoValorIva:          elemento.ValorIva,
+				ElementoValorFinal:        elemento.ValorFinal,
+				ElementoSubgrupoCodigo:    subgrupoCodigo,
+				ElementoSubgrupoNombre:    subgrupoNombre,
+				ElementoTipoBienNombre:    tipoBienNombre,
+				ElementoVidaUtilCatalogo:  vidaUtilCatalogo(elemento),
+				ElementoPlaca:             elemento.Placa,
+				CuentaDebitoEntrada:       resolveCuentaMovimientoLabel(movimientoCuenta.CuentaDebitoId, entrada.TransaccionContable, true),
+				CuentaCreditoEntrada:      resolveCuentaMovimientoLabel(movimientoCuenta.CuentaCreditoId, entrada.TransaccionContable, false),
+				SalidaConsecutivo:         movimientoConsecutivo(salida),
+				SalidaEstado:              movimientoEstado(salida),
+				SalidaFechaCreacion:       movimientoFechaCreacion(salida),
+				SalidaFechaCorte:          movimientoFechaCorte(salida),
+				SalidaFuncionarioAsignado: salidaFuncionario(salida),
+				SalidaSede:                salidaSede(salida),
+				SalidaDependencia:         salidaDependencia(salida),
+				CuentaDebitoSalida:        resolveCuentaMovimientoLabel(salidaCuenta.CuentaDebitoId, transaccionContableSalida(salida), true),
+				CuentaCreditoSalida:       resolveCuentaMovimientoLabel(salidaCuenta.CuentaCreditoId, transaccionContableSalida(salida), false),
 			}
 			rows = append(rows, row)
 		}
@@ -817,56 +916,62 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	}
 
 	row := hoja.AddRow()
-	values := []string{
-		strconv.Itoa(rowData.EntradaID),
-		rowData.EntradaConsecutivo,
-		rowData.EntradaEstado,
-		timeCell(rowData.EntradaFechaCreacion),
-		timePtrCell(rowData.EntradaFechaCorte),
-		strconv.Itoa(rowData.EntradaActaRecibidoID),
-		rowData.EntradaConceptoTransaccionContable,
-		timeCell(rowData.EntradaFechaTransaccionContable),
-		strconv.Itoa(rowData.ElementoID),
-		rowData.ElementoNombre,
-		strconv.Itoa(rowData.ElementoCantidad),
-		rowData.ElementoMarca,
-		rowData.ElementoSerie,
-		strconv.Itoa(rowData.ElementoUnidadMedida),
-		floatCell(rowData.ElementoValorUnitario),
-		floatCell(rowData.ElementoSubtotal),
-		floatCell(rowData.ElementoDescuento),
-		floatCell(rowData.ElementoValorTotal),
-		strconv.Itoa(rowData.ElementoPorcentajeIvaID),
-		floatCell(rowData.ElementoValorIva),
-		floatCell(rowData.ElementoValorFinal),
-		strconv.Itoa(rowData.ElementoSubgrupoID),
-		rowData.ElementoSubgrupoCodigo,
-		rowData.ElementoSubgrupoNombre,
-		strconv.Itoa(rowData.ElementoTipoBienID),
-		rowData.ElementoTipoBienNombre,
-		strconv.Itoa(rowData.ElementoActaRecibidoID),
-		rowData.ElementoPlaca,
-		strconv.FormatBool(rowData.ElementoActivo),
-		timeCell(rowData.ElementoFechaCreacion),
-		timeCell(rowData.ElementoFechaModificacion),
-		rowData.CuentaDebitoEntrada,
-		rowData.CuentaCreditoEntrada,
-		optionalIntCell(rowData.SalidaID),
-		rowData.SalidaConsecutivo,
-		rowData.SalidaEstado,
-		timeCell(rowData.SalidaFechaCreacion),
-		timePtrCell(rowData.SalidaFechaCorte),
-		rowData.SalidaFuncionarioAsignado,
-		rowData.SalidaConceptoTransaccionContable,
-		timeCell(rowData.SalidaFechaTransaccionContable),
-		rowData.TrasladosAsociados,
-		rowData.CuentaDebitoSalida,
-		rowData.CuentaCreditoSalida,
-	}
 
-	for _, value := range values {
-		row.AddCell().SetString(value)
-	}
+	// Columnas según lista solicitada (vacías donde no hay dato)
+	addStringCell(row, "")                                            // Vigencia
+	addStringCell(row, "")                                            // Periodo
+	addStringCell(row, rowData.ElementoNombre)                        // Nombre / Descripción
+	addStringCell(row, rowData.ElementoMarca)                         // Marca
+	addStringCell(row, rowData.ElementoSerie)                         // Serie
+	addStringCell(row, rowData.ElementoPlaca)                         // Placa
+	addStringCell(row, strconv.Itoa(rowData.ElementoCantidad))        // Cantidad
+	addDecimalCell(row, rowData.ElementoValorUnitario)                // Valor unitario
+	addDecimalCell(row, rowData.ElementoValorTotal)                   // VALOR TOTAL FACTURA
+	addStringCell(row, strconv.Itoa(rowData.ElementoPorcentajeIvaID)) // Porcentaje IVA
+	addDecimalCell(row, rowData.ElementoValorIva)                     // IVA
+	addDecimalCell(row, rowData.ElementoValorFinal)                   // Total más IVA
+	addStringCell(row, rowData.ElementoSubgrupoNombre)                // Clase
+	addStringCell(row, rowData.EntradaProveedor)                      // Proveedor
+	addStringCell(row, rowData.EntradaFacturaConsecutivo)             // Consecutivo Factura
+	addStringCell(row, timeCell(rowData.EntradaFacturaFecha))         // Fecha Factura
+	addDecimalCell(row, rowData.ElementoVidaUtilCatalogo)             // Vida útil (años)
+	addStringCell(row, rowData.TipoEntrada)                           // Tipo de entrada
+	addStringCell(row, timeCell(rowData.EntradaFechaCreacion))        // Fecha entrada
+	addStringCell(row, rowData.EntradaConsecutivo)                    // Consecutivo Entrada
+	addStringCell(row, rowData.CuentaDebitoEntrada)                   // Cuenta débito entrada
+	addStringCell(row, rowData.CuentaCreditoEntrada)                  // Cuenta crédito entrada
+	addStringCell(row, timeCell(rowData.SalidaFechaCreacion))         // Fecha salida
+	addStringCell(row, rowData.SalidaConsecutivo)                     // Consecutivo salida
+	addStringCell(row, rowData.SalidaFuncionarioAsignado)             // Funcionario asignado
+	addStringCell(row, rowData.SalidaSede)                            // Sede
+	addStringCell(row, "")                                            // Cod. Sede Centro Costo
+	addStringCell(row, rowData.SalidaDependencia)                     // Dependencia
+	addStringCell(row, "")                                            // Cod. Dependencia Centro Costo
+	addStringCell(row, "")                                            // Cod. Ubicación Centro Costo
+	addStringCell(row, rowData.CuentaDebitoSalida)                    // Cuenta débito salida
+	addStringCell(row, rowData.CuentaCreditoSalida)                   // Cuenta crédito salida
+	addStringCell(row, "")                                            // Fecha depreciación
+	addStringCell(row, "")                                            // Meses transcurridos
+	addStringCell(row, "")                                            // Vida útil
+
+	// Columnas existentes fuera de la lista
+	addStringCell(row, rowData.EntradaEstado)
+	addStringCell(row, strconv.Itoa(rowData.EntradaActaRecibidoID))
+	addDecimalCell(row, rowData.ElementoSubtotal)
+	addDecimalCell(row, rowData.ElementoDescuento)
+	addStringCell(row, rowData.ElementoSubgrupoCodigo)
+	addStringCell(row, rowData.ElementoTipoBienNombre)
+	addStringCell(row, rowData.SalidaEstado)
+	addStringCell(row, timePtrCell(rowData.SalidaFechaCorte))
+}
+
+func addStringCell(row *xlsx.Row, value string) {
+	row.AddCell().SetString(value)
+}
+
+func addDecimalCell(row *xlsx.Row, value float64) {
+	cell := row.AddCell()
+	cell.SetFloatWithFormat(value, decimalNumFmt)
 }
 
 func resolveCuentaMovimientoLabel(cuentaID string, transaccion *models.InfoTransaccionContable, debito bool) string {
@@ -998,13 +1103,6 @@ func movimientoTieneEstado(movimiento *models.Movimiento, estadosPermitidos ...s
 	return false
 }
 
-func movimientoID(salida *salidaReporteData) int {
-	if salida == nil || salida.Movimiento == nil {
-		return 0
-	}
-	return salida.Movimiento.Id
-}
-
 func movimientoConsecutivo(salida *salidaReporteData) string {
 	if salida == nil || salida.Movimiento == nil {
 		return ""
@@ -1040,25 +1138,18 @@ func salidaFuncionario(salida *salidaReporteData) string {
 	return salida.FuncionarioAsignado
 }
 
-func movimientoTransaccionConcepto(salida *salidaReporteData) string {
+func salidaSede(salida *salidaReporteData) string {
 	if salida == nil {
 		return ""
 	}
-	return transaccionConcepto(salida.TransaccionContable)
+	return salida.Sede
 }
 
-func movimientoTransaccionFecha(salida *salidaReporteData) time.Time {
-	if salida == nil {
-		return time.Time{}
-	}
-	return transaccionFecha(salida.TransaccionContable)
-}
-
-func movimientoTraslados(salida *salidaReporteData) string {
+func salidaDependencia(salida *salidaReporteData) string {
 	if salida == nil {
 		return ""
 	}
-	return salida.TrasladosAsociados
+	return salida.Dependencia
 }
 
 func transaccionContableSalida(salida *salidaReporteData) *models.InfoTransaccionContable {
@@ -1066,6 +1157,59 @@ func transaccionContableSalida(salida *salidaReporteData) *models.InfoTransaccio
 		return nil
 	}
 	return salida.TransaccionContable
+}
+
+func tipoEntradaNombre(movimiento *models.Movimiento) string {
+	if movimiento == nil || movimiento.FormatoTipoMovimientoId == nil {
+		return ""
+	}
+	return movimiento.FormatoTipoMovimientoId.Nombre
+}
+
+func vidaUtilCatalogo(elemento *models.DetalleElemento) float64 {
+	if elemento == nil || elemento.SubgrupoCatalogoId == nil {
+		return 0
+	}
+	return elemento.SubgrupoCatalogoId.VidaUtil
+}
+
+func salidaUbicacionInfo(movimiento *models.Movimiento) (sede, dependencia string) {
+	if movimiento == nil {
+		return "", ""
+	}
+
+	var detalle models.FormatoSalidaCostos
+	if outputError := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); outputError != nil {
+		return "", ""
+	}
+
+	if detalle.Ubicacion > 0 {
+		if ubicacion, outputError := oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion); outputError == nil && ubicacion != nil {
+			if ubicacion.Sede != nil {
+				sede = ubicacion.Sede.Nombre
+			}
+			if ubicacion.Dependencia != nil {
+				dependencia = ubicacion.Dependencia.Nombre
+			}
+		}
+	}
+
+	if (sede == "" || dependencia == "") && detalle.CentroCostos != "" {
+		if centrosCostos, outputError := movimientosArka.GetAllCentroCostos("query=Codigo:" + detalle.CentroCostos); outputError == nil && len(centrosCostos) > 0 {
+			if sede == "" {
+				sede = centrosCostos[0].Sede
+			}
+			if dependencia == "" {
+				if centrosCostos[0].Dependencia != "" {
+					dependencia = centrosCostos[0].Dependencia
+				} else {
+					dependencia = centrosCostos[0].Nombre
+				}
+			}
+		}
+	}
+
+	return sede, dependencia
 }
 
 func subgrupoInfo(elemento *models.DetalleElemento) (id int, codigo, nombre string) {
@@ -1140,12 +1284,20 @@ func timePtrCell(value *time.Time) string {
 }
 
 func setColumnWidths(hoja *xlsx.Sheet) {
-	_ = hoja.SetColWidth(0, 7, 22)
-	_ = hoja.SetColWidth(8, 13, 18)
-	_ = hoja.SetColWidth(14, 20, 16)
-	_ = hoja.SetColWidth(21, 27, 20)
-	_ = hoja.SetColWidth(28, 30, 22)
-	_ = hoja.SetColWidth(31, 32, 36)
-	_ = hoja.SetColWidth(33, 40, 24)
-	_ = hoja.SetColWidth(41, 43, 36)
+	_ = hoja.SetColWidth(0, 1, 14)   // Vigencia, Periodo
+	_ = hoja.SetColWidth(2, 2, 30)   // Nombre / Descripción
+	_ = hoja.SetColWidth(3, 5, 18)   // Marca, Serie, Placa
+	_ = hoja.SetColWidth(6, 6, 12)   // Cantidad
+	_ = hoja.SetColWidth(7, 11, 18)  // Valores monetarios
+	_ = hoja.SetColWidth(12, 12, 20) // Clase
+	_ = hoja.SetColWidth(13, 13, 30) // Proveedor
+	_ = hoja.SetColWidth(14, 15, 20) // Factura
+	_ = hoja.SetColWidth(16, 17, 18) // Vida útil, Tipo entrada
+	_ = hoja.SetColWidth(18, 19, 22) // Fecha entrada, Consecutivo Entrada
+	_ = hoja.SetColWidth(20, 21, 36) // Cuentas entrada
+	_ = hoja.SetColWidth(22, 24, 22) // Fecha salida, Consecutivo salida, Funcionario
+	_ = hoja.SetColWidth(25, 29, 24) // Sede, Cods centro costo, Dependencia
+	_ = hoja.SetColWidth(30, 31, 36) // Cuentas salida
+	_ = hoja.SetColWidth(32, 34, 18) // Depreciación, Meses, Vida útil
+	_ = hoja.SetColWidth(35, 45, 22) // Columnas extras al final
 }
