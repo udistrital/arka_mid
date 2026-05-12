@@ -65,86 +65,91 @@ type salidaReporteBaseData struct {
 }
 
 type reporteElementoEntradaRow struct {
-	EntradaConsecutivo                 string
-	EntradaEstado                      string
-	EntradaFechaCreacion               time.Time
-	EntradaActaRecibidoID              int
-	EntradaConceptoTransaccionContable string
-	EntradaProveedor                   string
-	EntradaFacturaConsecutivo          string
-	EntradaFacturaFecha                time.Time
-	TipoEntrada                        string
-	ElementoNombre                     string
-	ElementoCantidad                   int
-	ElementoMarca                      string
-	ElementoSerie                      string
-	ElementoUnidadMedida               int
-	ElementoValorUnitario              float64
-	ElementoSubtotal                   float64
-	ElementoDescuento                  float64
-	ElementoValorTotal                 float64
-	ElementoPorcentajeIvaID            int
-	ElementoValorIva                   float64
-	ElementoValorFinal                 float64
-	ElementoSubgrupoCodigo             string
-	ElementoSubgrupoNombre             string
-	ElementoTipoBienNombre             string
-	ElementoVidaUtilCatalogo           float64
-	ElementoPlaca                      string
-	CuentaDebitoEntrada                string
-	CuentaCreditoEntrada               string
-	SalidaConsecutivo                  string
-	SalidaEstado                       string
-	SalidaFechaCreacion                time.Time
-	SalidaFechaCorte                   *time.Time
-	SalidaFuncionarioAsignado          string
-	SalidaSede                         string
-	SalidaDependencia                  string
-	SalidaConceptoTransaccionContable  string
-	CuentaDebitoSalida                 string
-	CuentaCreditoSalida                string
+	// Columnas según lista solicitada
+	ElementoNombre            string
+	ElementoMarca             string
+	ElementoSerie             string
+	ElementoPlaca             string
+	ElementoCantidad          int
+	ElementoValorUnitario     float64
+	ElementoValorTotal        float64
+	ElementoPorcentajeIvaID   int
+	ElementoValorIva          float64
+	ElementoValorFinal        float64
+	ElementoSubgrupoNombre    string
+	EntradaProveedor          string
+	EntradaFacturaConsecutivo string
+	EntradaFacturaFecha       time.Time
+	ElementoVidaUtilCatalogo  float64
+	TipoEntrada               string
+	EntradaFechaCreacion      time.Time
+	EntradaConsecutivo        string
+	CuentaDebitoEntrada       string
+	CuentaCreditoEntrada      string
+	SalidaFechaCreacion       time.Time
+	SalidaConsecutivo         string
+	SalidaFuncionarioAsignado string
+	SalidaSede                string
+	SalidaDependencia         string
+	CuentaDebitoSalida        string
+	CuentaCreditoSalida       string
+
+	// Columnas existentes que no están en la lista (al final)
+	EntradaEstado          string
+	EntradaActaRecibidoID  int
+	ElementoSubtotal       float64
+	ElementoDescuento      float64
+	ElementoSubgrupoCodigo string
+	ElementoTipoBienNombre string
+	SalidaEstado           string
+	SalidaFechaCorte       *time.Time
 }
 
 var (
 	reporteElementosHeaders = []string{
-		"entrada_consecutivo",
-		"entrada_estado",
-		"entrada_fecha_creacion",
-		"entrada_acta_recibido_id",
-		"entrada_concepto_transaccion_contable",
+		"Vigencia",
+		"Periodo",
+		"Nombre / Descripción",
+		"Marca",
+		"Serie",
+		"Placa",
+		"Cantidad",
+		"Valor unitario",
+		"VALOR TOTAL FACTURA",
+		"Porcentaje IVA",
+		"IVA",
+		"Total más IVA",
+		"Clase",
 		"Proveedor",
 		"Consecutivo Factura",
 		"Fecha Factura",
+		"Vida útil (años)",
 		"Tipo de entrada",
-		"Nombre / Descripción",
-		"elemento_cantidad",
-		"elemento_marca",
-		"elemento_serie",
-		"elemento_unidad_medida",
-		"elemento_valor_unitario",
+		"Fecha entrada",
+		"Consecutivo Entrada",
+		"Cuenta débito entrada",
+		"Cuenta crédito entrada",
+		"Fecha salida",
+		"Consecutivo salida",
+		"Funcionario asignado",
+		"Sede",
+		"Cod. Sede Centro Costo",
+		"Dependencia",
+		"Cod. Dependencia Centro Costo",
+		"Cod. Ubicación Centro Costo",
+		"Cuenta débito salida",
+		"Cuenta crédito salida",
+		"Fecha depreciación",
+		"Meses transcurridos",
+		"Vida útil",
+		"entrada_estado",
+		"entrada_acta_recibido_id",
 		"elemento_subtotal",
 		"elemento_descuento",
-		"elemento_valor_total",
-		"Porcentaje IVA",
-		"elemento_valor_iva",
-		"elemento_valor_final",
 		"elemento_subgrupo_codigo",
-		"Clase",
 		"Tipo de bien",
-		"Vida útil (años)",
-		"elemento_placa",
-		"cuenta_debito_entrada",
-		"cuenta_credito_entrada",
-		"salida_consecutivo",
 		"salida_estado",
-		"salida_fecha_creacion",
 		"salida_fecha_corte",
-		"salida_funcionario_asignado",
-		"Sede",
-		"Dependencia",
-		"salida_concepto_transaccion_contable",
-		"cuenta_debito_salida",
-		"cuenta_credito_salida",
 	}
 
 	consultarEntradasReporteData = consultarEntradasReporteDataDefault
@@ -862,44 +867,41 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				salidaCuenta = salida.CuentasPorSubgrupo[subgrupoID]
 			}
 			row := &reporteElementoEntradaRow{
-				EntradaConsecutivo:                 stringPtrValue(entrada.Movimiento.Consecutivo),
-				EntradaEstado:                      estadoMovimientoNombre(entrada.Movimiento),
-				EntradaFechaCreacion:               entrada.Movimiento.FechaCreacion,
-				EntradaActaRecibidoID:              entrada.Formato.ActaRecibidoId,
-				EntradaConceptoTransaccionContable: transaccionConcepto(entrada.TransaccionContable),
-				EntradaProveedor:                   entrada.Proveedor,
-				EntradaFacturaConsecutivo:          entrada.FacturaConsecutivo,
-				EntradaFacturaFecha:                entrada.FacturaFecha,
-				TipoEntrada:                        tipoEntradaNombre(entrada.Movimiento),
-				ElementoNombre:                     elemento.Nombre,
-				ElementoCantidad:                   elemento.Cantidad,
-				ElementoMarca:                      elemento.Marca,
-				ElementoSerie:                      elemento.Serie,
-				ElementoUnidadMedida:               elemento.UnidadMedida,
-				ElementoValorUnitario:              elemento.ValorUnitario,
-				ElementoSubtotal:                   elemento.Subtotal,
-				ElementoDescuento:                  elemento.Descuento,
-				ElementoValorTotal:                 elemento.ValorTotal,
-				ElementoPorcentajeIvaID:            elemento.PorcentajeIvaId,
-				ElementoValorIva:                   elemento.ValorIva,
-				ElementoValorFinal:                 elemento.ValorFinal,
-				ElementoSubgrupoCodigo:             subgrupoCodigo,
-				ElementoSubgrupoNombre:             subgrupoNombre,
-				ElementoTipoBienNombre:             tipoBienNombre,
-				ElementoVidaUtilCatalogo:           vidaUtilCatalogo(elemento),
-				ElementoPlaca:                      elemento.Placa,
-				CuentaDebitoEntrada:                resolveCuentaMovimientoLabel(movimientoCuenta.CuentaDebitoId, entrada.TransaccionContable, true),
-				CuentaCreditoEntrada:               resolveCuentaMovimientoLabel(movimientoCuenta.CuentaCreditoId, entrada.TransaccionContable, false),
-				SalidaConsecutivo:                  movimientoConsecutivo(salida),
-				SalidaEstado:                       movimientoEstado(salida),
-				SalidaFechaCreacion:                movimientoFechaCreacion(salida),
-				SalidaFechaCorte:                   movimientoFechaCorte(salida),
-				SalidaFuncionarioAsignado:          salidaFuncionario(salida),
-				SalidaSede:                         salidaSede(salida),
-				SalidaDependencia:                  salidaDependencia(salida),
-				SalidaConceptoTransaccionContable:  movimientoTransaccionConcepto(salida),
-				CuentaDebitoSalida:                 resolveCuentaMovimientoLabel(salidaCuenta.CuentaDebitoId, transaccionContableSalida(salida), true),
-				CuentaCreditoSalida:                resolveCuentaMovimientoLabel(salidaCuenta.CuentaCreditoId, transaccionContableSalida(salida), false),
+				EntradaConsecutivo:        stringPtrValue(entrada.Movimiento.Consecutivo),
+				EntradaEstado:             estadoMovimientoNombre(entrada.Movimiento),
+				EntradaFechaCreacion:      entrada.Movimiento.FechaCreacion,
+				EntradaActaRecibidoID:     entrada.Formato.ActaRecibidoId,
+				EntradaProveedor:          entrada.Proveedor,
+				EntradaFacturaConsecutivo: entrada.FacturaConsecutivo,
+				EntradaFacturaFecha:       entrada.FacturaFecha,
+				TipoEntrada:               tipoEntradaNombre(entrada.Movimiento),
+				ElementoNombre:            elemento.Nombre,
+				ElementoCantidad:          elemento.Cantidad,
+				ElementoMarca:             elemento.Marca,
+				ElementoSerie:             elemento.Serie,
+				ElementoValorUnitario:     elemento.ValorUnitario,
+				ElementoSubtotal:          elemento.Subtotal,
+				ElementoDescuento:         elemento.Descuento,
+				ElementoValorTotal:        elemento.ValorTotal,
+				ElementoPorcentajeIvaID:   elemento.PorcentajeIvaId,
+				ElementoValorIva:          elemento.ValorIva,
+				ElementoValorFinal:        elemento.ValorFinal,
+				ElementoSubgrupoCodigo:    subgrupoCodigo,
+				ElementoSubgrupoNombre:    subgrupoNombre,
+				ElementoTipoBienNombre:    tipoBienNombre,
+				ElementoVidaUtilCatalogo:  vidaUtilCatalogo(elemento),
+				ElementoPlaca:             elemento.Placa,
+				CuentaDebitoEntrada:       resolveCuentaMovimientoLabel(movimientoCuenta.CuentaDebitoId, entrada.TransaccionContable, true),
+				CuentaCreditoEntrada:      resolveCuentaMovimientoLabel(movimientoCuenta.CuentaCreditoId, entrada.TransaccionContable, false),
+				SalidaConsecutivo:         movimientoConsecutivo(salida),
+				SalidaEstado:              movimientoEstado(salida),
+				SalidaFechaCreacion:       movimientoFechaCreacion(salida),
+				SalidaFechaCorte:          movimientoFechaCorte(salida),
+				SalidaFuncionarioAsignado: salidaFuncionario(salida),
+				SalidaSede:                salidaSede(salida),
+				SalidaDependencia:         salidaDependencia(salida),
+				CuentaDebitoSalida:        resolveCuentaMovimientoLabel(salidaCuenta.CuentaDebitoId, transaccionContableSalida(salida), true),
+				CuentaCreditoSalida:       resolveCuentaMovimientoLabel(salidaCuenta.CuentaCreditoId, transaccionContableSalida(salida), false),
 			}
 			rows = append(rows, row)
 		}
@@ -914,44 +916,53 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	}
 
 	row := hoja.AddRow()
-	addStringCell(row, rowData.EntradaConsecutivo)
+
+	// Columnas según lista solicitada (vacías donde no hay dato)
+	addStringCell(row, "")                                            // Vigencia
+	addStringCell(row, "")                                            // Periodo
+	addStringCell(row, rowData.ElementoNombre)                        // Nombre / Descripción
+	addStringCell(row, rowData.ElementoMarca)                         // Marca
+	addStringCell(row, rowData.ElementoSerie)                         // Serie
+	addStringCell(row, rowData.ElementoPlaca)                         // Placa
+	addStringCell(row, strconv.Itoa(rowData.ElementoCantidad))        // Cantidad
+	addDecimalCell(row, rowData.ElementoValorUnitario)                // Valor unitario
+	addDecimalCell(row, rowData.ElementoValorTotal)                   // VALOR TOTAL FACTURA
+	addStringCell(row, strconv.Itoa(rowData.ElementoPorcentajeIvaID)) // Porcentaje IVA
+	addDecimalCell(row, rowData.ElementoValorIva)                     // IVA
+	addDecimalCell(row, rowData.ElementoValorFinal)                   // Total más IVA
+	addStringCell(row, rowData.ElementoSubgrupoNombre)                // Clase
+	addStringCell(row, rowData.EntradaProveedor)                      // Proveedor
+	addStringCell(row, rowData.EntradaFacturaConsecutivo)             // Consecutivo Factura
+	addStringCell(row, timeCell(rowData.EntradaFacturaFecha))         // Fecha Factura
+	addDecimalCell(row, rowData.ElementoVidaUtilCatalogo)             // Vida útil (años)
+	addStringCell(row, rowData.TipoEntrada)                           // Tipo de entrada
+	addStringCell(row, timeCell(rowData.EntradaFechaCreacion))        // Fecha entrada
+	addStringCell(row, rowData.EntradaConsecutivo)                    // Consecutivo Entrada
+	addStringCell(row, rowData.CuentaDebitoEntrada)                   // Cuenta débito entrada
+	addStringCell(row, rowData.CuentaCreditoEntrada)                  // Cuenta crédito entrada
+	addStringCell(row, timeCell(rowData.SalidaFechaCreacion))         // Fecha salida
+	addStringCell(row, rowData.SalidaConsecutivo)                     // Consecutivo salida
+	addStringCell(row, rowData.SalidaFuncionarioAsignado)             // Funcionario asignado
+	addStringCell(row, rowData.SalidaSede)                            // Sede
+	addStringCell(row, "")                                            // Cod. Sede Centro Costo
+	addStringCell(row, rowData.SalidaDependencia)                     // Dependencia
+	addStringCell(row, "")                                            // Cod. Dependencia Centro Costo
+	addStringCell(row, "")                                            // Cod. Ubicación Centro Costo
+	addStringCell(row, rowData.CuentaDebitoSalida)                    // Cuenta débito salida
+	addStringCell(row, rowData.CuentaCreditoSalida)                   // Cuenta crédito salida
+	addStringCell(row, "")                                            // Fecha depreciación
+	addStringCell(row, "")                                            // Meses transcurridos
+	addStringCell(row, "")                                            // Vida útil
+
+	// Columnas existentes fuera de la lista
 	addStringCell(row, rowData.EntradaEstado)
-	addStringCell(row, timeCell(rowData.EntradaFechaCreacion))
 	addStringCell(row, strconv.Itoa(rowData.EntradaActaRecibidoID))
-	addStringCell(row, rowData.EntradaConceptoTransaccionContable)
-	addStringCell(row, rowData.EntradaProveedor)
-	addStringCell(row, rowData.EntradaFacturaConsecutivo)
-	addStringCell(row, timeCell(rowData.EntradaFacturaFecha))
-	addStringCell(row, rowData.TipoEntrada)
-	addStringCell(row, rowData.ElementoNombre)
-	addStringCell(row, strconv.Itoa(rowData.ElementoCantidad))
-	addStringCell(row, rowData.ElementoMarca)
-	addStringCell(row, rowData.ElementoSerie)
-	addStringCell(row, strconv.Itoa(rowData.ElementoUnidadMedida))
-	addDecimalCell(row, rowData.ElementoValorUnitario)
 	addDecimalCell(row, rowData.ElementoSubtotal)
 	addDecimalCell(row, rowData.ElementoDescuento)
-	addDecimalCell(row, rowData.ElementoValorTotal)
-	addStringCell(row, strconv.Itoa(rowData.ElementoPorcentajeIvaID))
-	addDecimalCell(row, rowData.ElementoValorIva)
-	addDecimalCell(row, rowData.ElementoValorFinal)
 	addStringCell(row, rowData.ElementoSubgrupoCodigo)
-	addStringCell(row, rowData.ElementoSubgrupoNombre)
 	addStringCell(row, rowData.ElementoTipoBienNombre)
-	addDecimalCell(row, rowData.ElementoVidaUtilCatalogo)
-	addStringCell(row, rowData.ElementoPlaca)
-	addStringCell(row, rowData.CuentaDebitoEntrada)
-	addStringCell(row, rowData.CuentaCreditoEntrada)
-	addStringCell(row, rowData.SalidaConsecutivo)
 	addStringCell(row, rowData.SalidaEstado)
-	addStringCell(row, timeCell(rowData.SalidaFechaCreacion))
 	addStringCell(row, timePtrCell(rowData.SalidaFechaCorte))
-	addStringCell(row, rowData.SalidaFuncionarioAsignado)
-	addStringCell(row, rowData.SalidaSede)
-	addStringCell(row, rowData.SalidaDependencia)
-	addStringCell(row, rowData.SalidaConceptoTransaccionContable)
-	addStringCell(row, rowData.CuentaDebitoSalida)
-	addStringCell(row, rowData.CuentaCreditoSalida)
 }
 
 func addStringCell(row *xlsx.Row, value string) {
@@ -1141,13 +1152,6 @@ func salidaDependencia(salida *salidaReporteData) string {
 	return salida.Dependencia
 }
 
-func movimientoTransaccionConcepto(salida *salidaReporteData) string {
-	if salida == nil {
-		return ""
-	}
-	return transaccionConcepto(salida.TransaccionContable)
-}
-
 func transaccionContableSalida(salida *salidaReporteData) *models.InfoTransaccionContable {
 	if salida == nil {
 		return nil
@@ -1280,10 +1284,20 @@ func timePtrCell(value *time.Time) string {
 }
 
 func setColumnWidths(hoja *xlsx.Sheet) {
-	_ = hoja.SetColWidth(0, 8, 22)
-	_ = hoja.SetColWidth(9, 13, 18)
-	_ = hoja.SetColWidth(14, 20, 16)
-	_ = hoja.SetColWidth(21, 25, 20)
-	_ = hoja.SetColWidth(26, 27, 36)
-	_ = hoja.SetColWidth(28, 37, 24)
+	_ = hoja.SetColWidth(0, 1, 14)   // Vigencia, Periodo
+	_ = hoja.SetColWidth(2, 2, 30)   // Nombre / Descripción
+	_ = hoja.SetColWidth(3, 5, 18)   // Marca, Serie, Placa
+	_ = hoja.SetColWidth(6, 6, 12)   // Cantidad
+	_ = hoja.SetColWidth(7, 11, 18)  // Valores monetarios
+	_ = hoja.SetColWidth(12, 12, 20) // Clase
+	_ = hoja.SetColWidth(13, 13, 30) // Proveedor
+	_ = hoja.SetColWidth(14, 15, 20) // Factura
+	_ = hoja.SetColWidth(16, 17, 18) // Vida útil, Tipo entrada
+	_ = hoja.SetColWidth(18, 19, 22) // Fecha entrada, Consecutivo Entrada
+	_ = hoja.SetColWidth(20, 21, 36) // Cuentas entrada
+	_ = hoja.SetColWidth(22, 24, 22) // Fecha salida, Consecutivo salida, Funcionario
+	_ = hoja.SetColWidth(25, 29, 24) // Sede, Cods centro costo, Dependencia
+	_ = hoja.SetColWidth(30, 31, 36) // Cuentas salida
+	_ = hoja.SetColWidth(32, 34, 18) // Depreciación, Meses, Vida útil
+	_ = hoja.SetColWidth(35, 45, 22) // Columnas extras al final
 }
