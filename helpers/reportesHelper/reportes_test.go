@@ -17,6 +17,9 @@ func TestGenerarReporteElementos(t *testing.T) {
 				Id:            7995,
 				Consecutivo:   stringPtr("ENT-7995"),
 				FechaCreacion: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+				FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+					Nombre: "Entrada por compra",
+				},
 				EstadoMovimientoId: &models.EstadoMovimiento{
 					Nombre: "Entrada Aprobada",
 				},
@@ -64,6 +67,7 @@ func TestGenerarReporteElementos(t *testing.T) {
 						Id: 555,
 					},
 					SubgrupoCatalogoId: &models.DetalleSubgrupo{
+						VidaUtil: 5,
 						SubgrupoId: &models.Subgrupo{
 							Id:     9,
 							Codigo: "SG-09",
@@ -82,6 +86,9 @@ func TestGenerarReporteElementos(t *testing.T) {
 					CuentaCreditoId: "cta-cr-1",
 				},
 			},
+			Proveedor:          "900123456 - Proveedor Uno",
+			FacturaConsecutivo: "FAC-2026-001",
+			FacturaFecha:       time.Date(2026, 5, 8, 8, 30, 0, 0, time.UTC),
 			SalidasPorElemento: map[int]*salidaReporteData{
 				101: {
 					Movimiento: &models.Movimiento{
@@ -94,6 +101,8 @@ func TestGenerarReporteElementos(t *testing.T) {
 					},
 					FuncionarioAsignado: "12345 - Funcionario Uno",
 					TrasladosAsociados:  "TRS-1001",
+					Sede:                "Sede Central",
+					Dependencia:         "Almacén General",
 					TransaccionContable: &models.InfoTransaccionContable{
 						Concepto: "Salida Almacén",
 						Fecha:    time.Date(2026, 5, 10, 15, 0, 0, 0, time.UTC),
@@ -161,43 +170,62 @@ func TestGenerarReporteElementos(t *testing.T) {
 	if headers.Cells[0].String() != "entrada_id" {
 		t.Fatalf("encabezado inesperado en la primera columna: %q", headers.Cells[0].String())
 	}
+	headerIndex := buildHeaderIndex(headers)
 
 	dataRow := archivo.Sheets[0].Rows[1]
-	if dataRow.Cells[0].String() != "7995" {
-		t.Fatalf("entrada_id inesperado: %q", dataRow.Cells[0].String())
+	if dataRow.Cells[headerIndex["entrada_id"]].String() != "7995" {
+		t.Fatalf("entrada_id inesperado: %q", dataRow.Cells[headerIndex["entrada_id"]].String())
 	}
-	if dataRow.Cells[9].String() != "Elemento Uno" {
-		t.Fatalf("elemento_nombre inesperado: %q", dataRow.Cells[9].String())
+	if dataRow.Cells[headerIndex["Nombre / Descripción"]].String() != "Elemento Uno" {
+		t.Fatalf("elemento_nombre inesperado: %q", dataRow.Cells[headerIndex["Nombre / Descripción"]].String())
 	}
-	if dataRow.Cells[31].String() != "151001 - Equipo de cómputo" {
-		t.Fatalf("cuenta_debito_entrada inesperada: %q", dataRow.Cells[31].String())
+	if dataRow.Cells[headerIndex["cuenta_debito_entrada"]].String() != "151001 - Equipo de cómputo" {
+		t.Fatalf("cuenta_debito_entrada inesperada: %q", dataRow.Cells[headerIndex["cuenta_debito_entrada"]].String())
 	}
-	if dataRow.Cells[32].String() != "240801 - Bienes recibidos" {
-		t.Fatalf("cuenta_credito_entrada inesperada: %q", dataRow.Cells[32].String())
+	if dataRow.Cells[headerIndex["cuenta_credito_entrada"]].String() != "240801 - Bienes recibidos" {
+		t.Fatalf("cuenta_credito_entrada inesperada: %q", dataRow.Cells[headerIndex["cuenta_credito_entrada"]].String())
 	}
-	if dataRow.Cells[33].String() != "9001" {
-		t.Fatalf("salida_id inesperado: %q", dataRow.Cells[33].String())
+	if dataRow.Cells[headerIndex["Proveedor"]].String() != "900123456 - Proveedor Uno" {
+		t.Fatalf("proveedor inesperado: %q", dataRow.Cells[headerIndex["Proveedor"]].String())
 	}
-	if dataRow.Cells[38].String() != "12345 - Funcionario Uno" {
-		t.Fatalf("salida_funcionario_asignado inesperado: %q", dataRow.Cells[38].String())
+	if dataRow.Cells[headerIndex["Consecutivo Factura"]].String() != "FAC-2026-001" {
+		t.Fatalf("factura inesperada: %q", dataRow.Cells[headerIndex["Consecutivo Factura"]].String())
 	}
-	if dataRow.Cells[41].String() != "TRS-1001" {
-		t.Fatalf("traslados_asociados inesperado: %q", dataRow.Cells[41].String())
+	if dataRow.Cells[headerIndex["Tipo de entrada"]].String() != "Entrada por compra" {
+		t.Fatalf("tipo de entrada inesperado: %q", dataRow.Cells[headerIndex["Tipo de entrada"]].String())
 	}
-	if dataRow.Cells[42].String() != "839090 - Responsabilidades en proceso" {
-		t.Fatalf("cuenta_debito_salida inesperada: %q", dataRow.Cells[42].String())
+	if dataRow.Cells[headerIndex["Vida útil (años)"]].Value != "5" {
+		t.Fatalf("vida útil inesperada: %q", dataRow.Cells[headerIndex["Vida útil (años)"]].Value)
 	}
-	if dataRow.Cells[43].String() != "151001 - Equipo de cómputo" {
-		t.Fatalf("cuenta_credito_salida inesperada: %q", dataRow.Cells[43].String())
+	if dataRow.Cells[headerIndex["salida_id"]].String() != "9001" {
+		t.Fatalf("salida_id inesperado: %q", dataRow.Cells[headerIndex["salida_id"]].String())
 	}
-	if dataRow.Cells[14].Type() != xlsx.CellTypeNumeric {
-		t.Fatalf("elemento_valor_unitario debe ser numérico, se obtuvo tipo %v", dataRow.Cells[14].Type())
+	if dataRow.Cells[headerIndex["salida_funcionario_asignado"]].String() != "12345 - Funcionario Uno" {
+		t.Fatalf("salida_funcionario_asignado inesperado: %q", dataRow.Cells[headerIndex["salida_funcionario_asignado"]].String())
 	}
-	if dataRow.Cells[14].GetNumberFormat() != decimalNumFmt {
-		t.Fatalf("formato numérico inesperado para elemento_valor_unitario: %q", dataRow.Cells[14].GetNumberFormat())
+	if dataRow.Cells[headerIndex["Sede"]].String() != "Sede Central" {
+		t.Fatalf("sede inesperada: %q", dataRow.Cells[headerIndex["Sede"]].String())
 	}
-	if dataRow.Cells[14].Value != "1250" {
-		t.Fatalf("valor interno inesperado para elemento_valor_unitario: %q", dataRow.Cells[14].Value)
+	if dataRow.Cells[headerIndex["Dependencia"]].String() != "Almacén General" {
+		t.Fatalf("dependencia inesperada: %q", dataRow.Cells[headerIndex["Dependencia"]].String())
+	}
+	if dataRow.Cells[headerIndex["traslados_asociados"]].String() != "TRS-1001" {
+		t.Fatalf("traslados_asociados inesperado: %q", dataRow.Cells[headerIndex["traslados_asociados"]].String())
+	}
+	if dataRow.Cells[headerIndex["cuenta_debito_salida"]].String() != "839090 - Responsabilidades en proceso" {
+		t.Fatalf("cuenta_debito_salida inesperada: %q", dataRow.Cells[headerIndex["cuenta_debito_salida"]].String())
+	}
+	if dataRow.Cells[headerIndex["cuenta_credito_salida"]].String() != "151001 - Equipo de cómputo" {
+		t.Fatalf("cuenta_credito_salida inesperada: %q", dataRow.Cells[headerIndex["cuenta_credito_salida"]].String())
+	}
+	if dataRow.Cells[headerIndex["elemento_valor_unitario"]].Type() != xlsx.CellTypeNumeric {
+		t.Fatalf("elemento_valor_unitario debe ser numérico, se obtuvo tipo %v", dataRow.Cells[headerIndex["elemento_valor_unitario"]].Type())
+	}
+	if dataRow.Cells[headerIndex["elemento_valor_unitario"]].GetNumberFormat() != decimalNumFmt {
+		t.Fatalf("formato numérico inesperado para elemento_valor_unitario: %q", dataRow.Cells[headerIndex["elemento_valor_unitario"]].GetNumberFormat())
+	}
+	if dataRow.Cells[headerIndex["elemento_valor_unitario"]].Value != "1250" {
+		t.Fatalf("valor interno inesperado para elemento_valor_unitario: %q", dataRow.Cells[headerIndex["elemento_valor_unitario"]].Value)
 	}
 }
 
@@ -251,4 +279,12 @@ func mockConsultarEntradasReporteData(t *testing.T, entradas []*entradaReporteDa
 
 func stringPtr(value string) *string {
 	return &value
+}
+
+func buildHeaderIndex(headerRow *xlsx.Row) map[string]int {
+	index := make(map[string]int, len(headerRow.Cells))
+	for i, cell := range headerRow.Cells {
+		index[cell.String()] = i
+	}
+	return index
 }
