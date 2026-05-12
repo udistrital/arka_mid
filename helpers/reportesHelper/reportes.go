@@ -65,19 +65,15 @@ type salidaReporteBaseData struct {
 }
 
 type reporteElementoEntradaRow struct {
-	EntradaID                          int
 	EntradaConsecutivo                 string
 	EntradaEstado                      string
 	EntradaFechaCreacion               time.Time
-	EntradaFechaCorte                  *time.Time
 	EntradaActaRecibidoID              int
 	EntradaConceptoTransaccionContable string
-	EntradaFechaTransaccionContable    time.Time
 	EntradaProveedor                   string
 	EntradaFacturaConsecutivo          string
 	EntradaFacturaFecha                time.Time
 	TipoEntrada                        string
-	ElementoID                         int
 	ElementoNombre                     string
 	ElementoCantidad                   int
 	ElementoMarca                      string
@@ -90,20 +86,13 @@ type reporteElementoEntradaRow struct {
 	ElementoPorcentajeIvaID            int
 	ElementoValorIva                   float64
 	ElementoValorFinal                 float64
-	ElementoSubgrupoID                 int
 	ElementoSubgrupoCodigo             string
 	ElementoSubgrupoNombre             string
-	ElementoTipoBienID                 int
 	ElementoTipoBienNombre             string
 	ElementoVidaUtilCatalogo           float64
-	ElementoActaRecibidoID             int
 	ElementoPlaca                      string
-	ElementoActivo                     bool
-	ElementoFechaCreacion              time.Time
-	ElementoFechaModificacion          time.Time
 	CuentaDebitoEntrada                string
 	CuentaCreditoEntrada               string
-	SalidaID                           int
 	SalidaConsecutivo                  string
 	SalidaEstado                       string
 	SalidaFechaCreacion                time.Time
@@ -112,27 +101,21 @@ type reporteElementoEntradaRow struct {
 	SalidaSede                         string
 	SalidaDependencia                  string
 	SalidaConceptoTransaccionContable  string
-	SalidaFechaTransaccionContable     time.Time
-	TrasladosAsociados                 string
 	CuentaDebitoSalida                 string
 	CuentaCreditoSalida                string
 }
 
 var (
 	reporteElementosHeaders = []string{
-		"entrada_id",
 		"entrada_consecutivo",
 		"entrada_estado",
 		"entrada_fecha_creacion",
-		"entrada_fecha_corte",
 		"entrada_acta_recibido_id",
 		"entrada_concepto_transaccion_contable",
-		"entrada_fecha_transaccion_contable",
 		"Proveedor",
 		"Consecutivo Factura",
 		"Fecha Factura",
 		"Tipo de entrada",
-		"elemento_id",
 		"Nombre / Descripción",
 		"elemento_cantidad",
 		"elemento_marca",
@@ -145,20 +128,13 @@ var (
 		"Porcentaje IVA",
 		"elemento_valor_iva",
 		"elemento_valor_final",
-		"elemento_subgrupo_id",
 		"elemento_subgrupo_codigo",
 		"Clase",
-		"elemento_tipo_bien_id",
 		"Tipo de bien",
 		"Vida útil (años)",
-		"elemento_acta_recibido_id",
 		"elemento_placa",
-		"elemento_activo",
-		"elemento_fecha_creacion",
-		"elemento_fecha_modificacion",
 		"cuenta_debito_entrada",
 		"cuenta_credito_entrada",
-		"salida_id",
 		"salida_consecutivo",
 		"salida_estado",
 		"salida_fecha_creacion",
@@ -167,8 +143,6 @@ var (
 		"Sede",
 		"Dependencia",
 		"salida_concepto_transaccion_contable",
-		"salida_fecha_transaccion_contable",
-		"traslados_asociados",
 		"cuenta_debito_salida",
 		"cuenta_credito_salida",
 	}
@@ -879,11 +853,7 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 			}
 
 			subgrupoID, subgrupoCodigo, subgrupoNombre := subgrupoInfo(elemento)
-			tipoBienID, tipoBienNombre := tipoBienInfo(elemento)
-			actaRecibidoID := 0
-			if elemento.ActaRecibidoId != nil {
-				actaRecibidoID = elemento.ActaRecibidoId.Id
-			}
+			_, tipoBienNombre := tipoBienInfo(elemento)
 
 			movimientoCuenta := entrada.CuentasPorSubgrupo[subgrupoID]
 			salida := entrada.SalidasPorElemento[elemento.Id]
@@ -892,19 +862,15 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				salidaCuenta = salida.CuentasPorSubgrupo[subgrupoID]
 			}
 			row := &reporteElementoEntradaRow{
-				EntradaID:                          entrada.Movimiento.Id,
 				EntradaConsecutivo:                 stringPtrValue(entrada.Movimiento.Consecutivo),
 				EntradaEstado:                      estadoMovimientoNombre(entrada.Movimiento),
 				EntradaFechaCreacion:               entrada.Movimiento.FechaCreacion,
-				EntradaFechaCorte:                  entrada.Movimiento.FechaCorte,
 				EntradaActaRecibidoID:              entrada.Formato.ActaRecibidoId,
 				EntradaConceptoTransaccionContable: transaccionConcepto(entrada.TransaccionContable),
-				EntradaFechaTransaccionContable:    transaccionFecha(entrada.TransaccionContable),
 				EntradaProveedor:                   entrada.Proveedor,
 				EntradaFacturaConsecutivo:          entrada.FacturaConsecutivo,
 				EntradaFacturaFecha:                entrada.FacturaFecha,
 				TipoEntrada:                        tipoEntradaNombre(entrada.Movimiento),
-				ElementoID:                         elemento.Id,
 				ElementoNombre:                     elemento.Nombre,
 				ElementoCantidad:                   elemento.Cantidad,
 				ElementoMarca:                      elemento.Marca,
@@ -917,20 +883,13 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				ElementoPorcentajeIvaID:            elemento.PorcentajeIvaId,
 				ElementoValorIva:                   elemento.ValorIva,
 				ElementoValorFinal:                 elemento.ValorFinal,
-				ElementoSubgrupoID:                 subgrupoID,
 				ElementoSubgrupoCodigo:             subgrupoCodigo,
 				ElementoSubgrupoNombre:             subgrupoNombre,
-				ElementoTipoBienID:                 tipoBienID,
 				ElementoTipoBienNombre:             tipoBienNombre,
 				ElementoVidaUtilCatalogo:           vidaUtilCatalogo(elemento),
-				ElementoActaRecibidoID:             actaRecibidoID,
 				ElementoPlaca:                      elemento.Placa,
-				ElementoActivo:                     elemento.Activo,
-				ElementoFechaCreacion:              elemento.FechaCreacion,
-				ElementoFechaModificacion:          elemento.FechaModificacion,
 				CuentaDebitoEntrada:                resolveCuentaMovimientoLabel(movimientoCuenta.CuentaDebitoId, entrada.TransaccionContable, true),
 				CuentaCreditoEntrada:               resolveCuentaMovimientoLabel(movimientoCuenta.CuentaCreditoId, entrada.TransaccionContable, false),
-				SalidaID:                           movimientoID(salida),
 				SalidaConsecutivo:                  movimientoConsecutivo(salida),
 				SalidaEstado:                       movimientoEstado(salida),
 				SalidaFechaCreacion:                movimientoFechaCreacion(salida),
@@ -939,8 +898,6 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				SalidaSede:                         salidaSede(salida),
 				SalidaDependencia:                  salidaDependencia(salida),
 				SalidaConceptoTransaccionContable:  movimientoTransaccionConcepto(salida),
-				SalidaFechaTransaccionContable:     movimientoTransaccionFecha(salida),
-				TrasladosAsociados:                 movimientoTraslados(salida),
 				CuentaDebitoSalida:                 resolveCuentaMovimientoLabel(salidaCuenta.CuentaDebitoId, transaccionContableSalida(salida), true),
 				CuentaCreditoSalida:                resolveCuentaMovimientoLabel(salidaCuenta.CuentaCreditoId, transaccionContableSalida(salida), false),
 			}
@@ -957,19 +914,15 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	}
 
 	row := hoja.AddRow()
-	addStringCell(row, strconv.Itoa(rowData.EntradaID))
 	addStringCell(row, rowData.EntradaConsecutivo)
 	addStringCell(row, rowData.EntradaEstado)
 	addStringCell(row, timeCell(rowData.EntradaFechaCreacion))
-	addStringCell(row, timePtrCell(rowData.EntradaFechaCorte))
 	addStringCell(row, strconv.Itoa(rowData.EntradaActaRecibidoID))
 	addStringCell(row, rowData.EntradaConceptoTransaccionContable)
-	addStringCell(row, timeCell(rowData.EntradaFechaTransaccionContable))
 	addStringCell(row, rowData.EntradaProveedor)
 	addStringCell(row, rowData.EntradaFacturaConsecutivo)
 	addStringCell(row, timeCell(rowData.EntradaFacturaFecha))
 	addStringCell(row, rowData.TipoEntrada)
-	addStringCell(row, strconv.Itoa(rowData.ElementoID))
 	addStringCell(row, rowData.ElementoNombre)
 	addStringCell(row, strconv.Itoa(rowData.ElementoCantidad))
 	addStringCell(row, rowData.ElementoMarca)
@@ -982,20 +935,13 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	addStringCell(row, strconv.Itoa(rowData.ElementoPorcentajeIvaID))
 	addDecimalCell(row, rowData.ElementoValorIva)
 	addDecimalCell(row, rowData.ElementoValorFinal)
-	addStringCell(row, strconv.Itoa(rowData.ElementoSubgrupoID))
 	addStringCell(row, rowData.ElementoSubgrupoCodigo)
 	addStringCell(row, rowData.ElementoSubgrupoNombre)
-	addStringCell(row, strconv.Itoa(rowData.ElementoTipoBienID))
 	addStringCell(row, rowData.ElementoTipoBienNombre)
 	addDecimalCell(row, rowData.ElementoVidaUtilCatalogo)
-	addStringCell(row, strconv.Itoa(rowData.ElementoActaRecibidoID))
 	addStringCell(row, rowData.ElementoPlaca)
-	addStringCell(row, strconv.FormatBool(rowData.ElementoActivo))
-	addStringCell(row, timeCell(rowData.ElementoFechaCreacion))
-	addStringCell(row, timeCell(rowData.ElementoFechaModificacion))
 	addStringCell(row, rowData.CuentaDebitoEntrada)
 	addStringCell(row, rowData.CuentaCreditoEntrada)
-	addStringCell(row, optionalIntCell(rowData.SalidaID))
 	addStringCell(row, rowData.SalidaConsecutivo)
 	addStringCell(row, rowData.SalidaEstado)
 	addStringCell(row, timeCell(rowData.SalidaFechaCreacion))
@@ -1004,8 +950,6 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	addStringCell(row, rowData.SalidaSede)
 	addStringCell(row, rowData.SalidaDependencia)
 	addStringCell(row, rowData.SalidaConceptoTransaccionContable)
-	addStringCell(row, timeCell(rowData.SalidaFechaTransaccionContable))
-	addStringCell(row, rowData.TrasladosAsociados)
 	addStringCell(row, rowData.CuentaDebitoSalida)
 	addStringCell(row, rowData.CuentaCreditoSalida)
 }
@@ -1148,13 +1092,6 @@ func movimientoTieneEstado(movimiento *models.Movimiento, estadosPermitidos ...s
 	return false
 }
 
-func movimientoID(salida *salidaReporteData) int {
-	if salida == nil || salida.Movimiento == nil {
-		return 0
-	}
-	return salida.Movimiento.Id
-}
-
 func movimientoConsecutivo(salida *salidaReporteData) string {
 	if salida == nil || salida.Movimiento == nil {
 		return ""
@@ -1211,20 +1148,6 @@ func movimientoTransaccionConcepto(salida *salidaReporteData) string {
 	return transaccionConcepto(salida.TransaccionContable)
 }
 
-func movimientoTransaccionFecha(salida *salidaReporteData) time.Time {
-	if salida == nil {
-		return time.Time{}
-	}
-	return transaccionFecha(salida.TransaccionContable)
-}
-
-func movimientoTraslados(salida *salidaReporteData) string {
-	if salida == nil {
-		return ""
-	}
-	return salida.TrasladosAsociados
-}
-
 func transaccionContableSalida(salida *salidaReporteData) *models.InfoTransaccionContable {
 	if salida == nil {
 		return nil
@@ -1244,16 +1167,6 @@ func vidaUtilCatalogo(elemento *models.DetalleElemento) float64 {
 		return 0
 	}
 	return elemento.SubgrupoCatalogoId.VidaUtil
-}
-
-func salidaSedeLabel(movimiento *models.Movimiento) string {
-	sede, _ := salidaUbicacionInfo(movimiento)
-	return sede
-}
-
-func salidaDependenciaLabel(movimiento *models.Movimiento) string {
-	_, dependencia := salidaUbicacionInfo(movimiento)
-	return dependencia
 }
 
 func salidaUbicacionInfo(movimiento *models.Movimiento) (sede, dependencia string) {
@@ -1367,12 +1280,10 @@ func timePtrCell(value *time.Time) string {
 }
 
 func setColumnWidths(hoja *xlsx.Sheet) {
-	_ = hoja.SetColWidth(0, 11, 22)
-	_ = hoja.SetColWidth(12, 17, 18)
-	_ = hoja.SetColWidth(18, 25, 16)
-	_ = hoja.SetColWidth(26, 33, 20)
-	_ = hoja.SetColWidth(34, 37, 22)
-	_ = hoja.SetColWidth(38, 39, 36)
-	_ = hoja.SetColWidth(40, 51, 24)
-	_ = hoja.SetColWidth(52, 53, 36)
+	_ = hoja.SetColWidth(0, 8, 22)
+	_ = hoja.SetColWidth(9, 13, 18)
+	_ = hoja.SetColWidth(14, 20, 16)
+	_ = hoja.SetColWidth(21, 25, 20)
+	_ = hoja.SetColWidth(26, 27, 36)
+	_ = hoja.SetColWidth(28, 37, 24)
 }
