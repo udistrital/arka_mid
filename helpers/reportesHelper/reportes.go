@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net/url"
 	"strconv"
 	"strings"
@@ -971,7 +972,11 @@ func addStringCell(row *xlsx.Row, value string) {
 
 func addDecimalCell(row *xlsx.Row, value float64) {
 	cell := row.AddCell()
-	cell.SetFloatWithFormat(value, decimalNumFmt)
+	cell.SetFloatWithFormat(roundToTwoDecimals(value), decimalNumFmt)
+}
+
+func roundToTwoDecimals(value float64) float64 {
+	return math.Round(value*100) / 100
 }
 
 func resolveCuentaMovimientoLabel(cuentaID string, transaccion *models.InfoTransaccionContable, debito bool) string {
