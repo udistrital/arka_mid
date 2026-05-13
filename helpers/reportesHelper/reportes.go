@@ -116,7 +116,7 @@ var (
 		"Placa",
 		"Cantidad",
 		"Valor unitario",
-		"VALOR TOTAL FACTURA",
+		"VAlor total",
 		"Porcentaje IVA",
 		"IVA",
 		"Total más IVA",
