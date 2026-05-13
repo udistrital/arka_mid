@@ -223,6 +223,9 @@ func TestGenerarReporteElementos(t *testing.T) {
 	if dataRow.Cells[headerIndex["Valor unitario"]].Value != "1250.57" {
 		t.Fatalf("valor interno inesperado para valor unitario: %q", dataRow.Cells[headerIndex["Valor unitario"]].Value)
 	}
+	if dataRow.Cells[headerIndex["Subtotal"]].Value != "2501.13" {
+		t.Fatalf("valor interno inesperado para subtotal: %q", dataRow.Cells[headerIndex["Subtotal"]].Value)
+	}
 	if dataRow.Cells[headerIndex["IVA"]].Value != "475.25" {
 		t.Fatalf("valor interno inesperado para IVA: %q", dataRow.Cells[headerIndex["IVA"]].Value)
 	}
