@@ -116,7 +116,7 @@ var (
 		"Placa",
 		"Cantidad",
 		"Valor unitario",
-		"VAlor total",
+		"Subtotal",
 		"Porcentaje IVA",
 		"IVA",
 		"Total más IVA",
@@ -927,7 +927,7 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	addStringCell(row, rowData.ElementoPlaca)                         // Placa
 	addStringCell(row, strconv.Itoa(rowData.ElementoCantidad))        // Cantidad
 	addDecimalCell(row, rowData.ElementoValorUnitario)                // Valor unitario
-	addDecimalCell(row, rowData.ElementoValorTotal)                   // VALOR TOTAL FACTURA
+	addDecimalCell(row, rowData.ElementoSubtotal)                     // Subtotal
 	addStringCell(row, strconv.Itoa(rowData.ElementoPorcentajeIvaID)) // Porcentaje IVA
 	addDecimalCell(row, rowData.ElementoValorIva)                     // IVA
 	addDecimalCell(row, rowData.ElementoValorFinal)                   // Total más IVA
