@@ -35,8 +35,11 @@ func SendJson(urlp string, trequest string, target interface{}, datajson interfa
 			resp, err := client.Do(req)
 			if err != nil {
 				logs.Error("Error reading response. ", err)
+				return
 			}
-
+			if resp == nil {
+				return
+			}
 			defer resp.Body.Close()
 			json.NewDecoder(resp.Body).Decode(target)
 		}
@@ -49,8 +52,11 @@ func SendJson(urlp string, trequest string, target interface{}, datajson interfa
 	resp, err := client.Do(req)
 	if err != nil {
 		logs.Error("Error reading response. ", err)
+		return err
 	}
-
+	if resp == nil {
+		return nil
+	}
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(target)
 }
@@ -92,6 +98,7 @@ func GetJson(urlp string, target interface{}) error {
 	req, err := http.NewRequest("GET", urlp, nil)
 	if err != nil {
 		logs.Error("Error reading request. ", err)
+		return err
 	}
 
 	//Se intenta acceder a cabecera, si no existe, se realiza peticion normal.
@@ -104,8 +111,11 @@ func GetJson(urlp string, target interface{}) error {
 			resp, err := client.Do(req)
 			if err != nil {
 				logs.Error("Error reading response. ", err)
+				return
 			}
-
+			if resp == nil {
+				return
+			}
 			defer resp.Body.Close()
 			json.NewDecoder(resp.Body).Decode(target)
 		}
@@ -119,8 +129,11 @@ func GetJson(urlp string, target interface{}) error {
 	resp, err := client.Do(req)
 	if err != nil {
 		logs.Error("Error reading response. ", err)
+		return err
 	}
-
+	if resp == nil {
+		return nil
+	}
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(target)
 }

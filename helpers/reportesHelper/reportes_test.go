@@ -266,6 +266,150 @@ func TestExcelGeneradoEsBinarioValido(t *testing.T) {
 	}
 }
 
+func TestGetDetalleCuentasEntradaPorConsecutivo(t *testing.T) {
+	mockConsultarMovimientoPorConsecutivo(t, &models.Movimiento{
+		Id:            7995,
+		Consecutivo:   stringPtr("ENT-7995"),
+		Detalle:       `{"acta_recibido_id":555}`,
+		FechaCreacion: time.Date(2026, 5, 9, 10, 0, 0, 0, time.UTC),
+		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+			Id:     55,
+			Nombre: "Entrada por compra",
+		},
+		EstadoMovimientoId: &models.EstadoMovimiento{
+			Nombre: "Entrada Aprobada",
+		},
+	})
+
+	mockConsultarElementosActa(t, []*models.DetalleElemento{
+		{
+			Id:         101,
+			Nombre:     "Elemento Uno",
+			ValorFinal: 2976.38,
+			SubgrupoCatalogoId: &models.DetalleSubgrupo{
+				SubgrupoId: &models.Subgrupo{Id: 9},
+			},
+		},
+	})
+	mockConsultarMetadataEntrada(t, "900123456 - Proveedor Uno", "FAC-2026-001", time.Date(2026, 5, 8, 8, 30, 0, 0, time.UTC))
+	mockResolverSalidasPorElemento(t, map[int]*salidaReporteData{
+		101: {
+			FuncionarioAsignado: "12345 - Funcionario Uno",
+		},
+	})
+	mockGetCuentasByMovimientoAndSubgrupos(t, map[int]models.CuentasSubgrupo{
+		9: {
+			CuentaDebitoId:  "cta-db-1",
+			CuentaCreditoId: "cta-cr-1",
+		},
+	})
+	mockConsultarTransaccionContable(t, &models.InfoTransaccionContable{
+		Movimientos: []*models.DetalleMovimientoContable{
+			{Cuenta: &models.DetalleCuenta{Id: "cta-db-1", Codigo: "151001", Nombre: "Equipo de cómputo"}, Debito: 2976.38},
+			{Cuenta: &models.DetalleCuenta{Id: "cta-cr-1", Codigo: "240801", Nombre: "Bienes recibidos"}, Credito: 2976.38},
+		},
+	})
+
+	respuesta, err := GetDetalleCuentasEntradaPorConsecutivo("ENT-7995")
+	if err != nil {
+		t.Fatalf("GetDetalleCuentasEntradaPorConsecutivo retornó error: %v", err)
+	}
+	if len(respuesta) != 1 {
+		t.Fatalf("se esperaba una fila, se obtuvieron %d", len(respuesta))
+	}
+	if respuesta[0].ElementoNombre != "Elemento Uno" {
+		t.Fatalf("ElementoNombre inesperado: %q", respuesta[0].ElementoNombre)
+	}
+	if respuesta[0].ElementoValorFinal != 2976.38 {
+		t.Fatalf("ElementoValorFinal inesperado: %v", respuesta[0].ElementoValorFinal)
+	}
+	if respuesta[0].SalidaFuncionarioAsignado != "12345 - Funcionario Uno" {
+		t.Fatalf("SalidaFuncionarioAsignado inesperado: %q", respuesta[0].SalidaFuncionarioAsignado)
+	}
+	if respuesta[0].CuentaDebitoEntrada != "151001 - Equipo de cómputo" {
+		t.Fatalf("CuentaDebitoEntrada inesperada: %q", respuesta[0].CuentaDebitoEntrada)
+	}
+	if respuesta[0].CuentaCreditoEntrada != "240801 - Bienes recibidos" {
+		t.Fatalf("CuentaCreditoEntrada inesperada: %q", respuesta[0].CuentaCreditoEntrada)
+	}
+}
+
+func TestGetDetalleCuentasSalidaPorConsecutivo(t *testing.T) {
+	mockConsultarMovimientoPorConsecutivo(t, &models.Movimiento{
+		Id:          9001,
+		Consecutivo: stringPtr("SAL-9001"),
+	})
+	mockConsultarTrSalida(t, &models.TrSalida{
+		Salida: &models.Movimiento{
+			Id:          9001,
+			Consecutivo: stringPtr("SAL-9001"),
+			Detalle:     `{"funcionario":12345}`,
+			FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+				Id: 77,
+			},
+			EstadoMovimientoId: &models.EstadoMovimiento{
+				Nombre: "Salida Aprobada",
+			},
+		},
+		Elementos: []*models.ElementosMovimiento{
+			{
+				Id:             1,
+				ElementoActaId: intPtr(101),
+			},
+		},
+	})
+	mockConsultarElementosActa(t, []*models.DetalleElemento{
+		{
+			Id:         101,
+			Nombre:     "Elemento Uno",
+			ValorFinal: 2976.38,
+			ValorTotal: 2976.38,
+			SubgrupoCatalogoId: &models.DetalleSubgrupo{
+				SubgrupoId: &models.Subgrupo{Id: 9},
+			},
+		},
+	})
+	mockGetCuentasByMovimientoAndSubgrupos(t, map[int]models.CuentasSubgrupo{
+		9: {
+			CuentaDebitoId:  "cta-db-sal-1",
+			CuentaCreditoId: "cta-cr-sal-1",
+		},
+	})
+	mockGetNombreTerceroByID(t, &models.IdentificacionTercero{
+		Numero:         "12345",
+		NombreCompleto: "Funcionario Uno",
+	})
+	mockConsultarTransaccionContable(t, &models.InfoTransaccionContable{
+		Movimientos: []*models.DetalleMovimientoContable{
+			{Cuenta: &models.DetalleCuenta{Id: "cta-db-sal-1", Codigo: "839090", Nombre: "Responsabilidades en proceso"}, Debito: 2976.38},
+			{Cuenta: &models.DetalleCuenta{Id: "cta-cr-sal-1", Codigo: "151001", Nombre: "Equipo de cómputo"}, Credito: 2976.38},
+		},
+	})
+
+	respuesta, err := GetDetalleCuentasSalidaPorConsecutivo("SAL-9001")
+	if err != nil {
+		t.Fatalf("GetDetalleCuentasSalidaPorConsecutivo retornó error: %v", err)
+	}
+	if len(respuesta) != 1 {
+		t.Fatalf("se esperaba una fila, se obtuvieron %d", len(respuesta))
+	}
+	if respuesta[0].ElementoNombre != "Elemento Uno" {
+		t.Fatalf("ElementoNombre inesperado: %q", respuesta[0].ElementoNombre)
+	}
+	if respuesta[0].ElementoValorFinal != 2976.38 {
+		t.Fatalf("ElementoValorFinal inesperado: %v", respuesta[0].ElementoValorFinal)
+	}
+	if respuesta[0].SalidaFuncionarioAsignado != "12345 - Funcionario Uno" {
+		t.Fatalf("SalidaFuncionarioAsignado inesperado: %q", respuesta[0].SalidaFuncionarioAsignado)
+	}
+	if respuesta[0].CuentaDebitoSalida != "839090 - Responsabilidades en proceso" {
+		t.Fatalf("CuentaDebitoSalida inesperada: %q", respuesta[0].CuentaDebitoSalida)
+	}
+	if respuesta[0].CuentaCreditoSalida != "151001 - Equipo de cómputo" {
+		t.Fatalf("CuentaCreditoSalida inesperada: %q", respuesta[0].CuentaCreditoSalida)
+	}
+}
+
 func mockConsultarEntradasReporteData(t *testing.T, entradas []*entradaReporteData) {
 	t.Helper()
 
@@ -279,7 +423,118 @@ func mockConsultarEntradasReporteData(t *testing.T, entradas []*entradaReporteDa
 	})
 }
 
+func mockConsultarMovimientoPorConsecutivo(t *testing.T, movimiento *models.Movimiento) {
+	t.Helper()
+
+	original := consultarMovimientoPorConsec
+	consultarMovimientoPorConsec = func(consecutivo string) (*models.Movimiento, map[string]interface{}) {
+		return movimiento, nil
+	}
+
+	t.Cleanup(func() {
+		consultarMovimientoPorConsec = original
+	})
+}
+
+func mockConsultarTrSalida(t *testing.T, trSalida *models.TrSalida) {
+	t.Helper()
+
+	original := consultarTrSalida
+	consultarTrSalida = func(id int) (*models.TrSalida, map[string]interface{}) {
+		return trSalida, nil
+	}
+
+	t.Cleanup(func() {
+		consultarTrSalida = original
+	})
+}
+
+func mockConsultarElementosActa(t *testing.T, elementos []*models.DetalleElemento) {
+	t.Helper()
+
+	original := consultarElementosActa
+	consultarElementosActa = func(actaID int, ids []int) ([]*models.DetalleElemento, map[string]interface{}) {
+		return elementos, nil
+	}
+
+	t.Cleanup(func() {
+		consultarElementosActa = original
+	})
+}
+
+func mockConsultarMetadataEntrada(t *testing.T, proveedor, facturaConsecutivo string, facturaFecha time.Time) {
+	t.Helper()
+
+	original := consultarMetadataEntradaFn
+	consultarMetadataEntradaFn = func(formato models.FormatoBaseEntrada) (string, string, time.Time, map[string]interface{}) {
+		return proveedor, facturaConsecutivo, facturaFecha, nil
+	}
+
+	t.Cleanup(func() {
+		consultarMetadataEntradaFn = original
+	})
+}
+
+func mockResolverSalidasPorElemento(t *testing.T, salidas map[int]*salidaReporteData) {
+	t.Helper()
+
+	original := resolverSalidasPorElementoFn
+	resolverSalidasPorElementoFn = func(elementos []*models.DetalleElemento) (map[int]*salidaReporteData, map[string]interface{}) {
+		return salidas, nil
+	}
+
+	t.Cleanup(func() {
+		resolverSalidasPorElementoFn = original
+	})
+}
+
+func mockGetCuentasByMovimientoAndSubgrupos(t *testing.T, cuentas map[int]models.CuentasSubgrupo) {
+	t.Helper()
+
+	original := getCuentasByMovimientoAndSubgrupos
+	getCuentasByMovimientoAndSubgrupos = func(movimientoID int, subgrupos []int, cuentasPorSubgrupo map[int]models.CuentasSubgrupo) map[string]interface{} {
+		for id, cuenta := range cuentas {
+			cuentasPorSubgrupo[id] = cuenta
+		}
+		return nil
+	}
+
+	t.Cleanup(func() {
+		getCuentasByMovimientoAndSubgrupos = original
+	})
+}
+
+func mockGetNombreTerceroByID(t *testing.T, tercero *models.IdentificacionTercero) {
+	t.Helper()
+
+	original := getNombreTerceroByID
+	getNombreTerceroByID = func(terceroID int) (*models.IdentificacionTercero, map[string]interface{}) {
+		return tercero, nil
+	}
+
+	t.Cleanup(func() {
+		getNombreTerceroByID = original
+	})
+}
+
+func mockConsultarTransaccionContable(t *testing.T, transaccion *models.InfoTransaccionContable) {
+	t.Helper()
+
+	original := consultarTransaccionContableMovimientoFn
+	consultarTransaccionContableMovimientoFn = func(movimiento *models.Movimiento, estadosPermitidos ...string) *models.InfoTransaccionContable {
+		return transaccion
+	}
+
+	t.Cleanup(func() {
+		consultarTransaccionContableMovimientoFn = original
+	})
+}
+
 func stringPtr(value string) *string {
+	return &value
+}
+
+func intPtr(value int) *int {
 	return &value
 }
 
