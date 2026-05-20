@@ -66,6 +66,9 @@ func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entra
 	}
 
 	for _, salida := range salidas_ {
+		if salida == nil || !salida.Activo {
+			continue
+		}
 
 		var formato models.FormatoSalidaCostos
 		outputError = utilsHelper.Unmarshal(salida.Detalle, &formato)
