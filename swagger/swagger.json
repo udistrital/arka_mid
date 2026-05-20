@@ -1388,6 +1388,70 @@
                 }
             }
         },
+        "/reportes/detalle_cuentas_entrada": {
+            "get": {
+                "tags": [
+                    "reportes"
+                ],
+                "description": "Consulta el detalle contable por elemento de una entrada usando su consecutivo.",
+                "operationId": "ReportesController.GetDetalleCuentasEntrada",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "EntradaConsecutivo",
+                        "description": "Consecutivo de la entrada",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ReporteDetalleEntradaResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error en los datos de entrada"
+                    }
+                }
+            }
+        },
+        "/reportes/detalle_cuentas_salida": {
+            "get": {
+                "tags": [
+                    "reportes"
+                ],
+                "description": "Consulta el detalle contable por elemento de una salida usando su consecutivo.",
+                "operationId": "ReportesController.GetDetalleCuentasSalida",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "SalidaConsecutivo",
+                        "description": "Consecutivo de la salida",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ReporteDetalleSalidaResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error en los datos de entrada"
+                    }
+                }
+            }
+        },
         "/reportes/elementos": {
             "post": {
                 "tags": [
@@ -3950,6 +4014,50 @@
                     "items": {
                         "$ref": "#/definitions/models.PreMovAjuste"
                     }
+                }
+            }
+        },
+        "models.ReporteDetalleEntradaResponse": {
+            "title": "ReporteDetalleEntradaResponse",
+            "type": "object",
+            "properties": {
+                "CuentaCreditoEntrada": {
+                    "type": "string"
+                },
+                "CuentaDebitoEntrada": {
+                    "type": "string"
+                },
+                "ElementoNombre": {
+                    "type": "string"
+                },
+                "ElementoValorFinal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "SalidaFuncionarioAsignado": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ReporteDetalleSalidaResponse": {
+            "title": "ReporteDetalleSalidaResponse",
+            "type": "object",
+            "properties": {
+                "CuentaCreditoSalida": {
+                    "type": "string"
+                },
+                "CuentaDebitoSalida": {
+                    "type": "string"
+                },
+                "ElementoNombre": {
+                    "type": "string"
+                },
+                "ElementoValorFinal": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "SalidaFuncionarioAsignado": {
+                    "type": "string"
                 }
             }
         },
