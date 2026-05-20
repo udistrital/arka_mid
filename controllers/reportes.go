@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"errors"
+
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/reportesHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -16,6 +18,8 @@ type ReportesController struct {
 // URLMapping ...
 func (c *ReportesController) URLMapping() {
 	c.Mapping("PostReporteElementos", c.PostReporteElementos)
+	c.Mapping("GetDetalleCuentasEntrada", c.GetDetalleCuentasEntrada)
+	c.Mapping("GetDetalleCuentasSalida", c.GetDetalleCuentasSalida)
 }
 
 // PostReporteElementos ...
@@ -34,6 +38,54 @@ func (c *ReportesController) PostReporteElementos() {
 	}
 
 	respuesta, outputError := reportesHelper.GenerarReporteElementos(&request)
+	if outputError != nil {
+		panic(outputError)
+	}
+
+	c.Data["json"] = respuesta
+	c.ServeJSON()
+}
+
+// GetDetalleCuentasEntrada ...
+// @Title GetDetalleCuentasEntrada
+// @Description Consulta el detalle contable por elemento de una entrada usando su consecutivo.
+// @Param	EntradaConsecutivo	query	string	true	"Consecutivo de la entrada"
+// @Success 200 {object} []models.ReporteDetalleEntradaResponse
+// @Failure 400 error en los datos de entrada
+// @router /detalle_cuentas_entrada [get]
+func (c *ReportesController) GetDetalleCuentasEntrada() {
+	defer errorCtrl.ErrorControlController(c.Controller, "ReportesController")
+
+	consecutivo := c.GetString("EntradaConsecutivo")
+	if consecutivo == "" {
+		panic(errorCtrl.Error("GetDetalleCuentasEntrada - c.GetString(EntradaConsecutivo)", errors.New("se debe especificar EntradaConsecutivo"), "400"))
+	}
+
+	respuesta, outputError := reportesHelper.GetDetalleCuentasEntradaPorConsecutivo(consecutivo)
+	if outputError != nil {
+		panic(outputError)
+	}
+
+	c.Data["json"] = respuesta
+	c.ServeJSON()
+}
+
+// GetDetalleCuentasSalida ...
+// @Title GetDetalleCuentasSalida
+// @Description Consulta el detalle contable por elemento de una salida usando su consecutivo.
+// @Param	SalidaConsecutivo	query	string	true	"Consecutivo de la salida"
+// @Success 200 {object} []models.ReporteDetalleSalidaResponse
+// @Failure 400 error en los datos de entrada
+// @router /detalle_cuentas_salida [get]
+func (c *ReportesController) GetDetalleCuentasSalida() {
+	defer errorCtrl.ErrorControlController(c.Controller, "ReportesController")
+
+	consecutivo := c.GetString("SalidaConsecutivo")
+	if consecutivo == "" {
+		panic(errorCtrl.Error("GetDetalleCuentasSalida - c.GetString(SalidaConsecutivo)", errors.New("se debe especificar SalidaConsecutivo"), "400"))
+	}
+
+	respuesta, outputError := reportesHelper.GetDetalleCuentasSalidaPorConsecutivo(consecutivo)
 	if outputError != nil {
 		panic(outputError)
 	}

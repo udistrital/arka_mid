@@ -153,8 +153,16 @@ var (
 		"salida_fecha_corte",
 	}
 
-	consultarEntradasReporteData = consultarEntradasReporteDataDefault
-	consultarCuentaContable      = cuentasContables.GetCuentaContable
+	consultarEntradasReporteData             = consultarEntradasReporteDataDefault
+	consultarCuentaContable                  = cuentasContables.GetCuentaContable
+	consultarMovimientoPorConsec             = consultarMovimientoPorConsecutivoDefault
+	consultarTrSalida                        = movimientosArka.GetTrSalida
+	consultarElementosActa                   = actaRecibido.GetElementos
+	consultarMetadataEntradaFn               = consultarMetadataEntrada
+	resolverSalidasPorElementoFn             = resolverSalidasPorElemento
+	getCuentasByMovimientoAndSubgrupos       = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos
+	getNombreTerceroByID                     = terceros.GetNombreTerceroById
+	consultarTransaccionContableMovimientoFn = consultarTransaccionContableMovimiento
 )
 
 // GenerarReporteElementos genera un archivo Excel en base64 con una fila por
@@ -218,6 +226,95 @@ func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *model
 	return respuesta, nil
 }
 
+func GetDetalleCuentasEntradaPorConsecutivo(consecutivo string) (respuesta []*models.ReporteDetalleEntradaResponse, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("GetDetalleCuentasEntradaPorConsecutivo - Unhandled Error!", "500")
+
+	movimiento, outputError := consultarMovimientoPorConsec(consecutivo)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	entrada, outputError := construirEntradaReporteData(movimiento)
+	if outputError != nil {
+		return nil, outputError
+	}
+	if entrada == nil {
+		return []*models.ReporteDetalleEntradaResponse{}, nil
+	}
+
+	rows := construirFilasReporteEntradas([]*entradaReporteData{entrada})
+	respuesta = make([]*models.ReporteDetalleEntradaResponse, 0, len(rows))
+	for _, row := range rows {
+		if row == nil {
+			continue
+		}
+		respuesta = append(respuesta, &models.ReporteDetalleEntradaResponse{
+			ElementoNombre:            row.ElementoNombre,
+			ElementoValorFinal:        row.ElementoValorFinal,
+			SalidaFuncionarioAsignado: row.SalidaFuncionarioAsignado,
+			CuentaDebitoEntrada:       row.CuentaDebitoEntrada,
+			CuentaCreditoEntrada:      row.CuentaCreditoEntrada,
+		})
+	}
+
+	return respuesta, nil
+}
+
+func GetDetalleCuentasSalidaPorConsecutivo(consecutivo string) (respuesta []*models.ReporteDetalleSalidaResponse, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("GetDetalleCuentasSalidaPorConsecutivo - Unhandled Error!", "500")
+
+	movimiento, outputError := consultarMovimientoPorConsec(consecutivo)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	trSalida, outputError := consultarTrSalida(movimiento.Id)
+	if outputError != nil {
+		return nil, outputError
+	}
+	if trSalida == nil || trSalida.Salida == nil {
+		return []*models.ReporteDetalleSalidaResponse{}, nil
+	}
+
+	elementos, outputError := resolverElementosSalida(trSalida)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
+	if trSalida.Salida.FormatoTipoMovimientoId != nil && trSalida.Salida.FormatoTipoMovimientoId.Id > 0 {
+		subgrupos := collectSubgrupoIDs(elementos)
+		if len(subgrupos) > 0 {
+			outputError = getCuentasByMovimientoAndSubgrupos(trSalida.Salida.FormatoTipoMovimientoId.Id, subgrupos, cuentasPorSubgrupo)
+			if outputError != nil {
+				return nil, outputError
+			}
+		}
+	}
+
+	transaccion := consultarTransaccionContableSalida(trSalida.Salida)
+	funcionario := funcionarioSalidaLabel(trSalida.Salida)
+
+	respuesta = make([]*models.ReporteDetalleSalidaResponse, 0, len(elementos))
+	for _, elemento := range elementos {
+		if elemento == nil {
+			continue
+		}
+
+		subgrupoID, _, _ := subgrupoInfo(elemento)
+		cuentas := cuentasPorSubgrupo[subgrupoID]
+		respuesta = append(respuesta, &models.ReporteDetalleSalidaResponse{
+			ElementoNombre:            elemento.Nombre,
+			ElementoValorFinal:        elemento.ValorFinal,
+			SalidaFuncionarioAsignado: funcionario,
+			CuentaDebitoSalida:        resolveCuentaMovimientoLabel(cuentas.CuentaDebitoId, transaccion, true),
+			CuentaCreditoSalida:       resolveCuentaMovimientoLabel(cuentas.CuentaCreditoId, transaccion, false),
+		})
+	}
+
+	return respuesta, nil
+}
+
 func consultarEntradasReporteDataDefault(fechaInicial, fechaFinal time.Time) (entradas []*entradaReporteData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarEntradasReporteDataDefault - Unhandled Error!", "500")
 
@@ -250,6 +347,30 @@ func consultarEntradasReporteDataDefault(fechaInicial, fechaFinal time.Time) (en
 	}
 
 	return entradas, nil
+}
+
+func consultarMovimientoPorConsecutivoDefault(consecutivo string) (movimiento *models.Movimiento, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarMovimientoPorConsecutivoDefault - Unhandled Error!", "500")
+
+	if strings.TrimSpace(consecutivo) == "" {
+		return nil, errorCtrl.Error("consultarMovimientoPorConsecutivoDefault - consecutivo", "consecutivo vacío", "400")
+	}
+
+	params := url.Values{}
+	params.Add("limit", "1")
+	params.Add("sortby", "Id")
+	params.Add("order", "desc")
+	params.Add("query", "Consecutivo:"+strings.TrimSpace(consecutivo))
+
+	movimientos, _, outputError := movimientosArka.GetAllMovimiento(params.Encode())
+	if outputError != nil {
+		return nil, outputError
+	}
+	if len(movimientos) == 0 || movimientos[0] == nil {
+		return nil, errorCtrl.Error("consultarMovimientoPorConsecutivoDefault - movimientosArka.GetAllMovimiento", "no se encontró movimiento con el consecutivo indicado", "404")
+	}
+
+	return movimientos[0], nil
 }
 
 func consultarCodigosEntrada() (codigos []string, outputError map[string]interface{}) {
@@ -321,12 +442,12 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 		return nil, outputError
 	}
 
-	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntrada(formato)
+	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntradaFn(formato)
 	if outputError != nil {
 		return nil, outputError
 	}
 
-	salidasPorElemento, outputError := resolverSalidasPorElemento(elementos)
+	salidasPorElemento, outputError := resolverSalidasPorElementoFn(elementos)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -335,7 +456,7 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 	if movimiento.FormatoTipoMovimientoId != nil && movimiento.FormatoTipoMovimientoId.Id > 0 {
 		subgrupos := collectSubgrupoIDs(elementos)
 		if len(subgrupos) > 0 {
-			outputError = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(movimiento.FormatoTipoMovimientoId.Id, subgrupos, cuentasPorSubgrupo)
+			outputError = getCuentasByMovimientoAndSubgrupos(movimiento.FormatoTipoMovimientoId.Id, subgrupos, cuentasPorSubgrupo)
 			if outputError != nil {
 				return nil, outputError
 			}
@@ -428,7 +549,7 @@ func consultarProveedorActa(actaRecibidoID int) (proveedor string, outputError m
 		return "", outputError
 	}
 
-	tercero, outputError := terceros.GetNombreTerceroById(historicos[0].ProveedorId)
+	tercero, outputError := getNombreTerceroByID(historicos[0].ProveedorId)
 	if outputError != nil {
 		return "", outputError
 	}
@@ -456,7 +577,7 @@ func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*m
 	defer errorCtrl.ErrorControlFunction("resolverElementosEntrada - Unhandled Error!", "500")
 
 	if formato.ActaRecibidoId > 0 {
-		return actaRecibido.GetElementos(formato.ActaRecibidoId, nil)
+		return consultarElementosActa(formato.ActaRecibidoId, nil)
 	}
 
 	if len(formato.Elementos) == 0 {
@@ -500,7 +621,7 @@ func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*m
 		return []*models.DetalleElemento{}, nil
 	}
 
-	elementos, outputError = actaRecibido.GetElementos(0, elementosActaIds)
+	elementos, outputError = consultarElementosActa(0, elementosActaIds)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -508,12 +629,38 @@ func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*m
 	return ordenarElementosPorIds(elementosActaIds, elementos), nil
 }
 
+func resolverElementosSalida(trSalida *models.TrSalida) (elementos []*models.DetalleElemento, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("resolverElementosSalida - Unhandled Error!", "500")
+
+	if trSalida == nil || len(trSalida.Elementos) == 0 {
+		return []*models.DetalleElemento{}, nil
+	}
+
+	ids := make([]int, 0, len(trSalida.Elementos))
+	for _, elemento := range trSalida.Elementos {
+		if elemento == nil || elemento.ElementoActaId == nil || *elemento.ElementoActaId <= 0 {
+			continue
+		}
+		ids = append(ids, *elemento.ElementoActaId)
+	}
+	if len(ids) == 0 {
+		return []*models.DetalleElemento{}, nil
+	}
+
+	elementos, outputError = consultarElementosActa(0, ids)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	return ordenarElementosPorIds(ids, elementos), nil
+}
+
 func consultarTransaccionContableEntrada(movimiento *models.Movimiento) *models.InfoTransaccionContable {
-	return consultarTransaccionContableMovimiento(movimiento, "Entrada Aprobada", "Entrada Con Salida")
+	return consultarTransaccionContableMovimientoFn(movimiento, "Entrada Aprobada", "Entrada Con Salida")
 }
 
 func consultarTransaccionContableSalida(movimiento *models.Movimiento) *models.InfoTransaccionContable {
-	return consultarTransaccionContableMovimiento(movimiento, "Salida Aprobada")
+	return consultarTransaccionContableMovimientoFn(movimiento, "Salida Aprobada")
 }
 
 func consultarTransaccionContableMovimiento(movimiento *models.Movimiento, estadosPermitidos ...string) *models.InfoTransaccionContable {
@@ -772,7 +919,7 @@ func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []i
 
 	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
 	if movimiento.FormatoTipoMovimientoId != nil && movimiento.FormatoTipoMovimientoId.Id > 0 && len(subgrupos) > 0 {
-		outputError = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos(movimiento.FormatoTipoMovimientoId.Id, subgrupos, cuentasPorSubgrupo)
+		outputError = getCuentasByMovimientoAndSubgrupos(movimiento.FormatoTipoMovimientoId.Id, subgrupos, cuentasPorSubgrupo)
 		if outputError != nil {
 			return nil, outputError
 		}
@@ -1044,7 +1191,7 @@ func funcionarioSalidaLabel(movimiento *models.Movimiento) string {
 		return ""
 	}
 
-	tercero, outputError := terceros.GetNombreTerceroById(formato.Funcionario)
+	tercero, outputError := getNombreTerceroByID(formato.Funcionario)
 	if outputError != nil || tercero == nil {
 		return strconv.Itoa(formato.Funcionario)
 	}
