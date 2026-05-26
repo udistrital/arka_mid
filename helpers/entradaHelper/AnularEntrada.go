@@ -81,8 +81,8 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 		resultado.Error = "No se pudo consultar el estado actual del acta asociada."
 		return nil
 	}
-	if actaTransaccion.UltimoEstado.EstadoActaId.CodigoAbreviacion != estadoActaAsociadaEntrada {
-		resultado.Error = "El acta asociada no está en estado 'Asociada a Entrada' y no se puede anular la entrada."
+	if !estadoActaPermiteAnulacion(actaTransaccion.UltimoEstado.EstadoActaId.CodigoAbreviacion) {
+		resultado.Error = "El acta asociada no está en un estado válido para anular la entrada."
 		return nil
 	}
 
@@ -314,15 +314,21 @@ func invertirMovimientosContables(original *models.TransaccionMovimientos, descr
 			Descripcion:      descripcion,
 			Activo:           true,
 		}
-		if movimientoOriginal.TerceroId != nil {
-			terceroID := *movimientoOriginal.TerceroId
-			movimiento.TerceroId = &terceroID
-		}
+		movimiento.TerceroId = normalizarTerceroId(movimientoOriginal.TerceroId)
 
 		movimientos = append(movimientos, movimiento)
 	}
 
 	return movimientos, nil
+}
+
+func normalizarTerceroId(terceroId *int) *int {
+	if terceroId == nil || *terceroId <= 0 {
+		return nil
+	}
+
+	tercero := *terceroId
+	return &tercero
 }
 
 func aplicarEstadoEntradaAnulada(entrada *models.Movimiento, observacion string) (outputError map[string]interface{}) {
@@ -356,6 +362,10 @@ func aplicarEstadoActaEnVerificacion(transaccion *models.TransaccionActaRecibido
 		}
 	}
 
+	if transaccion.UltimoEstado.EstadoActaId.CodigoAbreviacion == estadoActaEnVerificacion {
+		return nil
+	}
+
 	estadoID := 0
 	outputError = crudActaRecibido.GetEstadoActaIdByCodigoAbreviacion(&estadoID, estadoActaEnVerificacion)
 	if outputError != nil {
@@ -365,6 +375,10 @@ func aplicarEstadoActaEnVerificacion(transaccion *models.TransaccionActaRecibido
 	transaccion.UltimoEstado.Id = 0
 	transaccion.UltimoEstado.EstadoActaId.Id = estadoID
 	return nil
+}
+
+func estadoActaPermiteAnulacion(codigo string) bool {
+	return codigo == estadoActaAsociadaEntrada || codigo == estadoActaEnVerificacion
 }
 
 func rollbackEntradaAnulada(original *models.Movimiento, resultado *models.ResultadoAnulacionEntrada) {
