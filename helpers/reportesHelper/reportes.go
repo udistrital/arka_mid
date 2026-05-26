@@ -66,7 +66,8 @@ type salidaReporteBaseData struct {
 }
 
 type reporteElementoEntradaRow struct {
-	// Columnas según lista solicitada
+	Vigencia                  string
+	Periodo                   string
 	ElementoNombre            string
 	ElementoMarca             string
 	ElementoSerie             string
@@ -95,7 +96,6 @@ type reporteElementoEntradaRow struct {
 	CuentaDebitoSalida        string
 	CuentaCreditoSalida       string
 
-	// Columnas existentes que no están en la lista (al final)
 	EntradaEstado          string
 	EntradaActaRecibidoID  int
 	ElementoSubtotal       float64
@@ -165,8 +165,6 @@ var (
 	consultarTransaccionContableMovimientoFn = consultarTransaccionContableMovimiento
 )
 
-// GenerarReporteElementos genera un archivo Excel en base64 con una fila por
-// elemento, incluyendo la entrada asociada y las cuentas débito/crédito de la entrada.
 func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("GenerarReporteElementos - Unhandled Error!", "500")
 
@@ -1015,6 +1013,8 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				salidaCuenta = salida.CuentasPorSubgrupo[subgrupoID]
 			}
 			row := &reporteElementoEntradaRow{
+				Vigencia:                  strconv.Itoa(entrada.Movimiento.FechaCreacion.Year()),
+				Periodo:                   strconv.Itoa(int(entrada.Movimiento.FechaCreacion.Month())),
 				EntradaConsecutivo:        stringPtrValue(entrada.Movimiento.Consecutivo),
 				EntradaEstado:             estadoMovimientoNombre(entrada.Movimiento),
 				EntradaFechaCreacion:      entrada.Movimiento.FechaCreacion,
@@ -1065,9 +1065,8 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 
 	row := hoja.AddRow()
 
-	// Columnas según lista solicitada (vacías donde no hay dato)
-	addStringCell(row, "")                                            // Vigencia
-	addStringCell(row, "")                                            // Periodo
+	addStringCell(row, rowData.Vigencia)                              // Vigencia
+	addStringCell(row, rowData.Periodo)                               // Periodo
 	addStringCell(row, rowData.ElementoNombre)                        // Nombre / Descripción
 	addStringCell(row, rowData.ElementoMarca)                         // Marca
 	addStringCell(row, rowData.ElementoSerie)                         // Serie
@@ -1102,7 +1101,6 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	addStringCell(row, "")                                            // Meses transcurridos
 	addStringCell(row, "")                                            // Vida útil
 
-	// Columnas existentes fuera de la lista
 	addStringCell(row, rowData.EntradaEstado)
 	addStringCell(row, strconv.Itoa(rowData.EntradaActaRecibidoID))
 	addDecimalCell(row, rowData.ElementoSubtotal)
