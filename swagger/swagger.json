@@ -1211,6 +1211,44 @@
                 }
             }
         },
+        "/salida/{id}/anular": {
+            "put": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "Anula una salida aprobada, registra un movimiento de reversión contable y restablece la entrada padre cuando corresponda.",
+                "operationId": "SalidaController.PutAnular",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "Id de la salida a anular",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Observación de la anulación",
+                        "schema": {
+                            "$ref": "#/definitions/models.AnulacionSalidaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResultadoAnulacionSalida"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    }
+                }
+            }
+        },
         "/inmuebles/": {
             "get": {
                 "tags": [
@@ -1975,6 +2013,15 @@
         },
         "models.AnulacionEntradaRequest": {
             "title": "AnulacionEntradaRequest",
+            "type": "object",
+            "properties": {
+                "Observacion": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AnulacionSalidaRequest": {
+            "title": "AnulacionSalidaRequest",
             "type": "object",
             "properties": {
                 "Observacion": {
@@ -4146,6 +4193,27 @@
                     "type": "string"
                 },
                 "MovimientoReversion": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "TransaccionContable": {
+                    "$ref": "#/definitions/models.InfoTransaccionContable"
+                }
+            }
+        },
+        "models.ResultadoAnulacionSalida": {
+            "title": "ResultadoAnulacionSalida",
+            "type": "object",
+            "properties": {
+                "Entrada": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Error": {
+                    "type": "string"
+                },
+                "MovimientoReversion": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Salida": {
                     "$ref": "#/definitions/models.Movimiento"
                 },
                 "TransaccionContable": {
