@@ -1173,6 +1173,44 @@
                 }
             }
         },
+        "/entrada/{id}/anular": {
+            "put": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "Anula una entrada, registra un movimiento de reversión contable y devuelve el acta a estado en verificación.",
+                "operationId": "EntradaController.PutAnular",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "Id de la entrada a anular",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Observación de la anulación",
+                        "schema": {
+                            "$ref": "#/definitions/models.AnulacionEntradaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResultadoAnulacionEntrada"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    }
+                }
+            }
+        },
         "/inmuebles/": {
             "get": {
                 "tags": [
@@ -1932,6 +1970,15 @@
                 "UnidadEjecutoraId": {
                     "type": "integer",
                     "format": "int64"
+                }
+            }
+        },
+        "models.AnulacionEntradaRequest": {
+            "title": "AnulacionEntradaRequest",
+            "type": "object",
+            "properties": {
+                "Observacion": {
+                    "type": "string"
                 }
             }
         },
@@ -4085,6 +4132,24 @@
                 },
                 "fecha_inicial": {
                     "type": "string"
+                }
+            }
+        },
+        "models.ResultadoAnulacionEntrada": {
+            "title": "ResultadoAnulacionEntrada",
+            "type": "object",
+            "properties": {
+                "Entrada": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "Error": {
+                    "type": "string"
+                },
+                "MovimientoReversion": {
+                    "$ref": "#/definitions/models.Movimiento"
+                },
+                "TransaccionContable": {
+                    "$ref": "#/definitions/models.InfoTransaccionContable"
                 }
             }
         },
