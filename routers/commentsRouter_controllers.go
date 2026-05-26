@@ -313,6 +313,15 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:EntradaController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:EntradaController"],
+		beego.ControllerComments{
+			Method:           "PutAnular",
+			Router:           "/:id/anular",
+			AllowHTTPMethods: []string{"put"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 	beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:InmueblesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/arka_mid/controllers:InmueblesController"],
 		beego.ControllerComments{
 			Method:           "Post",
