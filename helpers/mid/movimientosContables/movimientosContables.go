@@ -13,13 +13,27 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
-var basePath, _ = beego.AppConfig.String("movimientosContablesmidService")
+func getBasePath() string {
+	basePath, _ := beego.AppConfig.String("movimientosContablesmidService")
+	basePath = strings.TrimSpace(basePath)
+
+	if basePath != "" && !strings.HasPrefix(basePath, "http://") && !strings.HasPrefix(basePath, "https://") {
+		basePath = "http://" + basePath
+	}
+
+	if basePath != "" && !strings.HasSuffix(basePath, "/") {
+		basePath += "/"
+	}
+
+	return basePath
+}
 
 // GetTransaccion query controlador transaccion_movimientos del api movimientos_contables_mid
 func GetTransaccion(id int, criteria string, detail bool) (transaccion *models.TransaccionMovimientos, outputError map[string]interface{}) {
 	funcion := "GetTransaccion"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
+	basePath := getBasePath()
 	urlcrud := basePath + "transaccion_movimientos/" + criteria + "/" + strconv.Itoa(id)
 	if detail {
 		urlcrud += "?detailed=true"
@@ -40,6 +54,7 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	var resp map[string]interface{}
+	basePath := getBasePath()
 	urlcrud := basePath + "transaccion_movimientos"
 
 	logs.Info("==== INICIO %s ====", funcion)
