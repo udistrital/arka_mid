@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -20,6 +21,7 @@ type EntradaController struct {
 func (c *EntradaController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
+	c.Mapping("PutAnular", c.PutAnular)
 }
 
 // Post ...
@@ -166,5 +168,50 @@ func (c *EntradaController) GetOne() {
 
 	logs.Info("Respuesta final GetOne: %+v", c.Data["json"])
 	logs.Info("==== FIN EntradaController.GetOne ====")
+	c.ServeJSON()
+}
+
+// PutAnular ...
+// @Title PutAnular
+// @Description Anula una entrada, registra un movimiento de reversión contable y devuelve el acta a estado en verificación.
+// @Param	id		path 	int								true	"Id de la entrada a anular"
+// @Param	body	body	models.AnulacionEntradaRequest	false	"Observación de la anulación"
+// @Success 200 {object} models.ResultadoAnulacionEntrada
+// @Failure 400 the request contains incorrect syntax
+// @router /:id/anular [put]
+func (c *EntradaController) PutAnular() {
+	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("se debe especificar una entrada válida")
+		}
+		panic(map[string]interface{}{
+			"funcion": `PutAnular - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	var request models.AnulacionEntradaRequest
+	if body := strings.TrimSpace(string(c.Ctx.Input.RequestBody)); body != "" {
+		if err := utilsHelper.Unmarshal(body, &request); err != nil {
+			panic(map[string]interface{}{
+				"funcion": "PutAnular - utilsHelper.Unmarshal(RequestBody, &request)",
+				"err":     err,
+				"status":  "400",
+			})
+		}
+	}
+
+	var resultado models.ResultadoAnulacionEntrada
+	if err := entradaHelper.AnularEntrada(id, &request, &resultado); err != nil {
+		panic(err)
+	}
+
+	c.Data["json"] = resultado
 	c.ServeJSON()
 }
