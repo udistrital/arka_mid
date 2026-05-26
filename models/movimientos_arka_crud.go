@@ -146,6 +146,18 @@ type ResultadoAnulacionEntrada struct {
 	TransaccionContable InfoTransaccionContable
 }
 
+type AnulacionSalidaRequest struct {
+	Observacion string
+}
+
+type ResultadoAnulacionSalida struct {
+	Error               string
+	Salida              Movimiento
+	Entrada             Movimiento
+	MovimientoReversion Movimiento
+	TransaccionContable InfoTransaccionContable
+}
+
 type FormatoTraslado struct {
 	Ubicacion          int
 	FuncionarioOrigen  int

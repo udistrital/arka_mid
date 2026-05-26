@@ -26,6 +26,7 @@ func (c *SalidaController) URLMapping() {
 	c.Mapping("GetSalidas", c.GetSalidas)
 	c.Mapping("GetElementos", c.GetElementos)
 	c.Mapping("Put", c.Put)
+	c.Mapping("PutAnular", c.PutAnular)
 }
 
 // Post ...
@@ -295,5 +296,50 @@ func (c *SalidaController) Put() {
 		}
 	}
 
+	c.ServeJSON()
+}
+
+// PutAnular ...
+// @Title PutAnular
+// @Description Anula una salida aprobada, registra un movimiento de reversión contable y restablece la entrada padre cuando corresponda.
+// @Param	id		path 	int							true	"Id de la salida a anular"
+// @Param	body	body	models.AnulacionSalidaRequest	false	"Observación de la anulación"
+// @Success 200 {object} models.ResultadoAnulacionSalida
+// @Failure 400 the request contains incorrect syntax
+// @router /:id/anular [put]
+func (c *SalidaController) PutAnular() {
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("se debe especificar una salida válida")
+		}
+		panic(map[string]interface{}{
+			"funcion": `PutAnular - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	var request models.AnulacionSalidaRequest
+	if body := strings.TrimSpace(string(c.Ctx.Input.RequestBody)); body != "" {
+		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &request); err != nil {
+			panic(map[string]interface{}{
+				"funcion": "PutAnular - json.Unmarshal(c.Ctx.Input.RequestBody, &request)",
+				"err":     err,
+				"status":  "400",
+			})
+		}
+	}
+
+	var resultado models.ResultadoAnulacionSalida
+	if err := salidaHelper.AnularSalida(id, &request, &resultado); err != nil {
+		panic(err)
+	}
+
+	c.Data["json"] = resultado
 	c.ServeJSON()
 }
