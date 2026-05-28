@@ -87,6 +87,8 @@ func (c *SalidaController) Post() {
 						"err": errors.New("no se obtuvo respuesta al registrar la(s) salida(s)"),
 					}
 					status = "404"
+				} else if rawStatus, ok := err["status"].(string); ok && rawStatus != "" {
+					status = rawStatus
 				}
 				logs.Error(err)
 				panic(map[string]interface{}{
