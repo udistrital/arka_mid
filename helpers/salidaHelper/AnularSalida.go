@@ -337,7 +337,7 @@ func aplicarEstadoSalidaAnulada(salida *models.Movimiento, observacion string) (
 		}
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&salida.EstadoMovimientoId.Id, estadoSalidaAnulada)
+	outputError = aplicarEstadoMovimiento(salida.EstadoMovimientoId, estadoSalidaAnulada)
 	if outputError != nil {
 		return outputError
 	}
@@ -377,7 +377,7 @@ func actualizarEstadoEntradaPadre(entradaID, salidaID int) (entrada *models.Movi
 		return entrada, nil
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&entrada.EstadoMovimientoId.Id, estadoEntradaAprobada)
+	outputError = aplicarEstadoMovimiento(entrada.EstadoMovimientoId, estadoEntradaAprobada)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -387,6 +387,34 @@ func actualizarEstadoEntradaPadre(entradaID, salidaID int) (entrada *models.Movi
 	}
 
 	return entrada, nil
+}
+
+func aplicarEstadoMovimiento(estado *models.EstadoMovimiento, nombre string) (outputError map[string]interface{}) {
+	if estado == nil {
+		return map[string]interface{}{
+			"funcion": "aplicarEstadoMovimiento - estado",
+			"err":     "estado movimiento nil",
+			"status":  "500",
+		}
+	}
+
+	var estadoID int
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoID, nombre)
+	if outputError != nil {
+		return outputError
+	}
+
+	sincronizarEstadoMovimiento(estado, estadoID, nombre)
+	return nil
+}
+
+func sincronizarEstadoMovimiento(estado *models.EstadoMovimiento, id int, nombre string) {
+	if estado == nil {
+		return
+	}
+
+	estado.Id = id
+	estado.Nombre = nombre
 }
 
 func consultarSalidasAsociadasEntradaPadre(entradaID int) (salidas []*models.Movimiento, outputError map[string]interface{}) {
