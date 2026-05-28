@@ -14,16 +14,27 @@ func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, 
 	var estadoMovimientoId int
 	resultado = make(map[string]interface{})
 
+	if m == nil || len(m.Salidas) == 0 {
+		return nil, errorCtrl.Error("Post - validacion salidas", "debe especificar al menos una salida", "400")
+	}
+
 	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite")
 	if outputError != nil {
 		return
 	}
 
-	for _, salida := range m.Salidas {
+	for idx := range m.Salidas {
+		salida := m.Salidas[idx].Salida
+		if salida == nil {
+			return nil, errorCtrl.Error("Post - validacion salida", "una de las salidas no tiene movimiento asociado", "400")
+		}
 
-		salida.Salida.EstadoMovimientoId = &models.EstadoMovimiento{Id: estadoMovimientoId}
+		salida.Id = 0
+		salida.EstadoMovimientoId = &models.EstadoMovimiento{Id: estadoMovimientoId, Nombre: "Salida En Trámite"}
 		if !etl {
-			outputError = setConsecutivoSalida(salida.Salida)
+			salida.Consecutivo = nil
+			salida.ConsecutivoId = nil
+			outputError = setConsecutivoSalida(salida)
 			if outputError != nil {
 				return
 			}
