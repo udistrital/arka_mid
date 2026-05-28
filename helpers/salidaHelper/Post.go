@@ -2,6 +2,7 @@ package salidaHelper
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -10,6 +11,8 @@ import (
 )
 
 var getMovimientoByIDSalidaPost = movimientosArka.GetMovimientoById
+var getAllElementosMovimientoSalidaPost = movimientosArka.GetAllElementosMovimiento
+var putElementosMovimientoSalidaPost = movimientosArka.PutElementosMovimiento
 
 // Post Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
 func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, outputError map[string]interface{}) {
@@ -45,6 +48,10 @@ func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, 
 			if outputError != nil {
 				return
 			}
+		}
+
+		if outputError = liberarElementosDeSalidasAnuladas(&m.Salidas[idx]); outputError != nil {
+			return nil, outputError
 		}
 	}
 
@@ -123,6 +130,53 @@ func completarSalidasPersistidas(m *models.SalidaGeneral) (outputError map[strin
 		}
 
 		m.Salidas[idx].Salida = movimientos[0]
+	}
+
+	return nil
+}
+
+func liberarElementosDeSalidasAnuladas(trSalida *models.TrSalida) (outputError map[string]interface{}) {
+	if trSalida == nil || trSalida.Salida == nil || len(trSalida.Elementos) == 0 {
+		return nil
+	}
+
+	desactivados := make(map[int]struct{})
+	parentID := 0
+	if trSalida.Salida.MovimientoPadreId != nil {
+		parentID = trSalida.Salida.MovimientoPadreId.Id
+	}
+
+	for _, elemento := range trSalida.Elementos {
+		if elemento == nil || elemento.ElementoActaId == nil || *elemento.ElementoActaId <= 0 {
+			continue
+		}
+
+		query := "limit=-1&query=Activo:true,ElementoActaId:" + strconv.Itoa(*elemento.ElementoActaId) +
+			",MovimientoId__EstadoMovimientoId__Nombre:" + url.QueryEscape(estadoSalidaAnulada)
+		if parentID > 0 {
+			query += ",MovimientoId__MovimientoPadreId__Id:" + strconv.Itoa(parentID)
+		}
+
+		elementosMovimiento, err := getAllElementosMovimientoSalidaPost(query)
+		if err != nil {
+			return err
+		}
+
+		for _, elementoMovimiento := range elementosMovimiento {
+			if elementoMovimiento == nil || elementoMovimiento.Id <= 0 {
+				continue
+			}
+			if _, ok := desactivados[elementoMovimiento.Id]; ok {
+				continue
+			}
+
+			elementoMovimiento.Activo = false
+			if _, err = putElementosMovimientoSalidaPost(elementoMovimiento, elementoMovimiento.Id); err != nil {
+				return err
+			}
+
+			desactivados[elementoMovimiento.Id] = struct{}{}
+		}
 	}
 
 	return nil
