@@ -138,7 +138,19 @@ func TestPostValidaSalidasVacias(t *testing.T) {
 }
 
 func TestNormalizarNuevaSalida(t *testing.T) {
-	t.Parallel()
+	originalGetter := getMovimientoByIDSalidaPost
+	getMovimientoByIDSalidaPost = func(id int) (*models.Movimiento, map[string]interface{}) {
+		return &models.Movimiento{
+			Id: 8079,
+			EstadoMovimientoId: &models.EstadoMovimiento{
+				Nombre: estadoEntradaAprobada,
+			},
+			FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+				CodigoAbreviacion: "ENT_ADQ",
+			},
+		}, nil
+	}
+	defer func() { getMovimientoByIDSalidaPost = originalGetter }()
 
 	elementoActaID := 41801
 	trSalida := &models.TrSalida{
@@ -189,6 +201,25 @@ func TestNormalizarNuevaSalida(t *testing.T) {
 
 	if trSalida.Elementos[0].Id != 0 || trSalida.Elementos[0].MovimientoId != nil {
 		t.Fatalf("expected element to be detached from previous movement, got %+v", trSalida.Elementos[0])
+	}
+}
+
+func TestNormalizarNuevaSalidaValidaPadre(t *testing.T) {
+	originalGetter := getMovimientoByIDSalidaPost
+	getMovimientoByIDSalidaPost = func(id int) (*models.Movimiento, map[string]interface{}) {
+		return nil, nil
+	}
+	defer func() { getMovimientoByIDSalidaPost = originalGetter }()
+
+	trSalida := &models.TrSalida{
+		Salida: &models.Movimiento{
+			MovimientoPadreId:       &models.Movimiento{Id: 8079},
+			FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{Id: 7},
+		},
+	}
+
+	if err := normalizarNuevaSalida(trSalida, 3); err == nil {
+		t.Fatal("expected missing parent to be rejected")
 	}
 }
 
