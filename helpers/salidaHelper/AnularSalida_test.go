@@ -223,6 +223,47 @@ func TestNormalizarNuevaSalidaValidaPadre(t *testing.T) {
 	}
 }
 
+func TestLiberarElementosDeSalidasAnuladas(t *testing.T) {
+	elementoActaID := 41801
+	actualizados := 0
+
+	originalGet := getAllElementosMovimientoSalidaPost
+	originalPut := putElementosMovimientoSalidaPost
+	getAllElementosMovimientoSalidaPost = func(query string) ([]*models.ElementosMovimiento, map[string]interface{}) {
+		return []*models.ElementosMovimiento{
+			{Id: 55, Activo: true},
+		}, nil
+	}
+	putElementosMovimientoSalidaPost = func(elementoM *models.ElementosMovimiento, elementoId int) (*models.ElementosMovimiento, map[string]interface{}) {
+		actualizados++
+		if elementoId != 55 || elementoM.Activo {
+			t.Fatalf("expected elemento 55 to be deactivated, got id=%d activo=%v", elementoId, elementoM.Activo)
+		}
+		return elementoM, nil
+	}
+	defer func() {
+		getAllElementosMovimientoSalidaPost = originalGet
+		putElementosMovimientoSalidaPost = originalPut
+	}()
+
+	trSalida := &models.TrSalida{
+		Salida: &models.Movimiento{
+			MovimientoPadreId: &models.Movimiento{Id: 8079},
+		},
+		Elementos: []*models.ElementosMovimiento{
+			{ElementoActaId: &elementoActaID},
+		},
+	}
+
+	if err := liberarElementosDeSalidasAnuladas(trSalida); err != nil {
+		t.Fatalf("expected cleanup of annulled salidas, got %#v", err)
+	}
+
+	if actualizados != 1 {
+		t.Fatalf("expected one stale elemento_movimiento to be updated, got %d", actualizados)
+	}
+}
+
 func normalizarString(v string) *string { return &v }
 
 func normalizarInt(v int) *int { return &v }
