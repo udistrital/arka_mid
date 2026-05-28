@@ -136,3 +136,62 @@ func TestPostValidaSalidasVacias(t *testing.T) {
 		t.Fatal("expected empty salidas request to be rejected")
 	}
 }
+
+func TestNormalizarNuevaSalida(t *testing.T) {
+	t.Parallel()
+
+	elementoActaID := 41801
+	trSalida := &models.TrSalida{
+		Salida: &models.Movimiento{
+			Id:            25,
+			Consecutivo:   normalizarString("H21-00001-2026"),
+			ConsecutivoId: normalizarInt(101),
+			MovimientoPadreId: &models.Movimiento{
+				Id:     8079,
+				Activo: false,
+			},
+			FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+				Id: 7,
+			},
+		},
+		Elementos: []*models.ElementosMovimiento{
+			{
+				Id:             88,
+				ElementoActaId: &elementoActaID,
+				MovimientoId:   &models.Movimiento{Id: 25},
+			},
+		},
+	}
+
+	if err := normalizarNuevaSalida(trSalida, 3); err != nil {
+		t.Fatalf("expected salida to be normalized, got %#v", err)
+	}
+
+	if trSalida.Salida.Id != 0 {
+		t.Fatalf("expected salida id 0, got %d", trSalida.Salida.Id)
+	}
+
+	if trSalida.Salida.MovimientoPadreId == nil || trSalida.Salida.MovimientoPadreId.Id != 8079 {
+		t.Fatalf("expected parent id 8079, got %+v", trSalida.Salida.MovimientoPadreId)
+	}
+
+	if trSalida.Salida.MovimientoPadreId.Activo {
+		t.Fatal("expected parent payload to be reduced to id-only reference")
+	}
+
+	if trSalida.Salida.FormatoTipoMovimientoId == nil || trSalida.Salida.FormatoTipoMovimientoId.Id != 7 {
+		t.Fatalf("expected format id 7, got %+v", trSalida.Salida.FormatoTipoMovimientoId)
+	}
+
+	if trSalida.Salida.EstadoMovimientoId == nil || trSalida.Salida.EstadoMovimientoId.Id != 3 || trSalida.Salida.EstadoMovimientoId.Nombre != "Salida En Trámite" {
+		t.Fatalf("expected estado salida en tramite, got %+v", trSalida.Salida.EstadoMovimientoId)
+	}
+
+	if trSalida.Elementos[0].Id != 0 || trSalida.Elementos[0].MovimientoId != nil {
+		t.Fatalf("expected element to be detached from previous movement, got %+v", trSalida.Elementos[0])
+	}
+}
+
+func normalizarString(v string) *string { return &v }
+
+func normalizarInt(v int) *int { return &v }
