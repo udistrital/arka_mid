@@ -3,7 +3,10 @@ package request
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -41,7 +44,9 @@ func SendJson(urlp string, trequest string, target interface{}, datajson interfa
 				return
 			}
 			defer resp.Body.Close()
-			json.NewDecoder(resp.Body).Decode(target)
+			if err := decodeJSONResponse(resp, target); err != nil {
+				logs.Error("Error decoding response. ", err)
+			}
 		}
 	}()
 
@@ -58,7 +63,7 @@ func SendJson(urlp string, trequest string, target interface{}, datajson interfa
 		return nil
 	}
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(target)
+	return decodeJSONResponse(resp, target)
 }
 
 func GetJsonWSO2(urlp string, target interface{}) error {
@@ -81,7 +86,7 @@ func GetJsonWSO2(urlp string, target interface{}) error {
 	}
 	defer r.Body.Close()
 
-	return json.NewDecoder(r.Body).Decode(target)
+	return decodeJSONResponse(r, target)
 }
 
 func SetHeader(h string) {
@@ -117,7 +122,9 @@ func GetJson(urlp string, target interface{}) error {
 				return
 			}
 			defer resp.Body.Close()
-			json.NewDecoder(resp.Body).Decode(target)
+			if err := decodeJSONResponse(resp, target); err != nil {
+				logs.Error("Error decoding response. ", err)
+			}
 		}
 	}()
 
@@ -135,7 +142,7 @@ func GetJson(urlp string, target interface{}) error {
 		return nil
 	}
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(target)
+	return decodeJSONResponse(resp, target)
 }
 
 func GetJsonTest(url string, target interface{}) (response *http.Response, err error) {
@@ -146,4 +153,34 @@ func GetJsonTest(url string, target interface{}) (response *http.Response, err e
 	}
 	defer response.Body.Close()
 	return response, json.NewDecoder(response.Body).Decode(target)
+}
+
+func decodeJSONResponse(resp *http.Response, target interface{}) error {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("http %d: %s", resp.StatusCode, resumirBodyError(body))
+	}
+
+	if target == nil || len(bytes.TrimSpace(body)) == 0 {
+		return nil
+	}
+
+	return json.Unmarshal(body, target)
+}
+
+func resumirBodyError(body []byte) string {
+	msg := strings.TrimSpace(string(body))
+	if msg == "" {
+		return "respuesta vacía"
+	}
+
+	if len(msg) > 1024 {
+		return msg[:1024]
+	}
+
+	return msg
 }
