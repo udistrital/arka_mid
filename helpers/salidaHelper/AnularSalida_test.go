@@ -124,3 +124,15 @@ func TestSincronizarEstadoMovimiento(t *testing.T) {
 
 	sincronizarEstadoMovimiento(nil, 9, estadoSalidaAnulada)
 }
+
+func TestPostValidaSalidasVacias(t *testing.T) {
+	t.Parallel()
+
+	if _, err := Post(nil, false); err == nil {
+		t.Fatal("expected nil request to be rejected")
+	}
+
+	if _, err := Post(&models.SalidaGeneral{}, false); err == nil {
+		t.Fatal("expected empty salidas request to be rejected")
+	}
+}

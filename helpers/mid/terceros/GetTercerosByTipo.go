@@ -21,9 +21,9 @@ func GetTercerosByTipo(tipo string, id int, terceros interface{}) (outputError m
 		urlcrud += "/" + strconv.Itoa(id)
 	}
 
-	if err := request.GetJson(urlcrud, &terceros); err != nil {
+	if err := request.GetJson(urlcrud, terceros); err != nil {
 		logs.Error(urlcrud + ", " + err.Error())
-		eval := " - request.GetJson(urlcrud, &terceros)"
+		eval := " - request.GetJson(urlcrud, terceros)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 

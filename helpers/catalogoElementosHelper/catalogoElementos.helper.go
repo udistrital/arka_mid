@@ -1,9 +1,9 @@
 package catalogoElementosHelper
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
@@ -18,115 +18,117 @@ func GetCuentasContablesSubgrupo(subgrupoId, movimientoId int, cuentas *[]models
 
 	defer errorCtrl.ErrorControlFunction("GetCuentasContablesSubgrupo - Unhandled Error!", "500")
 
-	var (
-		query         string
-		ctas          []models.CuentasSubgrupo
-		movs          []*models.FormatoTipoMovimiento
-		tiposBien     []models.TipoBien
-		formatoSalida models.FormatoTipoMovimiento
-	)
-
-	query = "limit=1&sortby=FechaCreacion&order=desc&fields=Id,Depreciacion,Amortizacion,TipoBienId" +
-		"&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-	detalle, outputError := catalogoElementos.GetAllDetalleSubgrupo(query)
-	if outputError != nil || len(detalle) != 1 {
-		return
-	}
-
-	query = "limit=-1&sortby=LimiteSuperior&order=asc&fields=Id,Nombre,BodegaConsumo" +
-		"&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(detalle[0].TipoBienId.Id)
-	outputError = catalogoElementos.GetAllTipoBien(query, &tiposBien)
-	if outputError != nil || len(tiposBien) == 0 {
-		return
-	}
-
-	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&query=Activo:true,CodigoAbreviacion:SAL&fields=Id,CodigoAbreviacion,Nombre"
+	query := "limit=-1&sortby=CodigoAbreviacion&order=asc&fields=Id,CodigoAbreviacion,Nombre&query=Activo:true"
 	tipos, outputError := movimientosArka.GetAllFormatoTipoMovimiento(query)
-	if outputError != nil || len(tipos) != 1 {
-		return
-	} else {
-		formatoSalida = *tipos[0]
-	}
-
-	query = "limit=-1&sortby=CodigoAbreviacion&order=asc&fields=Id,CodigoAbreviacion,Nombre&query=Activo:true"
-	if movimientoId > 0 {
-		query += ",Id:" + strconv.Itoa(movimientoId)
-	}
-
-	tipos, outputError = movimientosArka.GetAllFormatoTipoMovimiento(query)
 	if outputError != nil {
 		return
 	}
 
-	for _, fm := range tipos {
-		if (strings.Contains(fm.CodigoAbreviacion, "ENT_") || fm.CodigoAbreviacion == "BJ_HT") && !strings.Contains(fm.CodigoAbreviacion, "KDX") {
-			movs = append(movs, fm)
-		} else if fm.CodigoAbreviacion == "CRR" && (detalle[0].Depreciacion || detalle[0].Amortizacion) {
-			movs = append(movs, fm)
-		}
-	}
-
-	outputError = catalogoElementos.GetTrCuentasSubgrupo(subgrupoId, movimientoId, &ctas)
+	ctas, outputError := consultarCuentasSubgrupoRecientes(subgrupoId, movimientoId)
 	if outputError != nil {
 		return
 	}
 
+	formatosPorID := indexarFormatosPorID(tipos)
 	detalleCtas := make(map[string]models.DetalleCuenta)
-	for _, fm := range movs {
-		for _, tb := range tiposBien {
-			if tb.BodegaConsumo && (fm.CodigoAbreviacion == "CRR" || fm.CodigoAbreviacion == "BJ_HT") {
-				continue
-			}
-
-			outputError = fillCuentaSubgrupo(subgrupoId, cuentas, tb, models.FormatoTipoMovimiento{Id: 0}, *fm, ctas, detalleCtas)
-			if outputError != nil {
-				return
-			}
-
-			if !strings.Contains(fm.CodigoAbreviacion, "ENT_") {
-				continue
-			}
-
-			outputError = fillCuentaSubgrupo(subgrupoId, cuentas, tb, *fm, formatoSalida, ctas, detalleCtas)
-			if outputError != nil {
-				return
-			}
+	for _, cta := range ctas {
+		detalle := models.DetalleCuentasSubgrupo{
+			Id:         cta.Id,
+			SubgrupoId: subgrupoId,
 		}
+		if cta.TipoBienId != nil {
+			detalle.TipoBienId = *cta.TipoBienId
+		}
+
+		detalle.TipoMovimientoId = formatoMovimientoByID(cta.TipoMovimientoId, formatosPorID)
+		detalle.SubtipoMovimientoId = formatoMovimientoByID(cta.SubtipoMovimientoId, formatosPorID)
+		detalle.CuentaCreditoId = new(models.DetalleCuenta)
+		detalle.CuentaDebitoId = new(models.DetalleCuenta)
+
+		outputError = findCuentaSubgrupo(detalle.CuentaCreditoId, cta.CuentaCreditoId, detalleCtas)
+		if outputError != nil {
+			return
+		}
+
+		outputError = findCuentaSubgrupo(detalle.CuentaDebitoId, cta.CuentaDebitoId, detalleCtas)
+		if outputError != nil {
+			return
+		}
+
+		*cuentas = append(*cuentas, detalle)
 	}
 
 	return
 }
 
-func fillCuentaSubgrupo(sgId int, cFinales *[]models.DetalleCuentasSubgrupo, tb models.TipoBien, mov, sMov models.FormatoTipoMovimiento,
-	ctasSg []models.CuentasSubgrupo, cuentas map[string]models.DetalleCuenta) (
-	outputError map[string]interface{}) {
-
-	defer errorCtrl.ErrorControlFunction("fillCuentaSubgrupo - Unhandled Error!", "500")
-
-	var dCta models.DetalleCuentasSubgrupo
-	dCta.SubgrupoId = sgId
-	dCta.TipoMovimientoId = &mov
-	dCta.SubtipoMovimientoId = &sMov
-	dCta.TipoBienId = tb
-
-	if idx := findInArray(ctasSg, mov.Id, sMov.Id, tb.Id); idx > -1 {
-		dCta.Id = ctasSg[idx].Id
-		dCta.CuentaCreditoId = new(models.DetalleCuenta)
-		dCta.CuentaDebitoId = new(models.DetalleCuenta)
-
-		err := findCuentaSubgrupo(dCta.CuentaCreditoId, ctasSg[idx].CuentaCreditoId, cuentas)
-		if err != nil {
-			return err
-		}
-
-		err = findCuentaSubgrupo(dCta.CuentaDebitoId, ctasSg[idx].CuentaDebitoId, cuentas)
-		if err != nil {
-			return err
-		}
+func consultarCuentasSubgrupoRecientes(subgrupoId, movimientoId int) (ctas []models.CuentasSubgrupo, outputError map[string]interface{}) {
+	query := "limit=-1&fields=Id,CuentaDebitoId,CuentaCreditoId,TipoMovimientoId,SubtipoMovimientoId,SubgrupoId,TipoBienId" +
+		"&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
+	cuentasSubgrupo, outputError := catalogoElementos.GetAllCuentasSubgrupo(query)
+	if outputError != nil {
+		return nil, outputError
 	}
 
-	*cFinales = append(*cFinales, dCta)
-	return
+	return seleccionarCuentasSubgrupoRecientes(cuentasSubgrupo, movimientoId), nil
+}
+
+func seleccionarCuentasSubgrupoRecientes(cuentasSubgrupo []*models.CuentasSubgrupo, movimientoId int) []models.CuentasSubgrupo {
+	seleccionadas := make([]models.CuentasSubgrupo, 0, len(cuentasSubgrupo))
+	vistas := make(map[string]struct{}, len(cuentasSubgrupo))
+	for _, cuenta := range cuentasSubgrupo {
+		if cuenta == nil || cuenta.TipoBienId == nil {
+			continue
+		}
+
+		if movimientoId > 0 && cuenta.TipoMovimientoId != movimientoId && cuenta.SubtipoMovimientoId != movimientoId {
+			continue
+		}
+
+		key := cuentaSubgrupoKey(*cuenta)
+		if _, ok := vistas[key]; ok {
+			continue
+		}
+
+		vistas[key] = struct{}{}
+		seleccionadas = append(seleccionadas, *cuenta)
+	}
+
+	return seleccionadas
+}
+
+func cuentaSubgrupoKey(cuenta models.CuentasSubgrupo) string {
+	tipoBienID := 0
+	if cuenta.TipoBienId != nil {
+		tipoBienID = cuenta.TipoBienId.Id
+	}
+
+	return fmt.Sprintf("%d|%d|%d", cuenta.TipoMovimientoId, cuenta.SubtipoMovimientoId, tipoBienID)
+}
+
+func indexarFormatosPorID(tipos []*models.FormatoTipoMovimiento) map[int]models.FormatoTipoMovimiento {
+	index := make(map[int]models.FormatoTipoMovimiento, len(tipos))
+	for _, fm := range tipos {
+		if fm == nil || fm.Id <= 0 {
+			continue
+		}
+
+		index[fm.Id] = *fm
+	}
+
+	return index
+}
+
+func formatoMovimientoByID(id int, formatos map[int]models.FormatoTipoMovimiento) *models.FormatoTipoMovimiento {
+	if id == 0 {
+		return &models.FormatoTipoMovimiento{Id: 0}
+	}
+
+	if fm, ok := formatos[id]; ok {
+		formato := fm
+		return &formato
+	}
+
+	return &models.FormatoTipoMovimiento{Id: id}
 }
 
 func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas map[string]models.DetalleCuenta) (outputError map[string]interface{}) {
@@ -187,14 +189,4 @@ func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuent
 
 	return
 
-}
-
-// findIdInArray Retorna la posicion en que se encuentra el id específicado
-func findInArray(cuentasSg []models.CuentasSubgrupo, movimientoId, sMovimientoId, tipoBienId int) (i int) {
-	for i, cuentaSg := range cuentasSg {
-		if cuentaSg.TipoMovimientoId == movimientoId && cuentaSg.SubtipoMovimientoId == sMovimientoId && cuentaSg.TipoBienId.Id == tipoBienId {
-			return i
-		}
-	}
-	return -1
 }
