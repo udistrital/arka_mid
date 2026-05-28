@@ -2,11 +2,14 @@ package salidaHelper
 
 import (
 	"net/url"
+	"strings"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
+
+var getMovimientoByIDSalidaPost = movimientosArka.GetMovimientoById
 
 // Post Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
 func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, outputError map[string]interface{}) {
@@ -66,6 +69,19 @@ func normalizarNuevaSalida(trSalida *models.TrSalida, estadoMovimientoId int) (o
 
 	if salida.MovimientoPadreId == nil || salida.MovimientoPadreId.Id <= 0 {
 		return errorCtrl.Error("normalizarNuevaSalida - MovimientoPadreId", "la salida debe tener una entrada padre válida", "400")
+	}
+	entradaPadre, err := getMovimientoByIDSalidaPost(salida.MovimientoPadreId.Id)
+	if err != nil {
+		return err
+	}
+	if entradaPadre == nil || entradaPadre.Id <= 0 {
+		return errorCtrl.Error("normalizarNuevaSalida - MovimientoPadreId", "la entrada padre indicada no existe", "400")
+	}
+	if entradaPadre.EstadoMovimientoId == nil || (entradaPadre.EstadoMovimientoId.Nombre != "Entrada Aprobada" && entradaPadre.EstadoMovimientoId.Nombre != "Entrada Con Salida") {
+		return errorCtrl.Error("normalizarNuevaSalida - EstadoMovimientoId", "la entrada padre no está en un estado válido para registrar salidas", "400")
+	}
+	if entradaPadre.FormatoTipoMovimientoId == nil || !strings.HasPrefix(entradaPadre.FormatoTipoMovimientoId.CodigoAbreviacion, "ENT_") {
+		return errorCtrl.Error("normalizarNuevaSalida - FormatoTipoMovimientoId", "el movimiento padre indicado no corresponde a una entrada válida", "400")
 	}
 	salida.MovimientoPadreId = &models.Movimiento{Id: salida.MovimientoPadreId.Id}
 
