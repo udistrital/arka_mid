@@ -103,3 +103,24 @@ func TestNormalizarTerceroIdSalida(t *testing.T) {
 		t.Fatalf("expected tercero id %d to be preserved", valido)
 	}
 }
+
+func TestSincronizarEstadoMovimiento(t *testing.T) {
+	t.Parallel()
+
+	estado := &models.EstadoMovimiento{
+		Id:     3,
+		Nombre: estadoEntradaConSalida,
+	}
+
+	sincronizarEstadoMovimiento(estado, 7, estadoEntradaAprobada)
+
+	if estado.Id != 7 {
+		t.Fatalf("expected estado id 7, got %d", estado.Id)
+	}
+
+	if estado.Nombre != estadoEntradaAprobada {
+		t.Fatalf("expected estado nombre %q, got %q", estadoEntradaAprobada, estado.Nombre)
+	}
+
+	sincronizarEstadoMovimiento(nil, 9, estadoSalidaAnulada)
+}
