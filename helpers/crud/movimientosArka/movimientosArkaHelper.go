@@ -240,7 +240,7 @@ func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGene
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "tr_salida/"
-	if err := request.SendJson(urlcrud, "PUT", &trResultado, &trSalida); err != nil {
+	if err := request.SendJson(urlcrud, "PUT", &trResultado, trSalida); err != nil {
 		eval := " - request.SendJson(urlcrud, \"PUT\", &trResultado, &trSalida)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
@@ -256,10 +256,10 @@ func PostTrSalida(trSalida *models.SalidaGeneral) (outputError map[string]interf
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tr_salida"
-	err := request.SendJson(urlcrud, "POST", &trSalida, &trSalida)
+	err := request.SendJson(urlcrud, "POST", trSalida, trSalida)
 	if err != nil {
 		logs.Error(err)
-		eval := `request.SendJson(urlcrud, "POST", &trSalida, &trSalida)`
+		eval := `request.SendJson(urlcrud, "POST", trSalida, trSalida)`
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 

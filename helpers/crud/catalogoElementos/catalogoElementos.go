@@ -39,9 +39,9 @@ func GetTrCuentasSubgrupo(id, movimientoId int, cuentas *[]models.CuentasSubgrup
 		urlcrud += "?movimientoId=" + strconv.Itoa(movimientoId)
 	}
 
-	if err := request.GetJson(urlcrud, &cuentas); err != nil {
+	if err := request.GetJson(urlcrud, cuentas); err != nil {
 		logs.Error(urlcrud, err)
-		eval := "request.GetJson(urlcrud, &cuentas)"
+		eval := "request.GetJson(urlcrud, cuentas)"
 		return errorCtrl.Error(funcion+eval, err, "500")
 	}
 
@@ -71,9 +71,9 @@ func GetAllTipoBien(query string, tiposBien *[]models.TipoBien) (outputError map
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "tipo_bien?" + query
-	if err := request.GetJson(urlcrud, &tiposBien); err != nil {
+	if err := request.GetJson(urlcrud, tiposBien); err != nil {
 		logs.Error(urlcrud, err)
-		eval := "request.GetJson(urlcrud, &detalle)"
+		eval := "request.GetJson(urlcrud, tiposBien)"
 		return errorCtrl.Error(funcion+eval, err, "500")
 	}
 

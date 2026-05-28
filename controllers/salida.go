@@ -19,6 +19,10 @@ type SalidaController struct {
 	beego.Controller
 }
 
+type salidaPostEnvelope struct {
+	TrSalida *models.SalidaGeneral `json:"trSalida"`
+}
+
 // URLMapping ...
 func (c *SalidaController) URLMapping() {
 	c.Mapping("Post", c.Post)
@@ -72,7 +76,7 @@ func (c *SalidaController) Post() {
 		}
 	} else {
 		var v models.SalidaGeneral
-		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if err := decodeSalidaGeneralRequest(c.Ctx.Input.RequestBody, &v); err == nil {
 			if respuesta, err := salidaHelper.Post(&v, etl); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
@@ -94,7 +98,7 @@ func (c *SalidaController) Post() {
 		} else {
 			logs.Error(err)
 			panic(map[string]interface{}{
-				"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+				"funcion": "Post - decodeSalidaGeneralRequest(c.Ctx.Input.RequestBody, &v)",
 				"err":     err,
 				"status":  "400",
 			})
@@ -102,6 +106,32 @@ func (c *SalidaController) Post() {
 	}
 
 	c.ServeJSON()
+}
+
+func decodeSalidaGeneralRequest(body []byte, salida *models.SalidaGeneral) error {
+	if salida == nil {
+		return errors.New("destino de salida nil")
+	}
+
+	if err := json.Unmarshal(body, salida); err != nil {
+		return err
+	}
+
+	if len(salida.Salidas) > 0 {
+		return nil
+	}
+
+	var envelope salidaPostEnvelope
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return err
+	}
+
+	if envelope.TrSalida != nil && len(envelope.TrSalida.Salidas) > 0 {
+		*salida = *envelope.TrSalida
+		return nil
+	}
+
+	return errors.New("debe especificar al menos una salida")
 }
 
 // GetSalida ...
