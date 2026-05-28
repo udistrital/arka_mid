@@ -50,7 +50,6 @@ steps:
     branch:
       - feature/*
       - develop
-      - release/*
       - hotfix/*
     event:
       - push
