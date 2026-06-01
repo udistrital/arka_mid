@@ -52,9 +52,12 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 		}
 
 		payload = "Id:" + strconv.Itoa(val.ElementoActaId)
-		if elemento, err := actaRecibido.GetAllElemento(payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "", "", "", ""); err != nil {
+		if elemento, err := actaRecibido.GetAllElemento(payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId,Activo", "", "", "", ""); err != nil {
 			return err
 		} else if len(elemento) == 1 {
+			if !elementoValidoParaDepreciacion(elemento[0]) {
+				continue
+			}
 
 			payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 			if _, ok := subgrupos[elemento[0].SubgrupoCatalogoId]; !ok {
@@ -87,6 +90,22 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 	resultado.Error, outputError = asientoContable.CalcularMovimientosContables(elementos_, getDescripcionMovmientoCierre(), 0, formtatoCrr, terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos)
 
 	return
+}
+
+func elementoValidoParaDepreciacion(elemento *models.Elemento) bool {
+	if elemento == nil {
+		return false
+	}
+
+	if !elemento.Activo {
+		return false
+	}
+
+	if elemento.TipoBienId <= 0 {
+		return false
+	}
+
+	return true
 }
 
 func getTipoComprobanteCierre() string {
