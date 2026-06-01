@@ -1,6 +1,9 @@
 package terceros
 
 import (
+	"encoding/json"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -24,16 +27,75 @@ func GetCargoFuncionario(id int) (cargo []*models.Parametro, outputError map[str
 
 	// Consulta cargo
 	urlcrud := basePath + "propiedad/cargo/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &cargo); err != nil {
+	req, err := http.NewRequest(http.MethodGet, urlcrud, nil)
+	if err != nil {
 		logs.Error(err)
-		outputError = map[string]interface{}{
-			"funcion": "GetCargoFuncionario - request.GetJson(urlcrud, &cargo)",
+		return nil, map[string]interface{}{
+			"funcion": "GetCargoFuncionario - http.NewRequest(http.MethodGet, urlcrud, nil)",
 			"err":     err,
 			"status":  "502",
 		}
-		return nil, outputError
 	}
 
+	req.Header.Set("Authorization", request.GetHeader())
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logs.Error(err)
+		return nil, map[string]interface{}{
+			"funcion": "GetCargoFuncionario - http.DefaultClient.Do(req)",
+			"err":     err,
+			"status":  "502",
+		}
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logs.Error(err)
+		return nil, map[string]interface{}{
+			"funcion": "GetCargoFuncionario - io.ReadAll(resp.Body)",
+			"err":     err,
+			"status":  "502",
+		}
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return []*models.Parametro{}, nil
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		serviceError := map[string]interface{}{
+			"status": resp.StatusCode,
+			"body":   string(body),
+		}
+		logs.Error(serviceError)
+		return nil, map[string]interface{}{
+			"funcion": "GetCargoFuncionario - servicio terceros_mid",
+			"err":     serviceError,
+			"status":  "502",
+		}
+	}
+
+	if len(body) == 0 {
+		return []*models.Parametro{}, nil
+	}
+
+	if err := json.Unmarshal(body, &cargo); err == nil {
+		return cargo, nil
+	}
+
+	var parametro models.Parametro
+	if err := json.Unmarshal(body, &parametro); err == nil {
+		return []*models.Parametro{&parametro}, nil
+	}
+
+	logs.Error(err)
+	outputError = map[string]interface{}{
+		"funcion": "GetCargoFuncionario - json.Unmarshal(body, &cargo)",
+		"err":     err,
+		"status":  "502",
+	}
 	return
 }
 
