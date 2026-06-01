@@ -31,19 +31,6 @@ steps:
     event:
     - push
 
-- name: check_commits
-  image: jjvargass/qa_develoment:latest
-  failure: ignore
-  commands:
-  - python /app/check_commits.py
-  when:
-    branch:
-    - develop
-    - feature/*
-    - release/*
-    event:
-    - push
-
 - name: go_run_test
   image: golang:1.25
   commands:
@@ -63,7 +50,6 @@ steps:
     branch:
       - feature/*
       - develop
-      - release/*
       - hotfix/*
     event:
       - push

@@ -22,10 +22,10 @@ func GetOrdenadores(id int, ordenadores interface{}) (outputError map[string]int
 		urlcrud += "/" + strconv.Itoa(id)
 	}
 
-	err := request.GetJson(urlcrud, &ordenadores)
+	err := request.GetJson(urlcrud, ordenadores)
 	if err != nil {
 		logs.Error(urlcrud + ", " + err.Error())
-		eval := "request.GetJson(urlcrud, &ordenadores)"
+		eval := "request.GetJson(urlcrud, ordenadores)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 

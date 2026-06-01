@@ -19,6 +19,10 @@ type SalidaController struct {
 	beego.Controller
 }
 
+type salidaPostEnvelope struct {
+	TrSalida *models.SalidaGeneral `json:"trSalida"`
+}
+
 // URLMapping ...
 func (c *SalidaController) URLMapping() {
 	c.Mapping("Post", c.Post)
@@ -26,6 +30,7 @@ func (c *SalidaController) URLMapping() {
 	c.Mapping("GetSalidas", c.GetSalidas)
 	c.Mapping("GetElementos", c.GetElementos)
 	c.Mapping("Put", c.Put)
+	c.Mapping("PutAnular", c.PutAnular)
 }
 
 // Post ...
@@ -71,7 +76,7 @@ func (c *SalidaController) Post() {
 		}
 	} else {
 		var v models.SalidaGeneral
-		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if err := decodeSalidaGeneralRequest(c.Ctx.Input.RequestBody, &v); err == nil {
 			if respuesta, err := salidaHelper.Post(&v, etl); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
@@ -82,6 +87,8 @@ func (c *SalidaController) Post() {
 						"err": errors.New("no se obtuvo respuesta al registrar la(s) salida(s)"),
 					}
 					status = "404"
+				} else if rawStatus, ok := err["status"].(string); ok && rawStatus != "" {
+					status = rawStatus
 				}
 				logs.Error(err)
 				panic(map[string]interface{}{
@@ -93,7 +100,7 @@ func (c *SalidaController) Post() {
 		} else {
 			logs.Error(err)
 			panic(map[string]interface{}{
-				"funcion": "Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+				"funcion": "Post - decodeSalidaGeneralRequest(c.Ctx.Input.RequestBody, &v)",
 				"err":     err,
 				"status":  "400",
 			})
@@ -101,6 +108,32 @@ func (c *SalidaController) Post() {
 	}
 
 	c.ServeJSON()
+}
+
+func decodeSalidaGeneralRequest(body []byte, salida *models.SalidaGeneral) error {
+	if salida == nil {
+		return errors.New("destino de salida nil")
+	}
+
+	if err := json.Unmarshal(body, salida); err != nil {
+		return err
+	}
+
+	if len(salida.Salidas) > 0 {
+		return nil
+	}
+
+	var envelope salidaPostEnvelope
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return err
+	}
+
+	if envelope.TrSalida != nil && len(envelope.TrSalida.Salidas) > 0 {
+		*salida = *envelope.TrSalida
+		return nil
+	}
+
+	return errors.New("debe especificar al menos una salida")
 }
 
 // GetSalida ...
@@ -295,5 +328,50 @@ func (c *SalidaController) Put() {
 		}
 	}
 
+	c.ServeJSON()
+}
+
+// PutAnular ...
+// @Title PutAnular
+// @Description Anula una salida aprobada, registra un movimiento de reversión contable y restablece la entrada padre cuando corresponda.
+// @Param	id		path 	int							true	"Id de la salida a anular"
+// @Param	body	body	models.AnulacionSalidaRequest	false	"Observación de la anulación"
+// @Success 200 {object} models.ResultadoAnulacionSalida
+// @Failure 400 the request contains incorrect syntax
+// @router /:id/anular [put]
+func (c *SalidaController) PutAnular() {
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
+
+	var id int
+	if v, err := c.GetInt(":id"); err != nil || v <= 0 {
+		if err == nil {
+			err = errors.New("se debe especificar una salida válida")
+		}
+		panic(map[string]interface{}{
+			"funcion": `PutAnular - c.GetInt(":id")`,
+			"err":     err,
+			"status":  "400",
+		})
+	} else {
+		id = v
+	}
+
+	var request models.AnulacionSalidaRequest
+	if body := strings.TrimSpace(string(c.Ctx.Input.RequestBody)); body != "" {
+		if err := json.Unmarshal(c.Ctx.Input.RequestBody, &request); err != nil {
+			panic(map[string]interface{}{
+				"funcion": "PutAnular - json.Unmarshal(c.Ctx.Input.RequestBody, &request)",
+				"err":     err,
+				"status":  "400",
+			})
+		}
+	}
+
+	var resultado models.ResultadoAnulacionSalida
+	if err := salidaHelper.AnularSalida(id, &request, &resultado); err != nil {
+		panic(err)
+	}
+
+	c.Data["json"] = resultado
 	c.ServeJSON()
 }
