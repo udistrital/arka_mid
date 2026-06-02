@@ -152,7 +152,7 @@ func CalcularMovimientosContables(
 		}
 
 		if _, ok := cuentasSg[el.SubgrupoCatalogoId]; !ok {
-			payloadCtas := payloadCuentas(el.SubgrupoCatalogoId)
+			payloadCtas := payloadCuentas(el.SubgrupoCatalogoId, movId, sMovId)
 			logs.Info("CalcularMovimientosContables -> DEBUG criterios parametrizacion: SubgrupoCatalogoId=%d", el.SubgrupoCatalogoId)
 			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetAllCuentasSubgrupo payload=%s", payloadCtas)
 
@@ -165,7 +165,7 @@ func CalcularMovimientosContables(
 			if len(cst) == 0 {
 				logs.Error("CalcularMovimientosContables -> no hay parametrización contable para subgrupo=%d payload=%s",
 					el.SubgrupoCatalogoId, payloadCtas)
-				return "No se pudo establecer la parametrización contable para la clase: " + detalleSg.SubgrupoId.Codigo, nil
+				return mensajeFaltaParametrizacionSubgrupo(detalleSg), nil
 			}
 
 			for idx, cfg := range cst {
@@ -190,13 +190,13 @@ func CalcularMovimientosContables(
 		if cuentaCfg.CuentaCreditoId == "" {
 			logs.Error("CalcularMovimientosContables -> CuentaCreditoId vacío. subgrupo=%d config=%+v",
 				el.SubgrupoCatalogoId, cuentaCfg)
-			return "La parametrización contable no tiene cuenta crédito. Contacte soporte.", nil
+			return mensajeFaltaParametrizacionSubgrupo(detalleSg), nil
 		}
 
 		if cuentaCfg.CuentaDebitoId == "" {
 			logs.Error("CalcularMovimientosContables -> CuentaDebitoId vacío. subgrupo=%d config=%+v",
 				el.SubgrupoCatalogoId, cuentaCfg)
-			return "La parametrización contable no tiene cuenta débito. Contacte soporte.", nil
+			return mensajeFaltaParametrizacionSubgrupo(detalleSg), nil
 		}
 
 		logs.Info("CalcularMovimientosContables -> DEBUG cuentaCreditoID=%s cuentaDebitoID=%s",
@@ -214,7 +214,7 @@ func CalcularMovimientosContables(
 				cuentas[cuentaCfg.CuentaCreditoId] = *cr
 			} else {
 				logs.Error("CalcularMovimientosContables -> cuenta crédito no encontrada=%s", cuentaCfg.CuentaCreditoId)
-				return "No se pudo encontrar la cuenta contable. Contacte soporte", nil
+				return mensajeFaltaParametrizacionSubgrupo(detalleSg), nil
 			}
 		}
 
@@ -230,7 +230,7 @@ func CalcularMovimientosContables(
 				cuentas[cuentaCfg.CuentaDebitoId] = *db
 			} else {
 				logs.Error("CalcularMovimientosContables -> cuenta débito no encontrada=%s", cuentaCfg.CuentaDebitoId)
-				return "No se pudo encontrar la cuenta contable. Contacte soporte", nil
+				return mensajeFaltaParametrizacionSubgrupo(detalleSg), nil
 			}
 		}
 
@@ -284,10 +284,23 @@ func fillMovimiento(valor float64, dsc string, terceroId, tipoMov int, cuenta mo
 	logs.Info("fillMovimiento -> movimiento construido=%+v", *movimiento)
 }
 
-func payloadCuentas(sg int) string {
+func payloadCuentas(sg, movId, sMovId int) string {
 	payload := "limit=1&sortby=Id&order=desc&fields=CuentaDebitoId,CuentaCreditoId&query=Activo:true,SubgrupoId__Id:" +
 		strconv.Itoa(sg)
+	if sMovId > 0 {
+		payload += ",SubtipoMovimientoId:" + strconv.Itoa(sMovId)
+	} else if movId > 0 {
+		payload += ",TipoMovimientoId:" + strconv.Itoa(movId)
+	}
 
-	logs.Info("payloadCuentas -> sg=%d payload=%s", sg, payload)
+	logs.Info("payloadCuentas -> sg=%d movId=%d sMovId=%d payload=%s", sg, movId, sMovId, payload)
 	return payload
+}
+
+func mensajeFaltaParametrizacionSubgrupo(detalleSg models.DetalleSubgrupo) string {
+	if detalleSg.SubgrupoId != nil {
+		return "Debe parametrizar las cuentas activas para el subgrupo " + detalleSg.SubgrupoId.Codigo + " " + detalleSg.SubgrupoId.Nombre
+	}
+
+	return "Debe parametrizar las cuentas activas para el subgrupo solicitado."
 }
