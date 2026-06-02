@@ -398,7 +398,7 @@ func GetCorteDepreciacion(fechaCorte string) (corte []models.DepreciacionElement
 	funcion := "GetCorteDepreciacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
-	urlcrud := basePath + "cierre/?fechaCorte=" + fechaCorte
+	urlcrud := buildCorteDepreciacionURL(fechaCorte)
 	if err := request.GetJson(urlcrud, &corte); err != nil {
 		logs.Error(err, urlcrud)
 		eval := "request.GetJson(urlcrud, &corte)"
@@ -406,6 +406,10 @@ func GetCorteDepreciacion(fechaCorte string) (corte []models.DepreciacionElement
 	}
 
 	return
+}
+
+func buildCorteDepreciacionURL(fechaCorte string) string {
+	return basePath + "cierre?fechaCorte=" + fechaCorte
 }
 
 // AprobarCierre post controlador cierre del api movimientos_arka_crud
