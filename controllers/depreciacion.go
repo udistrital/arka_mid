@@ -42,16 +42,22 @@ func (c *DepreciacionController) Post() {
 		if !v.Rechazar {
 			if err := depreciacionHelper.GenerarCierre(v, &resultado); err != nil {
 				logs.Error(err)
-				c.Data["system"] = err
-				c.Abort("404")
+				panic(map[string]interface{}{
+					"funcion": "Post - depreciacionHelper.GenerarCierre(v, &resultado)",
+					"err":     err,
+					"status":  outputErrorStatus(err, "404"),
+				})
 			} else {
 				c.Data["json"] = resultado
 			}
 		} else {
 			if err := depreciacionHelper.RechazarCierre(v, &resultado); err != nil {
 				logs.Error(err)
-				c.Data["system"] = err
-				c.Abort("404")
+				panic(map[string]interface{}{
+					"funcion": "Post - depreciacionHelper.RechazarCierre(v, &resultado)",
+					"err":     err,
+					"status":  outputErrorStatus(err, "404"),
+				})
 			} else {
 				c.Data["json"] = resultado
 			}
@@ -89,8 +95,11 @@ func (c *DepreciacionController) GetOne() {
 	var detalle models.ResultadoMovimiento
 	if err := depreciacionHelper.GetCierre(id, &detalle); err != nil {
 		logs.Error(err)
-		c.Data["system"] = err
-		c.Abort("404")
+		panic(map[string]interface{}{
+			"funcion": "GetOne - depreciacionHelper.GetCierre(id, &detalle)",
+			"err":     err,
+			"status":  outputErrorStatus(err, "404"),
+		})
 	} else {
 		c.Data["json"] = detalle
 	}
@@ -140,4 +149,16 @@ func (c *DepreciacionController) Put() {
 	}
 
 	c.ServeJSON()
+}
+
+func outputErrorStatus(err map[string]interface{}, fallback string) string {
+	if err == nil {
+		return fallback
+	}
+
+	if status, ok := err["status"].(string); ok && status != "" {
+		return status
+	}
+
+	return fallback
 }
