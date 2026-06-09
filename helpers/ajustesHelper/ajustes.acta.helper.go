@@ -128,12 +128,24 @@ func fillElementos(elsOrg []*models.DetalleElemento_) (completos []*models.Detal
 
 }
 
-func generarNuevosActa(nuevos []*models.DetalleElemento_) (actualizados []*models.Elemento, outputError map[string]interface{}) {
+func generarNuevosActa(nuevos []*models.DetalleElemento_, originales []*models.Elemento) (actualizados []*models.Elemento, outputError map[string]interface{}) {
 
 	funcion := "generarNuevosActa"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
-	outputError = utilsHelper.FillStruct(nuevos, &actualizados)
+	if outputError = utilsHelper.FillStruct(nuevos, &actualizados); outputError != nil {
+		return
+	}
+
+	// El PUT a acta_recibido_crud reemplaza la fila completa; se preservan las
+	// fechas del elemento original para no violar el not-null de fecha_creacion.
+	for _, el := range actualizados {
+		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
+			el.FechaCreacion = originales[idx].FechaCreacion
+			el.FechaModificacion = originales[idx].FechaModificacion
+		}
+	}
+
 	return
 
 }

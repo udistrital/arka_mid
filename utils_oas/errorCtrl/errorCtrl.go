@@ -12,7 +12,11 @@ import (
 func ErrorControlController(c web.Controller, controller string) {
 	if err := recover(); err != nil {
 		logs.Error(err)
-		localError := err.(map[string]interface{})
+		localError, ok := err.(map[string]interface{})
+		if !ok {
+			c.Abort(strconv.Itoa(http.StatusInternalServerError))
+			return
+		}
 		appName, _ := web.AppConfig.String("appname")
 		c.Data["mesaage"] = (appName + "/" + controller + "/" + (localError["funcion"]).(string))
 		c.Data["data"] = normalizeErrorValue(localError["err"])
