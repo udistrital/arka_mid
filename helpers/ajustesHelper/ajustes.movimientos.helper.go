@@ -266,7 +266,7 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 		movimiento.FormatoTipoMovimientoId = fm[0]
 	}
 
-	if sm, err := movimientosArka.GetAllEstadoMovimiento(url.QueryEscape("Ajuste Aprobado")); err != nil {
+	if sm, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste Aprobado")); err != nil {
 		return nil, nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]

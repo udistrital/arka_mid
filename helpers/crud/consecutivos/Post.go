@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
@@ -23,14 +22,12 @@ func Post(consecutivo interface{}) (outputError map[string]interface{}) {
 	response := new(models.RespuestaAPI1Interface)
 
 	if err := request.SendJson(urlcrud, "POST", response, consecutivo); err != nil {
-		logs.Error(urlcrud + ", " + err.Error())
 		eval := ` - request.SendJson(urlcrud, "POST", response, consecutivo)`
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	if !response.Success {
 		err := fmt.Errorf("%v", response.Message)
-		logs.Error(err)
 		eval := ` - request.SendJson(urlcrud, "POST", response, consecutivo)`
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
@@ -56,28 +53,6 @@ func Post(consecutivo interface{}) (outputError map[string]interface{}) {
 			err := fmt.Errorf("response.Data llegó como arreglo vacío")
 			return errorCtrl.Error(funcion+" - response.Data vacío", err, "502")
 		}
-
-		// intentar encontrar el consecutivo correcto si el payload es *models.Consecutivo
-		if cons, ok := consecutivo.(*models.Consecutivo); ok {
-			for _, item := range data {
-				tmp := models.Consecutivo{}
-				raw, err := json.Marshal(item)
-				if err != nil {
-					continue
-				}
-				if err := json.Unmarshal(raw, &tmp); err != nil {
-					continue
-				}
-
-				if tmp.ContextoId == cons.ContextoId &&
-					tmp.Year == cons.Year &&
-					tmp.Descripcion == cons.Descripcion {
-					return fill(item, consecutivo)
-				}
-			}
-		}
-
-		// fallback: usar el último elemento
 		return fill(data[len(data)-1], consecutivo)
 
 	default:

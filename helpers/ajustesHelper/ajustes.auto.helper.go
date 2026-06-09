@@ -159,7 +159,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 	}
 
 	if len(updateSg)+len(updateVls)+len(updateMsc) > 0 {
-		if nuevos, err := generarNuevosActa(append(updateSg, (append(updateVls, updateMsc...))...)); err != nil {
+		if nuevos, err := generarNuevosActa(append(updateSg, (append(updateVls, updateMsc...))...), orgiginalesActa); err != nil {
 			return nil, err
 		} else {
 			nuevosActa = nuevos
