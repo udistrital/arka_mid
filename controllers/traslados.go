@@ -18,6 +18,7 @@ type TrasladosController struct {
 // URLMapping ...
 func (c *TrasladosController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("PostInterno", c.PostInterno)
 	c.Mapping("GetTraslado", c.GetTraslado)
 	c.Mapping("GetElementosFuncionario", c.GetElementosFuncionario)
 	c.Mapping("GetAll", c.GetAll)
@@ -46,6 +47,38 @@ func (c *TrasladosController) Post() {
 	}
 
 	err := trasladoshelper.Post(&v)
+	if err != nil {
+		panic(err)
+	} else {
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = v
+	}
+
+	c.ServeJSON()
+}
+
+// PostInterno ...
+// @Title Post Traslado Interno
+// @Description Genera un nuevo traslado interno en estado confirmado, validando que funcionario origen y destino sean distintos
+// @Param	body		body 	models.Movimiento	true		"Informacion del traslado interno"
+// @Success 200 {object} models.Movimiento
+// @Failure 403 body is empty
+// @router /interno [post]
+func (c *TrasladosController) PostInterno() {
+
+	defer errorCtrl.ErrorControlController(c.Controller, "TrasladosController")
+
+	var v models.Movimiento
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
+		logs.Error(err)
+		panic(map[string]interface{}{
+			"funcion": "PostInterno - json.Unmarshal(c.Ctx.Input.RequestBody, &v)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	err := trasladoshelper.PostInterno(&v)
 	if err != nil {
 		panic(err)
 	} else {
