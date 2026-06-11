@@ -376,7 +376,7 @@ func consultarEntradasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.T
 		return []*entradaReporteData{}, nil
 	}
 
-	movimientos, outputError := consultarMovimientosPorFechaEstadoYActivo(fechaInicial, fechaFinal, codigosEntrada, estadoEntradaAnuladaReporte, false)
+	movimientos, outputError := consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal, codigosEntrada, estadoEntradaAnuladaReporte)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -406,7 +406,7 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 		return []*salidaReporteData{}, nil
 	}
 
-	movimientos, outputError := consultarMovimientosPorFechaEstadoYActivo(fechaInicial, fechaFinal, codigosSalida, estadoSalidaAnuladaReporte, false)
+	movimientos, outputError := consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal, codigosSalida, estadoSalidaAnuladaReporte)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -551,8 +551,8 @@ func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrad
 	return movimientos, nil
 }
 
-func consultarMovimientosPorFechaEstadoYActivo(fechaInicial, fechaFinal time.Time, codigos []string, estado string, activo bool) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
-	defer errorCtrl.ErrorControlFunction("consultarMovimientosPorFechaEstadoYActivo - Unhandled Error!", "500")
+func consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal time.Time, codigos []string, estado string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarMovimientosPorFechaYEstado - Unhandled Error!", "500")
 
 	if len(codigos) == 0 {
 		return []*models.Movimiento{}, nil
@@ -567,8 +567,7 @@ func consultarMovimientosPorFechaEstadoYActivo(fechaInicial, fechaFinal time.Tim
 	params.Add("order", "asc")
 	params.Add(
 		"query",
-		"Activo:"+strconv.FormatBool(activo)+
-			",EstadoMovimientoId__Nombre:"+estado+
+		"EstadoMovimientoId__Nombre:"+estado+
 			",FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigos, "|")+
 			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
 			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
@@ -1332,7 +1331,6 @@ func construirFilaMovimientoSalidaSinElementos(salida *salidaReporteData) *repor
 
 func movimientoAnuladoReporte(movimiento *models.Movimiento, estado string) bool {
 	return movimiento != nil &&
-		!movimiento.Activo &&
 		movimiento.EstadoMovimientoId != nil &&
 		movimiento.EstadoMovimientoId.Nombre == estado
 }
