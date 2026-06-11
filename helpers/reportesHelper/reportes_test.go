@@ -137,6 +137,8 @@ func TestGenerarReporteElementos(t *testing.T) {
 			},
 		},
 	})
+	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{})
+	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{})
 
 	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
 		FechaInicial: "2026-05-01",
@@ -247,6 +249,8 @@ func TestGenerarReporteElementosFechaFinalMenor(t *testing.T) {
 
 func TestExcelGeneradoEsBinarioValido(t *testing.T) {
 	mockConsultarEntradasReporteData(t, []*entradaReporteData{})
+	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{})
+	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{})
 
 	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
 		FechaInicial: "2026-03-01",
@@ -263,6 +267,107 @@ func TestExcelGeneradoEsBinarioValido(t *testing.T) {
 
 	if len(bytes.TrimSpace(contenido)) == 0 {
 		t.Fatal("el excel generado no debe ser vacío")
+	}
+}
+
+func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
+	mockConsultarEntradasReporteData(t, []*entradaReporteData{})
+	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{
+		{
+			Movimiento: &models.Movimiento{
+				Id:            8101,
+				Activo:        false,
+				Consecutivo:   stringPtr("ENT-ANU-01"),
+				FechaCreacion: time.Date(2026, 5, 11, 9, 0, 0, 0, time.UTC),
+				FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+					Nombre: "Entrada por compra",
+				},
+				EstadoMovimientoId: &models.EstadoMovimiento{
+					Nombre: estadoEntradaAnuladaReporte,
+				},
+			},
+			Formato: models.FormatoBaseEntrada{
+				ActaRecibidoId: 777,
+			},
+			Elementos:          []*models.DetalleElemento{},
+			CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{},
+			SalidasPorElemento: map[int]*salidaReporteData{},
+		},
+	})
+	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{
+		{
+			Movimiento: &models.Movimiento{
+				Id:            9101,
+				Activo:        false,
+				Consecutivo:   stringPtr("SAL-ANU-01"),
+				FechaCreacion: time.Date(2026, 5, 12, 14, 0, 0, 0, time.UTC),
+				FechaCorte:    timePtr(time.Date(2026, 5, 12, 15, 0, 0, 0, time.UTC)),
+				EstadoMovimientoId: &models.EstadoMovimiento{
+					Nombre: estadoSalidaAnuladaReporte,
+				},
+				MovimientoPadreId: &models.Movimiento{
+					Id:            8102,
+					Consecutivo:   stringPtr("ENT-BASE-01"),
+					FechaCreacion: time.Date(2026, 5, 10, 8, 0, 0, 0, time.UTC),
+					FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+						Nombre: "Entrada por compra",
+					},
+					EstadoMovimientoId: &models.EstadoMovimiento{
+						Nombre: "Entrada Aprobada",
+					},
+					Detalle: `{"acta_recibido_id":888}`,
+				},
+			},
+			FuncionarioAsignado: "12345 - Funcionario Uno",
+			Sede:                "Sede Central",
+			Dependencia:         "Almacén General",
+		},
+	})
+
+	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+		FechaInicial: "2026-05-01",
+		FechaFinal:   "2026-05-31",
+	})
+	if err != nil {
+		t.Fatalf("GenerarReporteElementos retornó error: %v", err)
+	}
+
+	contenido, decodeErr := base64.StdEncoding.DecodeString(respuesta.ArchivoBase64)
+	if decodeErr != nil {
+		t.Fatalf("base64 inválido: %v", decodeErr)
+	}
+
+	archivo, openErr := xlsx.OpenBinary(contenido)
+	if openErr != nil {
+		t.Fatalf("no se pudo abrir el excel generado: %v", openErr)
+	}
+
+	if len(archivo.Sheets) != 1 {
+		t.Fatalf("se esperaba una hoja, se obtuvieron %d", len(archivo.Sheets))
+	}
+
+	if len(archivo.Sheets[0].Rows) != 3 {
+		t.Fatalf("se esperaban 3 filas, se obtuvieron %d", len(archivo.Sheets[0].Rows))
+	}
+
+	headerIndex := buildHeaderIndex(archivo.Sheets[0].Rows[0])
+	entradaAnuladaRow := archivo.Sheets[0].Rows[1]
+	if entradaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String() != "ENT-ANU-01" {
+		t.Fatalf("consecutivo entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String())
+	}
+	if entradaAnuladaRow.Cells[headerIndex["entrada_estado"]].String() != estadoEntradaAnuladaReporte {
+		t.Fatalf("estado entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["entrada_estado"]].String())
+	}
+
+	salidaAnuladaRow := archivo.Sheets[0].Rows[2]
+	if salidaAnuladaRow.Cells[headerIndex["Consecutivo salida"]].String() != "SAL-ANU-01" {
+		t.Fatalf("consecutivo salida anulada inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Consecutivo salida"]].String())
+	}
+	if salidaAnuladaRow.Cells[headerIndex["salida_estado"]].String() != estadoSalidaAnuladaReporte {
+		t.Fatalf("estado salida anulada inesperado: %q", salidaAnuladaRow.Cells[headerIndex["salida_estado"]].String())
+	}
+	if salidaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String() != "ENT-BASE-01" {
+		t.Fatalf("consecutivo entrada padre inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String())
 	}
 }
 
@@ -423,6 +528,32 @@ func mockConsultarEntradasReporteData(t *testing.T, entradas []*entradaReporteDa
 	})
 }
 
+func mockConsultarEntradasAnuladasReporteData(t *testing.T, entradas []*entradaReporteData) {
+	t.Helper()
+
+	original := consultarEntradasAnuladasReporteData
+	consultarEntradasAnuladasReporteData = func(fechaInicial, fechaFinal time.Time) ([]*entradaReporteData, map[string]interface{}) {
+		return entradas, nil
+	}
+
+	t.Cleanup(func() {
+		consultarEntradasAnuladasReporteData = original
+	})
+}
+
+func mockConsultarSalidasAnuladasReporteData(t *testing.T, salidas []*salidaReporteData) {
+	t.Helper()
+
+	original := consultarSalidasAnuladasReporteData
+	consultarSalidasAnuladasReporteData = func(fechaInicial, fechaFinal time.Time) ([]*salidaReporteData, map[string]interface{}) {
+		return salidas, nil
+	}
+
+	t.Cleanup(func() {
+		consultarSalidasAnuladasReporteData = original
+	})
+}
+
 func mockConsultarMovimientoPorConsecutivo(t *testing.T, movimiento *models.Movimiento) {
 	t.Helper()
 
@@ -535,6 +666,10 @@ func stringPtr(value string) *string {
 }
 
 func intPtr(value int) *int {
+	return &value
+}
+
+func timePtr(value time.Time) *time.Time {
 	return &value
 }
 
