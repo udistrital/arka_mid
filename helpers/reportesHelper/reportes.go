@@ -477,11 +477,15 @@ func consultarMovimientoPorConsecutivoDefault(consecutivo string) (movimiento *m
 func consultarCodigosEntrada() (codigos []string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarCodigosEntrada - Unhandled Error!", "500")
 
-	formatos, outputError := movimientosArka.GetAllFormatoTipoMovimiento("limit=-1&fields=CodigoAbreviacion&query=Activo:true")
+	formatos, outputError := movimientosArka.GetAllFormatoTipoMovimiento("limit=-1&fields=CodigoAbreviacion")
 	if outputError != nil {
 		return nil, outputError
 	}
 
+	return extraerCodigosEntrada(formatos), nil
+}
+
+func extraerCodigosEntrada(formatos []*models.FormatoTipoMovimiento) (codigos []string) {
 	seen := make(map[string]struct{})
 	for _, formato := range formatos {
 		if formato == nil {
@@ -497,17 +501,21 @@ func consultarCodigosEntrada() (codigos []string, outputError map[string]interfa
 		}
 	}
 
-	return codigos, nil
+	return codigos
 }
 
 func consultarCodigosSalida() (codigos []string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarCodigosSalida - Unhandled Error!", "500")
 
-	formatos, outputError := movimientosArka.GetAllFormatoTipoMovimiento("limit=-1&fields=CodigoAbreviacion&query=Activo:true")
+	formatos, outputError := movimientosArka.GetAllFormatoTipoMovimiento("limit=-1&fields=CodigoAbreviacion")
 	if outputError != nil {
 		return nil, outputError
 	}
 
+	return extraerCodigosSalida(formatos), nil
+}
+
+func extraerCodigosSalida(formatos []*models.FormatoTipoMovimiento) (codigos []string) {
 	seen := make(map[string]struct{})
 	for _, formato := range formatos {
 		if formato == nil {
@@ -523,7 +531,7 @@ func consultarCodigosSalida() (codigos []string, outputError map[string]interfac
 		}
 	}
 
-	return codigos, nil
+	return codigos
 }
 
 func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrada []string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
