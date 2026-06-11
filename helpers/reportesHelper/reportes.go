@@ -32,6 +32,9 @@ const (
 	historyWorkers = 8
 	salidaWorkers  = 6
 	decimalNumFmt  = "#.##0,00"
+
+	estadoEntradaAnuladaReporte = "Entrada anulada"
+	estadoSalidaAnuladaReporte  = "Salida anulada"
 )
 
 type entradaReporteData struct {
@@ -154,8 +157,11 @@ var (
 	}
 
 	consultarEntradasReporteData             = consultarEntradasReporteDataDefault
+	consultarEntradasAnuladasReporteData     = consultarEntradasAnuladasReporteDataDefault
+	consultarSalidasAnuladasReporteData      = consultarSalidasAnuladasReporteDataDefault
 	consultarCuentaContable                  = cuentasContables.GetCuentaContable
 	consultarMovimientoPorConsec             = consultarMovimientoPorConsecutivoDefault
+	consultarMovimientoPorID                 = movimientosArka.GetMovimientoById
 	consultarTrSalida                        = movimientosArka.GetTrSalida
 	consultarElementosActa                   = actaRecibido.GetElementos
 	consultarMetadataEntradaFn               = consultarMetadataEntrada
@@ -192,6 +198,18 @@ func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *model
 	}
 
 	rows := construirFilasReporteEntradas(entradas)
+
+	entradasAnuladas, outputError := consultarEntradasAnuladasReporteData(fechaInicial, fechaFinal)
+	if outputError != nil {
+		return nil, outputError
+	}
+	rows = append(rows, construirFilasMovimientosEntradaSinElementos(entradasAnuladas)...)
+
+	salidasAnuladas, outputError := consultarSalidasAnuladasReporteData(fechaInicial, fechaFinal)
+	if outputError != nil {
+		return nil, outputError
+	}
+	rows = append(rows, construirFilasMovimientosSalidaSinElementos(salidasAnuladas)...)
 
 	archivo := xlsx.NewFile()
 	hoja, err := archivo.AddSheet(sheetName)
@@ -347,6 +365,91 @@ func consultarEntradasReporteDataDefault(fechaInicial, fechaFinal time.Time) (en
 	return entradas, nil
 }
 
+func consultarEntradasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Time) (entradas []*entradaReporteData, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarEntradasAnuladasReporteDataDefault - Unhandled Error!", "500")
+
+	codigosEntrada, outputError := consultarCodigosEntrada()
+	if outputError != nil {
+		return nil, outputError
+	}
+	if len(codigosEntrada) == 0 {
+		return []*entradaReporteData{}, nil
+	}
+
+	movimientos, outputError := consultarMovimientosPorFechaEstadoYActivo(fechaInicial, fechaFinal, codigosEntrada, estadoEntradaAnuladaReporte, false)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	entradas = make([]*entradaReporteData, 0, len(movimientos))
+	for _, movimiento := range movimientos {
+		entrada, outputError := construirEntradaReporteSinElementosData(movimiento)
+		if outputError != nil {
+			return nil, outputError
+		}
+		if entrada != nil {
+			entradas = append(entradas, entrada)
+		}
+	}
+
+	return entradas, nil
+}
+
+func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Time) (salidas []*salidaReporteData, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarSalidasAnuladasReporteDataDefault - Unhandled Error!", "500")
+
+	codigosSalida, outputError := consultarCodigosSalida()
+	if outputError != nil {
+		return nil, outputError
+	}
+	if len(codigosSalida) == 0 {
+		return []*salidaReporteData{}, nil
+	}
+
+	movimientos, outputError := consultarMovimientosPorFechaEstadoYActivo(fechaInicial, fechaFinal, codigosSalida, estadoSalidaAnuladaReporte, false)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	salidas = make([]*salidaReporteData, 0, len(movimientos))
+	for _, movimiento := range movimientos {
+		if movimiento == nil || movimiento.Id <= 0 {
+			continue
+		}
+
+		base, outputError := construirSalidaReporteBaseData(movimiento, nil)
+		if outputError != nil {
+			return nil, outputError
+		}
+		if base == nil {
+			continue
+		}
+
+		salida := &salidaReporteData{
+			Movimiento:          base.Movimiento,
+			TransaccionContable: base.TransaccionContable,
+			FuncionarioAsignado: base.FuncionarioAsignado,
+			CuentasPorSubgrupo:  base.CuentasPorSubgrupo,
+			Sede:                base.Sede,
+			Dependencia:         base.Dependencia,
+		}
+
+		if movimiento.MovimientoPadreId != nil && movimiento.MovimientoPadreId.Id > 0 {
+			entradaPadre, outputError := consultarMovimientoPorID(movimiento.MovimientoPadreId.Id)
+			if outputError != nil {
+				return nil, outputError
+			}
+			if entradaPadre != nil {
+				salida.Movimiento.MovimientoPadreId = entradaPadre
+			}
+		}
+
+		salidas = append(salidas, salida)
+	}
+
+	return salidas, nil
+}
+
 func consultarMovimientoPorConsecutivoDefault(consecutivo string) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarMovimientoPorConsecutivoDefault - Unhandled Error!", "500")
 
@@ -397,6 +500,32 @@ func consultarCodigosEntrada() (codigos []string, outputError map[string]interfa
 	return codigos, nil
 }
 
+func consultarCodigosSalida() (codigos []string, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarCodigosSalida - Unhandled Error!", "500")
+
+	formatos, outputError := movimientosArka.GetAllFormatoTipoMovimiento("limit=-1&fields=CodigoAbreviacion&query=Activo:true")
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	seen := make(map[string]struct{})
+	for _, formato := range formatos {
+		if formato == nil {
+			continue
+		}
+		codigo := formato.CodigoAbreviacion
+		if (codigo == "SAL" || codigo == "SAL_CONS") && !strings.Contains(codigo, "KDX") {
+			if _, ok := seen[codigo]; ok {
+				continue
+			}
+			seen[codigo] = struct{}{}
+			codigos = append(codigos, codigo)
+		}
+	}
+
+	return codigos, nil
+}
+
 func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrada []string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarEntradasPorFecha - Unhandled Error!", "500")
 
@@ -410,6 +539,37 @@ func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrad
 	params.Add(
 		"query",
 		"Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigosEntrada, "|")+
+			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
+			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
+	)
+
+	movimientos, _, outputError = movimientosArka.GetAllMovimiento(params.Encode())
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	return movimientos, nil
+}
+
+func consultarMovimientosPorFechaEstadoYActivo(fechaInicial, fechaFinal time.Time, codigos []string, estado string, activo bool) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarMovimientosPorFechaEstadoYActivo - Unhandled Error!", "500")
+
+	if len(codigos) == 0 {
+		return []*models.Movimiento{}, nil
+	}
+
+	fechaInicial = time.Date(fechaInicial.Year(), fechaInicial.Month(), fechaInicial.Day(), 0, 0, 0, 0, time.UTC)
+	fechaFinal = time.Date(fechaFinal.Year(), fechaFinal.Month(), fechaFinal.Day(), 23, 59, 59, 0, time.UTC)
+
+	params := url.Values{}
+	params.Add("limit", "-1")
+	params.Add("sortby", "FechaCreacion")
+	params.Add("order", "asc")
+	params.Add(
+		"query",
+		"Activo:"+strconv.FormatBool(activo)+
+			",EstadoMovimientoId__Nombre:"+estado+
+			",FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigos, "|")+
 			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
 			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
 	)
@@ -474,6 +634,39 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 	}
 
 	return entrada, nil
+}
+
+func construirEntradaReporteSinElementosData(movimiento *models.Movimiento) (entrada *entradaReporteData, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("construirEntradaReporteSinElementosData - Unhandled Error!", "500")
+
+	if movimiento == nil {
+		return nil, nil
+	}
+
+	var formato models.FormatoBaseEntrada
+	if strings.TrimSpace(movimiento.Detalle) != "" {
+		outputError = utilsHelper.Unmarshal(movimiento.Detalle, &formato)
+		if outputError != nil {
+			return nil, outputError
+		}
+	}
+
+	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntradaFn(formato)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	return &entradaReporteData{
+		Movimiento:          movimiento,
+		Formato:             formato,
+		TransaccionContable: consultarTransaccionContableEntrada(movimiento),
+		Elementos:           []*models.DetalleElemento{},
+		CuentasPorSubgrupo:  map[int]models.CuentasSubgrupo{},
+		SalidasPorElemento:  map[int]*salidaReporteData{},
+		Proveedor:           proveedor,
+		FacturaConsecutivo:  facturaConsecutivo,
+		FacturaFecha:        facturaFecha,
+	}, nil
 }
 
 func consultarMetadataEntrada(formato models.FormatoBaseEntrada) (proveedor, facturaConsecutivo string, facturaFecha time.Time, outputError map[string]interface{}) {
@@ -998,6 +1191,11 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 			continue
 		}
 
+		if len(entrada.Elementos) == 0 && movimientoAnuladoReporte(entrada.Movimiento, estadoEntradaAnuladaReporte) {
+			rows = append(rows, construirFilaMovimientoEntradaSinElementos(entrada))
+			continue
+		}
+
 		for _, elemento := range entrada.Elementos {
 			if elemento == nil {
 				continue
@@ -1056,6 +1254,87 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 	}
 
 	return rows
+}
+
+func construirFilasMovimientosEntradaSinElementos(entradas []*entradaReporteData) []*reporteElementoEntradaRow {
+	rows := make([]*reporteElementoEntradaRow, 0, len(entradas))
+	for _, entrada := range entradas {
+		if entrada == nil || !movimientoAnuladoReporte(entrada.Movimiento, estadoEntradaAnuladaReporte) {
+			continue
+		}
+		if row := construirFilaMovimientoEntradaSinElementos(entrada); row != nil {
+			rows = append(rows, row)
+		}
+	}
+	return rows
+}
+
+func construirFilasMovimientosSalidaSinElementos(salidas []*salidaReporteData) []*reporteElementoEntradaRow {
+	rows := make([]*reporteElementoEntradaRow, 0, len(salidas))
+	for _, salida := range salidas {
+		if row := construirFilaMovimientoSalidaSinElementos(salida); row != nil {
+			rows = append(rows, row)
+		}
+	}
+	return rows
+}
+
+func construirFilaMovimientoEntradaSinElementos(entrada *entradaReporteData) *reporteElementoEntradaRow {
+	if entrada == nil || entrada.Movimiento == nil {
+		return nil
+	}
+
+	return &reporteElementoEntradaRow{
+		Vigencia:                  strconv.Itoa(entrada.Movimiento.FechaCreacion.Year()),
+		Periodo:                   strconv.Itoa(int(entrada.Movimiento.FechaCreacion.Month())),
+		EntradaConsecutivo:        stringPtrValue(entrada.Movimiento.Consecutivo),
+		EntradaEstado:             estadoMovimientoNombre(entrada.Movimiento),
+		EntradaFechaCreacion:      entrada.Movimiento.FechaCreacion,
+		EntradaActaRecibidoID:     entrada.Formato.ActaRecibidoId,
+		EntradaProveedor:          entrada.Proveedor,
+		EntradaFacturaConsecutivo: entrada.FacturaConsecutivo,
+		EntradaFacturaFecha:       entrada.FacturaFecha,
+		TipoEntrada:               tipoEntradaNombre(entrada.Movimiento),
+	}
+}
+
+func construirFilaMovimientoSalidaSinElementos(salida *salidaReporteData) *reporteElementoEntradaRow {
+	if salida == nil || salida.Movimiento == nil {
+		return nil
+	}
+
+	row := &reporteElementoEntradaRow{
+		SalidaConsecutivo:         movimientoConsecutivo(salida),
+		SalidaEstado:              movimientoEstado(salida),
+		SalidaFechaCreacion:       movimientoFechaCreacion(salida),
+		SalidaFechaCorte:          movimientoFechaCorte(salida),
+		SalidaFuncionarioAsignado: salidaFuncionario(salida),
+		SalidaSede:                salidaSede(salida),
+		SalidaDependencia:         salidaDependencia(salida),
+	}
+
+	if padre := salida.Movimiento.MovimientoPadreId; padre != nil {
+		var formato models.FormatoBaseEntrada
+		if strings.TrimSpace(padre.Detalle) != "" {
+			_ = utilsHelper.Unmarshal(padre.Detalle, &formato)
+		}
+		row.Vigencia = strconv.Itoa(padre.FechaCreacion.Year())
+		row.Periodo = strconv.Itoa(int(padre.FechaCreacion.Month()))
+		row.EntradaConsecutivo = stringPtrValue(padre.Consecutivo)
+		row.EntradaEstado = estadoMovimientoNombre(padre)
+		row.EntradaFechaCreacion = padre.FechaCreacion
+		row.EntradaActaRecibidoID = formato.ActaRecibidoId
+		row.TipoEntrada = tipoEntradaNombre(padre)
+	}
+
+	return row
+}
+
+func movimientoAnuladoReporte(movimiento *models.Movimiento, estado string) bool {
+	return movimiento != nil &&
+		!movimiento.Activo &&
+		movimiento.EstadoMovimientoId != nil &&
+		movimiento.EstadoMovimientoId.Nombre == estado
 }
 
 func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow) {
