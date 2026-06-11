@@ -371,6 +371,28 @@ func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
 	}
 }
 
+func TestExtraerCodigosEntradaIncluyeFormatosInactivos(t *testing.T) {
+	codigos := extraerCodigosEntrada([]*models.FormatoTipoMovimiento{
+		{CodigoAbreviacion: "ENT_RP", Activo: false},
+		{CodigoAbreviacion: "ENT_ADQ", Activo: true},
+		{CodigoAbreviacion: "ENT_KDX", Activo: true},
+		{CodigoAbreviacion: "SAL", Activo: true},
+	})
+
+	if !containsString(codigos, "ENT_RP") {
+		t.Fatalf("expected ENT_RP to be included, got %v", codigos)
+	}
+	if !containsString(codigos, "ENT_ADQ") {
+		t.Fatalf("expected ENT_ADQ to be included, got %v", codigos)
+	}
+	if containsString(codigos, "ENT_KDX") {
+		t.Fatalf("did not expect ENT_KDX to be included, got %v", codigos)
+	}
+	if containsString(codigos, "SAL") {
+		t.Fatalf("did not expect SAL to be included as entrada, got %v", codigos)
+	}
+}
+
 func TestGetDetalleCuentasEntradaPorConsecutivo(t *testing.T) {
 	mockConsultarMovimientoPorConsecutivo(t, &models.Movimiento{
 		Id:            7995,
@@ -679,4 +701,13 @@ func buildHeaderIndex(headerRow *xlsx.Row) map[string]int {
 		index[cell.String()] = i
 	}
 	return index
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
