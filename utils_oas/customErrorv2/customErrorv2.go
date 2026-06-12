@@ -2,6 +2,8 @@ package customErrorv2
 
 import (
 	"github.com/beego/beego/v2/server/web"
+	"github.com/udistrital/arka_mid/utils_oas/auditoria"
+	"github.com/udistrital/arka_mid/utils_oas/xray"
 )
 
 type CustomErrorController struct {
@@ -10,6 +12,8 @@ type CustomErrorController struct {
 
 func genericError(c *CustomErrorController, status string) {
 	outputError := map[string]interface{}{"Success": false, "Status": status, "Message": c.Data["mesaage"], "Data": c.Data["data"]}
+	xray.EndSegment(c.Ctx)
+	auditoria.LogRequest(c.Ctx)
 	c.Data["json"] = outputError
 	c.ServeJSON()
 }

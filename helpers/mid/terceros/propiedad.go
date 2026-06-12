@@ -37,8 +37,6 @@ func GetCargoFuncionario(id int) (cargo []*models.Parametro, outputError map[str
 		}
 	}
 
-	req.Header.Set("Authorization", request.GetHeader())
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		logs.Error(err)
