@@ -8,6 +8,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
 // ReportesController operations for reportes
@@ -18,6 +19,7 @@ type ReportesController struct {
 // URLMapping ...
 func (c *ReportesController) URLMapping() {
 	c.Mapping("PostReporteElementos", c.PostReporteElementos)
+	c.Mapping("PostPazYSalvo", c.PostPazYSalvo)
 	c.Mapping("GetDetalleCuentasEntrada", c.GetDetalleCuentasEntrada)
 	c.Mapping("GetDetalleCuentasSalida", c.GetDetalleCuentasSalida)
 }
@@ -38,6 +40,34 @@ func (c *ReportesController) PostReporteElementos() {
 	}
 
 	respuesta, outputError := reportesHelper.GenerarReporteElementos(&request)
+	if outputError != nil {
+		panic(outputError)
+	}
+
+	c.Data["json"] = respuesta
+	c.ServeJSON()
+}
+
+// PostPazYSalvo ...
+// @Title PostPazYSalvo
+// @Description Genera un paz y salvo de inventario en PDF base64 a partir del número de documento consultado.
+// @Param	body	body	models.PazYSalvoRequest	true	"Datos de consulta y firma opcional"
+// @Success 200 {object} models.PazYSalvoResponse
+// @Failure 400 error en los datos de entrada
+// @router /pazysalvo [post]
+func (c *ReportesController) PostPazYSalvo() {
+	defer errorCtrl.ErrorControlController(c.Controller, "ReportesController")
+
+	var payload models.PazYSalvoRequest
+	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &payload); err != nil {
+		panic(errorCtrl.Error("PostPazYSalvo - utilsHelper.Unmarshal(RequestBody, &payload)", err, "400"))
+	}
+
+	headerAnterior := request.GetHeader()
+	request.SetHeader(c.Ctx.Request.Header.Get("Authorization"))
+	defer request.SetHeader(headerAnterior)
+
+	respuesta, outputError := reportesHelper.GenerarPazYSalvo(&payload)
 	if outputError != nil {
 		panic(outputError)
 	}
