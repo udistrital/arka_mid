@@ -18,7 +18,6 @@ import (
 	crudActaRecibido "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -55,8 +54,8 @@ type salidaReporteData struct {
 	FuncionarioAsignado string
 	TrasladosAsociados  string
 	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
-	Sede                string
-	Dependencia         string
+	CentroCostoNombre   string
+	CentroCostoCodigo   string
 }
 
 type salidaReporteBaseData struct {
@@ -64,8 +63,8 @@ type salidaReporteBaseData struct {
 	TransaccionContable *models.InfoTransaccionContable
 	FuncionarioAsignado string
 	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
-	Sede                string
-	Dependencia         string
+	CentroCostoNombre   string
+	CentroCostoCodigo   string
 }
 
 type reporteElementoEntradaRow struct {
@@ -94,8 +93,8 @@ type reporteElementoEntradaRow struct {
 	SalidaFechaCreacion       time.Time
 	SalidaConsecutivo         string
 	SalidaFuncionarioAsignado string
-	SalidaSede                string
-	SalidaDependencia         string
+	SalidaCentroCosto         string
+	SalidaCodigoCentroCosto   string
 	CuentaDebitoSalida        string
 	CuentaCreditoSalida       string
 
@@ -136,11 +135,8 @@ var (
 		"Fecha salida",
 		"Consecutivo salida",
 		"Funcionario asignado",
-		"Sede",
-		"Cod. Sede Centro Costo",
-		"Dependencia",
-		"Cod. Dependencia Centro Costo",
-		"Cod. Ubicación Centro Costo",
+		"Centro de costo",
+		"codigo centro de costo",
 		"Cuenta débito salida",
 		"Cuenta crédito salida",
 		"Fecha depreciación",
@@ -163,6 +159,7 @@ var (
 	consultarMovimientoPorConsec             = consultarMovimientoPorConsecutivoDefault
 	consultarMovimientoPorID                 = movimientosArka.GetMovimientoById
 	consultarTrSalida                        = movimientosArka.GetTrSalida
+	consultarCentroCostosFn                  = movimientosArka.GetAllCentroCostos
 	consultarElementosActa                   = actaRecibido.GetElementos
 	consultarMetadataEntradaFn               = consultarMetadataEntrada
 	resolverSalidasPorElementoFn             = resolverSalidasPorElemento
@@ -430,8 +427,8 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 			TransaccionContable: base.TransaccionContable,
 			FuncionarioAsignado: base.FuncionarioAsignado,
 			CuentasPorSubgrupo:  base.CuentasPorSubgrupo,
-			Sede:                base.Sede,
-			Dependencia:         base.Dependencia,
+			CentroCostoNombre:   base.CentroCostoNombre,
+			CentroCostoCodigo:   base.CentroCostoCodigo,
 		}
 
 		if movimiento.MovimientoPadreId != nil && movimiento.MovimientoPadreId.Id > 0 {
@@ -976,8 +973,8 @@ func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPor
 			FuncionarioAsignado: base.FuncionarioAsignado,
 			TrasladosAsociados:  trasladosAsociadosLabel(historial.Traslados),
 			CuentasPorSubgrupo:  base.CuentasPorSubgrupo,
-			Sede:                base.Sede,
-			Dependencia:         base.Dependencia,
+			CentroCostoNombre:   base.CentroCostoNombre,
+			CentroCostoCodigo:   base.CentroCostoCodigo,
 		}
 	}
 
@@ -1113,7 +1110,7 @@ func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []i
 		return nil, nil
 	}
 
-	sede, dependencia := salidaUbicacionInfo(movimiento)
+	centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(movimiento)
 
 	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
 	if movimiento.FormatoTipoMovimientoId != nil && movimiento.FormatoTipoMovimientoId.Id > 0 && len(subgrupos) > 0 {
@@ -1128,8 +1125,8 @@ func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []i
 		TransaccionContable: consultarTransaccionContableSalida(movimiento),
 		FuncionarioAsignado: funcionarioSalidaLabel(movimiento),
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
-		Sede:                sede,
-		Dependencia:         dependencia,
+		CentroCostoNombre:   centroCostoNombre,
+		CentroCostoCodigo:   centroCostoCodigo,
 	}
 
 	return salida, nil
@@ -1251,8 +1248,8 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 				SalidaFechaCreacion:       movimientoFechaCreacion(salida),
 				SalidaFechaCorte:          movimientoFechaCorte(salida),
 				SalidaFuncionarioAsignado: salidaFuncionario(salida),
-				SalidaSede:                salidaSede(salida),
-				SalidaDependencia:         salidaDependencia(salida),
+				SalidaCentroCosto:         salidaCentroCosto(salida),
+				SalidaCodigoCentroCosto:   salidaCodigoCentroCosto(salida),
 				CuentaDebitoSalida:        resolveCuentaMovimientoLabel(salidaCuenta.CuentaDebitoId, transaccionContableSalida(salida), true),
 				CuentaCreditoSalida:       resolveCuentaMovimientoLabel(salidaCuenta.CuentaCreditoId, transaccionContableSalida(salida), false),
 			}
@@ -1316,8 +1313,8 @@ func construirFilaMovimientoSalidaSinElementos(salida *salidaReporteData) *repor
 		SalidaFechaCreacion:       movimientoFechaCreacion(salida),
 		SalidaFechaCorte:          movimientoFechaCorte(salida),
 		SalidaFuncionarioAsignado: salidaFuncionario(salida),
-		SalidaSede:                salidaSede(salida),
-		SalidaDependencia:         salidaDependencia(salida),
+		SalidaCentroCosto:         salidaCentroCosto(salida),
+		SalidaCodigoCentroCosto:   salidaCodigoCentroCosto(salida),
 	}
 
 	if padre := salida.Movimiento.MovimientoPadreId; padre != nil {
@@ -1375,11 +1372,8 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	addStringCell(row, timeCell(rowData.SalidaFechaCreacion))         // Fecha salida
 	addStringCell(row, rowData.SalidaConsecutivo)                     // Consecutivo salida
 	addStringCell(row, rowData.SalidaFuncionarioAsignado)             // Funcionario asignado
-	addStringCell(row, rowData.SalidaSede)                            // Sede
-	addStringCell(row, "")                                            // Cod. Sede Centro Costo
-	addStringCell(row, rowData.SalidaDependencia)                     // Dependencia
-	addStringCell(row, "")                                            // Cod. Dependencia Centro Costo
-	addStringCell(row, "")                                            // Cod. Ubicación Centro Costo
+	addStringCell(row, rowData.SalidaCentroCosto)                     // Centro de costo
+	addStringCell(row, rowData.SalidaCodigoCentroCosto)               // codigo centro de costo
 	addStringCell(row, rowData.CuentaDebitoSalida)                    // Cuenta débito salida
 	addStringCell(row, rowData.CuentaCreditoSalida)                   // Cuenta crédito salida
 	addStringCell(row, "")                                            // Fecha depreciación
@@ -1573,18 +1567,18 @@ func salidaFuncionario(salida *salidaReporteData) string {
 	return salida.FuncionarioAsignado
 }
 
-func salidaSede(salida *salidaReporteData) string {
+func salidaCentroCosto(salida *salidaReporteData) string {
 	if salida == nil {
 		return ""
 	}
-	return salida.Sede
+	return salida.CentroCostoNombre
 }
 
-func salidaDependencia(salida *salidaReporteData) string {
+func salidaCodigoCentroCosto(salida *salidaReporteData) string {
 	if salida == nil {
 		return ""
 	}
-	return salida.Dependencia
+	return salida.CentroCostoCodigo
 }
 
 func transaccionContableSalida(salida *salidaReporteData) *models.InfoTransaccionContable {
@@ -1608,7 +1602,7 @@ func vidaUtilCatalogo(elemento *models.DetalleElemento) float64 {
 	return elemento.SubgrupoCatalogoId.VidaUtil
 }
 
-func salidaUbicacionInfo(movimiento *models.Movimiento) (sede, dependencia string) {
+func salidaUbicacionInfo(movimiento *models.Movimiento) (centroCostoNombre, centroCostoCodigo string) {
 	if movimiento == nil {
 		return "", ""
 	}
@@ -1618,33 +1612,16 @@ func salidaUbicacionInfo(movimiento *models.Movimiento) (sede, dependencia strin
 		return "", ""
 	}
 
-	if detalle.Ubicacion > 0 {
-		if ubicacion, outputError := oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion); outputError == nil && ubicacion != nil {
-			if ubicacion.Sede != nil {
-				sede = ubicacion.Sede.Nombre
-			}
-			if ubicacion.Dependencia != nil {
-				dependencia = ubicacion.Dependencia.Nombre
-			}
-		}
+	if detalle.CentroCostos == "" {
+		return "", ""
 	}
 
-	if (sede == "" || dependencia == "") && detalle.CentroCostos != "" {
-		if centrosCostos, outputError := movimientosArka.GetAllCentroCostos("query=Codigo:" + detalle.CentroCostos); outputError == nil && len(centrosCostos) > 0 {
-			if sede == "" {
-				sede = centrosCostos[0].Sede
-			}
-			if dependencia == "" {
-				if centrosCostos[0].Dependencia != "" {
-					dependencia = centrosCostos[0].Dependencia
-				} else {
-					dependencia = centrosCostos[0].Nombre
-				}
-			}
-		}
+	if centrosCostos, outputError := consultarCentroCostosFn("query=Id:" + detalle.CentroCostos); outputError == nil && len(centrosCostos) > 0 {
+		centroCostoNombre = centrosCostos[0].Nombre
+		centroCostoCodigo = centrosCostos[0].Codigo
 	}
 
-	return sede, dependencia
+	return centroCostoNombre, centroCostoCodigo
 }
 
 func subgrupoInfo(elemento *models.DetalleElemento) (id int, codigo, nombre string) {
@@ -1731,8 +1708,8 @@ func setColumnWidths(hoja *xlsx.Sheet) {
 	_ = hoja.SetColWidth(18, 19, 22) // Fecha entrada, Consecutivo Entrada
 	_ = hoja.SetColWidth(20, 21, 36) // Cuentas entrada
 	_ = hoja.SetColWidth(22, 24, 22) // Fecha salida, Consecutivo salida, Funcionario
-	_ = hoja.SetColWidth(25, 29, 24) // Sede, Cods centro costo, Dependencia
-	_ = hoja.SetColWidth(30, 31, 36) // Cuentas salida
-	_ = hoja.SetColWidth(32, 34, 18) // Depreciación, Meses, Vida útil
-	_ = hoja.SetColWidth(35, 45, 22) // Columnas extras al final
+	_ = hoja.SetColWidth(25, 26, 24) // Centro de costo, codigo centro de costo
+	_ = hoja.SetColWidth(27, 28, 36) // Cuentas salida
+	_ = hoja.SetColWidth(29, 31, 18) // Depreciación, Meses, Vida útil
+	_ = hoja.SetColWidth(32, 42, 22) // Columnas extras al final
 }
