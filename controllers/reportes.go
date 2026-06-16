@@ -19,6 +19,7 @@ type ReportesController struct {
 // URLMapping ...
 func (c *ReportesController) URLMapping() {
 	c.Mapping("PostReporteElementos", c.PostReporteElementos)
+	c.Mapping("PostReporteContabilizacion", c.PostReporteContabilizacion)
 	c.Mapping("PostPazYSalvo", c.PostPazYSalvo)
 	c.Mapping("GetDetalleCuentasEntrada", c.GetDetalleCuentasEntrada)
 	c.Mapping("GetDetalleCuentasSalida", c.GetDetalleCuentasSalida)
@@ -40,6 +41,30 @@ func (c *ReportesController) PostReporteElementos() {
 	}
 
 	respuesta, outputError := reportesHelper.GenerarReporteElementos(&request)
+	if outputError != nil {
+		panic(outputError)
+	}
+
+	c.Data["json"] = respuesta
+	c.ServeJSON()
+}
+
+// PostReporteContabilizacion ...
+// @Title PostReporteContabilizacion
+// @Description Genera un reporte base64 en formato Excel de contabilización para un rango de fechas.
+// @Param	body	body	models.ReporteFechasRequest	true	"Rango de fechas del reporte"
+// @Success 200 {object} models.ReporteExcelBase64Response
+// @Failure 400 error en los datos de entrada
+// @router /contabilizacion [post]
+func (c *ReportesController) PostReporteContabilizacion() {
+	defer errorCtrl.ErrorControlController(c.Controller, "ReportesController")
+
+	var request models.ReporteFechasRequest
+	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &request); err != nil {
+		panic(errorCtrl.Error("PostReporteContabilizacion - utilsHelper.Unmarshal(RequestBody, &request)", err, "400"))
+	}
+
+	respuesta, outputError := reportesHelper.GenerarReporteContabilizacion(&request)
 	if outputError != nil {
 		panic(outputError)
 	}
