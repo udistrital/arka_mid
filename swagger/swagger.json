@@ -1559,6 +1559,37 @@
                 }
             }
         },
+        "/reportes/pazysalvo": {
+            "post": {
+                "tags": [
+                    "reportes"
+                ],
+                "description": "Genera un paz y salvo de inventario en PDF base64 a partir del número de documento consultado.",
+                "operationId": "ReportesController.PostPazYSalvo",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Datos de consulta y firma opcional",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PazYSalvoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.PazYSalvoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error en los datos de entrada"
+                    }
+                }
+            }
+        },
         "/salida/": {
             "get": {
                 "tags": [
@@ -1957,6 +1988,37 @@
                     },
                     "404": {
                         "description": "not found resource"
+                    }
+                }
+            }
+        },
+        "/traslados/interno": {
+            "post": {
+                "tags": [
+                    "traslados"
+                ],
+                "description": "Genera un nuevo traslado interno en estado confirmado, validando que funcionario origen y destino sean distintos",
+                "operationId": "TrasladosController.Post Traslado Interno",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Informacion del traslado interno",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Movimiento"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Movimiento"
+                        }
+                    },
+                    "403": {
+                        "description": "body is empty"
                     }
                 }
             }
@@ -4085,6 +4147,74 @@
                 },
                 "TipoParametroId": {
                     "$ref": "#/definitions/models.TipoParametro"
+                }
+            }
+        },
+        "models.PazYSalvoRequest": {
+            "title": "PazYSalvoRequest",
+            "type": "object",
+            "properties": {
+                "elaboro_tercero_id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "numero_documento": {
+                    "type": "string"
+                },
+                "usuario": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PazYSalvoResponse": {
+            "title": "PazYSalvoResponse",
+            "type": "object",
+            "properties": {
+                "archivo_base64": {
+                    "type": "string"
+                },
+                "elementos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DetalleElementoPlaca"
+                    }
+                },
+                "mensaje": {
+                    "type": "string"
+                },
+                "nombre_archivo": {
+                    "type": "string"
+                },
+                "puede_generar_paz_y_salvo": {
+                    "type": "boolean"
+                },
+                "tercero": {
+                    "$ref": "#/definitions/models.PazYSalvoTerceroResponse"
+                },
+                "tipo_archivo": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PazYSalvoTerceroResponse": {
+            "title": "PazYSalvoTerceroResponse",
+            "type": "object",
+            "properties": {
+                "cargo": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "nombre_completo": {
+                    "type": "string"
+                },
+                "numero_documento": {
+                    "type": "string"
+                },
+                "tipo_documento": {
+                    "type": "string"
                 }
             }
         },
