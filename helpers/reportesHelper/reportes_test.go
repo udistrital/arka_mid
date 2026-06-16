@@ -558,6 +558,228 @@ func TestGetDetalleCuentasSalidaPorConsecutivo(t *testing.T) {
 	}
 }
 
+func TestGenerarReporteContabilizacionRequestNil(t *testing.T) {
+	respuesta, err := GenerarReporteContabilizacion(nil)
+	if err == nil {
+		t.Fatal("se esperaba error cuando request es nil")
+	}
+	if respuesta != nil {
+		t.Fatal("no se esperaba respuesta cuando request es nil")
+	}
+}
+
+func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
+	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
+		FechaInicial: "2026-06-16",
+		FechaFinal:   "2026-06-01",
+	})
+	if err == nil {
+		t.Fatal("se esperaba error cuando fecha_final es menor a fecha_inicial")
+	}
+	if respuesta != nil {
+		t.Fatal("no se esperaba respuesta cuando el rango es inválido")
+	}
+}
+
+func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
+	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionEntradaData{
+		{
+			Movimiento: &models.Movimiento{
+				Consecutivo:   stringPtr("P8-00001-2026"),
+				FechaCreacion: time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
+			},
+			ProveedorLabel:     "900866324 - PROVEEDOR UNO",
+			FacturaConsecutivo: "FV 434",
+			CentroCostoCodigo:  "A1205",
+			CentroCostoNombre:  "Oficina Asesora de Planeación",
+			TransaccionContable: &models.InfoTransaccionContable{
+				Fecha: time.Date(2026, 6, 5, 10, 0, 0, 0, time.UTC),
+				Movimientos: []*models.DetalleMovimientoContable{
+					{
+						Cuenta:    &models.DetalleCuenta{Codigo: "151001"},
+						Debito:    1000,
+						TerceroId: &models.IdentificacionTercero{Numero: "800123", NombreCompleto: "TERCERO CONTABLE"},
+					},
+					{
+						Cuenta:  &models.DetalleCuenta{Codigo: "240801"},
+						Credito: 1000,
+					},
+				},
+			},
+		},
+	})
+	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionSalidaData{
+		{
+			Movimiento: &models.Movimiento{
+				Consecutivo:   stringPtr("H21-00001-2026"),
+				FechaCreacion: time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
+			},
+			EntradaPadre: &models.Movimiento{
+				Consecutivo: stringPtr("P8-00001-2026"),
+			},
+			ProveedorLabel:     "900866324 - PROVEEDOR UNO",
+			FacturaConsecutivo: "FV 434",
+			CentroCostoCodigo:  "A1205",
+			CentroCostoNombre:  "Oficina Asesora de Planeación",
+			TransaccionContable: &models.InfoTransaccionContable{
+				Fecha: time.Date(2026, 6, 6, 12, 0, 0, 0, time.UTC),
+				Movimientos: []*models.DetalleMovimientoContable{
+					{Cuenta: &models.DetalleCuenta{Codigo: "51111401"}, Debito: 300},
+					{Cuenta: &models.DetalleCuenta{Codigo: "15142401"}, Credito: 300},
+				},
+			},
+		},
+		{
+			Movimiento: &models.Movimiento{
+				Consecutivo:   stringPtr("H21-00002-2026"),
+				FechaCreacion: time.Date(2026, 6, 7, 11, 0, 0, 0, time.UTC),
+			},
+			EntradaPadre: &models.Movimiento{
+				Consecutivo: stringPtr("P8-00002-2026"),
+			},
+			ProveedorLabel:     "900999111 - PROVEEDOR DOS",
+			FacturaConsecutivo: "FV 999",
+			CentroCostoCodigo:  "A1302",
+			CentroCostoNombre:  "Dependencia Dos",
+			TransaccionContable: &models.InfoTransaccionContable{
+				Fecha: time.Date(2026, 6, 7, 12, 0, 0, 0, time.UTC),
+				Movimientos: []*models.DetalleMovimientoContable{
+					{Cuenta: &models.DetalleCuenta{Codigo: "8315100728"}, Debito: 500},
+				},
+			},
+		},
+	})
+
+	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
+		FechaInicial: "2026-06-01",
+		FechaFinal:   "2026-06-16",
+	})
+	if err != nil {
+		t.Fatalf("GenerarReporteContabilizacion retornó error: %v", err)
+	}
+
+	contenido, decodeErr := base64.StdEncoding.DecodeString(respuesta.ArchivoBase64)
+	if decodeErr != nil {
+		t.Fatalf("base64 inválido: %v", decodeErr)
+	}
+
+	archivo, openErr := xlsx.OpenBinary(contenido)
+	if openErr != nil {
+		t.Fatalf("no se pudo abrir el excel generado: %v", openErr)
+	}
+
+	if len(archivo.Sheets) != 2 {
+		t.Fatalf("se esperaban 2 hojas, se obtuvieron %d", len(archivo.Sheets))
+	}
+	if archivo.Sheets[0].Name != sheetNameContabilizacionEntradas {
+		t.Fatalf("nombre de hoja entradas inesperado: %q", archivo.Sheets[0].Name)
+	}
+	if archivo.Sheets[1].Name != sheetNameContabilizacionSalidas {
+		t.Fatalf("nombre de hoja salidas inesperado: %q", archivo.Sheets[1].Name)
+	}
+
+	headerRow := archivo.Sheets[0].Rows[0]
+	if len(headerRow.Cells) != 27 {
+		t.Fatalf("se esperaban 27 encabezados, se obtuvieron %d", len(headerRow.Cells))
+	}
+	if headerRow.Cells[0].String() != "Renglón" || headerRow.Cells[26].String() != "Jefe_Almacén" {
+		t.Fatalf("encabezados A11 inesperados")
+	}
+
+	entradasIndex := buildHeaderIndex(archivo.Sheets[0].Rows[0])
+	entradasDataRow := archivo.Sheets[0].Rows[1]
+	if entradasDataRow.Cells[entradasIndex["Documento_Entrada"]].String() != "P8-00001-2026" {
+		t.Fatalf("documento entrada inesperado: %q", entradasDataRow.Cells[entradasIndex["Documento_Entrada"]].String())
+	}
+	if entradasDataRow.Cells[entradasIndex["Documento_Salida"]].String() != "" {
+		t.Fatalf("documento salida de entrada debe venir vacío: %q", entradasDataRow.Cells[entradasIndex["Documento_Salida"]].String())
+	}
+	if entradasDataRow.Cells[entradasIndex["Identificación_Tercero"]].String() != "800123" {
+		t.Fatalf("tercero contable inesperado: %q", entradasDataRow.Cells[entradasIndex["Identificación_Tercero"]].String())
+	}
+	if entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String() != "A1205" {
+		t.Fatalf("centro de costo entrada inesperado: %q", entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String())
+	}
+	if entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat() != a11DateNumFmt {
+		t.Fatalf("formato fecha inesperado: %q", entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat())
+	}
+
+	salidasIndex := buildHeaderIndex(archivo.Sheets[1].Rows[0])
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Renglón"]].String() != "1" {
+		t.Fatalf("primer renglón de salida inesperado")
+	}
+	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Renglón"]].String() != "2" {
+		t.Fatalf("segundo renglón de salida inesperado")
+	}
+	if archivo.Sheets[1].Rows[3].Cells[salidasIndex["Renglón"]].String() != "1" {
+		t.Fatalf("el renglón debe reiniciarse por salida")
+	}
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Salida"]].String() != "H21-00001-2026" {
+		t.Fatalf("documento salida inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Salida"]].String())
+	}
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Entrada"]].String() != "P8-00001-2026" {
+		t.Fatalf("documento entrada asociado inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Entrada"]].String())
+	}
+	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza_Cuenta"]].String() != "C" {
+		t.Fatalf("naturaleza cuenta inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza_Cuenta"]].String())
+	}
+	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Identificación_Tercero"]].String() != "900866324" {
+		t.Fatalf("fallback de tercero inesperado: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Identificación_Tercero"]].String())
+	}
+}
+
+func TestGenerarReporteContabilizacionOmiteDocumentoSinTransaccion(t *testing.T) {
+	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionEntradaData{
+		{
+			Movimiento:          &models.Movimiento{Consecutivo: stringPtr("P8-00003-2026")},
+			TransaccionContable: nil,
+		},
+	})
+	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionSalidaData{
+		{
+			Movimiento: &models.Movimiento{Consecutivo: stringPtr("H21-00003-2026")},
+			TransaccionContable: &models.InfoTransaccionContable{
+				Movimientos: []*models.DetalleMovimientoContable{},
+			},
+		},
+	})
+
+	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
+		FechaInicial: "2026-06-01",
+		FechaFinal:   "2026-06-16",
+	})
+	if err != nil {
+		t.Fatalf("GenerarReporteContabilizacion retornó error: %v", err)
+	}
+
+	contenido, decodeErr := base64.StdEncoding.DecodeString(respuesta.ArchivoBase64)
+	if decodeErr != nil {
+		t.Fatalf("base64 inválido: %v", decodeErr)
+	}
+
+	archivo, openErr := xlsx.OpenBinary(contenido)
+	if openErr != nil {
+		t.Fatalf("no se pudo abrir el excel generado: %v", openErr)
+	}
+
+	if len(archivo.Sheets[0].Rows) != 1 {
+		t.Fatalf("la hoja entradas solo debe contener encabezados, tiene %d filas", len(archivo.Sheets[0].Rows))
+	}
+	if len(archivo.Sheets[1].Rows) != 1 {
+		t.Fatalf("la hoja salidas solo debe contener encabezados, tiene %d filas", len(archivo.Sheets[1].Rows))
+	}
+}
+
+func TestSplitTerceroLabel(t *testing.T) {
+	identificacion, nombre := splitTerceroLabel("900866324 - GESTION Y ESTUDIOS AMBIENTALES")
+	if identificacion != "900866324" {
+		t.Fatalf("identificación inesperada: %q", identificacion)
+	}
+	if nombre != "GESTION Y ESTUDIOS AMBIENTALES" {
+		t.Fatalf("nombre inesperado: %q", nombre)
+	}
+}
+
 func mockConsultarEntradasReporteData(t *testing.T, entradas []*entradaReporteData) {
 	t.Helper()
 
@@ -594,6 +816,32 @@ func mockConsultarSalidasAnuladasReporteData(t *testing.T, salidas []*salidaRepo
 
 	t.Cleanup(func() {
 		consultarSalidasAnuladasReporteData = original
+	})
+}
+
+func mockConsultarEntradasContabilizacionReporteData(t *testing.T, entradas []*reporteContabilizacionEntradaData) {
+	t.Helper()
+
+	original := consultarEntradasContabilizacionReporteData
+	consultarEntradasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionEntradaData, map[string]interface{}) {
+		return entradas, nil
+	}
+
+	t.Cleanup(func() {
+		consultarEntradasContabilizacionReporteData = original
+	})
+}
+
+func mockConsultarSalidasContabilizacionReporteData(t *testing.T, salidas []*reporteContabilizacionSalidaData) {
+	t.Helper()
+
+	original := consultarSalidasContabilizacionReporteData
+	consultarSalidasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionSalidaData, map[string]interface{}) {
+		return salidas, nil
+	}
+
+	t.Cleanup(func() {
+		consultarSalidasContabilizacionReporteData = original
 	})
 }
 

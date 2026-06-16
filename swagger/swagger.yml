@@ -982,6 +982,26 @@ paths:
               $ref: '#/definitions/models.ReporteDetalleSalidaResponse'
         "400":
           description: error en los datos de entrada
+  /reportes/contabilizacion:
+    post:
+      tags:
+      - reportes
+      description: Genera un reporte base64 en formato Excel de contabilización para un rango de fechas.
+      operationId: ReportesController.PostReporteContabilizacion
+      parameters:
+      - in: body
+        name: body
+        description: Rango de fechas del reporte
+        required: true
+        schema:
+          $ref: '#/definitions/models.ReporteFechasRequest'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.ReporteExcelBase64Response'
+        "400":
+          description: error en los datos de entrada
   /reportes/elementos:
     post:
       tags:
