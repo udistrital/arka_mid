@@ -103,8 +103,8 @@ func TestGenerarReporteElementos(t *testing.T) {
 					},
 					FuncionarioAsignado: "12345 - Funcionario Uno",
 					TrasladosAsociados:  "TRS-1001",
-					Sede:                "Sede Central",
-					Dependencia:         "Almacén General",
+					CentroCostoNombre:   "Almacén General",
+					CentroCostoCodigo:   "CC-001",
 					TransaccionContable: &models.InfoTransaccionContable{
 						Concepto: "Salida Almacén",
 						Fecha:    time.Date(2026, 5, 10, 15, 0, 0, 0, time.UTC),
@@ -204,11 +204,11 @@ func TestGenerarReporteElementos(t *testing.T) {
 	if dataRow.Cells[headerIndex["Funcionario asignado"]].String() != "12345 - Funcionario Uno" {
 		t.Fatalf("funcionario asignado inesperado: %q", dataRow.Cells[headerIndex["Funcionario asignado"]].String())
 	}
-	if dataRow.Cells[headerIndex["Sede"]].String() != "Sede Central" {
-		t.Fatalf("sede inesperada: %q", dataRow.Cells[headerIndex["Sede"]].String())
+	if dataRow.Cells[headerIndex["Centro de costo"]].String() != "Almacén General" {
+		t.Fatalf("centro de costo inesperado: %q", dataRow.Cells[headerIndex["Centro de costo"]].String())
 	}
-	if dataRow.Cells[headerIndex["Dependencia"]].String() != "Almacén General" {
-		t.Fatalf("dependencia inesperada: %q", dataRow.Cells[headerIndex["Dependencia"]].String())
+	if dataRow.Cells[headerIndex["codigo centro de costo"]].String() != "CC-001" {
+		t.Fatalf("codigo centro de costo inesperado: %q", dataRow.Cells[headerIndex["codigo centro de costo"]].String())
 	}
 	if dataRow.Cells[headerIndex["Cuenta débito salida"]].String() != "839090 - Responsabilidades en proceso" {
 		t.Fatalf("cuenta débito salida inesperada: %q", dataRow.Cells[headerIndex["Cuenta débito salida"]].String())
@@ -319,8 +319,8 @@ func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
 				},
 			},
 			FuncionarioAsignado: "12345 - Funcionario Uno",
-			Sede:                "Sede Central",
-			Dependencia:         "Almacén General",
+			CentroCostoNombre:   "Almacén General",
+			CentroCostoCodigo:   "CC-001",
 		},
 	})
 
@@ -390,6 +390,27 @@ func TestExtraerCodigosEntradaIncluyeFormatosInactivos(t *testing.T) {
 	}
 	if containsString(codigos, "SAL") {
 		t.Fatalf("did not expect SAL to be included as entrada, got %v", codigos)
+	}
+}
+
+func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
+	mockConsultarCentroCostos(t, []models.CentroCostos{
+		{
+			Id:     422,
+			Codigo: "CC-422",
+			Nombre: "Centro de costo principal",
+		},
+	})
+
+	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+		Detalle: `{"funcionario":12345,"ubicacion":999,"centro_costos":"422"}`,
+	})
+
+	if nombre != "Centro de costo principal" {
+		t.Fatalf("unexpected centro de costo: %q", nombre)
+	}
+	if codigo != "CC-422" {
+		t.Fatalf("unexpected codigo centro de costo: %q", codigo)
 	}
 }
 
@@ -612,6 +633,22 @@ func mockConsultarElementosActa(t *testing.T, elementos []*models.DetalleElement
 
 	t.Cleanup(func() {
 		consultarElementosActa = original
+	})
+}
+
+func mockConsultarCentroCostos(t *testing.T, centros []models.CentroCostos) {
+	t.Helper()
+
+	original := consultarCentroCostosFn
+	consultarCentroCostosFn = func(payload string) ([]models.CentroCostos, map[string]interface{}) {
+		if payload != "query=Id:422" {
+			t.Fatalf("unexpected centro costos payload: %s", payload)
+		}
+		return centros, nil
+	}
+
+	t.Cleanup(func() {
+		consultarCentroCostosFn = original
 	})
 }
 
