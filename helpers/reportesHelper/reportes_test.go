@@ -681,10 +681,10 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 
 	headerRow := archivo.Sheets[0].Rows[0]
-	if len(headerRow.Cells) != 19 {
-		t.Fatalf("se esperaban 19 encabezados, se obtuvieron %d", len(headerRow.Cells))
+	if len(headerRow.Cells) != 18 {
+		t.Fatalf("se esperaban 18 encabezados, se obtuvieron %d", len(headerRow.Cells))
 	}
-	if headerRow.Cells[0].String() != "Renglón" || headerRow.Cells[18].String() != "Jefe_Almacén" {
+	if headerRow.Cells[0].String() != "Renglón" || headerRow.Cells[17].String() != "Jefe_Almacén" {
 		t.Fatalf("encabezados A11 inesperados")
 	}
 
