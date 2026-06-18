@@ -20,6 +20,7 @@ type EntradaController struct {
 // URLMapping ...
 func (c *EntradaController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("PostHistorico", c.PostHistorico)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("PutAnular", c.PutAnular)
 }
@@ -115,6 +116,34 @@ func (c *EntradaController) Post() {
 
 	logs.Info("Respuesta final Post: %+v", c.Data["json"])
 	logs.Info("==== FIN EntradaController.Post ====")
+	c.ServeJSON()
+}
+
+// PostHistorico ...
+// @Title PostHistorico
+// @Description Registra y aprueba una entrada histórica para procesos de migración usando un consecutivo existente y fechas históricas.
+// @Param	body	body	models.TransaccionEntradaHistorica	true	"Detalles de la entrada histórica"
+// @Success 201 {object} models.ResultadoMovimiento
+// @Failure 400 the request contains incorrect syntax
+// @router /historico [post]
+func (c *EntradaController) PostHistorico() {
+	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
+
+	var payload models.TransaccionEntradaHistorica
+	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &payload); err != nil {
+		panic(map[string]interface{}{
+			"funcion": "PostHistorico - utilsHelper.Unmarshal(RequestBody, &payload)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	var resultado models.ResultadoMovimiento
+	if err := entradaHelper.RegistrarEntradaHistorica(&payload, &resultado); err != nil {
+		panic(err)
+	}
+
+	c.Data["json"] = resultado
 	c.ServeJSON()
 }
 
