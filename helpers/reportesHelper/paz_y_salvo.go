@@ -289,14 +289,14 @@ func construirParrafoPrincipal(tercero *models.PazYSalvoTerceroResponse, puedeGe
 	}
 
 	base := fmt.Sprintf(
-		"Que una vez revisada la aplicación ARKA 2 Sistema Gestión Almacén e Inventarios, se evidenció que %s identificado con %s número %s",
+		"Que una vez revisada la aplicación ARKA II Sistema Gestión Almacén e Inventarios, se evidenció que %s identificado con %s número %s",
 		nombre,
 		tipoDocumento,
 		numeroDocumento,
 	)
 
 	if puedeGenerar {
-		return base + " no tiene ningún elemento bajo su responsabilidad registrados en el aplicativo."
+		return base + " no tiene ningún elemento bajo su responsabilidad registrado en el aplicativo."
 	}
 
 	return base + " cuenta con elementos bajo su responsabilidad registrados en el aplicativo."

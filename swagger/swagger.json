@@ -956,7 +956,7 @@
                         }
                     },
                     "400": {
-                        "description": "\"Wrong parameter (ID MUST be \u003e 0)\""
+                        "description": "\"Wrong parameter (ID MUST be > 0)\""
                     },
                     "404": {
                         "description": "\"Not found\""
@@ -2077,6 +2077,68 @@
                     },
                     "403": {
                         "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/reportes/contabilizacion": {
+            "post": {
+                "tags": [
+                    "reportes"
+                ],
+                "description": "Genera un reporte base64 en formato Excel de contabilización para un rango de fechas.",
+                "operationId": "ReportesController.PostReporteContabilizacion",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Rango de fechas del reporte",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ReporteFechasRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ReporteExcelBase64Response"
+                        }
+                    },
+                    "400": {
+                        "description": "error en los datos de entrada"
+                    }
+                }
+            }
+        },
+        "/entrada/historico": {
+            "post": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "Registra y aprueba una entrada histórica para procesos de migración usando un consecutivo existente y fechas históricas.",
+                "operationId": "EntradaController.PostHistorico",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Detalles de la entrada histórica",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TransaccionEntradaHistorica"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResultadoMovimiento"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
                     }
                 }
             }
@@ -4904,6 +4966,49 @@
                     "type": "string"
                 },
                 "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.TransaccionEntradaHistorica": {
+            "title": "TransaccionEntradaHistorica",
+            "type": "object",
+            "properties": {
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Detalle": {
+                    "$ref": "#/definitions/models.FormatoBaseEntrada"
+                },
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FormatoTipoMovimientoId": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Year": {
                     "type": "integer",
                     "format": "int64"
                 }
