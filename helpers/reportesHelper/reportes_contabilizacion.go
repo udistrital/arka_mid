@@ -57,19 +57,11 @@ type reporteA11ContabilizacionRow struct {
 	DescripcionProyecto            string
 	ClaseDocumentoLinea            string
 	Empresa                        string
-	TipoDocumentoCodigo            string
-	TipoDocumentoNombre            string
-	ClaseDocumentoMovimientoCodigo string
-	ClaseDocumentoMovimientoNombre string
-	EstadoCodigo                   string
-	EstadoNombre                   string
-	Detalle                        string
 	DocumentoSalida                string
 	FechaDocumento                 time.Time
 	DocumentoEntrada               string
 	Factura                        string
 	Vigencia                       string
-	Usuario                        string
 	JefeAlmacen                    string
 }
 
@@ -88,19 +80,11 @@ var (
 		"Descripción_Proyecto",
 		"Clase_Documento",
 		"Empresa",
-		"Tipo_Documento",
-		"Tipo_Documento",
-		"Clase_Documento",
-		"Clase_Documento",
-		"Estado",
-		"Estado",
-		"Detalle",
 		"Documento_Salida",
 		"Fecha_Documento",
 		"Documento_Entrada",
 		"Factura",
 		"Vigencia",
-		"Usuario",
 		"Jefe_Almacén",
 	}
 
@@ -361,6 +345,7 @@ func construirFilasA11PorEntrada(entrada *reporteContabilizacionEntradaData) []*
 
 	rows := make([]*reporteA11ContabilizacionRow, 0, len(entrada.TransaccionContable.Movimientos))
 	renglon := 1
+	descripcion := strings.TrimSpace(entrada.Movimiento.Observacion)
 	for _, movimientoContable := range entrada.TransaccionContable.Movimientos {
 		naturaleza, valor := naturalezaYValorMovimientoA11(movimientoContable)
 		if naturaleza == "" {
@@ -372,13 +357,12 @@ func construirFilasA11PorEntrada(entrada *reporteContabilizacionEntradaData) []*
 			Renglon:                renglon,
 			CuentaContable:         codigoCuentaContableA11(movimientoContable),
 			NaturalezaCuenta:       naturaleza,
-			Descripcion:            "",
+			Descripcion:            descripcion,
 			Valor:                  valor,
 			IdentificacionTercero:  identificacion,
 			NombreTercero:          nombre,
 			CentroCosto:            entrada.CentroCostoCodigo,
 			DescripcionCentroCosto: entrada.CentroCostoNombre,
-			Detalle:                "",
 			FechaDocumento:         fechaDocumento,
 			DocumentoEntrada:       documentoEntrada,
 			Factura:                strings.TrimSpace(entrada.FacturaConsecutivo),
@@ -408,6 +392,7 @@ func construirFilasA11PorSalida(salida *reporteContabilizacionSalidaData) []*rep
 
 	rows := make([]*reporteA11ContabilizacionRow, 0, len(salida.TransaccionContable.Movimientos))
 	renglon := 1
+	descripcion := strings.TrimSpace(salida.Movimiento.Observacion)
 	for _, movimientoContable := range salida.TransaccionContable.Movimientos {
 		naturaleza, valor := naturalezaYValorMovimientoA11(movimientoContable)
 		if naturaleza == "" {
@@ -419,13 +404,12 @@ func construirFilasA11PorSalida(salida *reporteContabilizacionSalidaData) []*rep
 			Renglon:                renglon,
 			CuentaContable:         codigoCuentaContableA11(movimientoContable),
 			NaturalezaCuenta:       naturaleza,
-			Descripcion:            "",
+			Descripcion:            descripcion,
 			Valor:                  valor,
 			IdentificacionTercero:  identificacion,
 			NombreTercero:          nombre,
 			CentroCosto:            salida.CentroCostoCodigo,
 			DescripcionCentroCosto: salida.CentroCostoNombre,
-			Detalle:                "",
 			DocumentoSalida:        documentoSalida,
 			FechaDocumento:         fechaDocumento,
 			DocumentoEntrada:       documentoEntrada,
@@ -464,19 +448,11 @@ func addReporteA11Row(hoja *xlsx.Sheet, rowData *reporteA11ContabilizacionRow) {
 	addStringCell(row, rowData.DescripcionProyecto)
 	addStringCell(row, rowData.ClaseDocumentoLinea)
 	addStringCell(row, rowData.Empresa)
-	addStringCell(row, rowData.TipoDocumentoCodigo)
-	addStringCell(row, rowData.TipoDocumentoNombre)
-	addStringCell(row, rowData.ClaseDocumentoMovimientoCodigo)
-	addStringCell(row, rowData.ClaseDocumentoMovimientoNombre)
-	addStringCell(row, rowData.EstadoCodigo)
-	addStringCell(row, rowData.EstadoNombre)
-	addStringCell(row, rowData.Detalle)
 	addStringCell(row, rowData.DocumentoSalida)
 	addDateCell(row, rowData.FechaDocumento)
 	addStringCell(row, rowData.DocumentoEntrada)
 	addStringCell(row, rowData.Factura)
 	addStringCell(row, rowData.Vigencia)
-	addStringCell(row, rowData.Usuario)
 	addStringCell(row, rowData.JefeAlmacen)
 }
 
@@ -488,9 +464,8 @@ func setA11ColumnWidths(hoja *xlsx.Sheet) {
 	_ = hoja.SetColWidth(4, 4, 14)
 	_ = hoja.SetColWidth(5, 6, 24)
 	_ = hoja.SetColWidth(7, 8, 26)
-	_ = hoja.SetColWidth(9, 19, 20)
-	_ = hoja.SetColWidth(20, 24, 18)
-	_ = hoja.SetColWidth(25, 26, 18)
+	_ = hoja.SetColWidth(9, 13, 20)
+	_ = hoja.SetColWidth(14, 18, 18)
 }
 
 func addDateCell(row *xlsx.Row, value time.Time) {
