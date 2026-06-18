@@ -2073,6 +2073,37 @@
                     }
                 }
             }
+        },
+        "/entrada/historico": {
+            "post": {
+                "tags": [
+                    "entrada"
+                ],
+                "description": "Registra y aprueba una entrada histórica para procesos de migración usando un consecutivo existente y fechas históricas.",
+                "operationId": "EntradaController.PostHistorico",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Detalles de la entrada histórica",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TransaccionEntradaHistorica"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResultadoMovimiento"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4897,6 +4928,49 @@
                     "type": "string"
                 },
                 "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.TransaccionEntradaHistorica": {
+            "title": "TransaccionEntradaHistorica",
+            "type": "object",
+            "properties": {
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Detalle": {
+                    "$ref": "#/definitions/models.FormatoBaseEntrada"
+                },
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FormatoTipoMovimientoId": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Observacion": {
+                    "type": "string"
+                },
+                "SoporteMovimientoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Year": {
                     "type": "integer",
                     "format": "int64"
                 }
