@@ -44,25 +44,25 @@ type reporteContabilizacionSalidaData struct {
 }
 
 type reporteA11ContabilizacionRow struct {
-	Renglon                        int
-	CuentaContable                 string
-	NaturalezaCuenta               string
-	Descripcion                    string
-	Valor                          float64
-	IdentificacionTercero          string
-	NombreTercero                  string
-	CentroCosto                    string
-	DescripcionCentroCosto         string
-	Proyecto                       string
-	DescripcionProyecto            string
-	ClaseDocumentoLinea            string
-	Empresa                        string
-	DocumentoSalida                string
-	FechaDocumento                 time.Time
-	DocumentoEntrada               string
-	Factura                        string
-	Vigencia                       string
-	JefeAlmacen                    string
+	Renglon                int
+	CuentaContable         string
+	NaturalezaCuenta       string
+	Descripcion            string
+	Valor                  float64
+	IdentificacionTercero  string
+	NombreTercero          string
+	CentroCosto            string
+	DescripcionCentroCosto string
+	Proyecto               string
+	DescripcionProyecto    string
+	ClaseDocumentoLinea    string
+	Empresa                string
+	DocumentoSalida        string
+	FechaDocumento         time.Time
+	DocumentoEntrada       string
+	Factura                string
+	Vigencia               string
+	JefeAlmacen            string
 }
 
 var (
