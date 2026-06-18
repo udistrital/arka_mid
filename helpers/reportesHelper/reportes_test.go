@@ -583,12 +583,12 @@ func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 
 func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionEntradaData{
-			{
-				Movimiento: &models.Movimiento{
-					Consecutivo:   stringPtr("P8-00001-2026"),
-					Observacion:   "Observación entrada contable",
-					FechaCreacion: time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
-				},
+		{
+			Movimiento: &models.Movimiento{
+				Consecutivo:   stringPtr("P8-00001-2026"),
+				Observacion:   "Observación entrada contable",
+				FechaCreacion: time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
+			},
 			ProveedorLabel:     "900866324 - PROVEEDOR UNO",
 			FacturaConsecutivo: "FV 434",
 			CentroCostoCodigo:  "A1205",
@@ -610,12 +610,12 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 		},
 	})
 	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionSalidaData{
-			{
-				Movimiento: &models.Movimiento{
-					Consecutivo:   stringPtr("H21-00001-2026"),
-					Observacion:   "Observación salida contable",
-					FechaCreacion: time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
-				},
+		{
+			Movimiento: &models.Movimiento{
+				Consecutivo:   stringPtr("H21-00001-2026"),
+				Observacion:   "Observación salida contable",
+				FechaCreacion: time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
+			},
 			EntradaPadre: &models.Movimiento{
 				Consecutivo: stringPtr("P8-00001-2026"),
 			},
