@@ -56,7 +56,6 @@ type reporteA11ContabilizacionRow struct {
 	Proyecto               string
 	DescripcionProyecto    string
 	ClaseDocumentoLinea    string
-	Empresa                string
 	DocumentoSalida        string
 	FechaDocumento         time.Time
 	DocumentoEntrada       string
@@ -79,7 +78,6 @@ var (
 		"Proyecto",
 		"Descripción_Proyecto",
 		"Clase_Documento",
-		"Empresa",
 		"Documento_Salida",
 		"Fecha_Documento",
 		"Documento_Entrada",
@@ -447,7 +445,6 @@ func addReporteA11Row(hoja *xlsx.Sheet, rowData *reporteA11ContabilizacionRow) {
 	addStringCell(row, rowData.Proyecto)
 	addStringCell(row, rowData.DescripcionProyecto)
 	addStringCell(row, rowData.ClaseDocumentoLinea)
-	addStringCell(row, rowData.Empresa)
 	addStringCell(row, rowData.DocumentoSalida)
 	addDateCell(row, rowData.FechaDocumento)
 	addStringCell(row, rowData.DocumentoEntrada)
@@ -464,8 +461,8 @@ func setA11ColumnWidths(hoja *xlsx.Sheet) {
 	_ = hoja.SetColWidth(4, 4, 14)
 	_ = hoja.SetColWidth(5, 6, 24)
 	_ = hoja.SetColWidth(7, 8, 26)
-	_ = hoja.SetColWidth(9, 13, 20)
-	_ = hoja.SetColWidth(14, 18, 18)
+	_ = hoja.SetColWidth(9, 12, 20)
+	_ = hoja.SetColWidth(13, 17, 18)
 }
 
 func addDateCell(row *xlsx.Row, value time.Time) {
