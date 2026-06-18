@@ -583,11 +583,12 @@ func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 
 func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionEntradaData{
-		{
-			Movimiento: &models.Movimiento{
-				Consecutivo:   stringPtr("P8-00001-2026"),
-				FechaCreacion: time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
-			},
+			{
+				Movimiento: &models.Movimiento{
+					Consecutivo:   stringPtr("P8-00001-2026"),
+					Observacion:   "Observación entrada contable",
+					FechaCreacion: time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
+				},
 			ProveedorLabel:     "900866324 - PROVEEDOR UNO",
 			FacturaConsecutivo: "FV 434",
 			CentroCostoCodigo:  "A1205",
@@ -609,11 +610,12 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 		},
 	})
 	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionSalidaData{
-		{
-			Movimiento: &models.Movimiento{
-				Consecutivo:   stringPtr("H21-00001-2026"),
-				FechaCreacion: time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
-			},
+			{
+				Movimiento: &models.Movimiento{
+					Consecutivo:   stringPtr("H21-00001-2026"),
+					Observacion:   "Observación salida contable",
+					FechaCreacion: time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
+				},
 			EntradaPadre: &models.Movimiento{
 				Consecutivo: stringPtr("P8-00001-2026"),
 			},
@@ -679,10 +681,10 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 
 	headerRow := archivo.Sheets[0].Rows[0]
-	if len(headerRow.Cells) != 27 {
-		t.Fatalf("se esperaban 27 encabezados, se obtuvieron %d", len(headerRow.Cells))
+	if len(headerRow.Cells) != 19 {
+		t.Fatalf("se esperaban 19 encabezados, se obtuvieron %d", len(headerRow.Cells))
 	}
-	if headerRow.Cells[0].String() != "Renglón" || headerRow.Cells[26].String() != "Jefe_Almacén" {
+	if headerRow.Cells[0].String() != "Renglón" || headerRow.Cells[18].String() != "Jefe_Almacén" {
 		t.Fatalf("encabezados A11 inesperados")
 	}
 
@@ -700,6 +702,9 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	if entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String() != "A1205" {
 		t.Fatalf("centro de costo entrada inesperado: %q", entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String())
 	}
+	if entradasDataRow.Cells[entradasIndex["Descripción"]].String() != "Observación entrada contable" {
+		t.Fatalf("descripción entrada inesperada: %q", entradasDataRow.Cells[entradasIndex["Descripción"]].String())
+	}
 	if entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat() != a11DateNumFmt {
 		t.Fatalf("formato fecha inesperado: %q", entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat())
 	}
@@ -716,6 +721,9 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Salida"]].String() != "H21-00001-2026" {
 		t.Fatalf("documento salida inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Salida"]].String())
+	}
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Descripción"]].String() != "Observación salida contable" {
+		t.Fatalf("descripción salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Descripción"]].String())
 	}
 	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Entrada"]].String() != "P8-00001-2026" {
 		t.Fatalf("documento entrada asociado inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Entrada"]].String())
