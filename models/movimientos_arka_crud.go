@@ -95,6 +95,15 @@ type TransaccionEntrada struct {
 	SoporteMovimientoId     int
 }
 
+type TransaccionEntradaHistorica struct {
+	TransaccionEntrada
+	ConsecutivoId     int       `json:"consecutivo_id"`
+	Year              int       `json:"year"`
+	FechaCreacion     time.Time `json:"fecha_creacion"`
+	FechaModificacion time.Time `json:"fecha_modificacion"`
+	FechaCorte        time.Time `json:"fecha_corte"`
+}
+
 type FormatoBaseEntrada struct {
 	ActaRecibidoId      int                `json:"acta_recibido_id"`
 	ContratoId          int                `json:"contrato_id"`

@@ -402,6 +402,9 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	var transaccion = models.TransaccionMovimientos{
 		ConsecutivoId: *resultado_.Movimiento.ConsecutivoId,
 	}
+	if resultado_.Movimiento.FechaCorte != nil && !resultado_.Movimiento.FechaCorte.IsZero() {
+		transaccion.FechaTransaccion = *resultado_.Movimiento.FechaCorte
+	}
 	bufferCuentas := make(map[string]models.CuentaContable)
 
 	logs.Info("contabilidadEntrada -> FormatoTipoMovimientoId=%+v", resultado_.Movimiento.FormatoTipoMovimientoId)
