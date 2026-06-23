@@ -1,7 +1,9 @@
 package bajasHelper
 
 import (
+	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
@@ -38,20 +40,12 @@ func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja
 			return err
 		}
 
-		if _, ok := bufferTerceros[detalle.Funcionario]; !ok {
-			if tercero, err := terceros.GetTerceroById(detalle.Funcionario); err != nil {
-				return err
-			} else {
-				bufferTerceros[detalle.Funcionario] = tercero.NombreCompleto
-			}
+		if err := cargarNombreTerceroBaja(detalle.Funcionario, bufferTerceros); err != nil {
+			return err
 		}
 
-		if _, ok := bufferTerceros[detalle.Revisor]; !ok {
-			if tercero, err := terceros.GetTerceroById(detalle.Revisor); err != nil {
-				return err
-			} else {
-				bufferTerceros[detalle.Revisor] = tercero.NombreCompleto
-			}
+		if err := cargarNombreTerceroBaja(detalle.Revisor, bufferTerceros); err != nil {
+			return err
 		}
 
 		baja := models.DetalleBaja{
@@ -70,6 +64,43 @@ func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja
 
 	return
 
+}
+
+func cargarNombreTerceroBaja(terceroID int, buffer map[int]string) (outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("cargarNombreTerceroBaja - Unhandled Error!", "500")
+
+	if buffer == nil {
+		return nil
+	}
+	if terceroID <= 0 {
+		buffer[terceroID] = ""
+		return nil
+	}
+	if _, ok := buffer[terceroID]; ok {
+		return nil
+	}
+
+	tercero, err := terceros.GetTerceroById(terceroID)
+	if err != nil {
+		if esTerceroNoEncontrado(err) {
+			buffer[terceroID] = strconv.Itoa(terceroID)
+			return nil
+		}
+		return err
+	}
+
+	buffer[terceroID] = tercero.NombreCompleto
+	if buffer[terceroID] == "" {
+		buffer[terceroID] = strconv.Itoa(terceroID)
+	}
+	return nil
+}
+
+func esTerceroNoEncontrado(err map[string]interface{}) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(fmt.Sprint(err["err"]), "http 404:")
 }
 
 // loadBajas Consulta lista de bajas asociadas a un usuario de acuerdo a las revisiones y permisos del usuario
