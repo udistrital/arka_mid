@@ -142,13 +142,8 @@ var (
 		"Cuenta débito salida",
 		"Cuenta crédito salida",
 		"Fecha depreciación",
-		"Meses transcurridos",
 		"Vida útil",
 		"entrada_estado",
-		"entrada_acta_recibido_id",
-		"elemento_subtotal",
-		"elemento_descuento",
-		"elemento_subgrupo_codigo",
 		"Tipo de bien",
 		"salida_estado",
 		"salida_fecha_corte",
@@ -1496,14 +1491,9 @@ func addElementoEntradaRow(hoja *xlsx.Sheet, rowData *reporteElementoEntradaRow)
 	addStringCell(row, rowData.CuentaDebitoSalida)                    // Cuenta débito salida
 	addStringCell(row, rowData.CuentaCreditoSalida)                   // Cuenta crédito salida
 	addStringCell(row, "")                                            // Fecha depreciación
-	addStringCell(row, "")                                            // Meses transcurridos
 	addStringCell(row, "")                                            // Vida útil
 
 	addStringCell(row, rowData.EntradaEstado)
-	addStringCell(row, strconv.Itoa(rowData.EntradaActaRecibidoID))
-	addDecimalCell(row, rowData.ElementoSubtotal)
-	addDecimalCell(row, rowData.ElementoDescuento)
-	addStringCell(row, rowData.ElementoSubgrupoCodigo)
 	addStringCell(row, rowData.ElementoTipoBienNombre)
 	addStringCell(row, rowData.SalidaEstado)
 	addStringCell(row, timePtrCell(rowData.SalidaFechaCorte))
