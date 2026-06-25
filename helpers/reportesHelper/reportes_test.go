@@ -568,6 +568,36 @@ func TestGenerarReporteContabilizacionRequestNil(t *testing.T) {
 	}
 }
 
+func TestConsultarProveedorActaFallbackCuandoTerceroNoExiste(t *testing.T) {
+	originalHistoricos := consultarHistoricosActaReporteFn
+	originalGetNombre := getNombreTerceroByID
+
+	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+		return []models.HistoricoActa{
+			{ProveedorId: 123456},
+		}, nil
+	}
+	getNombreTerceroByID = func(terceroID int) (*models.IdentificacionTercero, map[string]interface{}) {
+		return nil, map[string]interface{}{
+			"err":    "http 404: {\"Message\":\"Not found resource\"}",
+			"status": "502",
+		}
+	}
+
+	t.Cleanup(func() {
+		consultarHistoricosActaReporteFn = originalHistoricos
+		getNombreTerceroByID = originalGetNombre
+	})
+
+	proveedor, err := consultarProveedorActa(555)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if proveedor != "123456" {
+		t.Fatalf("fallback de proveedor inesperado: %q", proveedor)
+	}
+}
+
 func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
 		FechaInicial: "2026-06-16",
