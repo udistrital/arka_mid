@@ -31,6 +31,10 @@ type reporteContabilizacionEntradaData struct {
 	FacturaConsecutivo  string
 	CentroCostoCodigo   string
 	CentroCostoNombre   string
+	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
+	Subgrupos           []int
+	CuentasDebitoA11    []string
+	CuentasCreditoA11   []string
 }
 
 type reporteContabilizacionSalidaData struct {
@@ -41,6 +45,8 @@ type reporteContabilizacionSalidaData struct {
 	FacturaConsecutivo  string
 	CentroCostoCodigo   string
 	CentroCostoNombre   string
+	CuentasDebitoA11    []string
+	CuentasCreditoA11   []string
 }
 
 type reporteA11ContabilizacionRow struct {
@@ -89,6 +95,8 @@ var (
 	consultarEntradasContabilizacionReporteData = consultarEntradasContabilizacionReporteDataDefault
 	consultarSalidasContabilizacionReporteData  = consultarSalidasContabilizacionReporteDataDefault
 	consultarHistoricosActaReporteFn            = crudActaRecibido.GetAllHistoricoActa
+	getDetalleCuentasEntradaA11Fn               = GetDetalleCuentasEntradaPorConsecutivo
+	getDetalleCuentasSalidaA11Fn                = GetDetalleCuentasSalidaPorConsecutivo
 )
 
 func GenerarReporteContabilizacion(req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
@@ -195,6 +203,10 @@ func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal
 			FacturaConsecutivo:  strings.TrimSpace(entrada.FacturaConsecutivo),
 			CentroCostoCodigo:   centroCostoCodigo,
 			CentroCostoNombre:   centroCostoNombre,
+			CuentasPorSubgrupo:  entrada.CuentasPorSubgrupo,
+			Subgrupos:           collectSubgrupoIDs(entrada.Elementos),
+			CuentasDebitoA11:    cuentasDetalleEntradaA11(stringPtrValue(entrada.Movimiento.Consecutivo), true),
+			CuentasCreditoA11:   cuentasDetalleEntradaA11(stringPtrValue(entrada.Movimiento.Consecutivo), false),
 		})
 	}
 
@@ -248,6 +260,8 @@ func consultarSalidasContabilizacionReporteDataDefault(fechaInicial, fechaFinal 
 			FacturaConsecutivo:  strings.TrimSpace(facturaConsecutivo),
 			CentroCostoCodigo:   centroCostoCodigo,
 			CentroCostoNombre:   centroCostoNombre,
+			CuentasDebitoA11:    cuentasDetalleSalidaA11(stringPtrValue(movimiento.Consecutivo), true),
+			CuentasCreditoA11:   cuentasDetalleSalidaA11(stringPtrValue(movimiento.Consecutivo), false),
 		})
 	}
 
@@ -344,6 +358,8 @@ func construirFilasA11PorEntrada(entrada *reporteContabilizacionEntradaData) []*
 	rows := make([]*reporteA11ContabilizacionRow, 0, len(entrada.TransaccionContable.Movimientos))
 	renglon := 1
 	descripcion := strings.TrimSpace(entrada.Movimiento.Observacion)
+	idxDebito := 0
+	idxCredito := 0
 	for _, movimientoContable := range entrada.TransaccionContable.Movimientos {
 		naturaleza, valor := naturalezaYValorMovimientoA11(movimientoContable)
 		if naturaleza == "" {
@@ -353,7 +369,7 @@ func construirFilasA11PorEntrada(entrada *reporteContabilizacionEntradaData) []*
 		identificacion, nombre := terceroMovimientoA11(movimientoContable, entrada.ProveedorLabel)
 		rows = append(rows, &reporteA11ContabilizacionRow{
 			Renglon:                renglon,
-			CuentaContable:         codigoCuentaContableA11(movimientoContable),
+			CuentaContable:         cuentaContableEntradaA11(entrada, movimientoContable, naturaleza, idxDebito, idxCredito),
 			NaturalezaCuenta:       naturaleza,
 			Descripcion:            descripcion,
 			Valor:                  valor,
@@ -366,6 +382,11 @@ func construirFilasA11PorEntrada(entrada *reporteContabilizacionEntradaData) []*
 			Factura:                strings.TrimSpace(entrada.FacturaConsecutivo),
 			Vigencia:               vigencia,
 		})
+		if naturaleza == "D" {
+			idxDebito++
+		} else if naturaleza == "C" {
+			idxCredito++
+		}
 		renglon++
 	}
 
@@ -391,6 +412,8 @@ func construirFilasA11PorSalida(salida *reporteContabilizacionSalidaData) []*rep
 	rows := make([]*reporteA11ContabilizacionRow, 0, len(salida.TransaccionContable.Movimientos))
 	renglon := 1
 	descripcion := strings.TrimSpace(salida.Movimiento.Observacion)
+	idxDebito := 0
+	idxCredito := 0
 	for _, movimientoContable := range salida.TransaccionContable.Movimientos {
 		naturaleza, valor := naturalezaYValorMovimientoA11(movimientoContable)
 		if naturaleza == "" {
@@ -400,7 +423,7 @@ func construirFilasA11PorSalida(salida *reporteContabilizacionSalidaData) []*rep
 		identificacion, nombre := terceroMovimientoA11(movimientoContable, salida.ProveedorLabel)
 		rows = append(rows, &reporteA11ContabilizacionRow{
 			Renglon:                renglon,
-			CuentaContable:         codigoCuentaContableA11(movimientoContable),
+			CuentaContable:         cuentaContableSalidaA11(salida, movimientoContable, naturaleza, idxDebito, idxCredito),
 			NaturalezaCuenta:       naturaleza,
 			Descripcion:            descripcion,
 			Valor:                  valor,
@@ -414,6 +437,11 @@ func construirFilasA11PorSalida(salida *reporteContabilizacionSalidaData) []*rep
 			Factura:                strings.TrimSpace(salida.FacturaConsecutivo),
 			Vigencia:               vigencia,
 		})
+		if naturaleza == "D" {
+			idxDebito++
+		} else if naturaleza == "C" {
+			idxCredito++
+		}
 		renglon++
 	}
 
@@ -635,6 +663,210 @@ func codigoCuentaContableA11(movimiento *models.DetalleMovimientoContable) strin
 		return strings.TrimSpace(movimiento.Cuenta.Codigo)
 	}
 	return strings.TrimSpace(movimiento.Cuenta.Id)
+}
+
+func cuentaContableEntradaA11(entrada *reporteContabilizacionEntradaData, movimiento *models.DetalleMovimientoContable, naturaleza string, idxDebito, idxCredito int) string {
+	fallback := codigoCuentaContableA11(movimiento)
+	if cuenta := cuentaDesdeDetalleA11(naturaleza, entradaCuentasDebitoA11(entrada), entradaCuentasCreditoA11(entrada), idxDebito, idxCredito); cuenta != "" {
+		return cuenta
+	}
+	if entrada == nil || len(entrada.Subgrupos) != 1 {
+		return fallback
+	}
+
+	cuentaCfg, ok := entrada.CuentasPorSubgrupo[entrada.Subgrupos[0]]
+	if !ok {
+		return fallback
+	}
+
+	var (
+		cuentaID string
+		debito   bool
+	)
+	if naturaleza == "D" {
+		cuentaID = cuentaCfg.CuentaDebitoId
+		debito = true
+	} else if naturaleza == "C" {
+		cuentaID = cuentaCfg.CuentaCreditoId
+	} else {
+		return fallback
+	}
+
+	return codigoCuentaPorIDCuentaMovimiento(cuentaID, entrada.TransaccionContable, debito, fallback)
+}
+
+func cuentaContableSalidaA11(salida *reporteContabilizacionSalidaData, movimiento *models.DetalleMovimientoContable, naturaleza string, idxDebito, idxCredito int) string {
+	fallback := codigoCuentaContableA11(movimiento)
+	if cuenta := cuentaDesdeDetalleA11(naturaleza, salidaCuentasDebitoA11(salida), salidaCuentasCreditoA11(salida), idxDebito, idxCredito); cuenta != "" {
+		return cuenta
+	}
+	return fallback
+}
+
+func codigoCuentaPorIDCuentaMovimiento(cuentaID string, transaccion *models.InfoTransaccionContable, debito bool, fallback string) string {
+	cuentaID = strings.TrimSpace(cuentaID)
+	if cuentaID == "" {
+		return fallback
+	}
+
+	if transaccion != nil {
+		for _, movimiento := range transaccion.Movimientos {
+			if movimiento == nil || movimiento.Cuenta == nil || strings.TrimSpace(movimiento.Cuenta.Id) != cuentaID {
+				continue
+			}
+			if debito && movimiento.Debito > 0 {
+				return codigoDetalleCuenta(movimiento.Cuenta, fallback)
+			}
+			if !debito && movimiento.Credito > 0 {
+				return codigoDetalleCuenta(movimiento.Cuenta, fallback)
+			}
+		}
+
+		for _, movimiento := range transaccion.Movimientos {
+			if movimiento != nil && movimiento.Cuenta != nil && strings.TrimSpace(movimiento.Cuenta.Id) == cuentaID {
+				return codigoDetalleCuenta(movimiento.Cuenta, fallback)
+			}
+		}
+	}
+
+	if cuenta, outputError := consultarCuentaContable(cuentaID); outputError == nil && cuenta != nil {
+		if strings.TrimSpace(cuenta.Codigo) != "" {
+			return strings.TrimSpace(cuenta.Codigo)
+		}
+		if strings.TrimSpace(cuenta.Id) != "" {
+			return strings.TrimSpace(cuenta.Id)
+		}
+	}
+
+	if fallback != "" {
+		return fallback
+	}
+	return cuentaID
+}
+
+func codigoDetalleCuenta(cuenta *models.DetalleCuenta, fallback string) string {
+	if cuenta == nil {
+		return fallback
+	}
+	if strings.TrimSpace(cuenta.Codigo) != "" {
+		return strings.TrimSpace(cuenta.Codigo)
+	}
+	if strings.TrimSpace(cuenta.Id) != "" {
+		return strings.TrimSpace(cuenta.Id)
+	}
+	return fallback
+}
+
+func cuentasDetalleEntradaA11(consecutivo string, debito bool) []string {
+	if strings.TrimSpace(consecutivo) == "" {
+		return nil
+	}
+	detalles, outputError := getDetalleCuentasEntradaA11Fn(consecutivo)
+	if outputError != nil {
+		return nil
+	}
+
+	cuentas := make([]string, 0, len(detalles))
+	for _, detalle := range detalles {
+		if detalle == nil {
+			continue
+		}
+		if debito {
+			cuentas = append(cuentas, detalle.CuentaDebitoEntrada)
+		} else {
+			cuentas = append(cuentas, detalle.CuentaCreditoEntrada)
+		}
+	}
+	return cuentasDetalleA11Normalizadas(cuentas)
+}
+
+func cuentasDetalleSalidaA11(consecutivo string, debito bool) []string {
+	if strings.TrimSpace(consecutivo) == "" {
+		return nil
+	}
+	detalles, outputError := getDetalleCuentasSalidaA11Fn(consecutivo)
+	if outputError != nil {
+		return nil
+	}
+
+	cuentas := make([]string, 0, len(detalles))
+	for _, detalle := range detalles {
+		if detalle == nil {
+			continue
+		}
+		if debito {
+			cuentas = append(cuentas, detalle.CuentaDebitoSalida)
+		} else {
+			cuentas = append(cuentas, detalle.CuentaCreditoSalida)
+		}
+	}
+	return cuentasDetalleA11Normalizadas(cuentas)
+}
+
+func cuentasDetalleA11Normalizadas(cuentas []string) []string {
+	normalizadas := make([]string, 0, len(cuentas))
+	for _, cuenta := range cuentas {
+		codigo := codigoCuentaDesdeLabel(cuenta)
+		if codigo == "" {
+			continue
+		}
+		normalizadas = append(normalizadas, codigo)
+	}
+	return normalizadas
+}
+
+func codigoCuentaDesdeLabel(label string) string {
+	label = strings.TrimSpace(label)
+	if label == "" {
+		return ""
+	}
+	partes := strings.SplitN(label, " - ", 2)
+	return strings.TrimSpace(partes[0])
+}
+
+func cuentaDesdeDetalleA11(naturaleza string, debito, credito []string, idxDebito, idxCredito int) string {
+	if naturaleza == "D" {
+		return cuentaPorIndiceDetalleA11(debito, idxDebito)
+	}
+	if naturaleza == "C" {
+		return cuentaPorIndiceDetalleA11(credito, idxCredito)
+	}
+	return ""
+}
+
+func cuentaPorIndiceDetalleA11(cuentas []string, idx int) string {
+	if idx < 0 || idx >= len(cuentas) {
+		return ""
+	}
+	return strings.TrimSpace(cuentas[idx])
+}
+
+func entradaCuentasDebitoA11(entrada *reporteContabilizacionEntradaData) []string {
+	if entrada == nil {
+		return nil
+	}
+	return entrada.CuentasDebitoA11
+}
+
+func entradaCuentasCreditoA11(entrada *reporteContabilizacionEntradaData) []string {
+	if entrada == nil {
+		return nil
+	}
+	return entrada.CuentasCreditoA11
+}
+
+func salidaCuentasDebitoA11(salida *reporteContabilizacionSalidaData) []string {
+	if salida == nil {
+		return nil
+	}
+	return salida.CuentasDebitoA11
+}
+
+func salidaCuentasCreditoA11(salida *reporteContabilizacionSalidaData) []string {
+	if salida == nil {
+		return nil
+	}
+	return salida.CuentasCreditoA11
 }
 
 func terceroMovimientoA11(movimiento *models.DetalleMovimientoContable, proveedorLabel string) (identificacion, nombre string) {

@@ -358,6 +358,12 @@ func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
 	if entradaAnuladaRow.Cells[headerIndex["entrada_estado"]].String() != estadoEntradaAnuladaReporte {
 		t.Fatalf("estado entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["entrada_estado"]].String())
 	}
+	if entradaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String() != rotuloEntradaAnuladaReporte {
+		t.Fatalf("rótulo entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String())
+	}
+	if entradaAnuladaRow.Cells[headerIndex["Valor unitario"]].Value != "0" {
+		t.Fatalf("valor unitario entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["Valor unitario"]].Value)
+	}
 
 	salidaAnuladaRow := archivo.Sheets[0].Rows[2]
 	if salidaAnuladaRow.Cells[headerIndex["Consecutivo salida"]].String() != "SAL-ANU-01" {
@@ -368,6 +374,81 @@ func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
 	}
 	if salidaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String() != "ENT-BASE-01" {
 		t.Fatalf("consecutivo entrada padre inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String())
+	}
+	if salidaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String() != rotuloSalidaAnuladaReporte {
+		t.Fatalf("rótulo salida anulada inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String())
+	}
+	if salidaAnuladaRow.Cells[headerIndex["Subtotal"]].Value != "0" {
+		t.Fatalf("subtotal salida anulada inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Subtotal"]].Value)
+	}
+}
+
+func TestGenerarReporteEntradaAnuladaConElementosGeneraSoloUnRenglon(t *testing.T) {
+	mockConsultarEntradasReporteData(t, []*entradaReporteData{
+		{
+			Movimiento: &models.Movimiento{
+				Id:            8103,
+				Consecutivo:   stringPtr("ENT-ANU-02"),
+				FechaCreacion: time.Date(2026, 5, 13, 9, 0, 0, 0, time.UTC),
+				EstadoMovimientoId: &models.EstadoMovimiento{
+					Nombre: estadoEntradaAnuladaReporte,
+				},
+				FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+					Nombre: "Entrada por compra",
+				},
+			},
+			Formato: models.FormatoBaseEntrada{ActaRecibidoId: 999},
+			Elementos: []*models.DetalleElemento{
+				{Id: 1, Nombre: "Elemento que no debe salir"},
+				{Id: 2, Nombre: "Segundo elemento que no debe salir"},
+			},
+			SalidasPorElemento: map[int]*salidaReporteData{},
+			CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{},
+		},
+	})
+	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{
+		{
+			Movimiento: &models.Movimiento{
+				Id:            8103,
+				Consecutivo:   stringPtr("ENT-ANU-02"),
+				FechaCreacion: time.Date(2026, 5, 13, 9, 0, 0, 0, time.UTC),
+				EstadoMovimientoId: &models.EstadoMovimiento{
+					Nombre: estadoEntradaAnuladaReporte,
+				},
+			},
+		},
+	})
+	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{})
+
+	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+		FechaInicial: "2026-05-01",
+		FechaFinal:   "2026-05-31",
+	})
+	if err != nil {
+		t.Fatalf("GenerarReporteElementos retornó error: %v", err)
+	}
+
+	contenido, decodeErr := base64.StdEncoding.DecodeString(respuesta.ArchivoBase64)
+	if decodeErr != nil {
+		t.Fatalf("base64 inválido: %v", decodeErr)
+	}
+
+	archivo, openErr := xlsx.OpenBinary(contenido)
+	if openErr != nil {
+		t.Fatalf("no se pudo abrir el excel generado: %v", openErr)
+	}
+
+	if len(archivo.Sheets[0].Rows) != 2 {
+		t.Fatalf("se esperaban 2 filas, se obtuvieron %d", len(archivo.Sheets[0].Rows))
+	}
+
+	headerIndex := buildHeaderIndex(archivo.Sheets[0].Rows[0])
+	row := archivo.Sheets[0].Rows[1]
+	if row.Cells[headerIndex["Consecutivo Entrada"]].String() != "ENT-ANU-02" {
+		t.Fatalf("consecutivo entrada anulada inesperado: %q", row.Cells[headerIndex["Consecutivo Entrada"]].String())
+	}
+	if row.Cells[headerIndex["Nombre / Descripción"]].String() != rotuloEntradaAnuladaReporte {
+		t.Fatalf("rotulo entrada anulada inesperado: %q", row.Cells[headerIndex["Nombre / Descripción"]].String())
 	}
 }
 
@@ -568,6 +649,36 @@ func TestGenerarReporteContabilizacionRequestNil(t *testing.T) {
 	}
 }
 
+func TestConsultarProveedorActaFallbackCuandoTerceroNoExiste(t *testing.T) {
+	originalHistoricos := consultarHistoricosActaReporteFn
+	originalGetNombre := getNombreTerceroByID
+
+	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+		return []models.HistoricoActa{
+			{ProveedorId: 123456},
+		}, nil
+	}
+	getNombreTerceroByID = func(terceroID int) (*models.IdentificacionTercero, map[string]interface{}) {
+		return nil, map[string]interface{}{
+			"err":    "http 404: {\"Message\":\"Not found resource\"}",
+			"status": "502",
+		}
+	}
+
+	t.Cleanup(func() {
+		consultarHistoricosActaReporteFn = originalHistoricos
+		getNombreTerceroByID = originalGetNombre
+	})
+
+	proveedor, err := consultarProveedorActa(555)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if proveedor != "123456" {
+		t.Fatalf("fallback de proveedor inesperado: %q", proveedor)
+	}
+}
+
 func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
 		FechaInicial: "2026-06-16",
@@ -582,6 +693,10 @@ func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 }
 
 func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
+	mockConsultarCuentaContableReporte(t, map[string]*models.CuentaContable{
+		"cta-db-1": {Id: "cta-db-1", Codigo: "151001"},
+		"cta-cr-1": {Id: "cta-cr-1", Codigo: "240801"},
+	})
 	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionEntradaData{
 		{
 			Movimiento: &models.Movimiento{
@@ -597,16 +712,25 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 				Fecha: time.Date(2026, 6, 5, 10, 0, 0, 0, time.UTC),
 				Movimientos: []*models.DetalleMovimientoContable{
 					{
-						Cuenta:    &models.DetalleCuenta{Codigo: "151001"},
+						Cuenta:    &models.DetalleCuenta{Id: "asiento-db-1", Codigo: "999999"},
 						Debito:    1000,
 						TerceroId: &models.IdentificacionTercero{Numero: "800123", NombreCompleto: "TERCERO CONTABLE"},
 					},
 					{
-						Cuenta:  &models.DetalleCuenta{Codigo: "240801"},
+						Cuenta:  &models.DetalleCuenta{Id: "asiento-cr-1", Codigo: "888888"},
 						Credito: 1000,
 					},
 				},
 			},
+			CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{
+				9: {
+					CuentaDebitoId:  "cta-db-1",
+					CuentaCreditoId: "cta-cr-1",
+				},
+			},
+			Subgrupos:         []int{9},
+			CuentasDebitoA11:  []string{"151001"},
+			CuentasCreditoA11: []string{"240801"},
 		},
 	})
 	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionSalidaData{
@@ -626,10 +750,12 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 			TransaccionContable: &models.InfoTransaccionContable{
 				Fecha: time.Date(2026, 6, 6, 12, 0, 0, 0, time.UTC),
 				Movimientos: []*models.DetalleMovimientoContable{
-					{Cuenta: &models.DetalleCuenta{Codigo: "51111401"}, Debito: 300},
-					{Cuenta: &models.DetalleCuenta{Codigo: "15142401"}, Credito: 300},
+					{Cuenta: &models.DetalleCuenta{Codigo: "77777777"}, Debito: 300},
+					{Cuenta: &models.DetalleCuenta{Codigo: "66666666"}, Credito: 300},
 				},
 			},
+			CuentasDebitoA11:  []string{"51111401"},
+			CuentasCreditoA11: []string{"15142401"},
 		},
 		{
 			Movimiento: &models.Movimiento{
@@ -702,8 +828,14 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	if entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String() != "A1205" {
 		t.Fatalf("centro de costo entrada inesperado: %q", entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String())
 	}
+	if entradasDataRow.Cells[entradasIndex["Cuenta_Contable"]].String() != "151001" {
+		t.Fatalf("cuenta contable entrada inesperada: %q", entradasDataRow.Cells[entradasIndex["Cuenta_Contable"]].String())
+	}
 	if entradasDataRow.Cells[entradasIndex["Descripción"]].String() != "Observación entrada contable" {
 		t.Fatalf("descripción entrada inesperada: %q", entradasDataRow.Cells[entradasIndex["Descripción"]].String())
+	}
+	if archivo.Sheets[0].Rows[2].Cells[entradasIndex["Cuenta_Contable"]].String() != "240801" {
+		t.Fatalf("cuenta contable crédito entrada inesperada: %q", archivo.Sheets[0].Rows[2].Cells[entradasIndex["Cuenta_Contable"]].String())
 	}
 	if entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat() != a11DateNumFmt {
 		t.Fatalf("formato fecha inesperado: %q", entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat())
@@ -730,6 +862,12 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza_Cuenta"]].String() != "C" {
 		t.Fatalf("naturaleza cuenta inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza_Cuenta"]].String())
+	}
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Cuenta_Contable"]].String() != "51111401" {
+		t.Fatalf("cuenta débito salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Cuenta_Contable"]].String())
+	}
+	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta_Contable"]].String() != "15142401" {
+		t.Fatalf("cuenta crédito salida inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta_Contable"]].String())
 	}
 	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Identificación_Tercero"]].String() != "900866324" {
 		t.Fatalf("fallback de tercero inesperado: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Identificación_Tercero"]].String())
@@ -825,6 +963,18 @@ func mockConsultarSalidasAnuladasReporteData(t *testing.T, salidas []*salidaRepo
 	t.Cleanup(func() {
 		consultarSalidasAnuladasReporteData = original
 	})
+}
+
+func TestCuentaDesdeDetalleA11MultiplesCuentas(t *testing.T) {
+	if cuenta := cuentaDesdeDetalleA11("D", []string{"151001", "151002"}, nil, 0, 0); cuenta != "151001" {
+		t.Fatalf("cuenta débito índice 0 inesperada: %q", cuenta)
+	}
+	if cuenta := cuentaDesdeDetalleA11("D", []string{"151001", "151002"}, nil, 1, 0); cuenta != "151002" {
+		t.Fatalf("cuenta débito índice 1 inesperada: %q", cuenta)
+	}
+	if cuenta := cuentaDesdeDetalleA11("C", nil, []string{"240801", "240802"}, 0, 1); cuenta != "240802" {
+		t.Fatalf("cuenta crédito índice 1 inesperada: %q", cuenta)
+	}
 }
 
 func mockConsultarEntradasContabilizacionReporteData(t *testing.T, entradas []*reporteContabilizacionEntradaData) {
@@ -973,6 +1123,22 @@ func mockConsultarTransaccionContable(t *testing.T, transaccion *models.InfoTran
 
 	t.Cleanup(func() {
 		consultarTransaccionContableMovimientoFn = original
+	})
+}
+
+func mockConsultarCuentaContableReporte(t *testing.T, cuentas map[string]*models.CuentaContable) {
+	t.Helper()
+
+	original := consultarCuentaContable
+	consultarCuentaContable = func(cuentaID string) (*models.CuentaContable, map[string]interface{}) {
+		if cuenta, ok := cuentas[cuentaID]; ok {
+			return cuenta, nil
+		}
+		return nil, nil
+	}
+
+	t.Cleanup(func() {
+		consultarCuentaContable = original
 	})
 }
 
