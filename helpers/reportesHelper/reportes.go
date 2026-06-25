@@ -739,17 +739,27 @@ func consultarProveedorActa(actaRecibidoID int) (proveedor string, outputError m
 		return "", nil
 	}
 
-	historicos, outputError := crudActaRecibido.GetAllHistoricoActa("ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID), "", "Id", "desc", "", "1")
+	historicos, outputError := consultarHistoricosActaReporteFn("ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID), "", "Id", "desc", "", "1")
 	if outputError != nil || len(historicos) == 0 || historicos[0].ProveedorId <= 0 {
 		return "", outputError
 	}
 
 	tercero, outputError := getNombreTerceroByID(historicos[0].ProveedorId)
 	if outputError != nil {
+		if esTerceroNoEncontradoReporte(outputError) {
+			return strconv.Itoa(historicos[0].ProveedorId), nil
+		}
 		return "", outputError
 	}
 
 	return identificacionTerceroLabel(tercero), nil
+}
+
+func esTerceroNoEncontradoReporte(err map[string]interface{}) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(fmt.Sprint(err["err"]), "http 404:")
 }
 
 func consultarFacturaSoporte(facturaID int) (consecutivo string, fecha time.Time, outputError map[string]interface{}) {
