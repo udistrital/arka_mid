@@ -34,6 +34,8 @@ const (
 
 	estadoEntradaAnuladaReporte = "Entrada anulada"
 	estadoSalidaAnuladaReporte  = "Salida anulada"
+	rotuloEntradaAnuladaReporte = "ENTRADA ANULADA"
+	rotuloSalidaAnuladaReporte  = "SALIDA ANULADA"
 )
 
 type entradaReporteData struct {
@@ -200,13 +202,13 @@ func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *model
 	if outputError != nil {
 		return nil, outputError
 	}
-	rows = append(rows, construirFilasMovimientosEntradaSinElementos(entradasAnuladas)...)
+	rows = appendRowsEntradasAnuladasUnicas(rows, construirFilasMovimientosEntradaSinElementos(entradasAnuladas)...)
 
 	salidasAnuladas, outputError := consultarSalidasAnuladasReporteData(fechaInicial, fechaFinal)
 	if outputError != nil {
 		return nil, outputError
 	}
-	rows = append(rows, construirFilasMovimientosSalidaSinElementos(salidasAnuladas)...)
+	rows = appendRowsSalidasAnuladasUnicas(rows, construirFilasMovimientosSalidaSinElementos(salidasAnuladas)...)
 
 	archivo := xlsx.NewFile()
 	hoja, err := archivo.AddSheet(sheetName)
@@ -544,8 +546,8 @@ func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrad
 	params.Add(
 		"query",
 		"Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigosEntrada, "|")+
-			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
-			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
+			",FechaCorte__gte:"+fechaInicial.Format(time.RFC3339)+
+			",FechaCorte__lte:"+fechaFinal.Format(time.RFC3339),
 	)
 
 	movimientos, _, outputError = movimientosArka.GetAllMovimiento(params.Encode())
@@ -574,8 +576,8 @@ func consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal time.Time, cod
 		"query",
 		"EstadoMovimientoId__Nombre:"+estado+
 			",FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigos, "|")+
-			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
-			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
+			",FechaCorte__gte:"+fechaInicial.Format(time.RFC3339)+
+			",FechaCorte__lte:"+fechaFinal.Format(time.RFC3339),
 	)
 
 	movimientos, _, outputError = movimientosArka.GetAllMovimiento(params.Encode())
@@ -1205,7 +1207,7 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 			continue
 		}
 
-		if len(entrada.Elementos) == 0 && movimientoAnuladoReporte(entrada.Movimiento, estadoEntradaAnuladaReporte) {
+		if movimientoAnuladoReporte(entrada.Movimiento, estadoEntradaAnuladaReporte) {
 			rows = append(rows, construirFilaMovimientoEntradaSinElementos(entrada))
 			continue
 		}
@@ -1220,6 +1222,9 @@ func construirFilasReporteEntradas(entradas []*entradaReporteData) []*reporteEle
 
 			movimientoCuenta := entrada.CuentasPorSubgrupo[subgrupoID]
 			salida := entrada.SalidasPorElemento[elemento.Id]
+			if salida != nil && movimientoAnuladoReporte(salida.Movimiento, estadoSalidaAnuladaReporte) {
+				continue
+			}
 			salidaCuenta := models.CuentasSubgrupo{}
 			if salida != nil {
 				salidaCuenta = salida.CuentasPorSubgrupo[subgrupoID]
@@ -1298,7 +1303,7 @@ func construirFilaMovimientoEntradaSinElementos(entrada *entradaReporteData) *re
 		return nil
 	}
 
-	return &reporteElementoEntradaRow{
+	row := &reporteElementoEntradaRow{
 		Vigencia:                  strconv.Itoa(entrada.Movimiento.FechaCreacion.Year()),
 		Periodo:                   strconv.Itoa(int(entrada.Movimiento.FechaCreacion.Month())),
 		EntradaConsecutivo:        stringPtrValue(entrada.Movimiento.Consecutivo),
@@ -1310,6 +1315,8 @@ func construirFilaMovimientoEntradaSinElementos(entrada *entradaReporteData) *re
 		EntradaFacturaFecha:       entrada.FacturaFecha,
 		TipoEntrada:               tipoEntradaNombre(entrada.Movimiento),
 	}
+	aplicarRotuloEntradaAnulada(row)
+	return row
 }
 
 func construirFilaMovimientoSalidaSinElementos(salida *salidaReporteData) *reporteElementoEntradaRow {
@@ -1341,7 +1348,109 @@ func construirFilaMovimientoSalidaSinElementos(salida *salidaReporteData) *repor
 		row.TipoEntrada = tipoEntradaNombre(padre)
 	}
 
+	aplicarRotuloSalidaAnulada(row)
 	return row
+}
+
+func aplicarRotuloEntradaAnulada(row *reporteElementoEntradaRow) {
+	if row == nil {
+		return
+	}
+	aplicarValoresMonetariosCero(row)
+	row.ElementoNombre = rotuloEntradaAnuladaReporte
+	row.ElementoMarca = rotuloEntradaAnuladaReporte
+	row.ElementoSerie = rotuloEntradaAnuladaReporte
+	row.ElementoPlaca = rotuloEntradaAnuladaReporte
+	row.ElementoSubgrupoNombre = rotuloEntradaAnuladaReporte
+	row.ElementoSubgrupoCodigo = rotuloEntradaAnuladaReporte
+	row.ElementoTipoBienNombre = rotuloEntradaAnuladaReporte
+	row.EntradaProveedor = rotuloEntradaAnuladaReporte
+	row.EntradaFacturaConsecutivo = rotuloEntradaAnuladaReporte
+	row.TipoEntrada = rotuloEntradaAnuladaReporte
+	row.CuentaDebitoEntrada = rotuloEntradaAnuladaReporte
+	row.CuentaCreditoEntrada = rotuloEntradaAnuladaReporte
+	row.SalidaConsecutivo = rotuloEntradaAnuladaReporte
+	row.SalidaFuncionarioAsignado = rotuloEntradaAnuladaReporte
+	row.SalidaCentroCosto = rotuloEntradaAnuladaReporte
+	row.SalidaCodigoCentroCosto = rotuloEntradaAnuladaReporte
+	row.CuentaDebitoSalida = rotuloEntradaAnuladaReporte
+	row.CuentaCreditoSalida = rotuloEntradaAnuladaReporte
+}
+
+func aplicarRotuloSalidaAnulada(row *reporteElementoEntradaRow) {
+	if row == nil {
+		return
+	}
+	aplicarValoresMonetariosCero(row)
+	row.ElementoNombre = rotuloSalidaAnuladaReporte
+	row.ElementoMarca = rotuloSalidaAnuladaReporte
+	row.ElementoSerie = rotuloSalidaAnuladaReporte
+	row.ElementoPlaca = rotuloSalidaAnuladaReporte
+	row.ElementoSubgrupoNombre = rotuloSalidaAnuladaReporte
+	row.ElementoSubgrupoCodigo = rotuloSalidaAnuladaReporte
+	row.ElementoTipoBienNombre = rotuloSalidaAnuladaReporte
+	row.SalidaFuncionarioAsignado = rotuloSalidaAnuladaReporte
+	row.SalidaCentroCosto = rotuloSalidaAnuladaReporte
+	row.SalidaCodigoCentroCosto = rotuloSalidaAnuladaReporte
+	row.CuentaDebitoSalida = rotuloSalidaAnuladaReporte
+	row.CuentaCreditoSalida = rotuloSalidaAnuladaReporte
+}
+
+func aplicarValoresMonetariosCero(row *reporteElementoEntradaRow) {
+	if row == nil {
+		return
+	}
+	row.ElementoCantidad = 0
+	row.ElementoValorUnitario = 0
+	row.ElementoSubtotal = 0
+	row.ElementoDescuento = 0
+	row.ElementoValorTotal = 0
+	row.ElementoPorcentajeIvaID = 0
+	row.ElementoValorIva = 0
+	row.ElementoValorFinal = 0
+	row.ElementoVidaUtilCatalogo = 0
+}
+
+func appendRowsEntradasAnuladasUnicas(rows []*reporteElementoEntradaRow, extras ...*reporteElementoEntradaRow) []*reporteElementoEntradaRow {
+	seen := make(map[string]struct{})
+	for _, row := range rows {
+		if row == nil || row.EntradaEstado != estadoEntradaAnuladaReporte {
+			continue
+		}
+		seen[row.EntradaConsecutivo] = struct{}{}
+	}
+	for _, row := range extras {
+		if row == nil {
+			continue
+		}
+		if _, ok := seen[row.EntradaConsecutivo]; ok {
+			continue
+		}
+		seen[row.EntradaConsecutivo] = struct{}{}
+		rows = append(rows, row)
+	}
+	return rows
+}
+
+func appendRowsSalidasAnuladasUnicas(rows []*reporteElementoEntradaRow, extras ...*reporteElementoEntradaRow) []*reporteElementoEntradaRow {
+	seen := make(map[string]struct{})
+	for _, row := range rows {
+		if row == nil || row.SalidaEstado != estadoSalidaAnuladaReporte {
+			continue
+		}
+		seen[row.SalidaConsecutivo] = struct{}{}
+	}
+	for _, row := range extras {
+		if row == nil {
+			continue
+		}
+		if _, ok := seen[row.SalidaConsecutivo]; ok {
+			continue
+		}
+		seen[row.SalidaConsecutivo] = struct{}{}
+		rows = append(rows, row)
+	}
+	return rows
 }
 
 func movimientoAnuladoReporte(movimiento *models.Movimiento, estado string) bool {

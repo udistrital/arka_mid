@@ -358,6 +358,12 @@ func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
 	if entradaAnuladaRow.Cells[headerIndex["entrada_estado"]].String() != estadoEntradaAnuladaReporte {
 		t.Fatalf("estado entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["entrada_estado"]].String())
 	}
+	if entradaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String() != rotuloEntradaAnuladaReporte {
+		t.Fatalf("rótulo entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String())
+	}
+	if entradaAnuladaRow.Cells[headerIndex["Valor unitario"]].Value != "0" {
+		t.Fatalf("valor unitario entrada anulada inesperado: %q", entradaAnuladaRow.Cells[headerIndex["Valor unitario"]].Value)
+	}
 
 	salidaAnuladaRow := archivo.Sheets[0].Rows[2]
 	if salidaAnuladaRow.Cells[headerIndex["Consecutivo salida"]].String() != "SAL-ANU-01" {
@@ -368,6 +374,81 @@ func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
 	}
 	if salidaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String() != "ENT-BASE-01" {
 		t.Fatalf("consecutivo entrada padre inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Consecutivo Entrada"]].String())
+	}
+	if salidaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String() != rotuloSalidaAnuladaReporte {
+		t.Fatalf("rótulo salida anulada inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Nombre / Descripción"]].String())
+	}
+	if salidaAnuladaRow.Cells[headerIndex["Subtotal"]].Value != "0" {
+		t.Fatalf("subtotal salida anulada inesperado: %q", salidaAnuladaRow.Cells[headerIndex["Subtotal"]].Value)
+	}
+}
+
+func TestGenerarReporteEntradaAnuladaConElementosGeneraSoloUnRenglon(t *testing.T) {
+	mockConsultarEntradasReporteData(t, []*entradaReporteData{
+		{
+			Movimiento: &models.Movimiento{
+				Id:            8103,
+				Consecutivo:   stringPtr("ENT-ANU-02"),
+				FechaCreacion: time.Date(2026, 5, 13, 9, 0, 0, 0, time.UTC),
+				EstadoMovimientoId: &models.EstadoMovimiento{
+					Nombre: estadoEntradaAnuladaReporte,
+				},
+				FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{
+					Nombre: "Entrada por compra",
+				},
+			},
+			Formato: models.FormatoBaseEntrada{ActaRecibidoId: 999},
+			Elementos: []*models.DetalleElemento{
+				{Id: 1, Nombre: "Elemento que no debe salir"},
+				{Id: 2, Nombre: "Segundo elemento que no debe salir"},
+			},
+			SalidasPorElemento: map[int]*salidaReporteData{},
+			CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{},
+		},
+	})
+	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{
+		{
+			Movimiento: &models.Movimiento{
+				Id:            8103,
+				Consecutivo:   stringPtr("ENT-ANU-02"),
+				FechaCreacion: time.Date(2026, 5, 13, 9, 0, 0, 0, time.UTC),
+				EstadoMovimientoId: &models.EstadoMovimiento{
+					Nombre: estadoEntradaAnuladaReporte,
+				},
+			},
+		},
+	})
+	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{})
+
+	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+		FechaInicial: "2026-05-01",
+		FechaFinal:   "2026-05-31",
+	})
+	if err != nil {
+		t.Fatalf("GenerarReporteElementos retornó error: %v", err)
+	}
+
+	contenido, decodeErr := base64.StdEncoding.DecodeString(respuesta.ArchivoBase64)
+	if decodeErr != nil {
+		t.Fatalf("base64 inválido: %v", decodeErr)
+	}
+
+	archivo, openErr := xlsx.OpenBinary(contenido)
+	if openErr != nil {
+		t.Fatalf("no se pudo abrir el excel generado: %v", openErr)
+	}
+
+	if len(archivo.Sheets[0].Rows) != 2 {
+		t.Fatalf("se esperaban 2 filas, se obtuvieron %d", len(archivo.Sheets[0].Rows))
+	}
+
+	headerIndex := buildHeaderIndex(archivo.Sheets[0].Rows[0])
+	row := archivo.Sheets[0].Rows[1]
+	if row.Cells[headerIndex["Consecutivo Entrada"]].String() != "ENT-ANU-02" {
+		t.Fatalf("consecutivo entrada anulada inesperado: %q", row.Cells[headerIndex["Consecutivo Entrada"]].String())
+	}
+	if row.Cells[headerIndex["Nombre / Descripción"]].String() != rotuloEntradaAnuladaReporte {
+		t.Fatalf("rotulo entrada anulada inesperado: %q", row.Cells[headerIndex["Nombre / Descripción"]].String())
 	}
 }
 
