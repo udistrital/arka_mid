@@ -284,6 +284,42 @@ func TestConsultarEntradasPorFechaFiltraPorFechaCreacion(t *testing.T) {
 	}
 }
 
+func TestFechaReporteSalidaUsaFechaEntradaSiSalidaEsAnterior(t *testing.T) {
+	fechaEntrada := time.Date(2026, 5, 4, 14, 43, 1, 0, time.UTC)
+	fechaSalida := time.Date(2026, 4, 30, 0, 0, 0, 0, time.UTC)
+
+	fechaReporte := fechaReporteSalidaMovimiento(&models.Movimiento{
+		FechaCorte: &fechaSalida,
+		MovimientoPadreId: &models.Movimiento{
+			FechaCreacion: fechaEntrada,
+		},
+	})
+
+	if fechaReporte == nil {
+		t.Fatal("se esperaba fecha de reporte")
+	}
+	if !fechaReporte.Equal(fechaEntrada) {
+		t.Fatalf("se esperaba usar la fecha de la entrada %v, se obtuvo %v", fechaEntrada, *fechaReporte)
+	}
+}
+
+func TestMovimientoEnRangoPorFechaReporteSalidaUsaFechaEntrada(t *testing.T) {
+	movimiento := &models.Movimiento{
+		FechaCorte: timePtr(time.Date(2026, 4, 30, 0, 0, 0, 0, time.UTC)),
+		MovimientoPadreId: &models.Movimiento{
+			FechaCreacion: time.Date(2026, 5, 4, 14, 43, 1, 0, time.UTC),
+		},
+	}
+
+	if !movimientoEnRangoPorFechaReporteSalida(
+		movimiento,
+		time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2026, 5, 31, 0, 0, 0, 0, time.UTC),
+	) {
+		t.Fatal("se esperaba que la salida entrara en mayo usando la fecha de la entrada")
+	}
+}
+
 func TestExcelGeneradoEsBinarioValido(t *testing.T) {
 	mockConsultarEntradasReporteData(t, []*entradaReporteData{})
 	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{})
