@@ -401,7 +401,7 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 		return []*salidaReporteData{}, nil
 	}
 
-	movimientos, outputError := consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal, codigosSalida, estadoSalidaAnuladaReporte)
+	movimientos, outputError := consultarMovimientosPorEstado(codigosSalida, estadoSalidaAnuladaReporte)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -437,6 +437,10 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 			if entradaPadre != nil {
 				salida.Movimiento.MovimientoPadreId = entradaPadre
 			}
+		}
+
+		if !movimientoEnRangoPorFechaReporteSalida(salida.Movimiento, fechaInicial, fechaFinal) {
+			continue
 		}
 
 		salidas = append(salidas, salida)
@@ -544,6 +548,31 @@ func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrad
 		"Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigosEntrada, "|")+
 			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
 			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
+	)
+
+	movimientos, _, outputError = consultarMovimientosReporteFn(params.Encode())
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	return movimientos, nil
+}
+
+func consultarMovimientosPorEstado(codigos []string, estado string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarMovimientosPorEstado - Unhandled Error!", "500")
+
+	if len(codigos) == 0 {
+		return []*models.Movimiento{}, nil
+	}
+
+	params := url.Values{}
+	params.Add("limit", "-1")
+	params.Add("sortby", "FechaCreacion")
+	params.Add("order", "asc")
+	params.Add(
+		"query",
+		"EstadoMovimientoId__Nombre:"+estado+
+			",FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigos, "|"),
 	)
 
 	movimientos, _, outputError = consultarMovimientosReporteFn(params.Encode())
@@ -1664,10 +1693,44 @@ func movimientoFechaCreacion(salida *salidaReporteData) time.Time {
 }
 
 func movimientoFechaCorte(salida *salidaReporteData) *time.Time {
-	if salida == nil || salida.Movimiento == nil {
+	if salida == nil {
 		return nil
 	}
-	return salida.Movimiento.FechaCorte
+	return fechaReporteSalidaMovimiento(salida.Movimiento)
+}
+
+func movimientoEnRangoPorFechaReporteSalida(movimiento *models.Movimiento, fechaInicial, fechaFinal time.Time) bool {
+	fecha := fechaReporteSalidaMovimiento(movimiento)
+	if fecha == nil {
+		return false
+	}
+
+	inicio := time.Date(fechaInicial.Year(), fechaInicial.Month(), fechaInicial.Day(), 0, 0, 0, 0, time.UTC)
+	fin := time.Date(fechaFinal.Year(), fechaFinal.Month(), fechaFinal.Day(), 23, 59, 59, 0, time.UTC)
+	return !fecha.Before(inicio) && !fecha.After(fin)
+}
+
+func fechaReporteSalidaMovimiento(movimiento *models.Movimiento) *time.Time {
+	if movimiento == nil {
+		return nil
+	}
+
+	fechaSalida := movimiento.FechaCorte
+	if fechaSalida == nil {
+		if movimiento.MovimientoPadreId != nil {
+			return &movimiento.MovimientoPadreId.FechaCreacion
+		}
+		return nil
+	}
+
+	if movimiento.MovimientoPadreId != nil {
+		fechaEntrada := movimiento.MovimientoPadreId.FechaCreacion
+		if fechaSalida.Before(fechaEntrada) {
+			return &fechaEntrada
+		}
+	}
+
+	return fechaSalida
 }
 
 func salidaFuncionario(salida *salidaReporteData) string {
