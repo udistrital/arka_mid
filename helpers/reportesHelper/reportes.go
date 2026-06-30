@@ -163,6 +163,7 @@ var (
 	getCuentasByMovimientoAndSubgrupos       = catalogoElementosHelper.GetCuentasByMovimientoAndSubgrupos
 	getNombreTerceroByID                     = terceros.GetNombreTerceroById
 	consultarTransaccionContableMovimientoFn = consultarTransaccionContableMovimiento
+	consultarMovimientosReporteFn            = movimientosArka.GetAllMovimiento
 )
 
 func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
@@ -541,11 +542,11 @@ func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrad
 	params.Add(
 		"query",
 		"Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigosEntrada, "|")+
-			",FechaCorte__gte:"+fechaInicial.Format(time.RFC3339)+
-			",FechaCorte__lte:"+fechaFinal.Format(time.RFC3339),
+			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
+			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
 	)
 
-	movimientos, _, outputError = movimientosArka.GetAllMovimiento(params.Encode())
+	movimientos, _, outputError = consultarMovimientosReporteFn(params.Encode())
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -575,7 +576,7 @@ func consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal time.Time, cod
 			",FechaCorte__lte:"+fechaFinal.Format(time.RFC3339),
 	)
 
-	movimientos, _, outputError = movimientosArka.GetAllMovimiento(params.Encode())
+	movimientos, _, outputError = consultarMovimientosReporteFn(params.Encode())
 	if outputError != nil {
 		return nil, outputError
 	}
