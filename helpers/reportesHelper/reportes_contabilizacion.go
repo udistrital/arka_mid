@@ -525,14 +525,11 @@ func documentoMovimientoA11(movimiento *models.Movimiento) string {
 }
 
 func fechaDocumentoA11(transaccion *models.InfoTransaccionContable, movimiento *models.Movimiento) time.Time {
-	if movimiento != nil && movimiento.FechaCorte != nil && !movimiento.FechaCorte.IsZero() {
-		return *movimiento.FechaCorte
+	if movimiento != nil {
+		return movimiento.FechaCreacion
 	}
 	if transaccion != nil && !transaccion.Fecha.IsZero() {
 		return transaccion.Fecha
-	}
-	if movimiento != nil {
-		return movimiento.FechaCreacion
 	}
 	return time.Time{}
 }
