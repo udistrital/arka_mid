@@ -765,6 +765,20 @@ func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 	}
 }
 
+func TestFechaDocumentoA11PriorizaFechaCorteMovimiento(t *testing.T) {
+	fechaTransaccion := time.Date(2026, 6, 5, 10, 0, 0, 0, time.UTC)
+	fechaCorte := time.Date(2026, 6, 7, 15, 30, 0, 0, time.UTC)
+
+	fecha := fechaDocumentoA11(
+		&models.InfoTransaccionContable{Fecha: fechaTransaccion},
+		&models.Movimiento{FechaCorte: &fechaCorte},
+	)
+
+	if !fecha.Equal(fechaCorte) {
+		t.Fatalf("se esperaba priorizar FechaCorte=%v, se obtuvo %v", fechaCorte, fecha)
+	}
+}
+
 func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	mockConsultarCuentaContableReporte(t, map[string]*models.CuentaContable{
 		"cta-db-1": {Id: "cta-db-1", Codigo: "151001"},
