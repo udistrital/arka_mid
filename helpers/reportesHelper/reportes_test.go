@@ -765,17 +765,18 @@ func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 	}
 }
 
-func TestFechaDocumentoA11PriorizaFechaCorteMovimiento(t *testing.T) {
+func TestFechaDocumentoA11PriorizaFechaCreacionMovimiento(t *testing.T) {
 	fechaTransaccion := time.Date(2026, 6, 5, 10, 0, 0, 0, time.UTC)
+	fechaCreacion := time.Date(2026, 6, 4, 8, 15, 0, 0, time.UTC)
 	fechaCorte := time.Date(2026, 6, 7, 15, 30, 0, 0, time.UTC)
 
 	fecha := fechaDocumentoA11(
 		&models.InfoTransaccionContable{Fecha: fechaTransaccion},
-		&models.Movimiento{FechaCorte: &fechaCorte},
+		&models.Movimiento{FechaCreacion: fechaCreacion, FechaCorte: &fechaCorte},
 	)
 
-	if !fecha.Equal(fechaCorte) {
-		t.Fatalf("se esperaba priorizar FechaCorte=%v, se obtuvo %v", fechaCorte, fecha)
+	if !fecha.Equal(fechaCreacion) {
+		t.Fatalf("se esperaba priorizar FechaCreacion=%v, se obtuvo %v", fechaCreacion, fecha)
 	}
 }
 
