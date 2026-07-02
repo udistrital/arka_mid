@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
-	"github.com/udistrital/arka_mid/helpers/crud/oikos"
+	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/models"
@@ -108,7 +108,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 	// PARTE 3: Completar data faltante
 
 	Terceros := make(map[int]models.Tercero)
-	Ubicaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
+	centrosCosto := make(map[int]models.CentroCostos)
 	for _, historico := range historicos {
 
 		var editor models.Tercero
@@ -128,12 +128,12 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 		}
 
 		if historico.UbicacionId > 0 {
-			if _, ok := Ubicaciones[historico.UbicacionId]; !ok {
+			if _, ok := centrosCosto[historico.UbicacionId]; !ok {
 				id_ := strconv.Itoa(historico.UbicacionId)
-				if asignacion, err := oikos.GetAllAsignacion("query=Id:" + id_); err != nil {
+				if centroCosto, err := movimientosArka.GetAllCentroCostos("query=Id:" + id_); err != nil {
 					return nil, "", err
-				} else if len(asignacion) == 1 {
-					Ubicaciones[historico.UbicacionId] = asignacion[0]
+				} else if len(centroCosto) == 1 {
+					centrosCosto[historico.UbicacionId] = centroCosto[0]
 				}
 			}
 		}
@@ -167,8 +167,8 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 			Acta["AceptadaPor"] = editor.NombreCompleto
 		}
 
-		if val, ok := Ubicaciones[historico.UbicacionId]; ok && val.EspacioFisicoId != nil {
-			Acta["DependenciaId"] = val.DependenciaId.Nombre
+		if val, ok := centrosCosto[historico.UbicacionId]; ok {
+			Acta["DependenciaId"] = val.Nombre
 		}
 
 		historicoActa = append(historicoActa, Acta)
