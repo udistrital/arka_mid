@@ -82,7 +82,7 @@ func GenerarPazYSalvo(req *models.PazYSalvoRequest) (respuesta *models.PazYSalvo
 
 	terceroResp := construirTerceroResponse(inventario, numeroDocumento)
 	puedeGenerar := len(inventario.Elementos) == 0
-	mensaje := "Actualmente no se puede generar el paz y salvo porque cuenta con elementos bajo su responsabilidad."
+	mensaje := "Actualmente cuenta con elementos bajo su responsabilidad."
 	if puedeGenerar {
 		mensaje = "El tercero no cuenta con elementos en inventario. Se generó el paz y salvo."
 	}
@@ -242,7 +242,7 @@ func construirPDFPazYSalvo(tercero *models.PazYSalvoTerceroResponse, elementos [
 	pdf.AddPage()
 
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
-	renderHeaderPazYSalvo(pdf, tr)
+	renderHeaderPazYSalvo(pdf, tr, puedeGenerar)
 
 	pdf.SetFont("Times", "B", 12)
 	pdf.CellFormat(0, 7, tr("CERTIFICA"), "", 1, "C", false, 0, "")
@@ -316,15 +316,7 @@ func construirTablaElementos(pdf *gofpdf.Fpdf, tr func(string) string, elementos
 			elemento.Marca,
 			elemento.Serie,
 		}
-		alturaFila := calcularAlturaFilaTabla(pdf, tr, widths, valores, 4.5)
-		_, pageHeight := pdf.GetPageSize()
-		if pdf.GetY()+alturaFila > pageHeight-20 {
-			pdf.AddPage()
-			imprimirCabeceraTabla(pdf, tr, headers, widths)
-			pdf.SetFont("Times", "", 9)
-		}
-
-		dibujarFilaTabla(pdf, tr, widths, valores, 4.5, alturaFila)
+		dibujarFilaTablaPaginada(pdf, tr, headers, widths, valores, 4.5)
 	}
 }
 
@@ -482,7 +474,7 @@ func normalizarTextoComparacion(valor string) string {
 	return replacer.Replace(valor)
 }
 
-func renderHeaderPazYSalvo(pdf *gofpdf.Fpdf, tr func(string) string) {
+func renderHeaderPazYSalvo(pdf *gofpdf.Fpdf, tr func(string) string, puedeGenerar bool) {
 	agregarLogoInstitucional(pdf)
 
 	pdf.SetY(44)
@@ -492,8 +484,11 @@ func renderHeaderPazYSalvo(pdf *gofpdf.Fpdf, tr func(string) string) {
 	pdf.CellFormat(0, 6, tr("FRANCISCO JOSE DE CALDAS"), "", 1, "C", false, 0, "")
 	pdf.Ln(8)
 	pdf.SetFont("Times", "BI", 13)
-	pdf.CellFormat(0, 6, tr("PAZ Y SALVO"), "", 1, "C", false, 0, "")
-	pdf.CellFormat(0, 6, tr("INVENTARIO"), "", 1, "C", false, 0, "")
+	if puedeGenerar {
+		pdf.CellFormat(0, 6, tr("PAZ Y SALVO"), "", 1, "C", false, 0, "")
+	} else {
+		pdf.CellFormat(0, 6, tr("INVENTARIO ACTIVO"), "", 1, "C", false, 0, "")
+	}
 	pdf.Ln(30)
 }
 
@@ -568,21 +563,59 @@ func renderFooterPazYSalvo(pdf *gofpdf.Fpdf) {
 }
 
 func obtenerRutaLogoPazYSalvo() string {
-	_, archivoActual, _, ok := runtime.Caller(0)
-	if !ok {
-		return ""
+	// Fallback a rutas locales en múltiples ubicaciones
+	candidatos := []string{
+		// Ruta relativa desde helpers/reportesHelper/
+		filepath.Clean(filepath.Join(filepath.Dir(obtenerDirActual()), "..", "..", "assets", "logo_universidad_acreditacion.png")),
+		// Ruta desde raíz del proyecto
+		filepath.Clean(filepath.Join(obtenerDirRaizProyecto(), "assets", "logo_universidad_acreditacion.png")),
+		// Ruta absoluta conocida (si se copia durante build)
+		"/app/assets/logo_universidad_acreditacion.png",
 	}
 
-	return filepath.Clean(filepath.Join(filepath.Dir(archivoActual), "..", "..", "assets", "logo_universidad_acreditacion.png"))
+	for _, ruta := range candidatos {
+		if _, err := os.Stat(ruta); err == nil {
+			return ruta
+		}
+	}
+
+	return ""
 }
 
 func obtenerRutaIsotipoArkaII() string {
-	_, archivoActual, _, ok := runtime.Caller(0)
+	// Fallback a rutas locales en múltiples ubicaciones
+	candidatos := []string{
+		// Ruta relativa desde helpers/reportesHelper/
+		filepath.Clean(filepath.Join(filepath.Dir(obtenerDirActual()), "..", "..", "assets", "isotipo_arkaII.png")),
+		// Ruta desde raíz del proyecto
+		filepath.Clean(filepath.Join(obtenerDirRaizProyecto(), "assets", "isotipo_arkaII.png")),
+		// Ruta absoluta conocida (si se copia durante build)
+		"/app/assets/isotipo_arkaII.png",
+	}
+
+	for _, ruta := range candidatos {
+		if _, err := os.Stat(ruta); err == nil {
+			return ruta
+		}
+	}
+
+	return ""
+}
+
+func obtenerDirActual() string {
+	_, archivoActual, _, ok := runtime.Caller(1)
 	if !ok {
 		return ""
 	}
+	return filepath.Dir(archivoActual)
+}
 
-	return filepath.Clean(filepath.Join(filepath.Dir(archivoActual), "..", "..", "assets", "isotipo_arkaII.png"))
+func obtenerDirRaizProyecto() string {
+	dir, err := os.Getwd()
+	if err == nil {
+		return dir
+	}
+	return ""
 }
 
 func imprimirCabeceraTabla(pdf *gofpdf.Fpdf, tr func(string) string, headers []string, widths []float64) {
@@ -603,6 +636,95 @@ func calcularAlturaFilaTabla(pdf *gofpdf.Fpdf, tr func(string) string, widths []
 	}
 
 	return float64(maxLineas)*altoLinea + 2
+}
+
+func dibujarFilaTablaPaginada(pdf *gofpdf.Fpdf, tr func(string) string, headers []string, widths []float64, valores []string, altoLinea float64) {
+	lineasPorColumna := splitLineasTabla(pdf, tr, widths, valores)
+
+	for {
+		lineasDisponibles := calcularLineasDisponiblesTabla(pdf, altoLinea)
+		if lineasDisponibles <= 0 {
+			pdf.AddPage()
+			imprimirCabeceraTabla(pdf, tr, headers, widths)
+			pdf.SetFont("Times", "", 9)
+			continue
+		}
+
+		segmento, restantes := extraerSegmentoFilaTabla(lineasPorColumna, lineasDisponibles)
+		alturaFila := calcularAlturaFilaTabla(pdf, tr, widths, segmento, altoLinea)
+		dibujarFilaTabla(pdf, tr, widths, segmento, altoLinea, alturaFila)
+		lineasPorColumna = restantes
+
+		if !hayContenidoPendienteTabla(lineasPorColumna) {
+			return
+		}
+
+		pdf.AddPage()
+		imprimirCabeceraTabla(pdf, tr, headers, widths)
+		pdf.SetFont("Times", "", 9)
+	}
+}
+
+func splitLineasTabla(pdf *gofpdf.Fpdf, tr func(string) string, widths []float64, valores []string) [][]string {
+	lineasPorColumna := make([][]string, len(valores))
+	for i, valor := range valores {
+		lineasRaw := pdf.SplitLines([]byte(tr(valor)), widths[i]-2)
+		if len(lineasRaw) == 0 {
+			lineasPorColumna[i] = []string{""}
+			continue
+		}
+
+		lineas := make([]string, 0, len(lineasRaw))
+		for _, linea := range lineasRaw {
+			lineas = append(lineas, string(linea))
+		}
+		lineasPorColumna[i] = lineas
+	}
+	return lineasPorColumna
+}
+
+func calcularLineasDisponiblesTabla(pdf *gofpdf.Fpdf, altoLinea float64) int {
+	_, _, _, margenInferior := pdf.GetMargins()
+	_, pageHeight := pdf.GetPageSize()
+	alturaDisponible := pageHeight - margenInferior - pdf.GetY() - 2
+	if alturaDisponible < altoLinea {
+		return 0
+	}
+	return int(alturaDisponible / altoLinea)
+}
+
+func extraerSegmentoFilaTabla(lineasPorColumna [][]string, maxLineas int) ([]string, [][]string) {
+	segmento := make([]string, len(lineasPorColumna))
+	restantes := make([][]string, len(lineasPorColumna))
+
+	for i, lineas := range lineasPorColumna {
+		if len(lineas) == 0 {
+			segmento[i] = ""
+			restantes[i] = nil
+			continue
+		}
+
+		cantidad := len(lineas)
+		if cantidad > maxLineas {
+			cantidad = maxLineas
+		}
+
+		segmento[i] = strings.Join(lineas[:cantidad], "\n")
+		if cantidad < len(lineas) {
+			restantes[i] = lineas[cantidad:]
+		}
+	}
+
+	return segmento, restantes
+}
+
+func hayContenidoPendienteTabla(lineasPorColumna [][]string) bool {
+	for _, lineas := range lineasPorColumna {
+		if len(lineas) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func dibujarFilaTabla(pdf *gofpdf.Fpdf, tr func(string) string, widths []float64, valores []string, altoLinea, alturaFila float64) {
