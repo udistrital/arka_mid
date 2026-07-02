@@ -138,6 +138,15 @@ type SalidaGeneral struct {
 	Salidas []TrSalida
 }
 
+type TransaccionSalidaHistorica struct {
+	SalidaGeneral
+	ConsecutivoId     int       `json:"consecutivo_id"`
+	Year              int       `json:"year"`
+	FechaCreacion     time.Time `json:"fecha_creacion"`
+	FechaModificacion time.Time `json:"fecha_modificacion"`
+	FechaCorte        time.Time `json:"fecha_corte"`
+}
+
 type ResultadoMovimiento struct {
 	Error               string
 	Movimiento          Movimiento

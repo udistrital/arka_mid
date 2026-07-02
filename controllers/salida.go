@@ -26,6 +26,7 @@ type salidaPostEnvelope struct {
 // URLMapping ...
 func (c *SalidaController) URLMapping() {
 	c.Mapping("Post", c.Post)
+	c.Mapping("PostHistorico", c.PostHistorico)
 	c.Mapping("GetSalida", c.GetSalida)
 	c.Mapping("GetSalidas", c.GetSalidas)
 	c.Mapping("GetElementos", c.GetElementos)
@@ -110,6 +111,34 @@ func (c *SalidaController) Post() {
 	c.ServeJSON()
 }
 
+// PostHistorico ...
+// @Title PostHistorico
+// @Description Registra y aprueba una salida histórica para procesos de migración usando un consecutivo existente y fechas históricas.
+// @Param	body	body	models.TransaccionSalidaHistorica	true	"Detalles de la salida histórica"
+// @Success 201 {object} models.ResultadoMovimiento
+// @Failure 400 the request contains incorrect syntax
+// @router /historico [post]
+func (c *SalidaController) PostHistorico() {
+	defer errorCtrl.ErrorControlController(c.Controller, "SalidaController")
+
+	var payload models.TransaccionSalidaHistorica
+	if err := decodeSalidaHistoricaRequest(c.Ctx.Input.RequestBody, &payload); err != nil {
+		panic(map[string]interface{}{
+			"funcion": "PostHistorico - decodeSalidaHistoricaRequest(c.Ctx.Input.RequestBody, &payload)",
+			"err":     err,
+			"status":  "400",
+		})
+	}
+
+	var resultado models.ResultadoMovimiento
+	if err := salidaHelper.RegistrarSalidaHistorica(&payload, &resultado); err != nil {
+		panic(err)
+	}
+
+	c.Data["json"] = resultado
+	c.ServeJSON()
+}
+
 func decodeSalidaGeneralRequest(body []byte, salida *models.SalidaGeneral) error {
 	if salida == nil {
 		return errors.New("destino de salida nil")
@@ -134,6 +163,34 @@ func decodeSalidaGeneralRequest(body []byte, salida *models.SalidaGeneral) error
 	}
 
 	return errors.New("debe especificar al menos una salida")
+}
+
+func decodeSalidaHistoricaRequest(body []byte, salida *models.TransaccionSalidaHistorica) error {
+	if salida == nil {
+		return errors.New("destino de salida histórica nil")
+	}
+
+	if err := json.Unmarshal(body, salida); err != nil {
+		return err
+	}
+
+	if len(salida.Salidas) > 0 {
+		return nil
+	}
+
+	var envelope struct {
+		TrSalida *models.TransaccionSalidaHistorica `json:"trSalida"`
+	}
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return err
+	}
+
+	if envelope.TrSalida != nil && len(envelope.TrSalida.Salidas) > 0 {
+		*salida = *envelope.TrSalida
+		return nil
+	}
+
+	return errors.New("debe especificar una salida histórica")
 }
 
 // GetSalida ...
