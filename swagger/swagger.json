@@ -2104,6 +2104,37 @@
                     }
                 }
             }
+        },
+        "/salida/historico": {
+            "post": {
+                "tags": [
+                    "salida"
+                ],
+                "description": "Registra y aprueba una salida histórica para procesos de migración usando un consecutivo existente y fechas históricas.",
+                "operationId": "SalidaController.PostHistorico",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Detalles de la salida histórica",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TransaccionSalidaHistorica"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResultadoMovimiento"
+                        }
+                    },
+                    "400": {
+                        "description": "the request contains incorrect syntax"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4969,6 +5000,38 @@
                 "SoporteMovimientoId": {
                     "type": "integer",
                     "format": "int64"
+                },
+                "Year": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.TransaccionSalidaHistorica": {
+            "title": "TransaccionSalidaHistorica",
+            "type": "object",
+            "properties": {
+                "ConsecutivoId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "FechaCorte": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FechaCreacion": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "FechaModificacion": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "Salidas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TrSalida"
+                    }
                 },
                 "Year": {
                     "type": "integer",
