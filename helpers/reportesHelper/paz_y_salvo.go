@@ -255,7 +255,7 @@ func construirPDFPazYSalvo(tercero *models.PazYSalvoTerceroResponse, elementos [
 	if puedeGenerar {
 		pdf.MultiCell(0, 6, tr("Se expide la presente a solicitud del interesado, para los fines que estime pertinentes."), "", "J", false)
 	} else {
-		pdf.MultiCell(0, 6, tr("Actualmente no se puede generar el paz y salvo porque el funcionario cuenta con los siguientes elementos bajo su responsabilidad:"), "", "J", false)
+		pdf.MultiCell(0, 6, tr("Actualmente el funcionario cuenta con los siguientes elementos bajo su responsabilidad:"), "", "J", false)
 		pdf.Ln(2)
 		construirTablaElementos(pdf, tr, elementos)
 	}
