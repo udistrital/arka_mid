@@ -68,6 +68,9 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 
 	bufferCuentas := make(map[string]models.CuentaContable)
 	transaccion := models.TransaccionMovimientos{ConsecutivoId: *trSalida.Salida.ConsecutivoId}
+	if trSalida.Salida.FechaCorte != nil && !trSalida.Salida.FechaCorte.IsZero() {
+		transaccion.FechaTransaccion = *trSalida.Salida.FechaCorte
+	}
 	res.Error, outputError = asientoContable.CalcularMovimientosContables(elementosActa, dsc, res.Movimiento.MovimientoPadreId.FormatoTipoMovimientoId.Id, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas, nil, &transaccion.Movimientos)
 	if outputError != nil || res.Error != "" {
 		return
@@ -90,7 +93,9 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 
 	res.TransaccionContable.Concepto = transaccion.Descripcion
 	res.TransaccionContable.Fecha = transaccion.FechaTransaccion
-	trSalida.Salida.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
+	if trSalida.Salida.FechaCorte == nil || trSalida.Salida.FechaCorte.IsZero() {
+		trSalida.Salida.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
+	}
 	outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
 
 	return
