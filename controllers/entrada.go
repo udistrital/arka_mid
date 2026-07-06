@@ -138,8 +138,11 @@ func (c *EntradaController) PostHistorico() {
 	if err := decodeEntradaHistoricaRequest(c.Ctx.Input.RequestBody, &payload); err != nil {
 		panic(map[string]interface{}{
 			"funcion": "PostHistorico - decodeEntradaHistoricaRequest(c.Ctx.Input.RequestBody, &payload)",
-			"err":     err,
-			"status":  "400",
+			"err": map[string]interface{}{
+				"paso":    "decodificar payload histórico",
+				"detalle": err.Error(),
+			},
+			"status": "400",
 		})
 	}
 
