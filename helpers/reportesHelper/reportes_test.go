@@ -561,7 +561,7 @@ func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
 	mockConsultarCentroCostos(t, []models.CentroCostos{
 		{
 			Id:     422,
-			Codigo: "CC-422",
+			Codigo: "123",
 			Nombre: "Centro de costo principal",
 		},
 	})
@@ -577,7 +577,7 @@ func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
 	if nombre != "Centro de costo principal" {
 		t.Fatalf("unexpected centro de costo: %q", nombre)
 	}
-	if codigo != "CC-422" {
+	if codigo != "A123" {
 		t.Fatalf("unexpected codigo centro de costo: %q", codigo)
 	}
 }
