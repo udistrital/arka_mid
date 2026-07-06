@@ -74,3 +74,44 @@ func TestFormatoMovimientoByID(t *testing.T) {
 		t.Fatalf("expected placeholder formato for unknown id, got %+v", desconocido)
 	}
 }
+
+func TestGetCuentasByMovimientoAndSubgruposConservaLaMasRecientePorSubgrupo(t *testing.T) {
+	t.Parallel()
+
+	input := []*models.CuentasSubgrupo{
+		{
+			Id:              449,
+			CuentaDebitoId:  "debito-reciente",
+			CuentaCreditoId: "credito-reciente",
+			SubgrupoId:      &models.Subgrupo{Id: 53582},
+		},
+		{
+			Id:              346,
+			CuentaDebitoId:  "debito-antiguo",
+			CuentaCreditoId: "credito-antiguo",
+			SubgrupoId:      &models.Subgrupo{Id: 53582},
+		},
+	}
+
+	got := make(map[int]models.CuentasSubgrupo)
+	for _, cuenta := range input {
+		if cuenta == nil || cuenta.SubgrupoId == nil {
+			continue
+		}
+		if _, ok := got[cuenta.SubgrupoId.Id]; ok {
+			continue
+		}
+		got[cuenta.SubgrupoId.Id] = *cuenta
+	}
+
+	seleccionada, ok := got[53582]
+	if !ok {
+		t.Fatal("expected cuenta for subgrupo 53582")
+	}
+	if seleccionada.Id != 449 {
+		t.Fatalf("expected most recent cuenta id 449, got %d", seleccionada.Id)
+	}
+	if seleccionada.CuentaDebitoId != "debito-reciente" {
+		t.Fatalf("expected most recent debito, got %q", seleccionada.CuentaDebitoId)
+	}
+}
