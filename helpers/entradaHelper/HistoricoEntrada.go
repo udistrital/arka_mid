@@ -3,6 +3,7 @@ package entradaHelper
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -13,6 +14,7 @@ import (
 )
 
 var getConsecutivoByIDEntradaHistorica = consecutivos.GetById
+var getTransaccionActaRecibidoEntradaHistorica = actaRecibido.GetTransaccionActaRecibidoById
 
 // RegistrarEntradaHistorica crea y aprueba una entrada histórica usando un consecutivo y año específicos.
 func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
@@ -39,12 +41,21 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
 	if outputError != nil {
-		return
+		return wrapHistoricoDependencyError(
+			"RegistrarEntradaHistorica - GetEstadoMovimientoIdByNombre",
+			"no se pudo resolver el estado inicial 'Entrada En Trámite'",
+			outputError,
+			"500",
+		)
 	}
 
 	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
 	if outputError != nil {
-		return
+		return errorCtrl.Error(
+			"RegistrarEntradaHistorica - GetFormatoTipoMovimientoIdByCodigoAbreviacion",
+			fmt.Sprintf("FormatoTipoMovimientoId %q inválido o no parametrizado", data.FormatoTipoMovimientoId),
+			"400",
+		)
 	}
 
 	outputError = crearDetalleEntrada(data.Detalle, &resultado.Movimiento.Detalle)
@@ -54,12 +65,17 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 	var acta models.TransaccionActaRecibido
 	if data.Detalle.ActaRecibidoId > 0 {
-		outputError = actaRecibido.GetTransaccionActaRecibidoById(data.Detalle.ActaRecibidoId, false, &acta)
+		outputError = getTransaccionActaRecibidoEntradaHistorica(data.Detalle.ActaRecibidoId, false, &acta)
 		if outputError != nil {
-			return
+			return wrapHistoricoDependencyError(
+				fmt.Sprintf("RegistrarEntradaHistorica - GetTransaccionActaRecibidoById(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
+				fmt.Sprintf("no se pudo consultar el acta %d", data.Detalle.ActaRecibidoId),
+				outputError,
+				"404",
+			)
 		}
 		if acta.UltimoEstado == nil || acta.UltimoEstado.EstadoActaId == nil || acta.UltimoEstado.EstadoActaId.CodigoAbreviacion != "Aceptada" {
-			resultado.Error = "El acta asociada no está en estado aceptada y no se puede continuar."
+			resultado.Error = mensajeEstadoActaHistoricaInvalido(data.Detalle.ActaRecibidoId, acta.UltimoEstado)
 			return nil
 		}
 	}
@@ -74,7 +90,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 			return outputError
 		}
 		if len(acta.Elementos) == 0 {
-			resultado.Error = "No se encontraron elementos asociados al acta."
+			resultado.Error = fmt.Sprintf("El acta %d no tiene elementos asociados y no puede usarse para una entrada histórica.", data.Detalle.ActaRecibidoId)
 			return nil
 		}
 	}
@@ -165,10 +181,19 @@ func aplicarConsecutivoHistoricoEntrada(entrada *models.Movimiento, consecutivoI
 	var consecutivo models.Consecutivo
 	outputError = getConsecutivoByIDEntradaHistorica(consecutivoID, &consecutivo)
 	if outputError != nil {
-		return
+		return wrapHistoricoDependencyError(
+			fmt.Sprintf("aplicarConsecutivoHistoricoEntrada - GetById(consecutivo_id=%d)", consecutivoID),
+			fmt.Sprintf("no se pudo consultar el consecutivo %d", consecutivoID),
+			outputError,
+			"404",
+		)
 	}
 	if consecutivo.Id <= 0 {
-		return errorCtrl.Error("aplicarConsecutivoHistoricoEntrada - getConsecutivoByIDEntradaHistorica", "no se encontró el consecutivo indicado", "404")
+		return errorCtrl.Error(
+			"aplicarConsecutivoHistoricoEntrada - getConsecutivoByIDEntradaHistorica",
+			fmt.Sprintf("ConsecutivoId %d no existe o no está disponible para construir el consecutivo histórico", consecutivoID),
+			"404",
+		)
 	}
 
 	consecutivo.Year = year
@@ -202,18 +227,31 @@ func validarAprobacionHistorica(data *models.TransaccionEntradaHistorica) error 
 	if data == nil {
 		return fmt.Errorf("payload nil")
 	}
+	var errores []string
+
+	if strings.TrimSpace(data.FormatoTipoMovimientoId) == "" {
+		errores = append(errores, "FormatoTipoMovimientoId es obligatorio")
+	}
 	if data.ConsecutivoId <= 0 {
-		return fmt.Errorf("consecutivo_id inválido")
+		errores = append(errores, "ConsecutivoId es obligatorio y debe ser mayor a 0")
 	}
 	if data.Year <= 0 {
-		return fmt.Errorf("year inválido")
+		errores = append(errores, "Year es obligatorio y debe ser mayor a 0")
 	}
 	if data.FechaCreacion.IsZero() {
-		return fmt.Errorf("fecha_creacion vacía")
+		errores = append(errores, "FechaCreacion es obligatoria y debe venir en formato RFC3339")
 	}
 	if data.FechaCorte.IsZero() {
-		return fmt.Errorf("fecha_corte vacía")
+		errores = append(errores, "FechaCorte es obligatoria y debe venir en formato RFC3339")
 	}
+	if data.Detalle.ActaRecibidoId <= 0 && len(data.Detalle.Elementos) == 0 {
+		errores = append(errores, "Detalle.acta_recibido_id o Detalle.elementos es obligatorio")
+	}
+
+	if len(errores) > 0 {
+		return fmt.Errorf("payload histórico inválido: %s", strings.Join(errores, "; "))
+	}
+
 	return nil
 }
 
@@ -225,4 +263,50 @@ func debugHistoricoEntrada(data *models.TransaccionEntradaHistorica) string {
 		" year=" + strconv.Itoa(data.Year) +
 		" fecha_creacion=" + data.FechaCreacion.Format(time.RFC3339) +
 		" fecha_corte=" + data.FechaCorte.Format(time.RFC3339)
+}
+
+func wrapHistoricoDependencyError(funcion, mensaje string, outputError map[string]interface{}, fallbackStatus string) map[string]interface{} {
+	if outputError == nil {
+		return nil
+	}
+
+	if errValue, ok := outputError["err"]; ok && errValue != nil {
+		mensaje += ": " + fmt.Sprintf("%v", errValue)
+	}
+
+	return errorCtrl.Error(funcion, mensaje, outputErrorStatusHistorico(outputError, fallbackStatus))
+}
+
+func outputErrorStatusHistorico(err map[string]interface{}, fallback string) string {
+	if err == nil {
+		return fallback
+	}
+
+	if status, ok := err["status"].(string); ok && status != "" {
+		return status
+	}
+
+	return fallback
+}
+
+func mensajeEstadoActaHistoricaInvalido(actaID int, historico *models.HistoricoActa) string {
+	if historico == nil || historico.EstadoActaId == nil {
+		return fmt.Sprintf("El acta %d no tiene estado actual identificable. Para registrar una entrada histórica debe estar en estado 'Aceptada'.", actaID)
+	}
+
+	estado := historico.EstadoActaId
+	if strings.TrimSpace(estado.Nombre) != "" {
+		return fmt.Sprintf(
+			"El acta %d está en estado %q (%s). Para registrar una entrada histórica debe estar en estado 'Aceptada'.",
+			actaID,
+			estado.Nombre,
+			estado.CodigoAbreviacion,
+		)
+	}
+
+	return fmt.Sprintf(
+		"El acta %d está en estado %q. Para registrar una entrada histórica debe estar en estado 'Aceptada'.",
+		actaID,
+		estado.CodigoAbreviacion,
+	)
 }
