@@ -182,6 +182,12 @@ func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuent
 		return err
 	} else {
 		for _, cuenta := range cuentas_ {
+			if cuenta == nil || cuenta.SubgrupoId == nil {
+				continue
+			}
+			if _, ok := cuentasSubgrupo[cuenta.SubgrupoId.Id]; ok {
+				continue
+			}
 			cuentasSubgrupo[cuenta.SubgrupoId.Id] = *cuenta
 		}
 
