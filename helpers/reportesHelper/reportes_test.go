@@ -548,6 +548,16 @@ func TestExtraerCodigosEntradaIncluyeFormatosInactivos(t *testing.T) {
 }
 
 func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
+	originalHistoricos := consultarHistoricosActaReporteFn
+	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+		return []models.HistoricoActa{
+			{UbicacionId: 422},
+		}, nil
+	}
+	t.Cleanup(func() {
+		consultarHistoricosActaReporteFn = originalHistoricos
+	})
+
 	mockConsultarCentroCostos(t, []models.CentroCostos{
 		{
 			Id:     422,
@@ -557,6 +567,10 @@ func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
 	})
 
 	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+		MovimientoPadreId: &models.Movimiento{
+			Id:      9001,
+			Detalle: `{"acta_recibido_id":555}`,
+		},
 		Detalle: `{"funcionario":12345,"ubicacion":999,"centro_costos":"422"}`,
 	})
 
