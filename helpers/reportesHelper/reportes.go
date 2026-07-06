@@ -1780,6 +1780,14 @@ func salidaUbicacionInfo(movimiento *models.Movimiento) (centroCostoNombre, cent
 		return "", ""
 	}
 
+	if formato, ok := formatoEntradaPadreSalida(movimiento); ok {
+		if codigo, nombre, outputError := centroCostoEntradaA11Info(formato); outputError == nil {
+			if nombre != "" || codigo != "" {
+				return nombre, codigo
+			}
+		}
+	}
+
 	var detalle models.FormatoSalidaCostos
 	if outputError := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); outputError != nil {
 		return "", ""
@@ -1795,6 +1803,27 @@ func salidaUbicacionInfo(movimiento *models.Movimiento) (centroCostoNombre, cent
 	}
 
 	return centroCostoNombre, centroCostoCodigo
+}
+
+func formatoEntradaPadreSalida(movimiento *models.Movimiento) (formato models.FormatoBaseEntrada, ok bool) {
+	if movimiento == nil || movimiento.MovimientoPadreId == nil || movimiento.MovimientoPadreId.Id <= 0 {
+		return models.FormatoBaseEntrada{}, false
+	}
+
+	entradaPadre := movimiento.MovimientoPadreId
+	if strings.TrimSpace(entradaPadre.Detalle) == "" {
+		if movimientoResuelta, outputError := consultarMovimientoPorID(entradaPadre.Id); outputError == nil && movimientoResuelta != nil {
+			entradaPadre = movimientoResuelta
+		}
+	}
+
+	if strings.TrimSpace(entradaPadre.Detalle) == "" {
+		return models.FormatoBaseEntrada{}, false
+	}
+	if outputError := utilsHelper.Unmarshal(entradaPadre.Detalle, &formato); outputError != nil {
+		return models.FormatoBaseEntrada{}, false
+	}
+	return formato, true
 }
 
 func subgrupoInfo(elemento *models.DetalleElemento) (id int, codigo, nombre string) {
