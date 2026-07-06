@@ -106,8 +106,15 @@ func TestAplicarConsecutivoHistoricoEntradaConsecutivoNoEncontrado(t *testing.T)
 		t.Fatal("expected error for missing consecutivo")
 	}
 
-	if got, ok := err["err"].(string); !ok || !strings.Contains(got, "ConsecutivoId 10764 no existe o no está disponible") {
+	data, ok := err["err"].(map[string]interface{})
+	if !ok {
 		t.Fatalf("unexpected error payload: %#v", err)
+	}
+	if got, ok := data["detalle"].(string); !ok || !strings.Contains(got, "ConsecutivoId 10764 no existe o no está disponible") {
+		t.Fatalf("unexpected error payload: %#v", err)
+	}
+	if got, ok := data["paso"].(string); !ok || got != "validar consecutivo histórico" {
+		t.Fatalf("unexpected paso payload: %#v", err)
 	}
 	if got, ok := err["status"].(string); !ok || got != "404" {
 		t.Fatalf("expected status 404, got %#v", err["status"])

@@ -21,13 +21,13 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 	defer errorCtrl.ErrorControlFunction("RegistrarEntradaHistorica - Unhandled Error!", "500")
 
 	if data == nil {
-		return errorCtrl.Error("RegistrarEntradaHistorica - data", "payload nil", "400")
+		return buildHistoricoPasoError("validar payload", "RegistrarEntradaHistorica - data", "payload nil", "400", nil)
 	}
 	if err := validarAprobacionHistorica(data); err != nil {
-		return errorCtrl.Error("RegistrarEntradaHistorica - validarAprobacionHistorica", err, "400")
+		return buildHistoricoPasoError("validar payload", "RegistrarEntradaHistorica - validarAprobacionHistorica", err.Error(), "400", nil)
 	}
 	if resultado == nil {
-		return errorCtrl.Error("RegistrarEntradaHistorica - resultado", "resultado nil", "500")
+		return buildHistoricoPasoError("inicializar resultado", "RegistrarEntradaHistorica - resultado", "resultado nil", "500", nil)
 	}
 
 	resultado.Movimiento = models.Movimiento{
@@ -42,6 +42,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
+			"resolver estado inicial",
 			"RegistrarEntradaHistorica - GetEstadoMovimientoIdByNombre",
 			"no se pudo resolver el estado inicial 'Entrada En Trámite'",
 			outputError,
@@ -51,16 +52,24 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
 	if outputError != nil {
-		return errorCtrl.Error(
+		return buildHistoricoPasoError(
+			"resolver tipo de movimiento",
 			"RegistrarEntradaHistorica - GetFormatoTipoMovimientoIdByCodigoAbreviacion",
 			fmt.Sprintf("FormatoTipoMovimientoId %q inválido o no parametrizado", data.FormatoTipoMovimientoId),
 			"400",
+			outputError,
 		)
 	}
 
 	outputError = crearDetalleEntrada(data.Detalle, &resultado.Movimiento.Detalle)
 	if outputError != nil {
-		return
+		return wrapHistoricoDependencyError(
+			"construir detalle del movimiento",
+			"RegistrarEntradaHistorica - crearDetalleEntrada",
+			"no se pudo construir el detalle de la entrada histórica",
+			outputError,
+			"400",
+		)
 	}
 
 	var acta models.TransaccionActaRecibido
@@ -68,6 +77,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		outputError = getTransaccionActaRecibidoEntradaHistorica(data.Detalle.ActaRecibidoId, false, &acta)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
+				"consultar acta asociada",
 				fmt.Sprintf("RegistrarEntradaHistorica - GetTransaccionActaRecibidoById(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
 				fmt.Sprintf("no se pudo consultar el acta %d", data.Detalle.ActaRecibidoId),
 				outputError,
@@ -75,8 +85,13 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 			)
 		}
 		if acta.UltimoEstado == nil || acta.UltimoEstado.EstadoActaId == nil || acta.UltimoEstado.EstadoActaId.CodigoAbreviacion != "Aceptada" {
-			resultado.Error = mensajeEstadoActaHistoricaInvalido(data.Detalle.ActaRecibidoId, acta.UltimoEstado)
-			return nil
+			return buildHistoricoPasoError(
+				"validar estado del acta",
+				fmt.Sprintf("RegistrarEntradaHistorica - validarEstadoActa(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
+				mensajeEstadoActaHistoricaInvalido(data.Detalle.ActaRecibidoId, acta.UltimoEstado),
+				"400",
+				nil,
+			)
 		}
 	}
 
@@ -86,25 +101,57 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 	if data.Detalle.ActaRecibidoId > 0 {
 		resultado.Error, outputError = asignarPlacas(data.Detalle.ActaRecibidoId, &acta.Elementos)
-		if outputError != nil || resultado.Error != "" {
-			return outputError
+		if outputError != nil {
+			return wrapHistoricoDependencyError(
+				"asignar placas a elementos del acta",
+				fmt.Sprintf("RegistrarEntradaHistorica - asignarPlacas(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
+				fmt.Sprintf("no se pudieron asignar placas para el acta %d", data.Detalle.ActaRecibidoId),
+				outputError,
+				"400",
+			)
+		}
+		if resultado.Error != "" {
+			return buildHistoricoPasoError(
+				"asignar placas a elementos del acta",
+				fmt.Sprintf("RegistrarEntradaHistorica - asignarPlacas(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
+				resultado.Error,
+				"400",
+				nil,
+			)
 		}
 		if len(acta.Elementos) == 0 {
-			resultado.Error = fmt.Sprintf("El acta %d no tiene elementos asociados y no puede usarse para una entrada histórica.", data.Detalle.ActaRecibidoId)
-			return nil
+			return buildHistoricoPasoError(
+				"validar elementos del acta",
+				fmt.Sprintf("RegistrarEntradaHistorica - validarElementosActa(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
+				fmt.Sprintf("El acta %d no tiene elementos asociados y no puede usarse para una entrada histórica.", data.Detalle.ActaRecibidoId),
+				"400",
+				nil,
+			)
 		}
 	}
 
 	outputError = movimientosArka.PostMovimiento(&resultado.Movimiento)
 	if outputError != nil {
-		return
+		return wrapHistoricoDependencyError(
+			"registrar movimiento en arka",
+			"RegistrarEntradaHistorica - PostMovimiento",
+			"no se pudo registrar el movimiento histórico en movimientos_arka_crud",
+			outputError,
+			"502",
+		)
 	}
 
 	resultado.Movimiento.FechaCreacion = data.FechaCreacion
 	resultado.Movimiento.FechaModificacion = normalizarFechaModificacionHistorica(data)
 	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id)
 	if outputError != nil {
-		return
+		return wrapHistoricoDependencyError(
+			"actualizar fechas históricas del movimiento",
+			fmt.Sprintf("RegistrarEntradaHistorica - PutMovimiento(movimiento_id=%d)", resultado.Movimiento.Id),
+			fmt.Sprintf("no se pudieron persistir las fechas históricas del movimiento %d", resultado.Movimiento.Id),
+			outputError,
+			"502",
+		)
 	}
 
 	if data.SoporteMovimientoId > 0 {
@@ -116,7 +163,13 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 		outputError = movimientosArka.PostSoporteMovimiento(&soporte)
 		if outputError != nil {
-			return
+			return wrapHistoricoDependencyError(
+				"asociar soporte al movimiento",
+				fmt.Sprintf("RegistrarEntradaHistorica - PostSoporteMovimiento(movimiento_id=%d)", resultado.Movimiento.Id),
+				fmt.Sprintf("no se pudo asociar el soporte %d al movimiento %d", data.SoporteMovimientoId, resultado.Movimiento.Id),
+				outputError,
+				"502",
+			)
 		}
 	}
 
@@ -125,7 +178,13 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		acta.UltimoEstado.Id = 0
 		outputError = actaRecibido.PutTransaccionActaRecibido(data.Detalle.ActaRecibidoId, &acta)
 		if outputError != nil {
-			return
+			return wrapHistoricoDependencyError(
+				"actualizar estado del acta después del registro",
+				fmt.Sprintf("RegistrarEntradaHistorica - PutTransaccionActaRecibido(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
+				fmt.Sprintf("no se pudo actualizar el estado del acta %d después de registrar la entrada histórica", data.Detalle.ActaRecibidoId),
+				outputError,
+				"502",
+			)
 		}
 	}
 
@@ -137,8 +196,23 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 	defer errorCtrl.ErrorControlFunction("aprobarEntradaHistorica - Unhandled Error!", "500")
 
 	formato, outputError := getFormato(entradaId, resultado)
-	if outputError != nil || resultado.Error != "" {
-		return
+	if outputError != nil {
+		return wrapHistoricoDependencyError(
+			"consultar movimiento recién registrado",
+			fmt.Sprintf("aprobarEntradaHistorica - getFormato(entrada_id=%d)", entradaId),
+			fmt.Sprintf("no se pudo consultar el movimiento %d para aprobar la entrada histórica", entradaId),
+			outputError,
+			"404",
+		)
+	}
+	if resultado.Error != "" {
+		return buildHistoricoPasoError(
+			"consultar movimiento recién registrado",
+			fmt.Sprintf("aprobarEntradaHistorica - getFormato(entrada_id=%d)", entradaId),
+			resultado.Error,
+			"400",
+			nil,
+		)
 	}
 
 	resultado.Movimiento.FechaCreacion = data.FechaCreacion
@@ -146,42 +220,104 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 	resultado.Movimiento.FechaCorte = &data.FechaCorte
 
 	terceroId, outputError := getTerceroEntrada(formato, resultado)
-	if outputError != nil || resultado.Error != "" {
-		return
+	if outputError != nil {
+		return wrapHistoricoDependencyError(
+			"resolver tercero contable de la entrada",
+			fmt.Sprintf("aprobarEntradaHistorica - getTerceroEntrada(entrada_id=%d)", entradaId),
+			fmt.Sprintf("no se pudo resolver el tercero contable para la entrada histórica %d", entradaId),
+			outputError,
+			"502",
+		)
+	}
+	if resultado.Error != "" {
+		return buildHistoricoPasoError(
+			"resolver tercero contable de la entrada",
+			fmt.Sprintf("aprobarEntradaHistorica - getTerceroEntrada(entrada_id=%d)", entradaId),
+			resultado.Error,
+			"400",
+			nil,
+		)
 	}
 
 	elementos, novedades, outputError := getElementosEntrada(formato, entradaId, resultado)
-	if outputError != nil || resultado.Error != "" {
-		return
+	if outputError != nil {
+		return wrapHistoricoDependencyError(
+			"resolver elementos y novedades de la entrada",
+			fmt.Sprintf("aprobarEntradaHistorica - getElementosEntrada(entrada_id=%d)", entradaId),
+			fmt.Sprintf("no se pudieron resolver los elementos o novedades de la entrada histórica %d", entradaId),
+			outputError,
+			"502",
+		)
+	}
+	if resultado.Error != "" {
+		return buildHistoricoPasoError(
+			"resolver elementos y novedades de la entrada",
+			fmt.Sprintf("aprobarEntradaHistorica - getElementosEntrada(entrada_id=%d)", entradaId),
+			resultado.Error,
+			"400",
+			nil,
+		)
 	}
 
 	outputError = contabilidadEntrada(resultado, formato, elementos, terceroId)
-	if outputError != nil || resultado.Error != "" {
-		return
+	if outputError != nil {
+		return wrapHistoricoDependencyError(
+			"generar transacción contable de la entrada",
+			fmt.Sprintf("aprobarEntradaHistorica - contabilidadEntrada(entrada_id=%d)", entradaId),
+			fmt.Sprintf("no se pudo generar la transacción contable de la entrada histórica %d", entradaId),
+			outputError,
+			"502",
+		)
+	}
+	if resultado.Error != "" {
+		return buildHistoricoPasoError(
+			"generar transacción contable de la entrada",
+			fmt.Sprintf("aprobarEntradaHistorica - contabilidadEntrada(entrada_id=%d)", entradaId),
+			resultado.Error,
+			"400",
+			nil,
+		)
 	}
 
 	for _, nov := range novedades {
 		outputError = movimientosArka.PostNovedadElemento(&nov)
 		if outputError != nil {
-			return
+			return wrapHistoricoDependencyError(
+				"registrar novedades de los elementos",
+				fmt.Sprintf("aprobarEntradaHistorica - PostNovedadElemento(entrada_id=%d)", entradaId),
+				fmt.Sprintf("no se pudieron registrar las novedades de la entrada histórica %d", entradaId),
+				outputError,
+				"502",
+			)
 		}
 	}
 
 	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id)
-	return
+	if outputError != nil {
+		return wrapHistoricoDependencyError(
+			"persistir aprobación histórica del movimiento",
+			fmt.Sprintf("aprobarEntradaHistorica - PutMovimiento(movimiento_id=%d)", resultado.Movimiento.Id),
+			fmt.Sprintf("no se pudo persistir la aprobación histórica del movimiento %d", resultado.Movimiento.Id),
+			outputError,
+			"502",
+		)
+	}
+
+	return nil
 }
 
 func aplicarConsecutivoHistoricoEntrada(entrada *models.Movimiento, consecutivoID, year int) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("aplicarConsecutivoHistoricoEntrada - Unhandled Error!", "500")
 
 	if entrada == nil {
-		return errorCtrl.Error("aplicarConsecutivoHistoricoEntrada - entrada", "entrada nil", "500")
+		return buildHistoricoPasoError("aplicar consecutivo histórico", "aplicarConsecutivoHistoricoEntrada - entrada", "entrada nil", "500", nil)
 	}
 
 	var consecutivo models.Consecutivo
 	outputError = getConsecutivoByIDEntradaHistorica(consecutivoID, &consecutivo)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
+			"consultar consecutivo histórico",
 			fmt.Sprintf("aplicarConsecutivoHistoricoEntrada - GetById(consecutivo_id=%d)", consecutivoID),
 			fmt.Sprintf("no se pudo consultar el consecutivo %d", consecutivoID),
 			outputError,
@@ -189,10 +325,12 @@ func aplicarConsecutivoHistoricoEntrada(entrada *models.Movimiento, consecutivoI
 		)
 	}
 	if consecutivo.Id <= 0 {
-		return errorCtrl.Error(
+		return buildHistoricoPasoError(
+			"validar consecutivo histórico",
 			"aplicarConsecutivoHistoricoEntrada - getConsecutivoByIDEntradaHistorica",
 			fmt.Sprintf("ConsecutivoId %d no existe o no está disponible para construir el consecutivo histórico", consecutivoID),
 			"404",
+			nil,
 		)
 	}
 
@@ -265,16 +403,29 @@ func debugHistoricoEntrada(data *models.TransaccionEntradaHistorica) string {
 		" fecha_corte=" + data.FechaCorte.Format(time.RFC3339)
 }
 
-func wrapHistoricoDependencyError(funcion, mensaje string, outputError map[string]interface{}, fallbackStatus string) map[string]interface{} {
+func buildHistoricoPasoError(paso, funcion, detalle, status string, causa interface{}) map[string]interface{} {
+	errPayload := map[string]interface{}{
+		"paso":    paso,
+		"detalle": detalle,
+	}
+	if causa != nil {
+		errPayload["causa"] = causa
+	}
+
+	return errorCtrl.Error(funcion, errPayload, status)
+}
+
+func wrapHistoricoDependencyError(paso, funcion, mensaje string, outputError map[string]interface{}, fallbackStatus string) map[string]interface{} {
 	if outputError == nil {
 		return nil
 	}
 
+	var causa interface{}
 	if errValue, ok := outputError["err"]; ok && errValue != nil {
-		mensaje += ": " + fmt.Sprintf("%v", errValue)
+		causa = errValue
 	}
 
-	return errorCtrl.Error(funcion, mensaje, outputErrorStatusHistorico(outputError, fallbackStatus))
+	return buildHistoricoPasoError(paso, funcion, mensaje, outputErrorStatusHistorico(outputError, fallbackStatus), causa)
 }
 
 func outputErrorStatusHistorico(err map[string]interface{}, fallback string) string {
