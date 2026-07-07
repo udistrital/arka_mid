@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -35,8 +36,6 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		Activo:                  true,
 		FormatoTipoMovimientoId: &models.FormatoTipoMovimiento{},
 		EstadoMovimientoId:      &models.EstadoMovimiento{},
-		FechaCreacion:           data.FechaCreacion,
-		FechaModificacion:       normalizarFechaModificacionHistorica(data),
 	}
 
 	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
@@ -132,11 +131,17 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 	outputError = movimientosArka.PostMovimiento(&resultado.Movimiento)
 	if outputError != nil {
+		payloadMovimiento, marshalErr := serializarMovimientoHistorico(resultado.Movimiento)
+		if marshalErr != nil {
+			payloadMovimiento = "no se pudo serializar el payload enviado a movimientos_arka_crud: " + marshalErr.Error()
+		}
 		return wrapHistoricoDependencyError(
 			"registrar movimiento en arka",
 			"RegistrarEntradaHistorica - PostMovimiento",
 			"no se pudo registrar el movimiento histórico en movimientos_arka_crud",
-			outputError,
+			mergeOutputErrorCause(outputError, map[string]interface{}{
+				"payload_movimiento": payloadMovimiento,
+			}),
 			"502",
 		)
 	}
@@ -415,6 +420,14 @@ func buildHistoricoPasoError(paso, funcion, detalle, status string, causa interf
 	return errorCtrl.Error(funcion, errPayload, status)
 }
 
+func serializarMovimientoHistorico(movimiento models.Movimiento) (string, error) {
+	rawBytes, err := json.Marshal(movimiento)
+	if err != nil {
+		return "", err
+	}
+	return string(rawBytes), nil
+}
+
 func wrapHistoricoDependencyError(paso, funcion, mensaje string, outputError map[string]interface{}, fallbackStatus string) map[string]interface{} {
 	if outputError == nil {
 		return nil
@@ -426,6 +439,44 @@ func wrapHistoricoDependencyError(paso, funcion, mensaje string, outputError map
 	}
 
 	return buildHistoricoPasoError(paso, funcion, mensaje, outputErrorStatusHistorico(outputError, fallbackStatus), causa)
+}
+
+func mergeOutputErrorCause(outputError map[string]interface{}, extra map[string]interface{}) map[string]interface{} {
+	if outputError == nil || len(extra) == 0 {
+		return outputError
+	}
+
+	merged := make(map[string]interface{}, len(outputError))
+	for key, value := range outputError {
+		merged[key] = value
+	}
+
+	if errValue, ok := outputError["err"].(map[string]interface{}); ok {
+		errMerged := make(map[string]interface{}, len(errValue)+len(extra))
+		for key, value := range errValue {
+			errMerged[key] = value
+		}
+		for key, value := range extra {
+			errMerged[key] = value
+		}
+		merged["err"] = errMerged
+		return merged
+	}
+
+	if errValue, ok := outputError["err"]; ok && errValue != nil {
+		merged["err"] = map[string]interface{}{
+			"causa_original": errValue,
+		}
+		if errMerged, ok := merged["err"].(map[string]interface{}); ok {
+			for key, value := range extra {
+				errMerged[key] = value
+			}
+		}
+		return merged
+	}
+
+	merged["err"] = extra
+	return merged
 }
 
 func outputErrorStatusHistorico(err map[string]interface{}, fallback string) string {

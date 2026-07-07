@@ -54,6 +54,4 @@ func GetById(id int, consecutivo *models.Consecutivo) (outputError map[string]in
 		err := fmt.Errorf("tipo inesperado en response.Data: %T", response.Data)
 		return errorCtrl.Error(funcion+"tipo inesperado", err, "502")
 	}
-
-	return nil
 }
