@@ -779,104 +779,66 @@ func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
 	}
 }
 
-func TestFechaDocumentoA11PriorizaFechaCreacionMovimiento(t *testing.T) {
-	fechaTransaccion := time.Date(2026, 6, 5, 10, 0, 0, 0, time.UTC)
-	fechaCreacion := time.Date(2026, 6, 4, 8, 15, 0, 0, time.UTC)
-	fechaCorte := time.Date(2026, 6, 7, 15, 30, 0, 0, time.UTC)
+func TestExpandirFilasReporteContabilizacionDuplicaDebitoYCredito(t *testing.T) {
+	rows := expandirFilasReporteContabilizacion([]*reporteContabilizacionGrupo{
+		{
+			Consecutivo:    "MOV-1",
+			Fecha:          time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC),
+			Observacion:    "Agrupación prueba",
+			SubgrupoNombre: "Subgrupo Uno",
+			ValorTotal:     3000,
+			CuentaDebito:   "151001",
+			CuentaCredito:  "240801",
+		},
+	})
 
-	fecha := fechaDocumentoA11(
-		&models.InfoTransaccionContable{Fecha: fechaTransaccion},
-		&models.Movimiento{FechaCreacion: fechaCreacion, FechaCorte: &fechaCorte},
-	)
-
-	if !fecha.Equal(fechaCreacion) {
-		t.Fatalf("se esperaba priorizar FechaCreacion=%v, se obtuvo %v", fechaCreacion, fecha)
+	if len(rows) != 2 {
+		t.Fatalf("se esperaban 2 filas, se obtuvieron %d", len(rows))
+	}
+	if rows[0].Cuenta != "151001" || rows[0].Naturaleza != "Debito" {
+		t.Fatalf("fila débito inesperada: %+v", rows[0])
+	}
+	if rows[1].Cuenta != "240801" || rows[1].Naturaleza != "Credito" {
+		t.Fatalf("fila crédito inesperada: %+v", rows[1])
 	}
 }
 
 func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
-	mockConsultarCuentaContableReporte(t, map[string]*models.CuentaContable{
-		"cta-db-1": {Id: "cta-db-1", Codigo: "151001"},
-		"cta-cr-1": {Id: "cta-cr-1", Codigo: "240801"},
-	})
-	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionEntradaData{
+	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionGrupo{
 		{
-			Movimiento: &models.Movimiento{
-				Consecutivo:   stringPtr("P8-00001-2026"),
-				Observacion:   "Observación entrada contable",
-				FechaCreacion: time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
-			},
-			ProveedorLabel:     "900866324 - PROVEEDOR UNO",
-			FacturaConsecutivo: "FV 434",
-			CentroCostoCodigo:  "A1205",
-			CentroCostoNombre:  "Oficina Asesora de Planeación",
-			TransaccionContable: &models.InfoTransaccionContable{
-				Fecha: time.Date(2026, 6, 5, 10, 0, 0, 0, time.UTC),
-				Movimientos: []*models.DetalleMovimientoContable{
-					{
-						Cuenta:    &models.DetalleCuenta{Id: "asiento-db-1", Codigo: "999999"},
-						Debito:    1000,
-						TerceroId: &models.IdentificacionTercero{Numero: "800123", NombreCompleto: "TERCERO CONTABLE"},
-					},
-					{
-						Cuenta:  &models.DetalleCuenta{Id: "asiento-cr-1", Codigo: "888888"},
-						Credito: 1000,
-					},
-				},
-			},
-			CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{
-				9: {
-					CuentaDebitoId:  "cta-db-1",
-					CuentaCreditoId: "cta-cr-1",
-				},
-			},
-			Subgrupos:         []int{9},
-			CuentasDebitoA11:  []string{"151001"},
-			CuentasCreditoA11: []string{"240801"},
-		},
-	})
-	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionSalidaData{
-		{
-			Movimiento: &models.Movimiento{
-				Consecutivo:   stringPtr("H21-00001-2026"),
-				Observacion:   "Observación salida contable",
-				FechaCreacion: time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
-			},
-			EntradaPadre: &models.Movimiento{
-				Consecutivo: stringPtr("P8-00001-2026"),
-			},
-			ProveedorLabel:     "900866324 - PROVEEDOR UNO",
-			FacturaConsecutivo: "FV 434",
-			CentroCostoCodigo:  "A1205",
-			CentroCostoNombre:  "Oficina Asesora de Planeación",
-			TransaccionContable: &models.InfoTransaccionContable{
-				Fecha: time.Date(2026, 6, 6, 12, 0, 0, 0, time.UTC),
-				Movimientos: []*models.DetalleMovimientoContable{
-					{Cuenta: &models.DetalleCuenta{Codigo: "77777777"}, Debito: 300},
-					{Cuenta: &models.DetalleCuenta{Codigo: "66666666"}, Credito: 300},
-				},
-			},
-			CuentasDebitoA11:  []string{"51111401"},
-			CuentasCreditoA11: []string{"15142401"},
+			Consecutivo:    "P8-00001-2026",
+			Fecha:          time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
+			Observacion:    "Observación entrada contable",
+			ActaID:         555,
+			SubgrupoID:     1,
+			SubgrupoNombre: "Subgrupo Uno",
+			ValorTotal:     1000,
+			CuentaDebito:   "151001",
+			CuentaCredito:  "240801",
 		},
 		{
-			Movimiento: &models.Movimiento{
-				Consecutivo:   stringPtr("H21-00002-2026"),
-				FechaCreacion: time.Date(2026, 6, 7, 11, 0, 0, 0, time.UTC),
-			},
-			EntradaPadre: &models.Movimiento{
-				Consecutivo: stringPtr("P8-00002-2026"),
-			},
-			ProveedorLabel:     "900999111 - PROVEEDOR DOS",
-			FacturaConsecutivo: "FV 999",
-			CentroCostoCodigo:  "A1302",
-			CentroCostoNombre:  "Dependencia Dos",
-			TransaccionContable: &models.InfoTransaccionContable{
-				Fecha: time.Date(2026, 6, 7, 12, 0, 0, 0, time.UTC),
-				Movimientos: []*models.DetalleMovimientoContable{
-					{Cuenta: &models.DetalleCuenta{Codigo: "8315100728"}, Debito: 500},
-				},
-			},
+			Consecutivo:    "P8-00001-2026",
+			Fecha:          time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
+			Observacion:    "Observación entrada contable",
+			ActaID:         555,
+			SubgrupoID:     2,
+			SubgrupoNombre: "Subgrupo Dos",
+			ValorTotal:     2500,
+			CuentaDebito:   "151002",
+			CuentaCredito:  "240802",
+		},
+	})
+	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionGrupo{
+		{
+			Consecutivo:    "H21-00001-2026",
+			Fecha:          time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
+			Observacion:    "Observación salida contable",
+			ActaID:         555,
+			SubgrupoID:     1,
+			SubgrupoNombre: "Subgrupo Uno",
+			ValorTotal:     300,
+			CuentaDebito:   "51111401",
+			CuentaCredito:  "15142401",
 		},
 	})
 
@@ -909,87 +871,80 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 
 	headerRow := archivo.Sheets[0].Rows[0]
-	if len(headerRow.Cells) != 18 {
-		t.Fatalf("se esperaban 18 encabezados, se obtuvieron %d", len(headerRow.Cells))
+	if len(headerRow.Cells) != 7 {
+		t.Fatalf("se esperaban 7 encabezados, se obtuvieron %d", len(headerRow.Cells))
 	}
-	if headerRow.Cells[0].String() != "Renglón" || headerRow.Cells[17].String() != "Jefe_Almacén" {
-		t.Fatalf("encabezados A11 inesperados")
+	if headerRow.Cells[0].String() != "Cuenta" || headerRow.Cells[6].String() != "Clase" {
+		t.Fatalf("encabezados del reporte contable inesperados")
 	}
 
 	entradasIndex := buildHeaderIndex(archivo.Sheets[0].Rows[0])
-	entradasDataRow := archivo.Sheets[0].Rows[1]
-	if entradasDataRow.Cells[entradasIndex["Documento_Entrada"]].String() != "P8-00001-2026" {
-		t.Fatalf("documento entrada inesperado: %q", entradasDataRow.Cells[entradasIndex["Documento_Entrada"]].String())
+	if len(archivo.Sheets[0].Rows) != 5 {
+		t.Fatalf("la hoja entradas debe tener encabezado y 4 filas de datos, tiene %d filas", len(archivo.Sheets[0].Rows))
 	}
-	if entradasDataRow.Cells[entradasIndex["Documento_Salida"]].String() != "" {
-		t.Fatalf("documento salida de entrada debe venir vacío: %q", entradasDataRow.Cells[entradasIndex["Documento_Salida"]].String())
+
+	entradaFila1 := archivo.Sheets[0].Rows[1]
+	if entradaFila1.Cells[entradasIndex["Cuenta"]].String() != "151001" {
+		t.Fatalf("cuenta débito entrada inesperada: %q", entradaFila1.Cells[entradasIndex["Cuenta"]].String())
 	}
-	if entradasDataRow.Cells[entradasIndex["Identificación_Tercero"]].String() != "800123" {
-		t.Fatalf("tercero contable inesperado: %q", entradasDataRow.Cells[entradasIndex["Identificación_Tercero"]].String())
+	if entradaFila1.Cells[entradasIndex["Naturaleza"]].String() != "Debito" {
+		t.Fatalf("naturaleza débito inesperada: %q", entradaFila1.Cells[entradasIndex["Naturaleza"]].String())
 	}
-	if entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String() != "A1205" {
-		t.Fatalf("centro de costo entrada inesperado: %q", entradasDataRow.Cells[entradasIndex["Centro_Costo"]].String())
+	if entradaFila1.Cells[entradasIndex["Consecutivo"]].String() != "P8-00001-2026" {
+		t.Fatalf("consecutivo entrada inesperado: %q", entradaFila1.Cells[entradasIndex["Consecutivo"]].String())
 	}
-	if entradasDataRow.Cells[entradasIndex["Cuenta_Contable"]].String() != "151001" {
-		t.Fatalf("cuenta contable entrada inesperada: %q", entradasDataRow.Cells[entradasIndex["Cuenta_Contable"]].String())
+	if entradaFila1.Cells[entradasIndex["Observacion"]].String() != "Observación entrada contable" {
+		t.Fatalf("observación entrada inesperada: %q", entradaFila1.Cells[entradasIndex["Observacion"]].String())
 	}
-	if entradasDataRow.Cells[entradasIndex["Descripción"]].String() != "Observación entrada contable" {
-		t.Fatalf("descripción entrada inesperada: %q", entradasDataRow.Cells[entradasIndex["Descripción"]].String())
+	if entradaFila1.Cells[entradasIndex["Valor"]].String() != "1000" {
+		t.Fatalf("valor entrada inesperado: %q", entradaFila1.Cells[entradasIndex["Valor"]].String())
 	}
-	if archivo.Sheets[0].Rows[2].Cells[entradasIndex["Cuenta_Contable"]].String() != "240801" {
-		t.Fatalf("cuenta contable crédito entrada inesperada: %q", archivo.Sheets[0].Rows[2].Cells[entradasIndex["Cuenta_Contable"]].String())
+	if entradaFila1.Cells[entradasIndex["Clase"]].String() != "Subgrupo Uno" {
+		t.Fatalf("clase entrada inesperada: %q", entradaFila1.Cells[entradasIndex["Clase"]].String())
 	}
-	if entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat() != a11DateNumFmt {
-		t.Fatalf("formato fecha inesperado: %q", entradasDataRow.Cells[entradasIndex["Fecha_Documento"]].GetNumberFormat())
+	if entradaFila1.Cells[entradasIndex["Fecha"]].GetNumberFormat() != a11DateNumFmt {
+		t.Fatalf("formato fecha inesperado: %q", entradaFila1.Cells[entradasIndex["Fecha"]].GetNumberFormat())
+	}
+	if archivo.Sheets[0].Rows[2].Cells[entradasIndex["Cuenta"]].String() != "240801" {
+		t.Fatalf("cuenta crédito de la primera agrupación inesperada: %q", archivo.Sheets[0].Rows[2].Cells[entradasIndex["Cuenta"]].String())
+	}
+	if archivo.Sheets[0].Rows[3].Cells[entradasIndex["Cuenta"]].String() != "151002" {
+		t.Fatalf("cuenta débito de la segunda agrupación inesperada: %q", archivo.Sheets[0].Rows[3].Cells[entradasIndex["Cuenta"]].String())
+	}
+	if archivo.Sheets[0].Rows[4].Cells[entradasIndex["Cuenta"]].String() != "240802" {
+		t.Fatalf("cuenta crédito de la segunda agrupación inesperada: %q", archivo.Sheets[0].Rows[4].Cells[entradasIndex["Cuenta"]].String())
 	}
 
 	salidasIndex := buildHeaderIndex(archivo.Sheets[1].Rows[0])
-	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Renglón"]].String() != "1" {
-		t.Fatalf("primer renglón de salida inesperado")
+	if len(archivo.Sheets[1].Rows) != 3 {
+		t.Fatalf("la hoja salidas debe tener encabezado y 2 filas de datos, tiene %d filas", len(archivo.Sheets[1].Rows))
 	}
-	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Renglón"]].String() != "2" {
-		t.Fatalf("segundo renglón de salida inesperado")
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Cuenta"]].String() != "51111401" {
+		t.Fatalf("cuenta débito salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Cuenta"]].String())
 	}
-	if archivo.Sheets[1].Rows[3].Cells[salidasIndex["Renglón"]].String() != "1" {
-		t.Fatalf("el renglón debe reiniciarse por salida")
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Naturaleza"]].String() != "Debito" {
+		t.Fatalf("naturaleza débito salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Naturaleza"]].String())
 	}
-	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Salida"]].String() != "H21-00001-2026" {
-		t.Fatalf("documento salida inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Salida"]].String())
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Consecutivo"]].String() != "H21-00001-2026" {
+		t.Fatalf("consecutivo salida inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Consecutivo"]].String())
 	}
-	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Descripción"]].String() != "Observación salida contable" {
-		t.Fatalf("descripción salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Descripción"]].String())
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Clase"]].String() != "Subgrupo Uno" {
+		t.Fatalf("clase salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Clase"]].String())
 	}
-	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Entrada"]].String() != "P8-00001-2026" {
-		t.Fatalf("documento entrada asociado inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Documento_Entrada"]].String())
+	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta"]].String() != "15142401" {
+		t.Fatalf("cuenta crédito salida inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta"]].String())
 	}
-	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza_Cuenta"]].String() != "C" {
-		t.Fatalf("naturaleza cuenta inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza_Cuenta"]].String())
-	}
-	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Cuenta_Contable"]].String() != "51111401" {
-		t.Fatalf("cuenta débito salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Cuenta_Contable"]].String())
-	}
-	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta_Contable"]].String() != "15142401" {
-		t.Fatalf("cuenta crédito salida inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta_Contable"]].String())
-	}
-	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Identificación_Tercero"]].String() != "900866324" {
-		t.Fatalf("fallback de tercero inesperado: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Identificación_Tercero"]].String())
+	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza"]].String() != "Credito" {
+		t.Fatalf("naturaleza crédito salida inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Naturaleza"]].String())
 	}
 }
 
-func TestGenerarReporteContabilizacionOmiteDocumentoSinTransaccion(t *testing.T) {
-	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionEntradaData{
-		{
-			Movimiento:          &models.Movimiento{Consecutivo: stringPtr("P8-00003-2026")},
-			TransaccionContable: nil,
-		},
+func TestGenerarReporteContabilizacionOmiteDocumentoSinCuentas(t *testing.T) {
+	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionGrupo{
+		{Consecutivo: "P8-00003-2026", SubgrupoNombre: "Sin cuentas", ValorTotal: 1000},
 	})
-	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionSalidaData{
-		{
-			Movimiento: &models.Movimiento{Consecutivo: stringPtr("H21-00003-2026")},
-			TransaccionContable: &models.InfoTransaccionContable{
-				Movimientos: []*models.DetalleMovimientoContable{},
-			},
-		},
+	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionGrupo{
+		{Consecutivo: "H21-00003-2026", SubgrupoNombre: "Sin cuentas", ValorTotal: 500},
 	})
 
 	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
@@ -1015,16 +970,6 @@ func TestGenerarReporteContabilizacionOmiteDocumentoSinTransaccion(t *testing.T)
 	}
 	if len(archivo.Sheets[1].Rows) != 1 {
 		t.Fatalf("la hoja salidas solo debe contener encabezados, tiene %d filas", len(archivo.Sheets[1].Rows))
-	}
-}
-
-func TestSplitTerceroLabel(t *testing.T) {
-	identificacion, nombre := splitTerceroLabel("900866324 - GESTION Y ESTUDIOS AMBIENTALES")
-	if identificacion != "900866324" {
-		t.Fatalf("identificación inesperada: %q", identificacion)
-	}
-	if nombre != "GESTION Y ESTUDIOS AMBIENTALES" {
-		t.Fatalf("nombre inesperado: %q", nombre)
 	}
 }
 
@@ -1067,44 +1012,6 @@ func mockConsultarSalidasAnuladasReporteData(t *testing.T, salidas []*salidaRepo
 	})
 }
 
-func TestCuentaDesdeDetalleA11MultiplesCuentas(t *testing.T) {
-	if cuenta := cuentaDesdeDetalleA11("D", []string{"151001", "151002"}, nil, 0, 0); cuenta != "151001" {
-		t.Fatalf("cuenta débito índice 0 inesperada: %q", cuenta)
-	}
-	if cuenta := cuentaDesdeDetalleA11("D", []string{"151001", "151002"}, nil, 1, 0); cuenta != "151002" {
-		t.Fatalf("cuenta débito índice 1 inesperada: %q", cuenta)
-	}
-	if cuenta := cuentaDesdeDetalleA11("C", nil, []string{"240801", "240802"}, 0, 1); cuenta != "240802" {
-		t.Fatalf("cuenta crédito índice 1 inesperada: %q", cuenta)
-	}
-}
-
-func mockConsultarEntradasContabilizacionReporteData(t *testing.T, entradas []*reporteContabilizacionEntradaData) {
-	t.Helper()
-
-	original := consultarEntradasContabilizacionReporteData
-	consultarEntradasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionEntradaData, map[string]interface{}) {
-		return entradas, nil
-	}
-
-	t.Cleanup(func() {
-		consultarEntradasContabilizacionReporteData = original
-	})
-}
-
-func mockConsultarSalidasContabilizacionReporteData(t *testing.T, salidas []*reporteContabilizacionSalidaData) {
-	t.Helper()
-
-	original := consultarSalidasContabilizacionReporteData
-	consultarSalidasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionSalidaData, map[string]interface{}) {
-		return salidas, nil
-	}
-
-	t.Cleanup(func() {
-		consultarSalidasContabilizacionReporteData = original
-	})
-}
-
 func mockConsultarMovimientoPorConsecutivo(t *testing.T, movimiento *models.Movimiento) {
 	t.Helper()
 
@@ -1115,6 +1022,50 @@ func mockConsultarMovimientoPorConsecutivo(t *testing.T, movimiento *models.Movi
 
 	t.Cleanup(func() {
 		consultarMovimientoPorConsec = original
+	})
+}
+
+func TestExpandirFilasReporteContabilizacionSoloCuentaDisponible(t *testing.T) {
+	rows := expandirFilasReporteContabilizacion([]*reporteContabilizacionGrupo{
+		{
+			Consecutivo:    "MOV-2",
+			SubgrupoNombre: "Solo débito",
+			ValorTotal:     1500,
+			CuentaDebito:   "151003",
+		},
+	})
+
+	if len(rows) != 1 {
+		t.Fatalf("se esperaba 1 fila, se obtuvieron %d", len(rows))
+	}
+	if rows[0].Cuenta != "151003" || rows[0].Naturaleza != "Debito" {
+		t.Fatalf("fila inesperada: %+v", rows[0])
+	}
+}
+
+func mockConsultarEntradasContabilizacionReporteData(t *testing.T, entradas []*reporteContabilizacionGrupo) {
+	t.Helper()
+
+	original := consultarEntradasContabilizacionReporteData
+	consultarEntradasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionGrupo, map[string]interface{}) {
+		return entradas, nil
+	}
+
+	t.Cleanup(func() {
+		consultarEntradasContabilizacionReporteData = original
+	})
+}
+
+func mockConsultarSalidasContabilizacionReporteData(t *testing.T, salidas []*reporteContabilizacionGrupo) {
+	t.Helper()
+
+	original := consultarSalidasContabilizacionReporteData
+	consultarSalidasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionGrupo, map[string]interface{}) {
+		return salidas, nil
+	}
+
+	t.Cleanup(func() {
+		consultarSalidasContabilizacionReporteData = original
 	})
 }
 
@@ -1131,6 +1082,19 @@ func mockConsultarTrSalida(t *testing.T, trSalida *models.TrSalida) {
 	})
 }
 
+func mockConsultarCentroCostos(t *testing.T, centros []models.CentroCostos) {
+	t.Helper()
+
+	original := consultarCentroCostosFn
+	consultarCentroCostosFn = func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		return centros, nil
+	}
+
+	t.Cleanup(func() {
+		consultarCentroCostosFn = original
+	})
+}
+
 func mockConsultarElementosActa(t *testing.T, elementos []*models.DetalleElemento) {
 	t.Helper()
 
@@ -1141,22 +1105,6 @@ func mockConsultarElementosActa(t *testing.T, elementos []*models.DetalleElement
 
 	t.Cleanup(func() {
 		consultarElementosActa = original
-	})
-}
-
-func mockConsultarCentroCostos(t *testing.T, centros []models.CentroCostos) {
-	t.Helper()
-
-	original := consultarCentroCostosFn
-	consultarCentroCostosFn = func(payload string) ([]models.CentroCostos, map[string]interface{}) {
-		if payload != "query=Id:422" {
-			t.Fatalf("unexpected centro costos payload: %s", payload)
-		}
-		return centros, nil
-	}
-
-	t.Cleanup(func() {
-		consultarCentroCostosFn = original
 	})
 }
 
