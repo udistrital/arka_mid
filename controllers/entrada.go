@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -57,6 +59,7 @@ func (c *EntradaController) Post() {
 			logs.Error("Error en entradaHelper.AprobarEntrada(%d): %v", entradaId, err)
 			panic(err)
 		}
+		panicOnResultadoMovimientoError("Post - entradaHelper.AprobarEntrada", res)
 
 		logs.Info("Aprobación exitosa. Respuesta: %+v", res)
 		c.Data["json"] = res
@@ -89,6 +92,7 @@ func (c *EntradaController) Post() {
 				logs.Error("Payload usado para update: %+v", v)
 				panic(err)
 			}
+			panicOnResultadoMovimientoError("Post - entradaHelper.UpdateEntrada", entrada)
 
 			logs.Info("Update exitoso. Respuesta: %+v", entrada)
 
@@ -100,6 +104,7 @@ func (c *EntradaController) Post() {
 				logs.Error("Payload usado para registro: %+v", v)
 				panic(err)
 			}
+			panicOnResultadoMovimientoError("Post - entradaHelper.RegistrarEntrada", entrada)
 
 			logs.Info("Registro exitoso. Respuesta: %+v", entrada)
 		}
@@ -130,11 +135,14 @@ func (c *EntradaController) PostHistorico() {
 	defer errorCtrl.ErrorControlController(c.Controller, "EntradaController")
 
 	var payload models.TransaccionEntradaHistorica
-	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &payload); err != nil {
+	if err := decodeEntradaHistoricaRequest(c.Ctx.Input.RequestBody, &payload); err != nil {
 		panic(map[string]interface{}{
-			"funcion": "PostHistorico - utilsHelper.Unmarshal(RequestBody, &payload)",
-			"err":     err,
-			"status":  "400",
+			"funcion": "PostHistorico - decodeEntradaHistoricaRequest(c.Ctx.Input.RequestBody, &payload)",
+			"err": map[string]interface{}{
+				"paso":    "decodificar payload histórico",
+				"detalle": err.Error(),
+			},
+			"status": "400",
 		})
 	}
 
@@ -142,9 +150,88 @@ func (c *EntradaController) PostHistorico() {
 	if err := entradaHelper.RegistrarEntradaHistorica(&payload, &resultado); err != nil {
 		panic(err)
 	}
+	panicOnResultadoMovimientoError("PostHistorico - entradaHelper.RegistrarEntradaHistorica", resultado)
 
 	c.Data["json"] = resultado
 	c.ServeJSON()
+}
+
+func panicOnResultadoMovimientoError(funcion string, resultado models.ResultadoMovimiento) {
+	if strings.TrimSpace(resultado.Error) == "" {
+		return
+	}
+
+	panic(errorCtrl.Error(funcion, errors.New(resultado.Error), "400"))
+}
+
+func decodeEntradaHistoricaRequest(body []byte, payload *models.TransaccionEntradaHistorica) error {
+	if payload == nil {
+		return errors.New("destino de entrada histórica nil")
+	}
+
+	if err := json.Unmarshal(body, payload); err != nil {
+		return err
+	}
+
+	if payload.ConsecutivoId > 0 && !payload.FechaCreacion.IsZero() && !payload.FechaCorte.IsZero() {
+		return nil
+	}
+
+	var alternate struct {
+		models.TransaccionEntrada
+		ConsecutivoId     int       `json:"ConsecutivoId"`
+		Year              int       `json:"Year"`
+		FechaCreacion     time.Time `json:"FechaCreacion"`
+		FechaModificacion time.Time `json:"FechaModificacion"`
+		FechaCorte        time.Time `json:"FechaCorte"`
+	}
+
+	if err := json.Unmarshal(body, &alternate); err != nil {
+		return err
+	}
+
+	if payload.Observacion == "" {
+		payload.Observacion = alternate.Observacion
+	}
+	if payload.FormatoTipoMovimientoId == "" {
+		payload.FormatoTipoMovimientoId = alternate.FormatoTipoMovimientoId
+	}
+	if payload.SoporteMovimientoId == 0 {
+		payload.SoporteMovimientoId = alternate.SoporteMovimientoId
+	}
+	if isZeroFormatoBaseEntrada(payload.Detalle) {
+		payload.Detalle = alternate.Detalle
+	}
+	if payload.ConsecutivoId == 0 {
+		payload.ConsecutivoId = alternate.ConsecutivoId
+	}
+	if payload.Year == 0 {
+		payload.Year = alternate.Year
+	}
+	if payload.FechaCreacion.IsZero() {
+		payload.FechaCreacion = alternate.FechaCreacion
+	}
+	if payload.FechaModificacion.IsZero() {
+		payload.FechaModificacion = alternate.FechaModificacion
+	}
+	if payload.FechaCorte.IsZero() {
+		payload.FechaCorte = alternate.FechaCorte
+	}
+
+	return nil
+}
+
+func isZeroFormatoBaseEntrada(detalle models.FormatoBaseEntrada) bool {
+	return detalle.ActaRecibidoId == 0 &&
+		detalle.ContratoId == 0 &&
+		detalle.Divisa == "" &&
+		detalle.Factura == 0 &&
+		detalle.OrdenadorGastoId == 0 &&
+		len(detalle.Elementos) == 0 &&
+		detalle.RegistroImportacion == "" &&
+		detalle.SupervisorId == 0 &&
+		detalle.TRM == 0 &&
+		detalle.VigenciaContrato == ""
 }
 
 // GetOne ...

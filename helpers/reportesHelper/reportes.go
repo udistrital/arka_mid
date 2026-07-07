@@ -1783,7 +1783,7 @@ func salidaUbicacionInfo(movimiento *models.Movimiento) (centroCostoNombre, cent
 	if formato, ok := formatoEntradaPadreSalida(movimiento); ok {
 		if codigo, nombre, outputError := centroCostoEntradaA11Info(formato); outputError == nil {
 			if nombre != "" || codigo != "" {
-				return nombre, codigo
+				return nombre, normalizarCodigoCentroCostoReporte(codigo)
 			}
 		}
 	}
@@ -1799,7 +1799,7 @@ func salidaUbicacionInfo(movimiento *models.Movimiento) (centroCostoNombre, cent
 
 	if centrosCostos, outputError := consultarCentroCostosFn("query=Id:" + detalle.CentroCostos); outputError == nil && len(centrosCostos) > 0 {
 		centroCostoNombre = centrosCostos[0].Nombre
-		centroCostoCodigo = centrosCostos[0].Codigo
+		centroCostoCodigo = normalizarCodigoCentroCostoReporte(centrosCostos[0].Codigo)
 	}
 
 	return centroCostoNombre, centroCostoCodigo
@@ -1824,6 +1824,17 @@ func formatoEntradaPadreSalida(movimiento *models.Movimiento) (formato models.Fo
 		return models.FormatoBaseEntrada{}, false
 	}
 	return formato, true
+}
+
+func normalizarCodigoCentroCostoReporte(codigo string) string {
+	codigo = strings.TrimSpace(codigo)
+	if codigo == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.ToUpper(codigo), "A") {
+		return codigo
+	}
+	return "A" + codigo
 }
 
 func subgrupoInfo(elemento *models.DetalleElemento) (id int, codigo, nombre string) {
