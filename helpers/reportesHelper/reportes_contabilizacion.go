@@ -26,16 +26,18 @@ const (
 )
 
 type reporteContabilizacionGrupo struct {
-	TipoMovimientoID int
-	Consecutivo      string
-	Fecha            time.Time
-	Observacion      string
-	ActaID           int
-	SubgrupoID       int
-	SubgrupoNombre   string
-	ValorTotal       float64
-	CuentaDebito     string
-	CuentaCredito    string
+	TipoMovimientoID  int
+	Consecutivo       string
+	Fecha             time.Time
+	Observacion       string
+	ActaID            int
+	CentroCostoNombre string
+	CentroCostoCodigo string
+	SubgrupoID        int
+	SubgrupoNombre    string
+	ValorTotal        float64
+	CuentaDebito      string
+	CuentaCredito     string
 }
 
 type reporteContabilizacionCuentaCache struct {
@@ -46,13 +48,15 @@ type reporteContabilizacionCuentaCache struct {
 }
 
 type reporteContabilizacionRow struct {
-	Cuenta      string
-	Naturaleza  string
-	Consecutivo string
-	Fecha       time.Time
-	Observacion string
-	Valor       float64
-	Clase       string
+	Cuenta            string
+	Naturaleza        string
+	Consecutivo       string
+	Fecha             time.Time
+	Observacion       string
+	Valor             float64
+	Clase             string
+	CentroCostoNombre string
+	CentroCostoCodigo string
 }
 
 var (
@@ -64,6 +68,8 @@ var (
 		"Observacion",
 		"Valor",
 		"Clase",
+		"CentroCostoNombre",
+		"CentroCostoCodigo",
 	}
 
 	consultarEntradasContabilizacionReporteData = consultarEntradasContabilizacionReporteDataDefault
@@ -187,9 +193,16 @@ func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal
 			return nil, outputError
 		}
 
+		centroCostoNombre, centroCostoCodigo, outputError := centroCostoContabilizacionEntradaInfo(formato)
+		if outputError != nil {
+			return nil, outputError
+		}
+
 		agrupados := agruparElementosContabilizacion(
 			movimiento,
 			formato.ActaRecibidoId,
+			centroCostoNombre,
+			centroCostoCodigo,
 			elementos,
 			cuentasPorMovimientoYSubgrupo[movimientoTipoID(movimiento)],
 		)
@@ -252,9 +265,13 @@ func consultarSalidasContabilizacionReporteDataDefault(fechaInicial, fechaFinal 
 			return nil, outputError
 		}
 
+		centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(trSalida.Salida)
+
 		agrupados := agruparElementosContabilizacion(
 			trSalida.Salida,
 			actaID,
+			centroCostoNombre,
+			centroCostoCodigo,
 			elementos,
 			cuentasPorMovimientoYSubgrupo[movimientoTipoID(trSalida.Salida)],
 		)
@@ -460,9 +477,20 @@ func entradaPadreYActaIDSalida(movimiento *models.Movimiento) (entradaPadre *mod
 	return entradaPadre, formato.ActaRecibidoId, nil
 }
 
+func centroCostoContabilizacionEntradaInfo(formato models.FormatoBaseEntrada) (nombre, codigo string, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("centroCostoContabilizacionEntradaInfo - Unhandled Error!", "500")
+
+	codigoRaw, nombre, outputError := centroCostoEntradaA11Info(formato)
+	if outputError != nil {
+		return "", "", outputError
+	}
+	return nombre, normalizarCodigoCentroCostoReporte(codigoRaw), nil
+}
+
 func agruparElementosContabilizacion(
 	movimiento *models.Movimiento,
 	actaID int,
+	centroCostoNombre, centroCostoCodigo string,
 	elementos []*models.DetalleElemento,
 	cuentasPorSubgrupo map[int]reporteContabilizacionCuentaCache,
 ) []*reporteContabilizacionGrupo {
@@ -501,14 +529,16 @@ func agruparElementosContabilizacion(
 		}
 
 		grupo := &reporteContabilizacionGrupo{
-			TipoMovimientoID: movimientoTipoID(movimiento),
-			Consecutivo:      stringPtrValue(movimiento.Consecutivo),
-			Fecha:            movimiento.FechaCreacion,
-			Observacion:      strings.TrimSpace(movimiento.Observacion),
-			ActaID:           actaID,
-			SubgrupoID:       subgrupoID,
-			SubgrupoNombre:   acum.nombre,
-			ValorTotal:       roundToTwoDecimals(acum.valor),
+			TipoMovimientoID:  movimientoTipoID(movimiento),
+			Consecutivo:       stringPtrValue(movimiento.Consecutivo),
+			Fecha:             movimiento.FechaCreacion,
+			Observacion:       strings.TrimSpace(movimiento.Observacion),
+			ActaID:            actaID,
+			CentroCostoNombre: centroCostoNombre,
+			CentroCostoCodigo: centroCostoCodigo,
+			SubgrupoID:        subgrupoID,
+			SubgrupoNombre:    acum.nombre,
+			ValorTotal:        roundToTwoDecimals(acum.valor),
 		}
 
 		if cuentas, ok := cuentasPorSubgrupo[subgrupoID]; ok {
@@ -538,24 +568,28 @@ func expandirFilasReporteContabilizacion(grupos []*reporteContabilizacionGrupo) 
 
 		if strings.TrimSpace(grupo.CuentaDebito) != "" {
 			rows = append(rows, &reporteContabilizacionRow{
-				Cuenta:      strings.TrimSpace(grupo.CuentaDebito),
-				Naturaleza:  "Debito",
-				Consecutivo: grupo.Consecutivo,
-				Fecha:       grupo.Fecha,
-				Observacion: grupo.Observacion,
-				Valor:       grupo.ValorTotal,
-				Clase:       grupo.SubgrupoNombre,
+				Cuenta:            strings.TrimSpace(grupo.CuentaDebito),
+				Naturaleza:        "Debito",
+				Consecutivo:       grupo.Consecutivo,
+				Fecha:             grupo.Fecha,
+				Observacion:       grupo.Observacion,
+				Valor:             grupo.ValorTotal,
+				Clase:             grupo.SubgrupoNombre,
+				CentroCostoNombre: grupo.CentroCostoNombre,
+				CentroCostoCodigo: grupo.CentroCostoCodigo,
 			})
 		}
 		if strings.TrimSpace(grupo.CuentaCredito) != "" {
 			rows = append(rows, &reporteContabilizacionRow{
-				Cuenta:      strings.TrimSpace(grupo.CuentaCredito),
-				Naturaleza:  "Credito",
-				Consecutivo: grupo.Consecutivo,
-				Fecha:       grupo.Fecha,
-				Observacion: grupo.Observacion,
-				Valor:       grupo.ValorTotal,
-				Clase:       grupo.SubgrupoNombre,
+				Cuenta:            strings.TrimSpace(grupo.CuentaCredito),
+				Naturaleza:        "Credito",
+				Consecutivo:       grupo.Consecutivo,
+				Fecha:             grupo.Fecha,
+				Observacion:       grupo.Observacion,
+				Valor:             grupo.ValorTotal,
+				Clase:             grupo.SubgrupoNombre,
+				CentroCostoNombre: grupo.CentroCostoNombre,
+				CentroCostoCodigo: grupo.CentroCostoCodigo,
 			})
 		}
 	}
@@ -582,6 +616,8 @@ func addReporteContabilizacionRow(hoja *xlsx.Sheet, rowData *reporteContabilizac
 	addStringCell(row, rowData.Observacion)
 	addDecimalCell(row, rowData.Valor)
 	addStringCell(row, rowData.Clase)
+	addStringCell(row, rowData.CentroCostoNombre)
+	addStringCell(row, rowData.CentroCostoCodigo)
 }
 
 func setReporteContabilizacionColumnWidths(hoja *xlsx.Sheet) {
@@ -592,6 +628,8 @@ func setReporteContabilizacionColumnWidths(hoja *xlsx.Sheet) {
 	_ = hoja.SetColWidth(4, 4, 42)
 	_ = hoja.SetColWidth(5, 5, 16)
 	_ = hoja.SetColWidth(6, 6, 28)
+	_ = hoja.SetColWidth(7, 7, 32)
+	_ = hoja.SetColWidth(8, 8, 20)
 }
 
 func addDateCell(row *xlsx.Row, value time.Time) {

@@ -806,39 +806,45 @@ func TestExpandirFilasReporteContabilizacionDuplicaDebitoYCredito(t *testing.T) 
 func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	mockConsultarEntradasContabilizacionReporteData(t, []*reporteContabilizacionGrupo{
 		{
-			Consecutivo:    "P8-00001-2026",
-			Fecha:          time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
-			Observacion:    "Observación entrada contable",
-			ActaID:         555,
-			SubgrupoID:     1,
-			SubgrupoNombre: "Subgrupo Uno",
-			ValorTotal:     1000,
-			CuentaDebito:   "151001",
-			CuentaCredito:  "240801",
+			Consecutivo:       "P8-00001-2026",
+			Fecha:             time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
+			Observacion:       "Observación entrada contable",
+			ActaID:            555,
+			CentroCostoNombre: "Oficina Asesora de Planeación",
+			CentroCostoCodigo: "A1205",
+			SubgrupoID:        1,
+			SubgrupoNombre:    "Subgrupo Uno",
+			ValorTotal:        1000,
+			CuentaDebito:      "151001",
+			CuentaCredito:     "240801",
 		},
 		{
-			Consecutivo:    "P8-00001-2026",
-			Fecha:          time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
-			Observacion:    "Observación entrada contable",
-			ActaID:         555,
-			SubgrupoID:     2,
-			SubgrupoNombre: "Subgrupo Dos",
-			ValorTotal:     2500,
-			CuentaDebito:   "151002",
-			CuentaCredito:  "240802",
+			Consecutivo:       "P8-00001-2026",
+			Fecha:             time.Date(2026, 6, 5, 9, 0, 0, 0, time.UTC),
+			Observacion:       "Observación entrada contable",
+			ActaID:            555,
+			CentroCostoNombre: "Oficina Asesora de Planeación",
+			CentroCostoCodigo: "A1205",
+			SubgrupoID:        2,
+			SubgrupoNombre:    "Subgrupo Dos",
+			ValorTotal:        2500,
+			CuentaDebito:      "151002",
+			CuentaCredito:     "240802",
 		},
 	})
 	mockConsultarSalidasContabilizacionReporteData(t, []*reporteContabilizacionGrupo{
 		{
-			Consecutivo:    "H21-00001-2026",
-			Fecha:          time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
-			Observacion:    "Observación salida contable",
-			ActaID:         555,
-			SubgrupoID:     1,
-			SubgrupoNombre: "Subgrupo Uno",
-			ValorTotal:     300,
-			CuentaDebito:   "51111401",
-			CuentaCredito:  "15142401",
+			Consecutivo:       "H21-00001-2026",
+			Fecha:             time.Date(2026, 6, 6, 11, 0, 0, 0, time.UTC),
+			Observacion:       "Observación salida contable",
+			ActaID:            555,
+			CentroCostoNombre: "Dependencia Dos",
+			CentroCostoCodigo: "A1302",
+			SubgrupoID:        1,
+			SubgrupoNombre:    "Subgrupo Uno",
+			ValorTotal:        300,
+			CuentaDebito:      "51111401",
+			CuentaCredito:     "15142401",
 		},
 	})
 
@@ -871,10 +877,10 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 
 	headerRow := archivo.Sheets[0].Rows[0]
-	if len(headerRow.Cells) != 7 {
-		t.Fatalf("se esperaban 7 encabezados, se obtuvieron %d", len(headerRow.Cells))
+	if len(headerRow.Cells) != 9 {
+		t.Fatalf("se esperaban 9 encabezados, se obtuvieron %d", len(headerRow.Cells))
 	}
-	if headerRow.Cells[0].String() != "Cuenta" || headerRow.Cells[6].String() != "Clase" {
+	if headerRow.Cells[0].String() != "Cuenta" || headerRow.Cells[8].String() != "CentroCostoCodigo" {
 		t.Fatalf("encabezados del reporte contable inesperados")
 	}
 
@@ -901,6 +907,12 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 	if entradaFila1.Cells[entradasIndex["Clase"]].String() != "Subgrupo Uno" {
 		t.Fatalf("clase entrada inesperada: %q", entradaFila1.Cells[entradasIndex["Clase"]].String())
+	}
+	if entradaFila1.Cells[entradasIndex["CentroCostoNombre"]].String() != "Oficina Asesora de Planeación" {
+		t.Fatalf("centro de costo nombre entrada inesperado: %q", entradaFila1.Cells[entradasIndex["CentroCostoNombre"]].String())
+	}
+	if entradaFila1.Cells[entradasIndex["CentroCostoCodigo"]].String() != "A1205" {
+		t.Fatalf("centro de costo código entrada inesperado: %q", entradaFila1.Cells[entradasIndex["CentroCostoCodigo"]].String())
 	}
 	if entradaFila1.Cells[entradasIndex["Fecha"]].GetNumberFormat() != a11DateNumFmt {
 		t.Fatalf("formato fecha inesperado: %q", entradaFila1.Cells[entradasIndex["Fecha"]].GetNumberFormat())
@@ -930,6 +942,12 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 	}
 	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["Clase"]].String() != "Subgrupo Uno" {
 		t.Fatalf("clase salida inesperada: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["Clase"]].String())
+	}
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["CentroCostoNombre"]].String() != "Dependencia Dos" {
+		t.Fatalf("centro de costo nombre salida inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["CentroCostoNombre"]].String())
+	}
+	if archivo.Sheets[1].Rows[1].Cells[salidasIndex["CentroCostoCodigo"]].String() != "A1302" {
+		t.Fatalf("centro de costo código salida inesperado: %q", archivo.Sheets[1].Rows[1].Cells[salidasIndex["CentroCostoCodigo"]].String())
 	}
 	if archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta"]].String() != "15142401" {
 		t.Fatalf("cuenta crédito salida inesperada: %q", archivo.Sheets[1].Rows[2].Cells[salidasIndex["Cuenta"]].String())
