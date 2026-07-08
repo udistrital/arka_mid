@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/beego/beego/v2/core/logs"
 	"github.com/tealeg/xlsx"
 	crudActaRecibido "github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
+	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
@@ -24,79 +25,56 @@ const (
 	a11DateNumFmt                    = "dd/mm/yyyy"
 )
 
-type reporteContabilizacionEntradaData struct {
-	Movimiento          *models.Movimiento
-	TransaccionContable *models.InfoTransaccionContable
-	ProveedorLabel      string
-	FacturaConsecutivo  string
-	CentroCostoCodigo   string
-	CentroCostoNombre   string
-	CuentasPorSubgrupo  map[int]models.CuentasSubgrupo
-	Subgrupos           []int
-	CuentasDebitoA11    []string
-	CuentasCreditoA11   []string
+type reporteContabilizacionGrupo struct {
+	TipoMovimientoID  int
+	Consecutivo       string
+	Fecha             time.Time
+	Observacion       string
+	ActaID            int
+	CentroCostoNombre string
+	CentroCostoCodigo string
+	SubgrupoID        int
+	SubgrupoNombre    string
+	ValorTotal        float64
+	CuentaDebito      string
+	CuentaCredito     string
 }
 
-type reporteContabilizacionSalidaData struct {
-	Movimiento          *models.Movimiento
-	EntradaPadre        *models.Movimiento
-	TransaccionContable *models.InfoTransaccionContable
-	ProveedorLabel      string
-	FacturaConsecutivo  string
-	CentroCostoCodigo   string
-	CentroCostoNombre   string
-	CuentasDebitoA11    []string
-	CuentasCreditoA11   []string
+type reporteContabilizacionCuentaCache struct {
+	CuentaDebitoID  string
+	CuentaCreditoID string
+	CuentaDebito    string
+	CuentaCredito   string
 }
 
-type reporteA11ContabilizacionRow struct {
-	Renglon                int
-	CuentaContable         string
-	NaturalezaCuenta       string
-	Descripcion            string
-	Valor                  float64
-	IdentificacionTercero  string
-	NombreTercero          string
-	CentroCosto            string
-	DescripcionCentroCosto string
-	Proyecto               string
-	DescripcionProyecto    string
-	ClaseDocumentoLinea    string
-	DocumentoSalida        string
-	FechaDocumento         time.Time
-	DocumentoEntrada       string
-	Factura                string
-	Vigencia               string
-	JefeAlmacen            string
+type reporteContabilizacionRow struct {
+	Cuenta            string
+	Naturaleza        string
+	Consecutivo       string
+	Fecha             time.Time
+	Observacion       string
+	Valor             float64
+	Clase             string
+	CentroCostoNombre string
+	CentroCostoCodigo string
 }
 
 var (
-	reporteA11Headers = []string{
-		"Renglón",
-		"Cuenta_Contable",
-		"Naturaleza_Cuenta",
-		"Descripción",
+	reporteContabilizacionHeaders = []string{
+		"Cuenta",
+		"Naturaleza",
+		"Consecutivo",
+		"Fecha",
+		"Observacion",
 		"Valor",
-		"Identificación_Tercero",
-		"Nombre_Tercero",
-		"Centro_Costo",
-		"Descripción_Centro_Costo",
-		"Proyecto",
-		"Descripción_Proyecto",
-		"Clase_Documento",
-		"Documento_Salida",
-		"Fecha_Documento",
-		"Documento_Entrada",
-		"Factura",
-		"Vigencia",
-		"Jefe_Almacén",
+		"Clase",
+		"CentroCostoNombre",
+		"CentroCostoCodigo",
 	}
 
 	consultarEntradasContabilizacionReporteData = consultarEntradasContabilizacionReporteDataDefault
 	consultarSalidasContabilizacionReporteData  = consultarSalidasContabilizacionReporteDataDefault
 	consultarHistoricosActaReporteFn            = crudActaRecibido.GetAllHistoricoActa
-	getDetalleCuentasEntradaA11Fn               = GetDetalleCuentasEntradaPorConsecutivo
-	getDetalleCuentasSalidaA11Fn                = GetDetalleCuentasSalidaPorConsecutivo
 )
 
 func GenerarReporteContabilizacion(req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
@@ -141,18 +119,18 @@ func GenerarReporteContabilizacion(req *models.ReporteFechasRequest) (respuesta 
 		return nil, errorCtrl.Error("GenerarReporteContabilizacion - archivo.AddSheet(Salidas)", err, "500")
 	}
 
-	addReporteA11Headers(hojaEntradas)
-	addReporteA11Headers(hojaSalidas)
+	addReporteContabilizacionHeaders(hojaEntradas)
+	addReporteContabilizacionHeaders(hojaSalidas)
 
-	for _, row := range construirFilasReporteA11Entradas(entradas) {
-		addReporteA11Row(hojaEntradas, row)
+	for _, row := range expandirFilasReporteContabilizacion(entradas) {
+		addReporteContabilizacionRow(hojaEntradas, row)
 	}
-	for _, row := range construirFilasReporteA11Salidas(salidas) {
-		addReporteA11Row(hojaSalidas, row)
+	for _, row := range expandirFilasReporteContabilizacion(salidas) {
+		addReporteContabilizacionRow(hojaSalidas, row)
 	}
 
-	setA11ColumnWidths(hojaEntradas)
-	setA11ColumnWidths(hojaSalidas)
+	setReporteContabilizacionColumnWidths(hojaEntradas)
+	setReporteContabilizacionColumnWidths(hojaSalidas)
 
 	var buffer bytes.Buffer
 	if err := archivo.Write(&buffer); err != nil {
@@ -166,54 +144,75 @@ func GenerarReporteContabilizacion(req *models.ReporteFechasRequest) (respuesta 
 	}, nil
 }
 
-func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal time.Time) (entradas []*reporteContabilizacionEntradaData, outputError map[string]interface{}) {
+func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal time.Time) (entradas []*reporteContabilizacionGrupo, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarEntradasContabilizacionReporteDataDefault - Unhandled Error!", "500")
 
-	entradasBase, outputError := consultarEntradasReporteDataDefault(fechaInicial, fechaFinal)
+	codigosEntrada, outputError := consultarCodigosEntrada()
+	if outputError != nil {
+		return nil, outputError
+	}
+	if len(codigosEntrada) == 0 {
+		return []*reporteContabilizacionGrupo{}, nil
+	}
+
+	formatosEntrada, outputError := consultarFormatosPorCodigos(codigosEntrada)
 	if outputError != nil {
 		return nil, outputError
 	}
 
-	entradas = make([]*reporteContabilizacionEntradaData, 0, len(entradasBase))
-	for _, entrada := range entradasBase {
-		if entrada == nil || entrada.Movimiento == nil {
-			continue
-		}
-		if !movimientoTieneEstado(entrada.Movimiento, "Entrada Aprobada", "Entrada Con Salida") {
-			continue
-		}
-		if !entradaTieneSalidas(entrada) {
-			continue
-		}
-		if entrada.TransaccionContable == nil || len(entrada.TransaccionContable.Movimientos) == 0 {
+	cuentasPorMovimientoYSubgrupo, outputError := consultarCuentasContabilizacionPorMovimiento(formatosEntrada)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	movimientos, outputError := consultarMovimientosContabilizacionPorFechaYEstado(fechaInicial, fechaFinal, codigosEntrada, "Entrada Con Salida")
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	entradas = make([]*reporteContabilizacionGrupo, 0)
+	for _, movimiento := range movimientos {
+		if movimiento == nil || movimiento.Id <= 0 {
 			continue
 		}
 
-		validarCuadreTransaccionA11("entrada", stringPtrValue(entrada.Movimiento.Consecutivo), entrada.TransaccionContable)
+		var formato models.FormatoBaseEntrada
+		if strings.TrimSpace(movimiento.Detalle) != "" {
+			if outputError = utilsHelper.Unmarshal(movimiento.Detalle, &formato); outputError != nil {
+				return nil, outputError
+			}
+		}
 
-		centroCostoCodigo, centroCostoNombre, outputError := centroCostoEntradaA11Info(entrada.Formato)
+		var elementos []*models.DetalleElemento
+		if formato.ActaRecibidoId > 0 {
+			elementos, outputError = consultarElementosActa(formato.ActaRecibidoId, nil)
+		} else {
+			elementos, outputError = resolverElementosEntrada(formato)
+		}
 		if outputError != nil {
 			return nil, outputError
 		}
 
-		entradas = append(entradas, &reporteContabilizacionEntradaData{
-			Movimiento:          entrada.Movimiento,
-			TransaccionContable: entrada.TransaccionContable,
-			ProveedorLabel:      entrada.Proveedor,
-			FacturaConsecutivo:  strings.TrimSpace(entrada.FacturaConsecutivo),
-			CentroCostoCodigo:   centroCostoCodigo,
-			CentroCostoNombre:   centroCostoNombre,
-			CuentasPorSubgrupo:  entrada.CuentasPorSubgrupo,
-			Subgrupos:           collectSubgrupoIDs(entrada.Elementos),
-			CuentasDebitoA11:    cuentasDetalleEntradaA11(stringPtrValue(entrada.Movimiento.Consecutivo), true),
-			CuentasCreditoA11:   cuentasDetalleEntradaA11(stringPtrValue(entrada.Movimiento.Consecutivo), false),
-		})
+		centroCostoNombre, centroCostoCodigo, outputError := centroCostoContabilizacionEntradaInfo(formato)
+		if outputError != nil {
+			return nil, outputError
+		}
+
+		agrupados := agruparElementosContabilizacion(
+			movimiento,
+			formato.ActaRecibidoId,
+			centroCostoNombre,
+			centroCostoCodigo,
+			elementos,
+			cuentasPorMovimientoYSubgrupo[movimientoTipoID(movimiento)],
+		)
+		entradas = append(entradas, agrupados...)
 	}
 
 	return entradas, nil
 }
 
-func consultarSalidasContabilizacionReporteDataDefault(fechaInicial, fechaFinal time.Time) (salidas []*reporteContabilizacionSalidaData, outputError map[string]interface{}) {
+func consultarSalidasContabilizacionReporteDataDefault(fechaInicial, fechaFinal time.Time) (salidas []*reporteContabilizacionGrupo, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarSalidasContabilizacionReporteDataDefault - Unhandled Error!", "500")
 
 	codigosSalida, outputError := consultarCodigosSalida()
@@ -221,55 +220,73 @@ func consultarSalidasContabilizacionReporteDataDefault(fechaInicial, fechaFinal 
 		return nil, outputError
 	}
 	if len(codigosSalida) == 0 {
-		return []*reporteContabilizacionSalidaData{}, nil
+		return []*reporteContabilizacionGrupo{}, nil
 	}
 
-	movimientos, outputError := consultarSalidasPorFecha(fechaInicial, fechaFinal, codigosSalida)
+	formatosSalida, outputError := consultarFormatosPorCodigos(codigosSalida)
 	if outputError != nil {
 		return nil, outputError
 	}
 
-	salidas = make([]*reporteContabilizacionSalidaData, 0, len(movimientos))
+	cuentasPorMovimientoYSubgrupo, outputError := consultarCuentasContabilizacionPorMovimiento(formatosSalida)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	movimientos, outputError := consultarMovimientosContabilizacionPorFechaYEstado(fechaInicial, fechaFinal, codigosSalida, "Salida Aprobada")
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	salidas = make([]*reporteContabilizacionGrupo, 0)
 	for _, movimiento := range movimientos {
 		if movimiento == nil || movimiento.Id <= 0 {
 			continue
 		}
 
-		transaccion := consultarTransaccionContableSalida(movimiento)
-		if transaccion == nil || len(transaccion.Movimientos) == 0 {
+		trSalida, outputError := consultarTrSalida(movimiento.Id)
+		if outputError != nil {
+			return nil, outputError
+		}
+		if trSalida == nil || trSalida.Salida == nil {
 			continue
 		}
 
-		validarCuadreTransaccionA11("salida", stringPtrValue(movimiento.Consecutivo), transaccion)
+		entradaPadre, actaID, outputError := entradaPadreYActaIDSalida(movimiento)
+		if outputError != nil {
+			return nil, outputError
+		}
+		if entradaPadre != nil {
+			trSalida.Salida.MovimientoPadreId = entradaPadre
+		}
 
-		entradaPadre, proveedorLabel, facturaConsecutivo, outputError := metadataEntradaPadreSalida(movimiento)
+		elementos, outputError := resolverElementosSalida(trSalida)
 		if outputError != nil {
 			return nil, outputError
 		}
 
-		centroCostoCodigo, centroCostoNombre, outputError := centroCostoMovimientoA11Info(movimiento)
-		if outputError != nil {
-			return nil, outputError
-		}
+		centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(trSalida.Salida)
 
-		salidas = append(salidas, &reporteContabilizacionSalidaData{
-			Movimiento:          movimiento,
-			EntradaPadre:        entradaPadre,
-			TransaccionContable: transaccion,
-			ProveedorLabel:      proveedorLabel,
-			FacturaConsecutivo:  strings.TrimSpace(facturaConsecutivo),
-			CentroCostoCodigo:   centroCostoCodigo,
-			CentroCostoNombre:   centroCostoNombre,
-			CuentasDebitoA11:    cuentasDetalleSalidaA11(stringPtrValue(movimiento.Consecutivo), true),
-			CuentasCreditoA11:   cuentasDetalleSalidaA11(stringPtrValue(movimiento.Consecutivo), false),
-		})
+		agrupados := agruparElementosContabilizacion(
+			trSalida.Salida,
+			actaID,
+			centroCostoNombre,
+			centroCostoCodigo,
+			elementos,
+			cuentasPorMovimientoYSubgrupo[movimientoTipoID(trSalida.Salida)],
+		)
+		salidas = append(salidas, agrupados...)
 	}
 
 	return salidas, nil
 }
 
-func consultarSalidasPorFecha(fechaInicial, fechaFinal time.Time, codigosSalida []string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
-	defer errorCtrl.ErrorControlFunction("consultarSalidasPorFecha - Unhandled Error!", "500")
+func consultarMovimientosContabilizacionPorFechaYEstado(fechaInicial, fechaFinal time.Time, codigos []string, estado string) (movimientos []*models.Movimiento, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarMovimientosContabilizacionPorFechaYEstado - Unhandled Error!", "500")
+
+	if len(codigos) == 0 {
+		return []*models.Movimiento{}, nil
+	}
 
 	fechaInicial = time.Date(fechaInicial.Year(), fechaInicial.Month(), fechaInicial.Day(), 0, 0, 0, 0, time.UTC)
 	fechaFinal = time.Date(fechaFinal.Year(), fechaFinal.Month(), fechaFinal.Day(), 23, 59, 59, 0, time.UTC)
@@ -280,12 +297,13 @@ func consultarSalidasPorFecha(fechaInicial, fechaFinal time.Time, codigosSalida 
 	params.Add("order", "asc")
 	params.Add(
 		"query",
-		"Activo:true,EstadoMovimientoId__Nombre:Salida Aprobada,FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigosSalida, "|")+
+		"Activo:true,EstadoMovimientoId__Nombre:"+estado+
+			",FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigos, "|")+
 			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
 			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
 	)
 
-	movimientos, _, outputError = movimientosArka.GetAllMovimiento(params.Encode())
+	movimientos, _, outputError = consultarMovimientosReporteFn(params.Encode())
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -293,279 +311,100 @@ func consultarSalidasPorFecha(fechaInicial, fechaFinal time.Time, codigosSalida 
 	return movimientos, nil
 }
 
-func metadataEntradaPadreSalida(movimiento *models.Movimiento) (entradaPadre *models.Movimiento, proveedorLabel, facturaConsecutivo string, outputError map[string]interface{}) {
-	defer errorCtrl.ErrorControlFunction("metadataEntradaPadreSalida - Unhandled Error!", "500")
+func consultarFormatosPorCodigos(codigos []string) (ids []int, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarFormatosPorCodigos - Unhandled Error!", "500")
 
-	if movimiento == nil || movimiento.MovimientoPadreId == nil || movimiento.MovimientoPadreId.Id <= 0 {
-		return nil, "", "", nil
+	if len(codigos) == 0 {
+		return nil, nil
 	}
 
-	entradaPadre = movimiento.MovimientoPadreId
-	if strings.TrimSpace(entradaPadre.Detalle) == "" || entradaPadre.FormatoTipoMovimientoId == nil {
-		entradaPadre, outputError = consultarMovimientoPorID(movimiento.MovimientoPadreId.Id)
-		if outputError != nil {
-			return nil, "", "", outputError
-		}
-	}
-	if entradaPadre == nil {
-		return nil, "", "", nil
-	}
-
-	var formato models.FormatoBaseEntrada
-	if strings.TrimSpace(entradaPadre.Detalle) != "" {
-		outputError = utilsHelper.Unmarshal(entradaPadre.Detalle, &formato)
-		if outputError != nil {
-			return nil, "", "", outputError
-		}
-	}
-
-	proveedorLabel, facturaConsecutivo, _, outputError = consultarMetadataEntradaFn(formato)
+	formatos, outputError := movimientosArka.GetAllFormatoTipoMovimiento("limit=-1&fields=Id,CodigoAbreviacion")
 	if outputError != nil {
-		return nil, "", "", outputError
+		return nil, outputError
 	}
 
-	return entradaPadre, proveedorLabel, facturaConsecutivo, nil
+	codigosSet := make(map[string]struct{}, len(codigos))
+	for _, codigo := range codigos {
+		codigosSet[codigo] = struct{}{}
+	}
+
+	seen := make(map[int]struct{})
+	for _, formato := range formatos {
+		if formato == nil {
+			continue
+		}
+		if _, ok := codigosSet[formato.CodigoAbreviacion]; !ok {
+			continue
+		}
+		if _, ok := seen[formato.Id]; ok || formato.Id <= 0 {
+			continue
+		}
+		seen[formato.Id] = struct{}{}
+		ids = append(ids, formato.Id)
+	}
+
+	sort.Ints(ids)
+	return ids, nil
 }
 
-func construirFilasReporteA11Entradas(entradas []*reporteContabilizacionEntradaData) []*reporteA11ContabilizacionRow {
-	rows := make([]*reporteA11ContabilizacionRow, 0)
-	for _, entrada := range entradas {
-		rows = append(rows, construirFilasA11PorEntrada(entrada)...)
-	}
-	return rows
-}
+func consultarCuentasContabilizacionPorMovimiento(movimientoIDs []int) (map[int]map[int]reporteContabilizacionCuentaCache, map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("consultarCuentasContabilizacionPorMovimiento - Unhandled Error!", "500")
 
-func construirFilasReporteA11Salidas(salidas []*reporteContabilizacionSalidaData) []*reporteA11ContabilizacionRow {
-	rows := make([]*reporteA11ContabilizacionRow, 0)
-	for _, salida := range salidas {
-		rows = append(rows, construirFilasA11PorSalida(salida)...)
-	}
-	return rows
-}
-
-func construirFilasA11PorEntrada(entrada *reporteContabilizacionEntradaData) []*reporteA11ContabilizacionRow {
-	if entrada == nil || entrada.Movimiento == nil || entrada.TransaccionContable == nil {
-		return nil
+	cuentasPorMovimientoYSubgrupo := make(map[int]map[int]reporteContabilizacionCuentaCache)
+	if len(movimientoIDs) == 0 {
+		return cuentasPorMovimientoYSubgrupo, nil
 	}
 
-	documentoEntrada := stringPtrValue(entrada.Movimiento.Consecutivo)
-	fechaDocumento := fechaDocumentoA11(entrada.TransaccionContable, entrada.Movimiento)
-	vigencia := strconv.Itoa(fechaDocumento.Year())
-	if fechaDocumento.IsZero() {
-		vigencia = strconv.Itoa(entrada.Movimiento.FechaCreacion.Year())
+	query := "limit=-1&fields=Id,CuentaDebitoId,CuentaCreditoId,SubgrupoId,SubtipoMovimientoId" +
+		"&sortby=Id&order=desc&query=Activo:true,SubtipoMovimientoId__in:" + utilsHelper.ArrayToString(movimientoIDs, "|")
+	cuentasSubgrupo, outputError := catalogoElementos.GetAllCuentasSubgrupo(query)
+	if outputError != nil {
+		return nil, outputError
 	}
 
-	rows := make([]*reporteA11ContabilizacionRow, 0, len(entrada.TransaccionContable.Movimientos))
-	renglon := 1
-	descripcion := strings.TrimSpace(entrada.Movimiento.Observacion)
-	idxDebito := 0
-	idxCredito := 0
-	for _, movimientoContable := range entrada.TransaccionContable.Movimientos {
-		naturaleza, valor := naturalezaYValorMovimientoA11(movimientoContable)
-		if naturaleza == "" {
+	codigosCuenta := make(map[string]string)
+	for _, cuentaSubgrupo := range cuentasSubgrupo {
+		if cuentaSubgrupo == nil || cuentaSubgrupo.SubgrupoId == nil || cuentaSubgrupo.SubtipoMovimientoId <= 0 || cuentaSubgrupo.SubgrupoId.Id <= 0 {
+			continue
+		}
+		if _, ok := cuentasPorMovimientoYSubgrupo[cuentaSubgrupo.SubtipoMovimientoId]; !ok {
+			cuentasPorMovimientoYSubgrupo[cuentaSubgrupo.SubtipoMovimientoId] = make(map[int]reporteContabilizacionCuentaCache)
+		}
+		if _, ok := cuentasPorMovimientoYSubgrupo[cuentaSubgrupo.SubtipoMovimientoId][cuentaSubgrupo.SubgrupoId.Id]; ok {
 			continue
 		}
 
-		identificacion, nombre := terceroMovimientoA11(movimientoContable, entrada.ProveedorLabel)
-		rows = append(rows, &reporteA11ContabilizacionRow{
-			Renglon:                renglon,
-			CuentaContable:         cuentaContableEntradaA11(entrada, movimientoContable, naturaleza, idxDebito, idxCredito),
-			NaturalezaCuenta:       naturaleza,
-			Descripcion:            descripcion,
-			Valor:                  valor,
-			IdentificacionTercero:  identificacion,
-			NombreTercero:          nombre,
-			CentroCosto:            entrada.CentroCostoCodigo,
-			DescripcionCentroCosto: entrada.CentroCostoNombre,
-			FechaDocumento:         fechaDocumento,
-			DocumentoEntrada:       documentoEntrada,
-			Factura:                strings.TrimSpace(entrada.FacturaConsecutivo),
-			Vigencia:               vigencia,
-		})
-		if naturaleza == "D" {
-			idxDebito++
-		} else if naturaleza == "C" {
-			idxCredito++
+		cuentasPorMovimientoYSubgrupo[cuentaSubgrupo.SubtipoMovimientoId][cuentaSubgrupo.SubgrupoId.Id] = reporteContabilizacionCuentaCache{
+			CuentaDebitoID:  strings.TrimSpace(cuentaSubgrupo.CuentaDebitoId),
+			CuentaCreditoID: strings.TrimSpace(cuentaSubgrupo.CuentaCreditoId),
+			CuentaDebito:    consultarCodigoCuentaContabilizacion(strings.TrimSpace(cuentaSubgrupo.CuentaDebitoId), codigosCuenta),
+			CuentaCredito:   consultarCodigoCuentaContabilizacion(strings.TrimSpace(cuentaSubgrupo.CuentaCreditoId), codigosCuenta),
 		}
-		renglon++
 	}
 
-	return rows
+	return cuentasPorMovimientoYSubgrupo, nil
 }
 
-func construirFilasA11PorSalida(salida *reporteContabilizacionSalidaData) []*reporteA11ContabilizacionRow {
-	if salida == nil || salida.Movimiento == nil || salida.TransaccionContable == nil {
-		return nil
-	}
-
-	documentoSalida := stringPtrValue(salida.Movimiento.Consecutivo)
-	documentoEntrada := ""
-	if salida.EntradaPadre != nil {
-		documentoEntrada = stringPtrValue(salida.EntradaPadre.Consecutivo)
-	}
-	fechaDocumento := fechaDocumentoA11(salida.TransaccionContable, salida.Movimiento)
-	vigencia := strconv.Itoa(fechaDocumento.Year())
-	if fechaDocumento.IsZero() {
-		vigencia = strconv.Itoa(salida.Movimiento.FechaCreacion.Year())
-	}
-
-	rows := make([]*reporteA11ContabilizacionRow, 0, len(salida.TransaccionContable.Movimientos))
-	renglon := 1
-	descripcion := strings.TrimSpace(salida.Movimiento.Observacion)
-	idxDebito := 0
-	idxCredito := 0
-	for _, movimientoContable := range salida.TransaccionContable.Movimientos {
-		naturaleza, valor := naturalezaYValorMovimientoA11(movimientoContable)
-		if naturaleza == "" {
-			continue
-		}
-
-		identificacion, nombre := terceroMovimientoA11(movimientoContable, salida.ProveedorLabel)
-		rows = append(rows, &reporteA11ContabilizacionRow{
-			Renglon:                renglon,
-			CuentaContable:         cuentaContableSalidaA11(salida, movimientoContable, naturaleza, idxDebito, idxCredito),
-			NaturalezaCuenta:       naturaleza,
-			Descripcion:            descripcion,
-			Valor:                  valor,
-			IdentificacionTercero:  identificacion,
-			NombreTercero:          nombre,
-			CentroCosto:            salida.CentroCostoCodigo,
-			DescripcionCentroCosto: salida.CentroCostoNombre,
-			DocumentoSalida:        documentoSalida,
-			FechaDocumento:         fechaDocumento,
-			DocumentoEntrada:       documentoEntrada,
-			Factura:                strings.TrimSpace(salida.FacturaConsecutivo),
-			Vigencia:               vigencia,
-		})
-		if naturaleza == "D" {
-			idxDebito++
-		} else if naturaleza == "C" {
-			idxCredito++
-		}
-		renglon++
-	}
-
-	return rows
-}
-
-func addReporteA11Headers(hoja *xlsx.Sheet) {
-	filaEncabezado := hoja.AddRow()
-	for _, header := range reporteA11Headers {
-		filaEncabezado.AddCell().SetString(header)
-	}
-}
-
-func addReporteA11Row(hoja *xlsx.Sheet, rowData *reporteA11ContabilizacionRow) {
-	if rowData == nil {
-		return
-	}
-
-	row := hoja.AddRow()
-	addStringCell(row, strconv.Itoa(rowData.Renglon))
-	addStringCell(row, rowData.CuentaContable)
-	addStringCell(row, rowData.NaturalezaCuenta)
-	addStringCell(row, rowData.Descripcion)
-	addDecimalCell(row, rowData.Valor)
-	addStringCell(row, rowData.IdentificacionTercero)
-	addStringCell(row, rowData.NombreTercero)
-	addStringCell(row, rowData.CentroCosto)
-	addStringCell(row, rowData.DescripcionCentroCosto)
-	addStringCell(row, rowData.Proyecto)
-	addStringCell(row, rowData.DescripcionProyecto)
-	addStringCell(row, rowData.ClaseDocumentoLinea)
-	addStringCell(row, rowData.DocumentoSalida)
-	addDateCell(row, rowData.FechaDocumento)
-	addStringCell(row, rowData.DocumentoEntrada)
-	addStringCell(row, rowData.Factura)
-	addStringCell(row, rowData.Vigencia)
-	addStringCell(row, rowData.JefeAlmacen)
-}
-
-func setA11ColumnWidths(hoja *xlsx.Sheet) {
-	_ = hoja.SetColWidth(0, 0, 10)
-	_ = hoja.SetColWidth(1, 1, 18)
-	_ = hoja.SetColWidth(2, 2, 16)
-	_ = hoja.SetColWidth(3, 3, 18)
-	_ = hoja.SetColWidth(4, 4, 14)
-	_ = hoja.SetColWidth(5, 6, 24)
-	_ = hoja.SetColWidth(7, 8, 26)
-	_ = hoja.SetColWidth(9, 12, 20)
-	_ = hoja.SetColWidth(13, 17, 18)
-}
-
-func addDateCell(row *xlsx.Row, value time.Time) {
-	cell := row.AddCell()
-	if value.IsZero() {
-		cell.SetString("")
-		return
-	}
-	cell.SetDate(value)
-	cell.NumFmt = a11DateNumFmt
-}
-
-func splitTerceroLabel(label string) (identificacion, nombre string) {
-	label = strings.TrimSpace(label)
-	if label == "" {
-		return "", ""
-	}
-
-	partes := strings.SplitN(label, " - ", 2)
-	if len(partes) == 2 {
-		return strings.TrimSpace(partes[0]), strings.TrimSpace(partes[1])
-	}
-
-	return label, ""
-}
-
-func documentoMovimientoA11(movimiento *models.Movimiento) string {
-	if movimiento == nil {
+func consultarCodigoCuentaContabilizacion(cuentaID string, cache map[string]string) string {
+	cuentaID = strings.TrimSpace(cuentaID)
+	if cuentaID == "" {
 		return ""
 	}
-	return strings.TrimSpace(stringPtrValue(movimiento.Consecutivo))
-}
-
-func fechaDocumentoA11(transaccion *models.InfoTransaccionContable, movimiento *models.Movimiento) time.Time {
-	if movimiento != nil {
-		return movimiento.FechaCreacion
-	}
-	if transaccion != nil && !transaccion.Fecha.IsZero() {
-		return transaccion.Fecha
-	}
-	return time.Time{}
-}
-
-func validarCuadreTransaccionA11(tipoDocumento, documento string, transaccion *models.InfoTransaccionContable) bool {
-	if transaccion == nil {
-		return true
+	if codigo, ok := cache[cuentaID]; ok {
+		return codigo
 	}
 
-	var debito, credito float64
-	for _, movimiento := range transaccion.Movimientos {
-		if movimiento == nil {
-			continue
-		}
-		debito += movimiento.Debito
-		credito += movimiento.Credito
-	}
-
-	if diff := roundToTwoDecimals(debito - credito); diff > 0.01 || diff < -0.01 {
-		logs.Warn("A11 %s %s descuadrado: debito=%f credito=%f diferencia=%f", tipoDocumento, documento, debito, credito, diff)
-		return false
-	}
-
-	return true
-}
-
-func entradaTieneSalidas(entrada *entradaReporteData) bool {
-	if entrada == nil || len(entrada.SalidasPorElemento) == 0 {
-		return false
-	}
-	for _, salida := range entrada.SalidasPorElemento {
-		if salida != nil && salida.Movimiento != nil {
-			return true
+	codigo := cuentaID
+	if cuenta, outputError := consultarCuentaContable(cuentaID); outputError == nil && cuenta != nil {
+		if strings.TrimSpace(cuenta.Codigo) != "" {
+			codigo = strings.TrimSpace(cuenta.Codigo)
+		} else if strings.TrimSpace(cuenta.Id) != "" {
+			codigo = strings.TrimSpace(cuenta.Id)
 		}
 	}
-	return false
+
+	cache[cuentaID] = codigo
+	return codigo
 }
 
 func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada) (codigo, nombre string, outputError map[string]interface{}) {
@@ -593,28 +432,6 @@ func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada) (codigo, nombr
 	return consultarCentroCostoA11ByID(strconv.Itoa(historicos[0].UbicacionId))
 }
 
-func centroCostoMovimientoA11Info(movimiento *models.Movimiento) (codigo, nombre string, outputError map[string]interface{}) {
-	defer errorCtrl.ErrorControlFunction("centroCostoMovimientoA11Info - Unhandled Error!", "500")
-
-	if movimiento == nil {
-		return "", "", nil
-	}
-
-	var detalle models.FormatoSalidaCostos
-	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
-		return "", "", err
-	}
-
-	switch {
-	case strings.TrimSpace(detalle.CentroCostos) != "":
-		return consultarCentroCostoA11ByID(strings.TrimSpace(detalle.CentroCostos))
-	case detalle.Ubicacion > 0:
-		return consultarCentroCostoA11ByID(strconv.Itoa(detalle.Ubicacion))
-	default:
-		return "", "", nil
-	}
-}
-
 func consultarCentroCostoA11ByID(id string) (codigo, nombre string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarCentroCostoA11ByID - Unhandled Error!", "500")
 
@@ -634,241 +451,193 @@ func consultarCentroCostoA11ByID(id string) (codigo, nombre string, outputError 
 	return strings.TrimSpace(centrosCostos[0].Codigo), strings.TrimSpace(centrosCostos[0].Nombre), nil
 }
 
-func naturalezaYValorMovimientoA11(movimiento *models.DetalleMovimientoContable) (naturaleza string, valor float64) {
-	if movimiento == nil {
-		return "", 0
+func entradaPadreYActaIDSalida(movimiento *models.Movimiento) (entradaPadre *models.Movimiento, actaID int, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("entradaPadreYActaIDSalida - Unhandled Error!", "500")
+
+	if movimiento == nil || movimiento.MovimientoPadreId == nil || movimiento.MovimientoPadreId.Id <= 0 {
+		return nil, 0, nil
 	}
 
-	if movimiento.Debito > 0 && movimiento.Credito > 0 {
-		logs.Warn("A11 movimiento contable con debito y credito simultaneo para cuenta %s", codigoCuentaContableA11(movimiento))
-		return "D", movimiento.Debito
-	}
-	if movimiento.Debito > 0 {
-		return "D", movimiento.Debito
-	}
-	if movimiento.Credito > 0 {
-		return "C", movimiento.Credito
-	}
-	return "", 0
-}
-
-func codigoCuentaContableA11(movimiento *models.DetalleMovimientoContable) string {
-	if movimiento == nil || movimiento.Cuenta == nil {
-		return ""
-	}
-	if strings.TrimSpace(movimiento.Cuenta.Codigo) != "" {
-		return strings.TrimSpace(movimiento.Cuenta.Codigo)
-	}
-	return strings.TrimSpace(movimiento.Cuenta.Id)
-}
-
-func cuentaContableEntradaA11(entrada *reporteContabilizacionEntradaData, movimiento *models.DetalleMovimientoContable, naturaleza string, idxDebito, idxCredito int) string {
-	fallback := codigoCuentaContableA11(movimiento)
-	if cuenta := cuentaDesdeDetalleA11(naturaleza, entradaCuentasDebitoA11(entrada), entradaCuentasCreditoA11(entrada), idxDebito, idxCredito); cuenta != "" {
-		return cuenta
-	}
-	if entrada == nil || len(entrada.Subgrupos) != 1 {
-		return fallback
-	}
-
-	cuentaCfg, ok := entrada.CuentasPorSubgrupo[entrada.Subgrupos[0]]
-	if !ok {
-		return fallback
-	}
-
-	var (
-		cuentaID string
-		debito   bool
-	)
-	if naturaleza == "D" {
-		cuentaID = cuentaCfg.CuentaDebitoId
-		debito = true
-	} else if naturaleza == "C" {
-		cuentaID = cuentaCfg.CuentaCreditoId
-	} else {
-		return fallback
-	}
-
-	return codigoCuentaPorIDCuentaMovimiento(cuentaID, entrada.TransaccionContable, debito, fallback)
-}
-
-func cuentaContableSalidaA11(salida *reporteContabilizacionSalidaData, movimiento *models.DetalleMovimientoContable, naturaleza string, idxDebito, idxCredito int) string {
-	fallback := codigoCuentaContableA11(movimiento)
-	if cuenta := cuentaDesdeDetalleA11(naturaleza, salidaCuentasDebitoA11(salida), salidaCuentasCreditoA11(salida), idxDebito, idxCredito); cuenta != "" {
-		return cuenta
-	}
-	return fallback
-}
-
-func codigoCuentaPorIDCuentaMovimiento(cuentaID string, transaccion *models.InfoTransaccionContable, debito bool, fallback string) string {
-	cuentaID = strings.TrimSpace(cuentaID)
-	if cuentaID == "" {
-		return fallback
-	}
-
-	if transaccion != nil {
-		for _, movimiento := range transaccion.Movimientos {
-			if movimiento == nil || movimiento.Cuenta == nil || strings.TrimSpace(movimiento.Cuenta.Id) != cuentaID {
-				continue
-			}
-			if debito && movimiento.Debito > 0 {
-				return codigoDetalleCuenta(movimiento.Cuenta, fallback)
-			}
-			if !debito && movimiento.Credito > 0 {
-				return codigoDetalleCuenta(movimiento.Cuenta, fallback)
-			}
-		}
-
-		for _, movimiento := range transaccion.Movimientos {
-			if movimiento != nil && movimiento.Cuenta != nil && strings.TrimSpace(movimiento.Cuenta.Id) == cuentaID {
-				return codigoDetalleCuenta(movimiento.Cuenta, fallback)
-			}
+	entradaPadre = movimiento.MovimientoPadreId
+	if strings.TrimSpace(entradaPadre.Detalle) == "" {
+		entradaPadre, outputError = consultarMovimientoPorID(entradaPadre.Id)
+		if outputError != nil {
+			return nil, 0, outputError
 		}
 	}
-
-	if cuenta, outputError := consultarCuentaContable(cuentaID); outputError == nil && cuenta != nil {
-		if strings.TrimSpace(cuenta.Codigo) != "" {
-			return strings.TrimSpace(cuenta.Codigo)
-		}
-		if strings.TrimSpace(cuenta.Id) != "" {
-			return strings.TrimSpace(cuenta.Id)
-		}
+	if entradaPadre == nil || strings.TrimSpace(entradaPadre.Detalle) == "" {
+		return entradaPadre, 0, nil
 	}
 
-	if fallback != "" {
-		return fallback
+	var formato models.FormatoBaseEntrada
+	if outputError = utilsHelper.Unmarshal(entradaPadre.Detalle, &formato); outputError != nil {
+		return nil, 0, outputError
 	}
-	return cuentaID
+
+	return entradaPadre, formato.ActaRecibidoId, nil
 }
 
-func codigoDetalleCuenta(cuenta *models.DetalleCuenta, fallback string) string {
-	if cuenta == nil {
-		return fallback
-	}
-	if strings.TrimSpace(cuenta.Codigo) != "" {
-		return strings.TrimSpace(cuenta.Codigo)
-	}
-	if strings.TrimSpace(cuenta.Id) != "" {
-		return strings.TrimSpace(cuenta.Id)
-	}
-	return fallback
-}
+func centroCostoContabilizacionEntradaInfo(formato models.FormatoBaseEntrada) (nombre, codigo string, outputError map[string]interface{}) {
+	defer errorCtrl.ErrorControlFunction("centroCostoContabilizacionEntradaInfo - Unhandled Error!", "500")
 
-func cuentasDetalleEntradaA11(consecutivo string, debito bool) []string {
-	if strings.TrimSpace(consecutivo) == "" {
-		return nil
-	}
-	detalles, outputError := getDetalleCuentasEntradaA11Fn(consecutivo)
+	codigoRaw, nombre, outputError := centroCostoEntradaA11Info(formato)
 	if outputError != nil {
+		return "", "", outputError
+	}
+	return nombre, normalizarCodigoCentroCostoReporte(codigoRaw), nil
+}
+
+func agruparElementosContabilizacion(
+	movimiento *models.Movimiento,
+	actaID int,
+	centroCostoNombre, centroCostoCodigo string,
+	elementos []*models.DetalleElemento,
+	cuentasPorSubgrupo map[int]reporteContabilizacionCuentaCache,
+) []*reporteContabilizacionGrupo {
+	if movimiento == nil || len(elementos) == 0 {
 		return nil
 	}
 
-	cuentas := make([]string, 0, len(detalles))
-	for _, detalle := range detalles {
-		if detalle == nil {
+	type acumulado struct {
+		nombre string
+		valor  float64
+	}
+
+	acumulados := make(map[int]*acumulado)
+	for _, elemento := range elementos {
+		subgrupoID, _, subgrupoNombre := subgrupoInfo(elemento)
+		if subgrupoID <= 0 {
 			continue
 		}
-		if debito {
-			cuentas = append(cuentas, detalle.CuentaDebitoEntrada)
-		} else {
-			cuentas = append(cuentas, detalle.CuentaCreditoEntrada)
+		if _, ok := acumulados[subgrupoID]; !ok {
+			acumulados[subgrupoID] = &acumulado{nombre: subgrupoNombre}
 		}
-	}
-	return cuentasDetalleA11Normalizadas(cuentas)
-}
-
-func cuentasDetalleSalidaA11(consecutivo string, debito bool) []string {
-	if strings.TrimSpace(consecutivo) == "" {
-		return nil
-	}
-	detalles, outputError := getDetalleCuentasSalidaA11Fn(consecutivo)
-	if outputError != nil {
-		return nil
+		acumulados[subgrupoID].valor += elemento.ValorFinal
 	}
 
-	cuentas := make([]string, 0, len(detalles))
-	for _, detalle := range detalles {
-		if detalle == nil {
+	subgrupos := make([]int, 0, len(acumulados))
+	for subgrupoID := range acumulados {
+		subgrupos = append(subgrupos, subgrupoID)
+	}
+	sort.Ints(subgrupos)
+
+	grupos := make([]*reporteContabilizacionGrupo, 0, len(subgrupos))
+	for _, subgrupoID := range subgrupos {
+		acum := acumulados[subgrupoID]
+		if acum == nil {
 			continue
 		}
-		if debito {
-			cuentas = append(cuentas, detalle.CuentaDebitoSalida)
-		} else {
-			cuentas = append(cuentas, detalle.CuentaCreditoSalida)
+
+		grupo := &reporteContabilizacionGrupo{
+			TipoMovimientoID:  movimientoTipoID(movimiento),
+			Consecutivo:       stringPtrValue(movimiento.Consecutivo),
+			Fecha:             movimiento.FechaCreacion,
+			Observacion:       strings.TrimSpace(movimiento.Observacion),
+			ActaID:            actaID,
+			CentroCostoNombre: centroCostoNombre,
+			CentroCostoCodigo: centroCostoCodigo,
+			SubgrupoID:        subgrupoID,
+			SubgrupoNombre:    acum.nombre,
+			ValorTotal:        roundToTwoDecimals(acum.valor),
 		}
+
+		if cuentas, ok := cuentasPorSubgrupo[subgrupoID]; ok {
+			grupo.CuentaDebito = cuentas.CuentaDebito
+			grupo.CuentaCredito = cuentas.CuentaCredito
+		}
+
+		grupos = append(grupos, grupo)
 	}
-	return cuentasDetalleA11Normalizadas(cuentas)
+
+	return grupos
 }
 
-func cuentasDetalleA11Normalizadas(cuentas []string) []string {
-	normalizadas := make([]string, 0, len(cuentas))
-	for _, cuenta := range cuentas {
-		codigo := codigoCuentaDesdeLabel(cuenta)
-		if codigo == "" {
+func movimientoTipoID(movimiento *models.Movimiento) int {
+	if movimiento == nil || movimiento.FormatoTipoMovimientoId == nil {
+		return 0
+	}
+	return movimiento.FormatoTipoMovimientoId.Id
+}
+
+func expandirFilasReporteContabilizacion(grupos []*reporteContabilizacionGrupo) []*reporteContabilizacionRow {
+	rows := make([]*reporteContabilizacionRow, 0, len(grupos)*2)
+	for _, grupo := range grupos {
+		if grupo == nil {
 			continue
 		}
-		normalizadas = append(normalizadas, codigo)
+
+		if strings.TrimSpace(grupo.CuentaDebito) != "" {
+			rows = append(rows, &reporteContabilizacionRow{
+				Cuenta:            strings.TrimSpace(grupo.CuentaDebito),
+				Naturaleza:        "Debito",
+				Consecutivo:       grupo.Consecutivo,
+				Fecha:             grupo.Fecha,
+				Observacion:       grupo.Observacion,
+				Valor:             grupo.ValorTotal,
+				Clase:             grupo.SubgrupoNombre,
+				CentroCostoNombre: grupo.CentroCostoNombre,
+				CentroCostoCodigo: grupo.CentroCostoCodigo,
+			})
+		}
+		if strings.TrimSpace(grupo.CuentaCredito) != "" {
+			rows = append(rows, &reporteContabilizacionRow{
+				Cuenta:            strings.TrimSpace(grupo.CuentaCredito),
+				Naturaleza:        "Credito",
+				Consecutivo:       grupo.Consecutivo,
+				Fecha:             grupo.Fecha,
+				Observacion:       grupo.Observacion,
+				Valor:             grupo.ValorTotal,
+				Clase:             grupo.SubgrupoNombre,
+				CentroCostoNombre: grupo.CentroCostoNombre,
+				CentroCostoCodigo: grupo.CentroCostoCodigo,
+			})
+		}
 	}
-	return normalizadas
+	return rows
 }
 
-func codigoCuentaDesdeLabel(label string) string {
-	label = strings.TrimSpace(label)
-	if label == "" {
-		return ""
+func addReporteContabilizacionHeaders(hoja *xlsx.Sheet) {
+	filaEncabezado := hoja.AddRow()
+	for _, header := range reporteContabilizacionHeaders {
+		filaEncabezado.AddCell().SetString(header)
 	}
-	partes := strings.SplitN(label, " - ", 2)
-	return strings.TrimSpace(partes[0])
 }
 
-func cuentaDesdeDetalleA11(naturaleza string, debito, credito []string, idxDebito, idxCredito int) string {
-	if naturaleza == "D" {
-		return cuentaPorIndiceDetalleA11(debito, idxDebito)
+func addReporteContabilizacionRow(hoja *xlsx.Sheet, rowData *reporteContabilizacionRow) {
+	if rowData == nil {
+		return
 	}
-	if naturaleza == "C" {
-		return cuentaPorIndiceDetalleA11(credito, idxCredito)
-	}
-	return ""
+
+	row := hoja.AddRow()
+	addStringCell(row, rowData.Cuenta)
+	addStringCell(row, rowData.Naturaleza)
+	addStringCell(row, rowData.Consecutivo)
+	addDateCell(row, rowData.Fecha)
+	addStringCell(row, rowData.Observacion)
+	addDecimalCell(row, rowData.Valor)
+	addStringCell(row, rowData.Clase)
+	addStringCell(row, rowData.CentroCostoNombre)
+	addStringCell(row, rowData.CentroCostoCodigo)
 }
 
-func cuentaPorIndiceDetalleA11(cuentas []string, idx int) string {
-	if idx < 0 || idx >= len(cuentas) {
-		return ""
-	}
-	return strings.TrimSpace(cuentas[idx])
+func setReporteContabilizacionColumnWidths(hoja *xlsx.Sheet) {
+	_ = hoja.SetColWidth(0, 0, 18)
+	_ = hoja.SetColWidth(1, 1, 14)
+	_ = hoja.SetColWidth(2, 2, 24)
+	_ = hoja.SetColWidth(3, 3, 14)
+	_ = hoja.SetColWidth(4, 4, 42)
+	_ = hoja.SetColWidth(5, 5, 16)
+	_ = hoja.SetColWidth(6, 6, 28)
+	_ = hoja.SetColWidth(7, 7, 32)
+	_ = hoja.SetColWidth(8, 8, 20)
 }
 
-func entradaCuentasDebitoA11(entrada *reporteContabilizacionEntradaData) []string {
-	if entrada == nil {
-		return nil
+func addDateCell(row *xlsx.Row, value time.Time) {
+	cell := row.AddCell()
+	if value.IsZero() {
+		cell.SetString("")
+		return
 	}
-	return entrada.CuentasDebitoA11
-}
-
-func entradaCuentasCreditoA11(entrada *reporteContabilizacionEntradaData) []string {
-	if entrada == nil {
-		return nil
-	}
-	return entrada.CuentasCreditoA11
-}
-
-func salidaCuentasDebitoA11(salida *reporteContabilizacionSalidaData) []string {
-	if salida == nil {
-		return nil
-	}
-	return salida.CuentasDebitoA11
-}
-
-func salidaCuentasCreditoA11(salida *reporteContabilizacionSalidaData) []string {
-	if salida == nil {
-		return nil
-	}
-	return salida.CuentasCreditoA11
-}
-
-func terceroMovimientoA11(movimiento *models.DetalleMovimientoContable, proveedorLabel string) (identificacion, nombre string) {
-	if movimiento != nil && movimiento.TerceroId != nil {
-		return strings.TrimSpace(movimiento.TerceroId.Numero), strings.TrimSpace(movimiento.TerceroId.NombreCompleto)
-	}
-	return splitTerceroLabel(proveedorLabel)
+	cell.SetDate(value)
+	cell.NumFmt = a11DateNumFmt
 }

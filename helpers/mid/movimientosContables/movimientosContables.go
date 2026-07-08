@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -13,12 +14,27 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
+var sendJSONPostTrContable = request.SendJson
+
+const maxPostTrContableRetries = 3
+
 func getBasePath() string {
 	basePath, _ := beego.AppConfig.String("movimientosContablesmidService")
+	basePath = normalizeMovimientosContablesBasePath(basePath)
+
+	return basePath
+}
+
+func normalizeMovimientosContablesBasePath(basePath string) string {
 	basePath = strings.TrimSpace(basePath)
 
 	if basePath != "" && !strings.HasPrefix(basePath, "http://") && !strings.HasPrefix(basePath, "https://") {
 		basePath = "http://" + basePath
+	}
+
+	// movimientos_contables_mid responde 301 desde http hacia https y el POST termina degradándose.
+	if strings.HasPrefix(basePath, "http://pruebasapi.intranetoas.udistrital.edu.co/") {
+		basePath = "https://" + strings.TrimPrefix(basePath, "http://")
 	}
 
 	if basePath != "" && !strings.HasSuffix(basePath, "/") {
@@ -50,6 +66,10 @@ func GetTransaccion(id int, criteria string, detail bool) (transaccion *models.T
 
 // PostTrContable post controlador transaccion_movimientos/transaccion_movimientos/ del api movimientos_contables_mid
 func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionMovimientos, outputError map[string]interface{}) {
+	return postTrContable(tr, 0)
+}
+
+func postTrContable(tr *models.TransaccionMovimientos, attempt int) (tr_ *models.TransaccionMovimientos, outputError map[string]interface{}) {
 	funcion := "PostTrContable"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
@@ -61,7 +81,12 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 	logs.Info("%s -> url=%s", funcion, urlcrud)
 	logs.Info("%s -> payload=%+v", funcion, tr)
 
-	if err := request.SendJson(urlcrud, "POST", &resp, tr); err != nil {
+	if err := sendJSONPostTrContable(urlcrud, "POST", &resp, tr); err != nil {
+		if shouldRetryPostTrContable(err, attempt) {
+			time.Sleep(time.Duration(attempt+1) * 200 * time.Millisecond)
+			logs.Warn("%s -> reintentando POST tras error transitorio: %v", funcion, err)
+			return postTrContable(tr, attempt+1)
+		}
 		logs.Error("%s -> error request.SendJson: %v", funcion, err)
 		eval := ` - request.SendJson(urlcrud, "POST", &resp, tr)`
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
@@ -95,7 +120,7 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 
 			if strings.Contains(d, "invalid character") {
 				logs.Error("%s -> se detectó 'invalid character', reintentando PostTrContable", funcion)
-				return PostTrContable(tr)
+				return postTrContable(tr, attempt+1)
 			}
 
 			eval := ` - request.SendJson(urlcrud, "POST", &resp, tr)`
@@ -124,4 +149,13 @@ func PostTrContable(tr *models.TransaccionMovimientos) (tr_ *models.TransaccionM
 	logs.Info("%s -> POST exitoso, retornando transacción", funcion)
 	logs.Info("==== FIN %s ====", funcion)
 	return tr, nil
+}
+
+func shouldRetryPostTrContable(err error, attempt int) bool {
+	if err == nil || attempt >= maxPostTrContableRetries {
+		return false
+	}
+
+	msg := err.Error()
+	return strings.Contains(msg, "http 404:")
 }

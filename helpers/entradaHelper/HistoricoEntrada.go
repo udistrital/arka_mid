@@ -16,6 +16,13 @@ import (
 
 var getConsecutivoByIDEntradaHistorica = consecutivos.GetById
 var getTransaccionActaRecibidoEntradaHistorica = actaRecibido.GetTransaccionActaRecibidoById
+var putTransaccionActaRecibidoEntradaHistorica = actaRecibido.PutTransaccionActaRecibido
+var getEstadoMovimientoIdByNombreEntradaHistorica = movimientosArka.GetEstadoMovimientoIdByNombre
+var getFormatoTipoMovimientoIdByCodigoEntradaHistorica = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion
+var postMovimientoEntradaHistorica = movimientosArka.PostMovimiento
+var putMovimientoEntradaHistorica = movimientosArka.PutMovimiento
+var postSoporteMovimientoEntradaHistorica = movimientosArka.PostSoporteMovimiento
+var aprobarEntradaHistoricaFn = aprobarEntradaHistorica
 
 // RegistrarEntradaHistorica crea y aprueba una entrada histórica usando un consecutivo y año específicos.
 func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
@@ -38,7 +45,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		EstadoMovimientoId:      &models.EstadoMovimiento{},
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
+	outputError = getEstadoMovimientoIdByNombreEntradaHistorica(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"resolver estado inicial",
@@ -49,7 +56,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		)
 	}
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
+	outputError = getFormatoTipoMovimientoIdByCodigoEntradaHistorica(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
 	if outputError != nil {
 		return buildHistoricoPasoError(
 			"resolver tipo de movimiento",
@@ -73,7 +80,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 	var acta models.TransaccionActaRecibido
 	if data.Detalle.ActaRecibidoId > 0 {
-		outputError = getTransaccionActaRecibidoEntradaHistorica(data.Detalle.ActaRecibidoId, false, &acta)
+		outputError = getTransaccionActaRecibidoEntradaHistorica(data.Detalle.ActaRecibidoId, true, &acta)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
 				"consultar acta asociada",
@@ -99,25 +106,6 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 	}
 
 	if data.Detalle.ActaRecibidoId > 0 {
-		resultado.Error, outputError = asignarPlacas(data.Detalle.ActaRecibidoId, &acta.Elementos)
-		if outputError != nil {
-			return wrapHistoricoDependencyError(
-				"asignar placas a elementos del acta",
-				fmt.Sprintf("RegistrarEntradaHistorica - asignarPlacas(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
-				fmt.Sprintf("no se pudieron asignar placas para el acta %d", data.Detalle.ActaRecibidoId),
-				outputError,
-				"400",
-			)
-		}
-		if resultado.Error != "" {
-			return buildHistoricoPasoError(
-				"asignar placas a elementos del acta",
-				fmt.Sprintf("RegistrarEntradaHistorica - asignarPlacas(acta_recibido_id=%d)", data.Detalle.ActaRecibidoId),
-				resultado.Error,
-				"400",
-				nil,
-			)
-		}
 		if len(acta.Elementos) == 0 {
 			return buildHistoricoPasoError(
 				"validar elementos del acta",
@@ -129,7 +117,13 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		}
 	}
 
-	outputError = movimientosArka.PostMovimiento(&resultado.Movimiento)
+	resultado.Movimiento.FechaCreacion = data.FechaCreacion
+	resultado.Movimiento.FechaModificacion = normalizarFechaModificacionHistorica(data)
+	if fechaCorte := normalizarFechaCorteHistorica(data); !fechaCorte.IsZero() {
+		resultado.Movimiento.FechaCorte = &fechaCorte
+	}
+
+	outputError = postMovimientoEntradaHistorica(&resultado.Movimiento)
 	if outputError != nil {
 		payloadMovimiento, marshalErr := serializarMovimientoHistorico(resultado.Movimiento)
 		if marshalErr != nil {
@@ -146,9 +140,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		)
 	}
 
-	resultado.Movimiento.FechaCreacion = data.FechaCreacion
-	resultado.Movimiento.FechaModificacion = normalizarFechaModificacionHistorica(data)
-	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id)
+	outputError = putMovimientoEntradaHistorica(&resultado.Movimiento, resultado.Movimiento.Id)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"actualizar fechas históricas del movimiento",
@@ -166,7 +158,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 			MovimientoId: &models.Movimiento{Id: resultado.Movimiento.Id},
 		}
 
-		outputError = movimientosArka.PostSoporteMovimiento(&soporte)
+		outputError = postSoporteMovimientoEntradaHistorica(&soporte)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
 				"asociar soporte al movimiento",
@@ -181,7 +173,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 	if data.Detalle.ActaRecibidoId > 0 {
 		acta.UltimoEstado.EstadoActaId.Id = 6
 		acta.UltimoEstado.Id = 0
-		outputError = actaRecibido.PutTransaccionActaRecibido(data.Detalle.ActaRecibidoId, &acta)
+		outputError = putTransaccionActaRecibidoEntradaHistorica(data.Detalle.ActaRecibidoId, &acta)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
 				"actualizar estado del acta después del registro",
@@ -193,7 +185,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		}
 	}
 
-	outputError = aprobarEntradaHistorica(resultado.Movimiento.Id, data, resultado)
+	outputError = aprobarEntradaHistoricaFn(resultado.Movimiento.Id, data, resultado)
 	return
 }
 
@@ -222,7 +214,11 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 
 	resultado.Movimiento.FechaCreacion = data.FechaCreacion
 	resultado.Movimiento.FechaModificacion = normalizarFechaModificacionHistorica(data)
-	resultado.Movimiento.FechaCorte = &data.FechaCorte
+	if fechaCorte := normalizarFechaCorteHistorica(data); !fechaCorte.IsZero() {
+		resultado.Movimiento.FechaCorte = &fechaCorte
+	} else {
+		resultado.Movimiento.FechaCorte = nil
+	}
 
 	terceroId, outputError := getTerceroEntrada(formato, resultado)
 	if outputError != nil {
@@ -297,7 +293,7 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 		}
 	}
 
-	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, resultado.Movimiento.Id)
+	outputError = putMovimientoEntradaHistorica(&resultado.Movimiento, resultado.Movimiento.Id)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"persistir aprobación histórica del movimiento",
@@ -359,6 +355,16 @@ func normalizarFechaModificacionHistorica(data *models.TransaccionEntradaHistori
 	}
 	if !data.FechaModificacion.IsZero() {
 		return data.FechaModificacion
+	}
+	if !data.FechaCorte.IsZero() {
+		return data.FechaCorte
+	}
+	return data.FechaCreacion
+}
+
+func normalizarFechaCorteHistorica(data *models.TransaccionEntradaHistorica) time.Time {
+	if data == nil {
+		return time.Time{}
 	}
 	if !data.FechaCorte.IsZero() {
 		return data.FechaCorte
