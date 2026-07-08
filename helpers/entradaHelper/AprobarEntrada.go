@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -396,6 +397,14 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	detalleContable, outputError := descripcionMovimientoContable(resultado_.Movimiento.Detalle)
 	logs.Info("contabilidadEntrada -> descripcionMovimientoContable detalleContable=%q outputError=%v", detalleContable, outputError)
 	if outputError != nil {
+		outputError = wrapContabilidadEntradaError(
+			"descripcionMovimientoContable",
+			outputError,
+			map[string]interface{}{
+				"movimiento_id": resultado_.Movimiento.Id,
+				"detalle":       resultado_.Movimiento.Detalle,
+			},
+		)
 		return
 	}
 
@@ -424,6 +433,18 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	logs.Info("contabilidadEntrada -> CalcularMovimientosContables resultado.Error=%q outputError=%v len(movimientos)=%d bufferCuentas=%+v",
 		resultado_.Error, outputError, len(transaccion.Movimientos), bufferCuentas)
 	if outputError != nil || resultado_.Error != "" {
+		if outputError != nil {
+			outputError = wrapContabilidadEntradaError(
+				"CalcularMovimientosContables",
+				outputError,
+				map[string]interface{}{
+					"movimiento_id":   resultado_.Movimiento.Id,
+					"consecutivo_id":  transaccion.ConsecutivoId,
+					"len_elementos":   len(elementos),
+					"detalle_contable": detalleContable,
+				},
+			)
+		}
 		logs.Error("contabilidadEntrada -> aborta en CalcularMovimientosContables")
 		return
 	}
@@ -432,6 +453,16 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	logs.Info("contabilidadEntrada -> CreateTransaccionContable resultado.Error=%q outputError=%v transaccion=%+v",
 		resultado_.Error, outputError, transaccion)
 	if outputError != nil || resultado_.Error != "" {
+		if outputError != nil {
+			outputError = wrapContabilidadEntradaError(
+				"CreateTransaccionContable",
+				outputError,
+				map[string]interface{}{
+					"movimiento_id":  resultado_.Movimiento.Id,
+					"consecutivo_id": transaccion.ConsecutivoId,
+				},
+			)
+		}
 		logs.Error("contabilidadEntrada -> aborta en CreateTransaccionContable")
 		return
 	}
@@ -443,6 +474,14 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	logs.Info("contabilidadEntrada -> GetDetalleContable outputError=%v movimientosDetalle=%+v",
 		outputError, resultado_.TransaccionContable.Movimientos)
 	if outputError != nil {
+		outputError = wrapContabilidadEntradaError(
+			"GetDetalleContable",
+			outputError,
+			map[string]interface{}{
+				"movimiento_id":  resultado_.Movimiento.Id,
+				"consecutivo_id": transaccion.ConsecutivoId,
+			},
+		)
 		logs.Error("contabilidadEntrada -> aborta en GetDetalleContable")
 		return
 	}
@@ -452,6 +491,19 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	logs.Info("contabilidadEntrada -> DESPUÉS de PostTrContable response=%+v outputError=%v", postRes, outputError)
 
 	if outputError != nil {
+		payloadTransaccion, marshalErr := serializarTransaccionContable(transaccion)
+		if marshalErr != nil {
+			payloadTransaccion = "no se pudo serializar la transacción contable: " + marshalErr.Error()
+		}
+		outputError = wrapContabilidadEntradaError(
+			"PostTrContable",
+			outputError,
+			map[string]interface{}{
+				"movimiento_id":       resultado_.Movimiento.Id,
+				"consecutivo_id":      transaccion.ConsecutivoId,
+				"payload_transaccion": payloadTransaccion,
+			},
+		)
 		logs.Error("contabilidadEntrada -> error en PostTrContable: %v", outputError)
 		return
 	}
@@ -519,4 +571,45 @@ func descripcionMovimientoContable(detalle string) (detalle_ string, outputError
 	logs.Info("descripcionMovimientoContable -> detalle final=%q", detalle_)
 	logs.Info("==== FIN descripcionMovimientoContable ====")
 	return
+}
+
+func serializarTransaccionContable(transaccion models.TransaccionMovimientos) (string, error) {
+	rawBytes, err := json.Marshal(transaccion)
+	if err != nil {
+		return "", err
+	}
+	return string(rawBytes), nil
+}
+
+func wrapContabilidadEntradaError(paso string, outputError map[string]interface{}, extra map[string]interface{}) map[string]interface{} {
+	if outputError == nil {
+		return nil
+	}
+
+	merged := make(map[string]interface{}, len(outputError))
+	for key, value := range outputError {
+		merged[key] = value
+	}
+
+	causa := map[string]interface{}{
+		"paso_contabilidad": paso,
+	}
+	for key, value := range extra {
+		causa[key] = value
+	}
+
+	if errValue, ok := outputError["err"].(map[string]interface{}); ok {
+		for key, value := range errValue {
+			causa[key] = value
+		}
+		merged["err"] = causa
+		return merged
+	}
+
+	if errValue, ok := outputError["err"]; ok && errValue != nil {
+		causa["causa_original"] = errValue
+	}
+
+	merged["err"] = causa
+	return merged
 }
