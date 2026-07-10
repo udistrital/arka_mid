@@ -1,6 +1,8 @@
 package depreciacionHelper
 
 import (
+	"time"
+
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -9,6 +11,10 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
+
+var launchCierreAsync = func(fn func()) {
+	go fn()
+}
 
 // GenerarCierre Crear el movimiento y transacción contable correspondientes al cierre a una fecha determinada
 func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
@@ -20,8 +26,6 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 		parametros       []models.ParametroConfiguracion
 		formatoCierre    int
 		estadoMovimiento int
-		transaccion      models.TransaccionMovimientos
-		cuentas          map[string]models.CuentaContable
 	)
 
 	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formatoCierre, "CRR"); err != nil {
@@ -46,28 +50,6 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 	if err := configuracion.PutParametro(parametros[1].Id, &parametros[1]); err != nil {
 		resultado.Error = "No se pudo bloquear el sistema para iniciar el proceso de cierre. Contacte soporte."
 		return err
-	}
-
-	if err := calcularCierre(info.FechaCorte.Format("2006-01-02"), cuentas, &transaccion, resultado); err != nil || resultado.Error != "" || len(transaccion.Movimientos) == 0 {
-		desbloquearSistema(parametros[1], *resultado)
-		return err
-	}
-
-	if msg, err := asientoContable.CreateTransaccionContable(getTipoComprobanteCierre(), dscTransaccionCierre(), &transaccion); err != nil || msg != "" {
-		resultado.Error = msg
-		desbloquearSistema(parametros[1], *resultado)
-		return err
-	}
-
-	if detalleContable, err := asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas); err != nil {
-		desbloquearSistema(parametros[1], *resultado)
-		return err
-	} else if len(detalleContable) > 0 {
-		trContable := models.InfoTransaccionContable{
-			Movimientos: detalleContable,
-			Concepto:    transaccion.Descripcion,
-		}
-		resultado.TransaccionContable = trContable
 	}
 
 	if info.Id == 0 {
@@ -99,6 +81,13 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 	resultado.Movimiento.FechaCorte = &info.FechaCorte
 
 	detalle.RazonRechazo = info.RazonRechazo
+	detalle.CalculoListo = false
+	detalle.CalculoError = ""
+	detalle.ElementosCalculados = 0
+	detalle.MovimientosContables = 0
+	detalle.FechaCalculo = nil
+	detalle.Transaccion = nil
+	detalle.PreviewContable = nil
 
 	if err := utilsHelper.Marshal(detalle, &resultado.Movimiento.Detalle); err != nil {
 		desbloquearSistema(parametros[1], *resultado)
@@ -121,6 +110,15 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 		}
 	}
 
+	resultado.TransaccionContable = models.InfoTransaccionContable{}
+	resultado.Error = ""
+
+	movimientoID := resultado.Movimiento.Id
+	fechaCorte := info.FechaCorte
+	launchCierreAsync(func() {
+		procesarCierreDepreciacionAsync(movimientoID, fechaCorte)
+	})
+
 	return
 }
 
@@ -130,4 +128,125 @@ func desbloquearSistema(parametro models.ParametroConfiguracion, resultado model
 		resultado.Error += " No se pudo desbloquear el sistema. Contacte soporte."
 		return
 	}
+}
+
+func procesarCierreDepreciacionAsync(movimientoID int, fechaCorte time.Time) {
+	movimiento, outputError := movimientosArka.GetMovimientoById(movimientoID)
+	if outputError != nil || movimiento == nil {
+		return
+	}
+
+	var (
+		detalle     models.FormatoDepreciacion
+		resultado   models.ResultadoMovimiento
+		transaccion models.TransaccionMovimientos
+		cuentas     map[string]models.CuentaContable
+	)
+
+	if err := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); err != nil {
+		persistirFalloCalculoCierreAsync(movimiento, "No se pudo leer el detalle del cierre para procesar la depreciación.")
+		return
+	}
+
+	transaccion.ConsecutivoId = 0
+	if movimiento.ConsecutivoId != nil {
+		transaccion.ConsecutivoId = *movimiento.ConsecutivoId
+	}
+	if movimiento.FechaCorte != nil && !movimiento.FechaCorte.IsZero() {
+		transaccion.FechaTransaccion = *movimiento.FechaCorte
+	} else {
+		transaccion.FechaTransaccion = fechaCorte
+	}
+
+	outputError = calcularCierre(fechaCorte.Format("2006-01-02"), cuentas, &transaccion, &resultado)
+	if outputError != nil {
+		persistirFalloCalculoCierreAsync(movimiento, "No se pudo calcular el cierre de depreciación.")
+		return
+	}
+	if resultado.Error != "" {
+		persistirFalloCalculoCierreAsync(movimiento, resultado.Error)
+		return
+	}
+	if len(transaccion.Movimientos) == 0 {
+		persistirFalloCalculoCierreAsync(movimiento, "No se generaron movimientos contables para la fecha de corte indicada.")
+		return
+	}
+
+	if msg, err := asientoContable.CreateTransaccionContable(getTipoComprobanteCierre(), dscTransaccionCierre(), &transaccion); err != nil || msg != "" {
+		if msg == "" {
+			msg = "No se pudo construir la transacción contable del cierre."
+		}
+		persistirFalloCalculoCierreAsync(movimiento, msg)
+		return
+	}
+
+	detalleContable, outputError := asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas)
+	if outputError != nil {
+		persistirFalloCalculoCierreAsync(movimiento, "No se pudo construir la vista previa contable del cierre.")
+		return
+	}
+
+	now := time.Now().UTC()
+	detalle.CalculoListo = true
+	detalle.CalculoError = ""
+	detalle.ElementosCalculados = contarMovimientosConValor(transaccion.Movimientos)
+	detalle.MovimientosContables = len(transaccion.Movimientos)
+	detalle.FechaCalculo = &now
+	detalle.Transaccion = &transaccion
+	detalle.PreviewContable = &models.InfoTransaccionContable{
+		Movimientos: detalleContable,
+		Concepto:    transaccion.Descripcion,
+		Fecha:       transaccion.FechaTransaccion,
+	}
+
+	if err := utilsHelper.Marshal(detalle, &movimiento.Detalle); err != nil {
+		persistirFalloCalculoCierreAsync(movimiento, "No se pudo persistir el detalle calculado del cierre.")
+		return
+	}
+
+	_ = movimientosArka.PutMovimiento(movimiento, movimiento.Id)
+}
+
+func persistirFalloCalculoCierreAsync(movimiento *models.Movimiento, mensaje string) {
+	if movimiento == nil {
+		return
+	}
+
+	var detalle models.FormatoDepreciacion
+	_ = utilsHelper.Unmarshal(movimiento.Detalle, &detalle)
+
+	detalle.CalculoListo = false
+	detalle.CalculoError = mensaje
+	detalle.Transaccion = nil
+	detalle.PreviewContable = nil
+	detalle.ElementosCalculados = 0
+	detalle.MovimientosContables = 0
+
+	if err := utilsHelper.Marshal(detalle, &movimiento.Detalle); err != nil {
+		return
+	}
+
+	if movimiento.EstadoMovimientoId == nil {
+		movimiento.EstadoMovimientoId = &models.EstadoMovimiento{}
+	}
+	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&movimiento.EstadoMovimientoId.Id, "Cierre Rechazado"); err == nil {
+		movimiento.EstadoMovimientoId.Nombre = "Cierre Rechazado"
+	}
+	_ = movimientosArka.PutMovimiento(movimiento, movimiento.Id)
+
+	var parametros []models.ParametroConfiguracion
+	if err := configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros); err == nil && len(parametros) == 1 {
+		desbloquearSistema(parametros[0], models.ResultadoMovimiento{})
+	}
+}
+
+func contarMovimientosConValor(movimientos []*models.MovimientoTransaccion) int {
+	total := 0
+	for _, movimiento := range movimientos {
+		if movimiento == nil || movimiento.Valor == 0 {
+			continue
+		}
+		total++
+	}
+	return total
 }

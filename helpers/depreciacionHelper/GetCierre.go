@@ -3,9 +3,9 @@ package depreciacionHelper
 import (
 	"strings"
 
-	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
@@ -21,20 +21,32 @@ func GetCierre(id int, detalle_ *models.ResultadoMovimiento) (outputError map[st
 	}
 
 	detalle_.Movimiento = *mov
-	var transaccion = new(models.TransaccionMovimientos)
-	if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre En Curso" || detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Rechazado" {
-		outputError = calcularCierre(detalle_.Movimiento.FechaCorte.UTC().Format("2006-01-02"), nil, transaccion, detalle_)
-	} else if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Aprobado" && detalle_.Movimiento.ConsecutivoId != nil && *detalle_.Movimiento.ConsecutivoId > 0 {
+	var (
+		detalle     models.FormatoDepreciacion
+		transaccion *models.TransaccionMovimientos
+	)
+	if err := utilsHelper.Unmarshal(detalle_.Movimiento.Detalle, &detalle); err != nil {
+		return err
+	}
+
+	detalle_.Error = detalle.CalculoError
+
+	if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Aprobado" && detalle_.Movimiento.ConsecutivoId != nil && *detalle_.Movimiento.ConsecutivoId > 0 {
 		transaccion, outputError = movimientosContables.GetTransaccion(*detalle_.Movimiento.ConsecutivoId, "consecutivo", true)
+		if outputError != nil {
+			return
+		}
+		detalle_.TransaccionContable.Concepto = dscTransaccionCierre()
+		detalle_.TransaccionContable.Fecha = transaccion.FechaTransaccion
+		if detalle.PreviewContable != nil {
+			detalle_.TransaccionContable.Movimientos = detalle.PreviewContable.Movimientos
+		}
+		return nil
 	}
 
-	if outputError != nil {
-		return
+	if detalle.CalculoListo && detalle.PreviewContable != nil {
+		detalle_.TransaccionContable = *detalle.PreviewContable
 	}
-
-	detalle_.TransaccionContable.Concepto = dscTransaccionCierre()
-	detalle_.TransaccionContable.Fecha = transaccion.FechaTransaccion
-	detalle_.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, nil)
 
 	return
 }

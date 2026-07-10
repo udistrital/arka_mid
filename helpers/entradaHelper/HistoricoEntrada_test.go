@@ -89,6 +89,20 @@ func TestNormalizarFechaModificacionHistorica(t *testing.T) {
 	}
 }
 
+func TestNormalizarFechaCorteHistorica(t *testing.T) {
+	t.Parallel()
+
+	creacion := time.Date(2024, 12, 30, 8, 0, 0, 0, time.UTC)
+
+	payload := &models.TransaccionEntradaHistorica{
+		FechaCreacion: creacion,
+	}
+
+	if got := normalizarFechaCorteHistorica(payload); !got.Equal(creacion) {
+		t.Fatalf("expected fecha creacion fallback, got %v", got)
+	}
+}
+
 func TestAplicarConsecutivoHistoricoEntradaConsecutivoNoEncontrado(t *testing.T) {
 	t.Parallel()
 
@@ -133,5 +147,194 @@ func TestMensajeEstadoActaHistoricaInvalido(t *testing.T) {
 
 	if !strings.Contains(msg, `acta 3348`) || !strings.Contains(msg, `"En revisión"`) || !strings.Contains(msg, "Aceptada") {
 		t.Fatalf("unexpected message: %q", msg)
+	}
+}
+
+func TestRegistrarEntradaHistoricaEnviaFechasAntesDelPost(t *testing.T) {
+	creacion := time.Date(1997, 1, 15, 8, 0, 0, 0, time.UTC)
+	corte := time.Date(1997, 1, 16, 9, 0, 0, 0, time.UTC)
+
+	originalGetConsecutivo := getConsecutivoByIDEntradaHistorica
+	originalGetActa := getTransaccionActaRecibidoEntradaHistorica
+	originalPutActa := putTransaccionActaRecibidoEntradaHistorica
+	originalGetEstado := getEstadoMovimientoIdByNombreEntradaHistorica
+	originalGetFormato := getFormatoTipoMovimientoIdByCodigoEntradaHistorica
+	originalPostMovimiento := postMovimientoEntradaHistorica
+	originalPutMovimiento := putMovimientoEntradaHistorica
+	originalPostSoporte := postSoporteMovimientoEntradaHistorica
+	originalAprobar := aprobarEntradaHistoricaFn
+
+	getEstadoMovimientoIdByNombreEntradaHistorica = func(id *int, nombre string) map[string]interface{} {
+		*id = 2
+		return nil
+	}
+	getFormatoTipoMovimientoIdByCodigoEntradaHistorica = func(id *int, codigo string) map[string]interface{} {
+		*id = 1
+		return nil
+	}
+	getConsecutivoByIDEntradaHistorica = func(id int, consecutivo *models.Consecutivo) map[string]interface{} {
+		consecutivo.Id = id
+		consecutivo.Consecutivo = 1
+		return nil
+	}
+	getTransaccionActaRecibidoEntradaHistorica = func(id int, elementos bool, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+		transaccion.UltimoEstado = &models.HistoricoActa{
+			EstadoActaId: &models.EstadoActa{CodigoAbreviacion: "Aceptada"},
+		}
+		transaccion.Elementos = []*models.Elemento{{Id: 1}}
+		return nil
+	}
+	putTransaccionActaRecibidoEntradaHistorica = func(id int, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+		return nil
+	}
+	postMovimientoEntradaHistorica = func(movimiento *models.Movimiento) map[string]interface{} {
+		if movimiento == nil {
+			t.Fatal("expected movimiento payload")
+		}
+		if movimiento.FechaCreacion.IsZero() {
+			t.Fatal("expected FechaCreacion to be set before post")
+		}
+		if movimiento.FechaModificacion.IsZero() {
+			t.Fatal("expected FechaModificacion to be set before post")
+		}
+		if !movimiento.FechaCreacion.Equal(creacion) {
+			t.Fatalf("unexpected FechaCreacion: %v", movimiento.FechaCreacion)
+		}
+		if !movimiento.FechaModificacion.Equal(corte) {
+			t.Fatalf("unexpected FechaModificacion: %v", movimiento.FechaModificacion)
+		}
+		if movimiento.FechaCorte == nil {
+			t.Fatal("expected FechaCorte to be set before post")
+		}
+		if !movimiento.FechaCorte.Equal(corte) {
+			t.Fatalf("unexpected FechaCorte: %v", movimiento.FechaCorte)
+		}
+		movimiento.Id = 99
+		return nil
+	}
+	putMovimientoEntradaHistorica = func(movimiento *models.Movimiento, id int) map[string]interface{} {
+		return nil
+	}
+	postSoporteMovimientoEntradaHistorica = func(soporte *models.SoporteMovimiento) map[string]interface{} {
+		return nil
+	}
+	aprobarEntradaHistoricaFn = func(entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) map[string]interface{} {
+		return nil
+	}
+
+	t.Cleanup(func() {
+		getConsecutivoByIDEntradaHistorica = originalGetConsecutivo
+		getTransaccionActaRecibidoEntradaHistorica = originalGetActa
+		putTransaccionActaRecibidoEntradaHistorica = originalPutActa
+		getEstadoMovimientoIdByNombreEntradaHistorica = originalGetEstado
+		getFormatoTipoMovimientoIdByCodigoEntradaHistorica = originalGetFormato
+		postMovimientoEntradaHistorica = originalPostMovimiento
+		putMovimientoEntradaHistorica = originalPutMovimiento
+		postSoporteMovimientoEntradaHistorica = originalPostSoporte
+		aprobarEntradaHistoricaFn = originalAprobar
+	})
+
+	data := &models.TransaccionEntradaHistorica{
+		TransaccionEntrada: models.TransaccionEntrada{
+			Observacion:             "Migración histórica",
+			FormatoTipoMovimientoId: "ENT_ADQ",
+			Detalle: models.FormatoBaseEntrada{
+				ActaRecibidoId: 3353,
+				Factura:        2203,
+			},
+		},
+		ConsecutivoId: 10764,
+		Year:          1997,
+		FechaCreacion: creacion,
+		FechaCorte:    corte,
+	}
+
+	resultado := &models.ResultadoMovimiento{}
+	err := RegistrarEntradaHistorica(data, resultado)
+	if err != nil {
+		t.Fatalf("unexpected error: %#v", err)
+	}
+}
+
+func TestRegistrarEntradaHistoricaConsultaActaConElementos(t *testing.T) {
+	originalGetConsecutivo := getConsecutivoByIDEntradaHistorica
+	originalGetActa := getTransaccionActaRecibidoEntradaHistorica
+	originalPutActa := putTransaccionActaRecibidoEntradaHistorica
+	originalGetEstado := getEstadoMovimientoIdByNombreEntradaHistorica
+	originalGetFormato := getFormatoTipoMovimientoIdByCodigoEntradaHistorica
+	originalPostMovimiento := postMovimientoEntradaHistorica
+	originalPutMovimiento := putMovimientoEntradaHistorica
+	originalPostSoporte := postSoporteMovimientoEntradaHistorica
+	originalAprobar := aprobarEntradaHistoricaFn
+
+	getEstadoMovimientoIdByNombreEntradaHistorica = func(id *int, nombre string) map[string]interface{} {
+		*id = 2
+		return nil
+	}
+	getFormatoTipoMovimientoIdByCodigoEntradaHistorica = func(id *int, codigo string) map[string]interface{} {
+		*id = 1
+		return nil
+	}
+	getConsecutivoByIDEntradaHistorica = func(id int, consecutivo *models.Consecutivo) map[string]interface{} {
+		consecutivo.Id = id
+		consecutivo.Consecutivo = 1
+		return nil
+	}
+	getTransaccionActaRecibidoEntradaHistorica = func(id int, elementos bool, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+		if !elementos {
+			t.Fatal("expected consultar acta histórica con elementos=true")
+		}
+		transaccion.UltimoEstado = &models.HistoricoActa{
+			EstadoActaId: &models.EstadoActa{CodigoAbreviacion: "Aceptada"},
+		}
+		transaccion.Elementos = []*models.Elemento{{Id: 1}}
+		return nil
+	}
+	putTransaccionActaRecibidoEntradaHistorica = func(id int, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+		return nil
+	}
+	postMovimientoEntradaHistorica = func(movimiento *models.Movimiento) map[string]interface{} {
+		movimiento.Id = 99
+		return nil
+	}
+	putMovimientoEntradaHistorica = func(movimiento *models.Movimiento, id int) map[string]interface{} {
+		return nil
+	}
+	postSoporteMovimientoEntradaHistorica = func(soporte *models.SoporteMovimiento) map[string]interface{} {
+		return nil
+	}
+	aprobarEntradaHistoricaFn = func(entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) map[string]interface{} {
+		return nil
+	}
+
+	t.Cleanup(func() {
+		getConsecutivoByIDEntradaHistorica = originalGetConsecutivo
+		getTransaccionActaRecibidoEntradaHistorica = originalGetActa
+		putTransaccionActaRecibidoEntradaHistorica = originalPutActa
+		getEstadoMovimientoIdByNombreEntradaHistorica = originalGetEstado
+		getFormatoTipoMovimientoIdByCodigoEntradaHistorica = originalGetFormato
+		postMovimientoEntradaHistorica = originalPostMovimiento
+		putMovimientoEntradaHistorica = originalPutMovimiento
+		postSoporteMovimientoEntradaHistorica = originalPostSoporte
+		aprobarEntradaHistoricaFn = originalAprobar
+	})
+
+	data := &models.TransaccionEntradaHistorica{
+		TransaccionEntrada: models.TransaccionEntrada{
+			Observacion:             "Migración histórica",
+			FormatoTipoMovimientoId: "ENT_ADQ",
+			Detalle: models.FormatoBaseEntrada{
+				ActaRecibidoId: 3353,
+			},
+		},
+		ConsecutivoId: 10764,
+		Year:          1997,
+		FechaCreacion: time.Date(1997, 1, 15, 8, 0, 0, 0, time.UTC),
+		FechaCorte:    time.Date(1997, 1, 16, 9, 0, 0, 0, time.UTC),
+	}
+
+	resultado := &models.ResultadoMovimiento{}
+	if err := RegistrarEntradaHistorica(data, resultado); err != nil {
+		t.Fatalf("unexpected error: %#v", err)
 	}
 }

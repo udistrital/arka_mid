@@ -9,11 +9,15 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-const maxWorkersConsultaElementosCierre = 5
+const (
+	maxWorkersConsultaElementosCierre = 8
+	loteElementosCierreSize           = 200
+)
 
 var getAllElementoDepreciacionCierre = actaRecibido.GetAllElemento
 
@@ -25,6 +29,11 @@ type elementoCierreDetalle struct {
 type resultadoElementoCierre struct {
 	detalle     *elementoCierreDetalle
 	errorMsg    string
+	outputError map[string]interface{}
+}
+
+type resultadoLoteElementosCierre struct {
+	elementos   []*models.Elemento
 	outputError map[string]interface{}
 }
 
@@ -106,78 +115,121 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 
 func consultarElementosParaCierre(infoCorte []models.DepreciacionElemento) (detalles []elementoCierreDetalle, errMsg string, outputError map[string]interface{}) {
 	pendientes := make([]models.DepreciacionElemento, 0, len(infoCorte))
+	idsElementoActa := make([]int, 0, len(infoCorte))
 	for _, val := range infoCorte {
 		if val.DeltaValor != 0 {
 			pendientes = append(pendientes, val)
+			if val.ElementoActaId > 0 {
+				idsElementoActa = append(idsElementoActa, val.ElementoActaId)
+			}
 		}
 	}
 
 	if len(pendientes) == 0 {
 		return nil, "", nil
 	}
-
-	workers := maxWorkersConsultaElementosCierre
-	if len(pendientes) < workers {
-		workers = len(pendientes)
+	if len(idsElementoActa) == 0 {
+		return nil, "No se pudo consultar el detalle de los elementos. Contacte soporte.", nil
 	}
 
-	jobs := make(chan models.DepreciacionElemento, len(pendientes))
-	results := make(chan resultadoElementoCierre, len(pendientes))
+	elementosPorID, outputError := consultarElementosCierrePorLotes(idsElementoActa)
+	if outputError != nil {
+		return nil, "", outputError
+	}
+
+	detalles = make([]elementoCierreDetalle, 0, len(pendientes))
+	for _, val := range pendientes {
+		elemento, ok := elementosPorID[val.ElementoActaId]
+		if !ok {
+			errMsg = "No se pudo consultar el detalle de los elementos. Contacte soporte."
+			continue
+		}
+		if !elementoValidoParaDepreciacion(elemento) {
+			continue
+		}
+
+		detalles = append(detalles, elementoCierreDetalle{
+			deltaValor: val.DeltaValor,
+			elemento:   elemento,
+		})
+	}
+
+	return detalles, errMsg, nil
+}
+
+func consultarElementosCierrePorLotes(ids []int) (map[int]*models.Elemento, map[string]interface{}) {
+	ids = utilsHelper.RemoveDuplicateInt(ids)
+	if len(ids) == 0 {
+		return map[int]*models.Elemento{}, nil
+	}
+
+	lotes := chunkInts(ids, loteElementosCierreSize)
+	workers := maxWorkersConsultaElementosCierre
+	if len(lotes) < workers {
+		workers = len(lotes)
+	}
+
+	jobs := make(chan []int, len(lotes))
+	results := make(chan resultadoLoteElementosCierre, len(lotes))
 
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for val := range jobs {
-				results <- consultarElementoCierre(val)
+			for lote := range jobs {
+				payload := "Id__in:" + utilsHelper.ArrayToString(lote, "|")
+				elementos, err := getAllElementoDepreciacionCierre(payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId,Activo", "", "", "", "-1")
+				results <- resultadoLoteElementosCierre{
+					elementos:   elementos,
+					outputError: err,
+				}
 			}
 		}()
 	}
 
-	for _, val := range pendientes {
-		jobs <- val
+	for _, lote := range lotes {
+		jobs <- lote
 	}
 	close(jobs)
 
 	wg.Wait()
 	close(results)
 
-	detalles = make([]elementoCierreDetalle, 0, len(pendientes))
+	elementosPorID := make(map[int]*models.Elemento, len(ids))
 	for result := range results {
-		if result.outputError != nil && outputError == nil {
-			outputError = result.outputError
+		if result.outputError != nil {
+			return nil, result.outputError
 		}
-		if result.errorMsg != "" && errMsg == "" {
-			errMsg = result.errorMsg
-		}
-		if result.detalle != nil {
-			detalles = append(detalles, *result.detalle)
+		for _, elemento := range result.elementos {
+			if elemento == nil || elemento.Id <= 0 {
+				continue
+			}
+			elementosPorID[elemento.Id] = elemento
 		}
 	}
 
-	return detalles, errMsg, outputError
+	return elementosPorID, nil
 }
 
-func consultarElementoCierre(val models.DepreciacionElemento) resultadoElementoCierre {
-	payload := "Id:" + strconv.Itoa(val.ElementoActaId)
-	elementos, err := getAllElementoDepreciacionCierre(payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId,Activo", "", "", "", "")
-	if err != nil {
-		return resultadoElementoCierre{outputError: err}
-	}
-	if len(elementos) != 1 {
-		return resultadoElementoCierre{errorMsg: "No se pudo consultar el detalle de los elementos. Contacte soporte."}
-	}
-	if !elementoValidoParaDepreciacion(elementos[0]) {
-		return resultadoElementoCierre{}
+func chunkInts(ids []int, size int) [][]int {
+	if size <= 0 || len(ids) == 0 {
+		return nil
 	}
 
-	return resultadoElementoCierre{
-		detalle: &elementoCierreDetalle{
-			deltaValor: val.DeltaValor,
-			elemento:   elementos[0],
-		},
+	lotes := make([][]int, 0, (len(ids)+size-1)/size)
+	for start := 0; start < len(ids); start += size {
+		end := start + size
+		if end > len(ids) {
+			end = len(ids)
+		}
+
+		lote := make([]int, end-start)
+		copy(lote, ids[start:end])
+		lotes = append(lotes, lote)
 	}
+
+	return lotes
 }
 
 func elementoValidoParaDepreciacion(elemento *models.Elemento) bool {
