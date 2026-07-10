@@ -12,25 +12,21 @@ import (
 )
 
 func main() {
-
-	AllowedOrigins := []string{"*.udistrital.edu.co"}
-	if web.BConfig.RunMode == "dev" {
-		AllowedOrigins = []string{"*"}
+	allowedOrigins := []string{"*.udistrital.edu.co"}
+	if web.BConfig.RunMode == web.DEV {
+		allowedOrigins = []string{"*"}
 		web.BConfig.WebConfig.DirectoryIndex = true
 		web.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 	}
+
 	web.InsertFilter("*", web.BeforeRouter, cors.Allow(&cors.Options{
-		AllowOrigins: AllowedOrigins,
-		AllowMethods: []string{"PUT", "PATCH", "GET", "POST", "OPTIONS", "DELETE"},
-		AllowHeaders: []string{"Origin", "x-requested-with",
-			"content-type",
-			"accept",
-			"origin",
-			"authorization",
-			"x-csrftoken"},
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST", "OPTIONS", "DELETE"},
+		AllowHeaders:     []string{"accept", "authorization", "content-type"},
 		ExposeHeaders:    []string{"Content-Length", "X-Total-Count"},
 		AllowCredentials: true,
 	}))
+
 	web.ErrorController(&customErrorv2.CustomErrorController{})
 	security.SetSecurityHeaders()
 	apiStatus.Init()
