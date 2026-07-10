@@ -300,7 +300,14 @@ type Historial struct {
 }
 
 type FormatoDepreciacion struct {
-	RazonRechazo string
+	RazonRechazo         string                   `json:"razon_rechazo"`
+	CalculoListo         bool                     `json:"calculo_listo"`
+	CalculoError         string                   `json:"calculo_error"`
+	ElementosCalculados  int                      `json:"elementos_calculados"`
+	MovimientosContables int                      `json:"movimientos_contables"`
+	FechaCalculo         *time.Time               `json:"fecha_calculo,omitempty"`
+	Transaccion          *TransaccionMovimientos  `json:"transaccion,omitempty"`
+	PreviewContable      *InfoTransaccionContable `json:"preview_contable,omitempty"`
 }
 
 type DetalleCorteDepreciacion struct {
