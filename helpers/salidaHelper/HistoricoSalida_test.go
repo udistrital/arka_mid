@@ -72,18 +72,18 @@ func TestNormalizarElementoMovimientoHistoricoSalida(t *testing.T) {
 	corte := time.Date(1997, 12, 31, 10, 0, 0, 0, time.UTC)
 
 	elemento := &models.ElementosMovimiento{
-		Id:                41409,
-		ElementoActaId:    &elementoActaID,
+		Id:                 41409,
+		ElementoActaId:     &elementoActaID,
 		ElementoCatalogoId: 0,
-		Unidad:            1,
-		ValorUnitario:     100,
-		ValorTotal:        100,
-		SaldoCantidad:     0,
-		SaldoValor:        0,
-		VidaUtil:          0,
-		ValorResidual:     0,
-		Activo:            false,
-		MovimientoId:      &models.Movimiento{Id: movimientoID, Observacion: "debe limpiarse"},
+		Unidad:             1,
+		ValorUnitario:      100,
+		ValorTotal:         100,
+		SaldoCantidad:      0,
+		SaldoValor:         0,
+		VidaUtil:           0,
+		ValorResidual:      0,
+		Activo:             false,
+		MovimientoId:       &models.Movimiento{Id: movimientoID, Observacion: "debe limpiarse"},
 	}
 	payload := &models.TransaccionSalidaHistorica{
 		FechaCreacion: creacion,
@@ -122,10 +122,10 @@ func TestNormalizarElementoMovimientoHistoricoSalidaSinMovimientoId(t *testing.T
 	corte := time.Date(1997, 12, 31, 10, 0, 0, 0, time.UTC)
 
 	elemento := &models.ElementosMovimiento{
-		Id:                41412,
-		ElementoActaId:    &elementoActaID,
+		Id:                 41412,
+		ElementoActaId:     &elementoActaID,
 		ElementoCatalogoId: 0,
-		Activo:            false,
+		Activo:             false,
 	}
 	payload := &models.TransaccionSalidaHistorica{
 		FechaCreacion: creacion,

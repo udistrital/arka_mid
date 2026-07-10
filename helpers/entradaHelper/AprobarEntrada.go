@@ -438,9 +438,9 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 				"CalcularMovimientosContables",
 				outputError,
 				map[string]interface{}{
-					"movimiento_id":   resultado_.Movimiento.Id,
-					"consecutivo_id":  transaccion.ConsecutivoId,
-					"len_elementos":   len(elementos),
+					"movimiento_id":    resultado_.Movimiento.Id,
+					"consecutivo_id":   transaccion.ConsecutivoId,
+					"len_elementos":    len(elementos),
 					"detalle_contable": detalleContable,
 				},
 			)

@@ -147,9 +147,9 @@ func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado
 				fmt.Sprintf("RegistrarSalidaHistorica - PutElementosMovimiento(elemento_movimiento_id=%d)", elementoHistorico.Id),
 				fmt.Sprintf("no se pudieron persistir las fechas históricas del elemento_movimiento %d", elementoHistorico.Id),
 				mergeHistoricoSalidaErrorCause(outputError, map[string]interface{}{
-					"salida_id":               trSalida.Salida.Id,
-					"elemento_movimiento_id":  elementoHistorico.Id,
-					"elemento_acta_id":        valorElementoActaHistoricoSalida(elementoHistorico.ElementoActaId),
+					"salida_id":                   trSalida.Salida.Id,
+					"elemento_movimiento_id":      elementoHistorico.Id,
+					"elemento_acta_id":            valorElementoActaHistoricoSalida(elementoHistorico.ElementoActaId),
 					"payload_elemento_movimiento": payloadElemento,
 				}),
 				"502",
@@ -223,16 +223,16 @@ func normalizarElementoMovimientoHistoricoSalida(
 	}
 
 	elementoHistorico := &models.ElementosMovimiento{
-		Id:                elemento.Id,
+		Id:                 elemento.Id,
 		ElementoCatalogoId: elemento.ElementoCatalogoId,
-		Unidad:            elemento.Unidad,
-		ValorUnitario:     elemento.ValorUnitario,
-		ValorTotal:        elemento.ValorTotal,
-		SaldoCantidad:     elemento.SaldoCantidad,
-		SaldoValor:        elemento.SaldoValor,
-		VidaUtil:          elemento.VidaUtil,
-		ValorResidual:     elemento.ValorResidual,
-		Activo:            elemento.Activo,
+		Unidad:             elemento.Unidad,
+		ValorUnitario:      elemento.ValorUnitario,
+		ValorTotal:         elemento.ValorTotal,
+		SaldoCantidad:      elemento.SaldoCantidad,
+		SaldoValor:         elemento.SaldoValor,
+		VidaUtil:           elemento.VidaUtil,
+		ValorResidual:      elemento.ValorResidual,
+		Activo:             elemento.Activo,
 	}
 
 	if elemento.ElementoActaId != nil {
