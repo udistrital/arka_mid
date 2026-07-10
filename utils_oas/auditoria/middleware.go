@@ -21,6 +21,7 @@ import (
 const (
 	authorizationKey = "Authorization"
 	userKey          = "user"
+	userInfoURL      = "https://autenticacion.portaloas.udistrital.edu.co/oauth2/userinfo"
 )
 
 var appName, _ = beego.AppConfig.String("appname")
@@ -113,7 +114,7 @@ func validateAndSetAuth(ctx *beegoCtx.Context) {
 	}
 
 	var user usuario
-	if status, err := getWithContext(reqCtx, "https://autenticacion.portaloas.udistrital.edu.co/oauth2/userinfo", &user); err != nil {
+	if status, err := getWithContext(reqCtx, &user); err != nil {
 		logs.Error("error al validar el token: %v, status %d", err, status)
 		// debería retornar 401
 		// ctx.Abort(401, "unauthorized")
@@ -177,8 +178,8 @@ func sanitizeInputData(input any) map[string]any {
 	return nil
 }
 
-func getWithContext(ctx context.Context, urlp string, target any) (int, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlp, nil)
+func getWithContext(ctx context.Context, target any) (int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, userInfoURL, nil)
 	if err != nil {
 		return 0, fmt.Errorf("could not create request: %w", err)
 	}

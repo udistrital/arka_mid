@@ -9,6 +9,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/auditoria"
 	"github.com/udistrital/arka_mid/utils_oas/customErrorv2"
 	"github.com/udistrital/arka_mid/utils_oas/security"
+	"github.com/udistrital/arka_mid/utils_oas/xray"
 )
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 	apiStatus.Init()
 	auditoria.InitMiddleware()
 	security.SetSecurityHeaders()
+	xray.Init()
 
 	web.ErrorController(&customErrorv2.CustomErrorController{})
 	web.Run()

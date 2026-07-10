@@ -10,10 +10,19 @@ import (
 	"time"
 
 	"github.com/beego/beego/v2/core/logs"
+	"github.com/udistrital/arka_mid/utils_oas/xray"
 )
 
 var global string
 
+func SetHeader(h string) {
+	global = h
+
+}
+
+func GetHeader() (h string) {
+	return global
+}
 func SendJson(urlp string, trequest string, target interface{}, datajson interface{}) error {
 	b := new(bytes.Buffer)
 	if datajson != nil {
@@ -89,15 +98,6 @@ func GetJsonWSO2(urlp string, target interface{}) error {
 	return decodeJSONResponse(r, target)
 }
 
-func SetHeader(h string) {
-	global = h
-
-}
-
-func GetHeader() (h string) {
-	return global
-}
-
 func GetJson(urlp string, target interface{}) error {
 
 	req, err := http.NewRequest("GET", urlp, nil)
@@ -153,6 +153,16 @@ func GetJsonTest(url string, target interface{}) (response *http.Response, err e
 	}
 	defer response.Body.Close()
 	return response, json.NewDecoder(response.Body).Decode(target)
+}
+
+// execRequest executes req using the provided HTTP client, wrapping the call
+// with an X-Ray subsegment via the local xray package.
+// The caller is responsible for closing resp.Body on success.
+func execRequest(client *http.Client, req *http.Request) (*http.Response, error) {
+	subseg := xray.BeginSegmentSec(req)
+	resp, err := client.Do(req)
+	xray.CloseSubsegment(subseg, resp, err)
+	return resp, err
 }
 
 func decodeJSONResponse(resp *http.Response, target interface{}) error {
