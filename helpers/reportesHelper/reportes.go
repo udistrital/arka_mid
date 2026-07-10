@@ -1776,33 +1776,135 @@ func vidaUtilCatalogo(elemento *models.DetalleElemento) float64 {
 }
 
 func salidaUbicacionInfo(movimiento *models.Movimiento) (centroCostoNombre, centroCostoCodigo string) {
+	centroCostoNombre, centroCostoCodigo, _ = resolverCentroCostoMovimiento(movimiento)
+	return centroCostoNombre, centroCostoCodigo
+}
+
+func resolverCentroCostoMovimiento(movimiento *models.Movimiento) (centroCostoNombre, centroCostoCodigo string, outputError map[string]interface{}) {
 	if movimiento == nil {
-		return "", ""
+		return "", "", nil
 	}
 
-	if formato, ok := formatoEntradaPadreSalida(movimiento); ok {
-		if codigo, nombre, outputError := centroCostoEntradaA11Info(formato); outputError == nil {
-			if nombre != "" || codigo != "" {
-				return nombre, normalizarCodigoCentroCostoReporte(codigo)
-			}
+	var (
+		detalle  models.FormatoSalidaCostos
+		firstErr map[string]interface{}
+	)
+
+	setErr := func(err map[string]interface{}) {
+		if err != nil && firstErr == nil {
+			firstErr = err
 		}
 	}
 
-	var detalle models.FormatoSalidaCostos
-	if outputError := utilsHelper.Unmarshal(movimiento.Detalle, &detalle); outputError != nil {
-		return "", ""
+	if strings.TrimSpace(movimiento.Detalle) != "" {
+		if outputError = utilsHelper.Unmarshal(movimiento.Detalle, &detalle); outputError != nil {
+			setErr(outputError)
+		}
 	}
 
-	if detalle.CentroCostos == "" {
-		return "", ""
+	if strings.TrimSpace(detalle.CentroCostos) != "" {
+		codigo, nombre, err := consultarCentroCostoA11ByID(detalle.CentroCostos)
+		if err != nil {
+			setErr(err)
+		} else if nombre != "" || codigo != "" {
+			return nombre, normalizarCodigoCentroCostoReporte(codigo), nil
+		}
 	}
 
-	if centrosCostos, outputError := consultarCentroCostosFn("query=Id:" + detalle.CentroCostos); outputError == nil && len(centrosCostos) > 0 {
-		centroCostoNombre = centrosCostos[0].Nombre
-		centroCostoCodigo = normalizarCodigoCentroCostoReporte(centrosCostos[0].Codigo)
+	if detalle.Ubicacion > 0 {
+		codigo, nombre, err := consultarCentroCostoA11ByID(strconv.Itoa(detalle.Ubicacion))
+		if err != nil {
+			setErr(err)
+		} else if nombre != "" || codigo != "" {
+			return nombre, normalizarCodigoCentroCostoReporte(codigo), nil
+		}
 	}
 
-	return centroCostoNombre, centroCostoCodigo
+	if formato, ok := formatoEntradaPadreSalida(movimiento); ok {
+		codigo, nombre, err := centroCostoEntradaA11Info(formato, nil)
+		if err != nil {
+			setErr(err)
+		} else if nombre != "" || codigo != "" {
+			return nombre, normalizarCodigoCentroCostoReporte(codigo), nil
+		}
+	}
+
+	return "", "", firstErr
+}
+
+func resolverActaRecibidoIDCentroCostoEntrada(formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) int {
+	if formato.ActaRecibidoId > 0 {
+		return formato.ActaRecibidoId
+	}
+
+	for _, elemento := range elementos {
+		if elemento != nil && elemento.ActaRecibidoId != nil && elemento.ActaRecibidoId.Id > 0 {
+			return elemento.ActaRecibidoId.Id
+		}
+	}
+
+	return 0
+}
+
+func codigoCentroCostoQueryCandidates(referencia string) []string {
+	referencia = strings.TrimSpace(referencia)
+	if referencia == "" {
+		return nil
+	}
+
+	seen := make(map[string]struct{})
+	candidatos := make([]string, 0, 3)
+	appendCandidate := func(candidate string) {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			return
+		}
+		key := strings.ToUpper(candidate)
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		candidatos = append(candidatos, candidate)
+	}
+
+	appendCandidate(referencia)
+	appendCandidate(normalizarCodigoCentroCostoReporte(referencia))
+	if len(referencia) > 1 && strings.HasPrefix(strings.ToUpper(referencia), "A") {
+		appendCandidate(referencia[1:])
+	}
+
+	return candidatos
+}
+
+func consultarCentroCostoA11ByReferencia(referencia string) (codigo, nombre string, outputError map[string]interface{}) {
+	referencia = strings.TrimSpace(referencia)
+	if referencia == "" {
+		return "", "", nil
+	}
+
+	var firstErr map[string]interface{}
+	if centrosCostos, err := consultarCentroCostosFn("query=Id:" + referencia); err == nil {
+		if len(centrosCostos) > 0 {
+			return strings.TrimSpace(centrosCostos[0].Codigo), strings.TrimSpace(centrosCostos[0].Nombre), nil
+		}
+	} else {
+		firstErr = err
+	}
+
+	for _, candidate := range codigoCentroCostoQueryCandidates(referencia) {
+		centrosCostos, err := consultarCentroCostosFn("query=Codigo:" + candidate)
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		if len(centrosCostos) > 0 {
+			return strings.TrimSpace(centrosCostos[0].Codigo), strings.TrimSpace(centrosCostos[0].Nombre), nil
+		}
+	}
+
+	return "", "", firstErr
 }
 
 func formatoEntradaPadreSalida(movimiento *models.Movimiento) (formato models.FormatoBaseEntrada, ok bool) {

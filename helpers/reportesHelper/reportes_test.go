@@ -547,7 +547,7 @@ func TestExtraerCodigosEntradaIncluyeFormatosInactivos(t *testing.T) {
 	}
 }
 
-func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
+func TestSalidaUbicacionInfoPriorizaCentroCostosSobreEntradaPadre(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
 	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
 		return []models.HistoricoActa{
@@ -558,12 +558,15 @@ func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
 		consultarHistoricosActaReporteFn = originalHistoricos
 	})
 
-	mockConsultarCentroCostos(t, []models.CentroCostos{
-		{
-			Id:     422,
-			Codigo: "123",
-			Nombre: "Centro de costo principal",
-		},
+	mockConsultarCentroCostosByQuery(t, func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		switch {
+		case strings.Contains(query, "query=Id:999"):
+			return []models.CentroCostos{{Id: 999, Codigo: "999", Nombre: "Centro salida"}}, nil
+		case strings.Contains(query, "query=Id:422"):
+			return []models.CentroCostos{{Id: 422, Codigo: "123", Nombre: "Centro padre"}}, nil
+		default:
+			return []models.CentroCostos{}, nil
+		}
 	})
 
 	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
@@ -571,14 +574,160 @@ func TestSalidaUbicacionInfoUsaCentroCostosPorId(t *testing.T) {
 			Id:      9001,
 			Detalle: `{"acta_recibido_id":555}`,
 		},
-		Detalle: `{"funcionario":12345,"ubicacion":999,"centro_costos":"422"}`,
+		Detalle: `{"funcionario":12345,"ubicacion":777,"centro_costos":"999"}`,
 	})
 
-	if nombre != "Centro de costo principal" {
+	if nombre != "Centro salida" {
+		t.Fatalf("unexpected centro de costo: %q", nombre)
+	}
+	if codigo != "A999" {
+		t.Fatalf("unexpected codigo centro de costo: %q", codigo)
+	}
+}
+
+func TestSalidaUbicacionInfoUsaUbicacionCuandoCentroCostosVacio(t *testing.T) {
+	originalHistoricos := consultarHistoricosActaReporteFn
+	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+		return []models.HistoricoActa{
+			{UbicacionId: 422},
+		}, nil
+	}
+	t.Cleanup(func() {
+		consultarHistoricosActaReporteFn = originalHistoricos
+	})
+
+	mockConsultarCentroCostosByQuery(t, func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		switch {
+		case strings.Contains(query, "query=Id:777"):
+			return []models.CentroCostos{{Id: 777, Codigo: "777", Nombre: "Centro ubicación"}}, nil
+		case strings.Contains(query, "query=Id:422"):
+			return []models.CentroCostos{{Id: 422, Codigo: "123", Nombre: "Centro padre"}}, nil
+		default:
+			return []models.CentroCostos{}, nil
+		}
+	})
+
+	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+		MovimientoPadreId: &models.Movimiento{
+			Id:      9001,
+			Detalle: `{"acta_recibido_id":555}`,
+		},
+		Detalle: `{"funcionario":12345,"ubicacion":777}`,
+	})
+
+	if nombre != "Centro ubicación" {
+		t.Fatalf("unexpected centro de costo: %q", nombre)
+	}
+	if codigo != "A777" {
+		t.Fatalf("unexpected codigo centro de costo: %q", codigo)
+	}
+}
+
+func TestSalidaUbicacionInfoUsaEntradaPadreComoFallback(t *testing.T) {
+	originalHistoricos := consultarHistoricosActaReporteFn
+	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+		return []models.HistoricoActa{
+			{UbicacionId: 422},
+		}, nil
+	}
+	t.Cleanup(func() {
+		consultarHistoricosActaReporteFn = originalHistoricos
+	})
+
+	mockConsultarCentroCostosByQuery(t, func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		if strings.Contains(query, "query=Id:422") {
+			return []models.CentroCostos{{Id: 422, Codigo: "123", Nombre: "Centro padre"}}, nil
+		}
+		return []models.CentroCostos{}, nil
+	})
+
+	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+		MovimientoPadreId: &models.Movimiento{
+			Id:      9001,
+			Detalle: `{"acta_recibido_id":555}`,
+		},
+		Detalle: `{"funcionario":12345}`,
+	})
+
+	if nombre != "Centro padre" {
 		t.Fatalf("unexpected centro de costo: %q", nombre)
 	}
 	if codigo != "A123" {
 		t.Fatalf("unexpected codigo centro de costo: %q", codigo)
+	}
+}
+
+func TestConsultarCentroCostoA11ByIDBuscaPorCodigoCuandoNoExistePorId(t *testing.T) {
+	mockConsultarCentroCostosByQuery(t, func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		switch {
+		case strings.Contains(query, "query=Id:1205"):
+			return []models.CentroCostos{}, nil
+		case strings.Contains(query, "query=Codigo:A1205"):
+			return []models.CentroCostos{{Id: 1205, Codigo: "A1205", Nombre: "Oficina Planeación"}}, nil
+		default:
+			return []models.CentroCostos{}, nil
+		}
+	})
+
+	codigo, nombre, err := consultarCentroCostoA11ByID("1205")
+	if err != nil {
+		t.Fatalf("consultarCentroCostoA11ByID retornó error: %v", err)
+	}
+	if codigo != "A1205" || nombre != "Oficina Planeación" {
+		t.Fatalf("centro de costo inesperado: codigo=%q nombre=%q", codigo, nombre)
+	}
+}
+
+func TestCentroCostoContabilizacionEntradaInfoUsaActaDeElementoCuandoFormatoNoLaTrae(t *testing.T) {
+	originalHistoricos := consultarHistoricosActaReporteFn
+	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+		if !strings.Contains(query, "ActaRecibidoId__Id:555") {
+			t.Fatalf("query historico inesperado: %q", query)
+		}
+		return []models.HistoricoActa{{UbicacionId: 422}}, nil
+	}
+	t.Cleanup(func() {
+		consultarHistoricosActaReporteFn = originalHistoricos
+	})
+
+	mockConsultarCentroCostosByQuery(t, func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		if strings.Contains(query, "query=Id:422") {
+			return []models.CentroCostos{{Id: 422, Codigo: "1205", Nombre: "Oficina Planeación"}}, nil
+		}
+		return []models.CentroCostos{}, nil
+	})
+
+	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(
+		nil,
+		models.FormatoBaseEntrada{},
+		[]*models.DetalleElemento{{ActaRecibidoId: &models.ActaRecibido{Id: 555}}},
+	)
+	if err != nil {
+		t.Fatalf("centroCostoContabilizacionEntradaInfo retornó error: %v", err)
+	}
+	if nombre != "Oficina Planeación" || codigo != "A1205" {
+		t.Fatalf("centro de costo inesperado: nombre=%q codigo=%q", nombre, codigo)
+	}
+}
+
+func TestCentroCostoContabilizacionEntradaInfoUsaMovimientoCuandoNoHayActa(t *testing.T) {
+	mockConsultarCentroCostosByQuery(t, func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		if strings.Contains(query, "query=Id:888") {
+			return []models.CentroCostos{{Id: 888, Codigo: "888", Nombre: "Centro desde movimiento"}}, nil
+		}
+		return []models.CentroCostos{}, nil
+	})
+
+	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(
+		&models.Movimiento{Detalle: `{"centro_costos":"888"}`},
+		models.FormatoBaseEntrada{},
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("centroCostoContabilizacionEntradaInfo retornó error: %v", err)
+	}
+	if nombre != "Centro desde movimiento" || codigo != "A888" {
+		t.Fatalf("centro de costo inesperado: nombre=%q codigo=%q", nombre, codigo)
 	}
 }
 
@@ -1106,6 +1255,19 @@ func mockConsultarCentroCostos(t *testing.T, centros []models.CentroCostos) {
 	original := consultarCentroCostosFn
 	consultarCentroCostosFn = func(query string) ([]models.CentroCostos, map[string]interface{}) {
 		return centros, nil
+	}
+
+	t.Cleanup(func() {
+		consultarCentroCostosFn = original
+	})
+}
+
+func mockConsultarCentroCostosByQuery(t *testing.T, handler func(query string) ([]models.CentroCostos, map[string]interface{})) {
+	t.Helper()
+
+	original := consultarCentroCostosFn
+	consultarCentroCostosFn = func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		return handler(query)
 	}
 
 	t.Cleanup(func() {
