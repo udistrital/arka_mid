@@ -193,7 +193,7 @@ func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal
 			return nil, outputError
 		}
 
-		centroCostoNombre, centroCostoCodigo, outputError := centroCostoContabilizacionEntradaInfo(formato)
+		centroCostoNombre, centroCostoCodigo, outputError := centroCostoContabilizacionEntradaInfo(movimiento, formato, elementos)
 		if outputError != nil {
 			return nil, outputError
 		}
@@ -407,15 +407,16 @@ func consultarCodigoCuentaContabilizacion(cuentaID string, cache map[string]stri
 	return codigo
 }
 
-func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada) (codigo, nombre string, outputError map[string]interface{}) {
+func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) (codigo, nombre string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("centroCostoEntradaA11Info - Unhandled Error!", "500")
 
-	if formato.ActaRecibidoId <= 0 {
+	actaRecibidoID := resolverActaRecibidoIDCentroCostoEntrada(formato, elementos)
+	if actaRecibidoID <= 0 {
 		return "", "", nil
 	}
 
 	historicos, outputError := consultarHistoricosActaReporteFn(
-		"ActaRecibidoId__Id:"+strconv.Itoa(formato.ActaRecibidoId),
+		"ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID),
 		"UbicacionId",
 		"Id",
 		"desc",
@@ -435,20 +436,7 @@ func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada) (codigo, nombr
 func consultarCentroCostoA11ByID(id string) (codigo, nombre string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarCentroCostoA11ByID - Unhandled Error!", "500")
 
-	id = strings.TrimSpace(id)
-	if id == "" {
-		return "", "", nil
-	}
-
-	centrosCostos, outputError := consultarCentroCostosFn("query=Id:" + id)
-	if outputError != nil {
-		return "", "", outputError
-	}
-	if len(centrosCostos) == 0 {
-		return "", "", nil
-	}
-
-	return strings.TrimSpace(centrosCostos[0].Codigo), strings.TrimSpace(centrosCostos[0].Nombre), nil
+	return consultarCentroCostoA11ByReferencia(id)
 }
 
 func entradaPadreYActaIDSalida(movimiento *models.Movimiento) (entradaPadre *models.Movimiento, actaID int, outputError map[string]interface{}) {
@@ -477,14 +465,28 @@ func entradaPadreYActaIDSalida(movimiento *models.Movimiento) (entradaPadre *mod
 	return entradaPadre, formato.ActaRecibidoId, nil
 }
 
-func centroCostoContabilizacionEntradaInfo(formato models.FormatoBaseEntrada) (nombre, codigo string, outputError map[string]interface{}) {
+func centroCostoContabilizacionEntradaInfo(movimiento *models.Movimiento, formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) (nombre, codigo string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("centroCostoContabilizacionEntradaInfo - Unhandled Error!", "500")
 
-	codigoRaw, nombre, outputError := centroCostoEntradaA11Info(formato)
+	codigoRaw, nombre, outputError := centroCostoEntradaA11Info(formato, elementos)
+	if outputError == nil && (nombre != "" || codigoRaw != "") {
+		return nombre, normalizarCodigoCentroCostoReporte(codigoRaw), nil
+	}
+
+	if centroCostoNombre, centroCostoCodigo, movimientoErr := resolverCentroCostoMovimiento(movimiento); movimientoErr != nil {
+		if outputError != nil {
+			return "", "", outputError
+		}
+		return "", "", movimientoErr
+	} else if centroCostoNombre != "" || centroCostoCodigo != "" {
+		return centroCostoNombre, centroCostoCodigo, nil
+	}
+
 	if outputError != nil {
 		return "", "", outputError
 	}
-	return nombre, normalizarCodigoCentroCostoReporte(codigoRaw), nil
+
+	return "", "", nil
 }
 
 func agruparElementosContabilizacion(
