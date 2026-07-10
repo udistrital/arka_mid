@@ -1,10 +1,10 @@
 package depreciacionHelper
 
 import (
-	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
+	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
@@ -15,13 +15,16 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 	defer errorCtrl.ErrorControlFunction("AprobarDepreciacion - Unhandled Error!", "500")
 
 	var (
-		parametros  []models.ParametroConfiguracion
-		transaccion models.TransaccionMovimientos
-		cuentas     map[string]models.CuentaContable
+		parametros []models.ParametroConfiguracion
+		detalle    models.FormatoDepreciacion
 	)
 
 	outputError = configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros)
-	if outputError != nil || len(parametros) != 1 || parametros[0].Valor != "true" {
+	if outputError != nil {
+		return
+	}
+	if len(parametros) != 1 || parametros[0].Valor != "true" {
+		resultado.Error = "No hay un cierre en curso listo para aprobación."
 		return
 	}
 
@@ -34,24 +37,27 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 	}
 
 	resultado.Movimiento = *mov_
-	outputError = calcularCierre(resultado.Movimiento.FechaCorte.UTC().Format("2006-01-02"), cuentas, &transaccion, resultado)
-	if outputError != nil || resultado.Error != "" || len(transaccion.Movimientos) == 0 {
+	if err := utilsHelper.Unmarshal(resultado.Movimiento.Detalle, &detalle); err != nil {
+		return err
+	}
+	if detalle.CalculoError != "" {
+		resultado.Error = "El cierre no está listo para aprobación: " + detalle.CalculoError
+		return
+	}
+	if !detalle.CalculoListo || detalle.Transaccion == nil || len(detalle.Transaccion.Movimientos) == 0 {
+		resultado.Error = "El cálculo del cierre aún está en proceso o no produjo una vista previa aprobable."
 		return
 	}
 
-	resultado.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteCierre(), dscTransaccionCierre(), &transaccion)
-	if outputError != nil || resultado.Error != "" {
-		return
-	}
-
-	resultado.TransaccionContable.Concepto = transaccion.Descripcion
-	resultado.TransaccionContable.Fecha = transaccion.FechaTransaccion
-	resultado.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas)
-	if outputError != nil {
-		return
-	}
-
+	transaccion := *detalle.Transaccion
 	transaccion.ConsecutivoId = *resultado.Movimiento.ConsecutivoId
+	if transaccion.FechaTransaccion.IsZero() && resultado.Movimiento.FechaCorte != nil {
+		transaccion.FechaTransaccion = *resultado.Movimiento.FechaCorte
+	}
+
+	if detalle.PreviewContable != nil {
+		resultado.TransaccionContable = *detalle.PreviewContable
+	}
 	_, outputError = movimientosContables.PostTrContable(&transaccion)
 	if outputError != nil {
 		resultado.Error = "Error al registrar la transacción contable. Contacte soporte"

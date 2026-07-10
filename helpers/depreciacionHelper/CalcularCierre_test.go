@@ -1,6 +1,7 @@
 package depreciacionHelper
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/udistrital/arka_mid/models"
@@ -29,16 +30,17 @@ func TestElementoValidoParaDepreciacion(t *testing.T) {
 func TestConsultarElementosParaCierre(t *testing.T) {
 	originalGetter := getAllElementoDepreciacionCierre
 	getAllElementoDepreciacionCierre = func(query string, fields string, sortby string, order string, offset string, limit string) (elementos []*models.Elemento, outputError map[string]interface{}) {
-		switch query {
-		case "Id:1":
-			return []*models.Elemento{{Id: 1, Activo: true, TipoBienId: 10, SubgrupoCatalogoId: 100}}, nil
-		case "Id:2":
-			return []*models.Elemento{{Id: 2, Activo: false, TipoBienId: 10, SubgrupoCatalogoId: 100}}, nil
-		case "Id:3":
-			return []*models.Elemento{{Id: 3, Activo: true, TipoBienId: 0, SubgrupoCatalogoId: 100}}, nil
-		default:
-			return nil, nil
+		result := make([]*models.Elemento, 0)
+		if strings.Contains(query, "1") {
+			result = append(result, &models.Elemento{Id: 1, Activo: true, TipoBienId: 10, SubgrupoCatalogoId: 100})
 		}
+		if strings.Contains(query, "2") {
+			result = append(result, &models.Elemento{Id: 2, Activo: false, TipoBienId: 10, SubgrupoCatalogoId: 100})
+		}
+		if strings.Contains(query, "3") {
+			result = append(result, &models.Elemento{Id: 3, Activo: true, TipoBienId: 0, SubgrupoCatalogoId: 100})
+		}
+		return result, nil
 	}
 	defer func() { getAllElementoDepreciacionCierre = originalGetter }()
 
@@ -64,5 +66,17 @@ func TestConsultarElementosParaCierre(t *testing.T) {
 
 	if detalles[0].elemento == nil || detalles[0].elemento.Id != 1 || detalles[0].deltaValor != 15 {
 		t.Fatalf("unexpected collected detalle %+v", detalles[0])
+	}
+}
+
+func TestChunkInts(t *testing.T) {
+	t.Parallel()
+
+	lotes := chunkInts([]int{1, 2, 3, 4, 5}, 2)
+	if len(lotes) != 3 {
+		t.Fatalf("expected 3 lots, got %d", len(lotes))
+	}
+	if len(lotes[0]) != 2 || len(lotes[1]) != 2 || len(lotes[2]) != 1 {
+		t.Fatalf("unexpected chunk sizes: %+v", lotes)
 	}
 }
