@@ -7,11 +7,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.29
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.71.0
 	github.com/aws/aws-xray-sdk-go/v2 v2.0.1
-	github.com/beego/beego/v2 v2.3.9
+	github.com/beego/beego/v2 v2.3.10
 	github.com/phpdave11/gofpdf v1.4.3
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/tealeg/xlsx v1.0.5
-	golang.org/x/text v0.35.0
+	golang.org/x/text v0.40.0
 )
 
 require (
@@ -47,7 +47,7 @@ require (
 	github.com/valyala/fasthttp v1.52.0 // indirect
 	golang.org/x/crypto v0.46.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	google.golang.org/grpc v1.79.3 // indirect

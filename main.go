@@ -27,9 +27,10 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	web.ErrorController(&customErrorv2.CustomErrorController{})
-	security.SetSecurityHeaders()
 	apiStatus.Init()
 	auditoria.InitMiddleware()
+	security.SetSecurityHeaders()
+
+	web.ErrorController(&customErrorv2.CustomErrorController{})
 	web.Run()
 }
