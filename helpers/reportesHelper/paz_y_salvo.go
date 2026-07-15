@@ -322,24 +322,24 @@ func construirTablaElementos(pdf *gofpdf.Fpdf, tr func(string) string, elementos
 
 func fechaLargaEs(fecha time.Time) string {
 	meses := map[time.Month]string{
-		time.January:   "1 de enero de 2006",
-		time.February:  "1 de febrero de 2006",
-		time.March:     "1 de marzo de 2006",
-		time.April:     "1 de abril de 2006",
-		time.May:       "1 de mayo de 2006",
-		time.June:      "1 de junio de 2006",
-		time.July:      "1 de julio de 2006",
-		time.August:    "1 de agosto de 2006",
-		time.September: "1 de septiembre de 2006",
-		time.October:   "1 de octubre de 2006",
-		time.November:  "1 de noviembre de 2006",
-		time.December:  "1 de diciembre de 2006",
+		time.January:   "enero",
+		time.February:  "febrero",
+		time.March:     "marzo",
+		time.April:     "abril",
+		time.May:       "mayo",
+		time.June:      "junio",
+		time.July:      "julio",
+		time.August:    "agosto",
+		time.September: "septiembre",
+		time.October:   "octubre",
+		time.November:  "noviembre",
+		time.December:  "diciembre",
 	}
-	layout, ok := meses[fecha.Month()]
+	mes, ok := meses[fecha.Month()]
 	if !ok {
-		layout = "2 de January de 2006"
+		mes = strings.ToLower(fecha.Month().String())
 	}
-	return strings.ToLower(fecha.Format(layout))
+	return fmt.Sprintf("%d dias de %s de %d", fecha.Day(), mes, fecha.Year())
 }
 
 func obtenerConfig(key, fallback string) string {
