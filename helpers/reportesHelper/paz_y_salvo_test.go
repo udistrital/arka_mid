@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/udistrital/arka_mid/models"
 )
@@ -160,6 +161,16 @@ func TestGenerarPazYSalvoContinuaSinElaborador(t *testing.T) {
 
 	if respuesta == nil || strings.TrimSpace(respuesta.ArchivoBase64) == "" {
 		t.Fatal("se esperaba PDF generado aun sin elaborador")
+	}
+}
+
+func TestFechaLargaEsUsaDiaReal(t *testing.T) {
+	fecha := time.Date(2026, time.July, 15, 10, 30, 0, 0, time.UTC)
+
+	resultado := fechaLargaEs(fecha)
+
+	if resultado != "15 dias de julio de 2026" {
+		t.Fatalf("fecha larga inesperada: %q", resultado)
 	}
 }
 
