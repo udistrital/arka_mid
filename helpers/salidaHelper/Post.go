@@ -71,6 +71,7 @@ func normalizarNuevaSalida(trSalida *models.TrSalida, estadoMovimientoId int) (o
 
 	salida := trSalida.Salida
 	salida.Id = 0
+	salida.Activo = true
 	salida.FechaCorte = nil
 	salida.EstadoMovimientoId = &models.EstadoMovimiento{Id: estadoMovimientoId, Nombre: "Salida En Trámite"}
 
@@ -107,6 +108,7 @@ func normalizarNuevaSalida(trSalida *models.TrSalida, estadoMovimientoId int) (o
 		}
 
 		elemento.Id = 0
+		elemento.Activo = true
 		elemento.MovimientoId = nil
 	}
 
