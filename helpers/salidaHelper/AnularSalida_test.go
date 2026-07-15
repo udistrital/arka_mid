@@ -182,6 +182,9 @@ func TestNormalizarNuevaSalida(t *testing.T) {
 	if trSalida.Salida.Id != 0 {
 		t.Fatalf("expected salida id 0, got %d", trSalida.Salida.Id)
 	}
+	if !trSalida.Salida.Activo {
+		t.Fatal("expected normalized salida to be active")
+	}
 
 	if trSalida.Salida.MovimientoPadreId == nil || trSalida.Salida.MovimientoPadreId.Id != 8079 {
 		t.Fatalf("expected parent id 8079, got %+v", trSalida.Salida.MovimientoPadreId)
@@ -201,6 +204,9 @@ func TestNormalizarNuevaSalida(t *testing.T) {
 
 	if trSalida.Elementos[0].Id != 0 || trSalida.Elementos[0].MovimientoId != nil {
 		t.Fatalf("expected element to be detached from previous movement, got %+v", trSalida.Elementos[0])
+	}
+	if !trSalida.Elementos[0].Activo {
+		t.Fatal("expected normalized element to be active")
 	}
 }
 
