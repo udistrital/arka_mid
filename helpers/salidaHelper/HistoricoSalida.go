@@ -263,7 +263,7 @@ func normalizarElementoMovimientoHistoricoSalida(
 		SaldoValor:         elemento.SaldoValor,
 		VidaUtil:           elemento.VidaUtil,
 		ValorResidual:      elemento.ValorResidual,
-		Activo:             true,
+		Activo:             elemento.Activo,
 	}
 
 	if elemento.ElementoActaId != nil {

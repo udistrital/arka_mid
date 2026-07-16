@@ -4,13 +4,11 @@ import (
 	"time"
 )
 
-var tiempoBogota time.Time
+var bogota, _ = time.LoadLocation("America/Bogota")
 
 func TiempoBogota() time.Time {
-
-	tiempoBogota = time.Now()
-	loc, _ := time.LoadLocation("America/Bogota")
-	tiempoBogota = tiempoBogota.In(loc)
+	tiempoBogota := time.Now()
+	tiempoBogota = tiempoBogota.In(bogota)
 
 	return tiempoBogota
 }
