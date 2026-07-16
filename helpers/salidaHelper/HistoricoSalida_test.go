@@ -112,6 +112,9 @@ func TestNormalizarElementoMovimientoHistoricoSalida(t *testing.T) {
 	if !got.FechaModificacion.Equal(corte) {
 		t.Fatalf("unexpected FechaModificacion: %v", got.FechaModificacion)
 	}
+	if !got.Activo {
+		t.Fatal("expected elemento_movimiento historico to remain active")
+	}
 }
 
 func TestNormalizarElementoMovimientoHistoricoSalidaSinMovimientoId(t *testing.T) {
@@ -186,6 +189,60 @@ func TestHidratarElementoMovimientoHistoricoSalidaCompletaValoresFaltantes(t *te
 	}
 	if elemento.ValorResidual != 15 {
 		t.Fatalf("expected seed ValorResidual to be preserved, got %v", elemento.ValorResidual)
+	}
+}
+
+func TestNormalizarElementoMovimientoHistoricoSalidaReconstruyeDataDesdeSeedYActaYActivaElemento(t *testing.T) {
+	t.Parallel()
+
+	elementoActaID := 46677
+	elemento := &models.ElementosMovimiento{
+		Id:             41413,
+		ElementoActaId: &elementoActaID,
+		Activo:         false,
+	}
+	seed := &elementoMovimientoHistoricoSalidaSeed{
+		Unidad:        3,
+		SaldoCantidad: 3,
+		SaldoValor:    3600,
+		VidaUtil:      7,
+	}
+	elementoActa := &models.DetalleElemento{
+		Cantidad:      3,
+		ValorUnitario: 1200,
+		ValorTotal:    3600,
+		SubgrupoCatalogoId: &models.DetalleSubgrupo{
+			ValorResidual: 0.1,
+		},
+	}
+
+	got := normalizarElementoMovimientoHistoricoSalida(elemento, nil, seed, elementoActa)
+	if got == nil {
+		t.Fatal("expected normalized element")
+	}
+	if !got.Activo {
+		t.Fatal("expected normalized element to be active")
+	}
+	if got.Unidad != 3 {
+		t.Fatalf("unexpected Unidad: %v", got.Unidad)
+	}
+	if got.ValorUnitario != 1200 {
+		t.Fatalf("unexpected ValorUnitario: %v", got.ValorUnitario)
+	}
+	if got.ValorTotal != 3600 {
+		t.Fatalf("unexpected ValorTotal: %v", got.ValorTotal)
+	}
+	if got.SaldoCantidad != 3 {
+		t.Fatalf("unexpected SaldoCantidad: %v", got.SaldoCantidad)
+	}
+	if got.SaldoValor != 3600 {
+		t.Fatalf("unexpected SaldoValor: %v", got.SaldoValor)
+	}
+	if got.VidaUtil != 7 {
+		t.Fatalf("unexpected VidaUtil: %v", got.VidaUtil)
+	}
+	if got.ValorResidual != 360 {
+		t.Fatalf("unexpected ValorResidual: %v", got.ValorResidual)
 	}
 }
 
