@@ -72,25 +72,25 @@ func TestNormalizarElementoMovimientoHistoricoSalida(t *testing.T) {
 	corte := time.Date(1997, 12, 31, 10, 0, 0, 0, time.UTC)
 
 	elemento := &models.ElementosMovimiento{
-		Id:                41409,
-		ElementoActaId:    &elementoActaID,
+		Id:                 41409,
+		ElementoActaId:     &elementoActaID,
 		ElementoCatalogoId: 0,
-		Unidad:            1,
-		ValorUnitario:     100,
-		ValorTotal:        100,
-		SaldoCantidad:     0,
-		SaldoValor:        0,
-		VidaUtil:          0,
-		ValorResidual:     0,
-		Activo:            false,
-		MovimientoId:      &models.Movimiento{Id: movimientoID, Observacion: "debe limpiarse"},
+		Unidad:             1,
+		ValorUnitario:      100,
+		ValorTotal:         100,
+		SaldoCantidad:      0,
+		SaldoValor:         0,
+		VidaUtil:           0,
+		ValorResidual:      0,
+		Activo:             false,
+		MovimientoId:       &models.Movimiento{Id: movimientoID, Observacion: "debe limpiarse"},
 	}
 	payload := &models.TransaccionSalidaHistorica{
 		FechaCreacion: creacion,
 		FechaCorte:    corte,
 	}
 
-	got := normalizarElementoMovimientoHistoricoSalida(elemento, payload)
+	got := normalizarElementoMovimientoHistoricoSalida(elemento, payload, nil, nil)
 	if got == nil {
 		t.Fatal("expected normalized element")
 	}
@@ -122,17 +122,17 @@ func TestNormalizarElementoMovimientoHistoricoSalidaSinMovimientoId(t *testing.T
 	corte := time.Date(1997, 12, 31, 10, 0, 0, 0, time.UTC)
 
 	elemento := &models.ElementosMovimiento{
-		Id:                41412,
-		ElementoActaId:    &elementoActaID,
+		Id:                 41412,
+		ElementoActaId:     &elementoActaID,
 		ElementoCatalogoId: 0,
-		Activo:            false,
+		Activo:             false,
 	}
 	payload := &models.TransaccionSalidaHistorica{
 		FechaCreacion: creacion,
 		FechaCorte:    corte,
 	}
 
-	got := normalizarElementoMovimientoHistoricoSalida(elemento, payload)
+	got := normalizarElementoMovimientoHistoricoSalida(elemento, payload, nil, nil)
 	if got == nil {
 		t.Fatal("expected normalized element")
 	}
@@ -141,6 +141,62 @@ func TestNormalizarElementoMovimientoHistoricoSalidaSinMovimientoId(t *testing.T
 	}
 	if got.ElementoActaId == nil || *got.ElementoActaId != elementoActaID {
 		t.Fatalf("unexpected ElementoActaId: %+v", got.ElementoActaId)
+	}
+}
+
+func TestHidratarElementoMovimientoHistoricoSalidaCompletaValoresFaltantes(t *testing.T) {
+	t.Parallel()
+
+	elemento := &models.ElementosMovimiento{
+		Id:     41412,
+		Activo: true,
+	}
+	seed := &elementoMovimientoHistoricoSalidaSeed{
+		ValorResidual: 15,
+	}
+	elementoActa := &models.DetalleElemento{
+		Cantidad:      2,
+		ValorUnitario: 1250,
+		ValorTotal:    2500,
+		SubgrupoCatalogoId: &models.DetalleSubgrupo{
+			VidaUtil:      5,
+			ValorResidual: 0.1,
+		},
+	}
+
+	hidratarElementoMovimientoHistoricoSalida(elemento, seed, elementoActa)
+
+	if elemento.Unidad != 2 {
+		t.Fatalf("unexpected Unidad: %v", elemento.Unidad)
+	}
+	if elemento.ValorUnitario != 1250 {
+		t.Fatalf("unexpected ValorUnitario: %v", elemento.ValorUnitario)
+	}
+	if elemento.ValorTotal != 2500 {
+		t.Fatalf("unexpected ValorTotal: %v", elemento.ValorTotal)
+	}
+	if elemento.SaldoCantidad != 2 {
+		t.Fatalf("unexpected SaldoCantidad: %v", elemento.SaldoCantidad)
+	}
+	if elemento.SaldoValor != 2500 {
+		t.Fatalf("unexpected SaldoValor: %v", elemento.SaldoValor)
+	}
+	if elemento.VidaUtil != 5 {
+		t.Fatalf("unexpected VidaUtil: %v", elemento.VidaUtil)
+	}
+	if elemento.ValorResidual != 15 {
+		t.Fatalf("expected seed ValorResidual to be preserved, got %v", elemento.ValorResidual)
+	}
+}
+
+func TestResolverValorResidualHistoricoSalidaUsaProporcion(t *testing.T) {
+	t.Parallel()
+
+	if got := resolverValorResidualHistoricoSalida(0.1, 2500); got != 250 {
+		t.Fatalf("unexpected proportional residual: %v", got)
+	}
+	if got := resolverValorResidualHistoricoSalida(300, 2500); got != 300 {
+		t.Fatalf("unexpected absolute residual: %v", got)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
@@ -14,6 +15,17 @@ import (
 )
 
 var getConsecutivoByIDSalidaHistorica = consecutivos.GetById
+var consultarElementosActaHistoricoSalida = actaRecibido.GetElementos
+
+type elementoMovimientoHistoricoSalidaSeed struct {
+	ValorUnitario float64
+	ValorTotal    float64
+	VidaUtil      float64
+	ValorResidual float64
+	Unidad        float64
+	SaldoCantidad float64
+	SaldoValor    float64
+}
 
 // RegistrarSalidaHistorica crea y aprueba una salida histórica usando un consecutivo y año específicos.
 func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
@@ -49,6 +61,7 @@ func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado
 		Salidas: make([]models.TrSalida, len(data.Salidas)),
 	}
 	copy(payload.Salidas, data.Salidas)
+	seedsPorElementoActa := construirSeedsElementosHistoricosSalida(data)
 
 	if outputError = normalizarNuevaSalida(&payload.Salidas[0], estadoMovimientoId); outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
@@ -108,6 +121,17 @@ func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado
 		)
 	}
 
+	elementosActaPorID, outputError := consultarElementosActaHistoricoSalidaPorTrSalida(trSalida)
+	if outputError != nil {
+		return wrapHistoricoSalidaDependencyError(
+			"consultar detalle de elementos del acta",
+			fmt.Sprintf("RegistrarSalidaHistorica - consultarElementosActaHistoricoSalidaPorTrSalida(salida_id=%d)", trSalida.Salida.Id),
+			fmt.Sprintf("no se pudo consultar el detalle de los elementos de la salida histórica %d", trSalida.Salida.Id),
+			outputError,
+			"502",
+		)
+	}
+
 	trSalida.Salida.FechaCreacion = data.FechaCreacion
 	trSalida.Salida.FechaModificacion = normalizarFechaModificacionHistoricaSalida(data)
 	trSalida.Salida.FechaCorte = &data.FechaCorte
@@ -133,7 +157,12 @@ func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado
 		if elemento == nil || elemento.Id <= 0 {
 			continue
 		}
-		elementoHistorico := normalizarElementoMovimientoHistoricoSalida(elemento, data)
+		elementoHistorico := normalizarElementoMovimientoHistoricoSalida(
+			elemento,
+			data,
+			seedsPorElementoActa[valorElementoActaHistoricoSalida(elemento.ElementoActaId)],
+			elementosActaPorID[valorElementoActaHistoricoSalida(elemento.ElementoActaId)],
+		)
 		if elementoHistorico != nil && (elementoHistorico.MovimientoId == nil || elementoHistorico.MovimientoId.Id <= 0) {
 			elementoHistorico.MovimientoId = &models.Movimiento{Id: trSalida.Salida.Id}
 		}
@@ -147,9 +176,9 @@ func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado
 				fmt.Sprintf("RegistrarSalidaHistorica - PutElementosMovimiento(elemento_movimiento_id=%d)", elementoHistorico.Id),
 				fmt.Sprintf("no se pudieron persistir las fechas históricas del elemento_movimiento %d", elementoHistorico.Id),
 				mergeHistoricoSalidaErrorCause(outputError, map[string]interface{}{
-					"salida_id":               trSalida.Salida.Id,
-					"elemento_movimiento_id":  elementoHistorico.Id,
-					"elemento_acta_id":        valorElementoActaHistoricoSalida(elementoHistorico.ElementoActaId),
+					"salida_id":                   trSalida.Salida.Id,
+					"elemento_movimiento_id":      elementoHistorico.Id,
+					"elemento_acta_id":            valorElementoActaHistoricoSalida(elementoHistorico.ElementoActaId),
 					"payload_elemento_movimiento": payloadElemento,
 				}),
 				"502",
@@ -217,22 +246,24 @@ func normalizarFechaModificacionHistoricaSalida(data *models.TransaccionSalidaHi
 func normalizarElementoMovimientoHistoricoSalida(
 	elemento *models.ElementosMovimiento,
 	data *models.TransaccionSalidaHistorica,
+	seed *elementoMovimientoHistoricoSalidaSeed,
+	elementoActa *models.DetalleElemento,
 ) *models.ElementosMovimiento {
 	if elemento == nil {
 		return nil
 	}
 
 	elementoHistorico := &models.ElementosMovimiento{
-		Id:                elemento.Id,
+		Id:                 elemento.Id,
 		ElementoCatalogoId: elemento.ElementoCatalogoId,
-		Unidad:            elemento.Unidad,
-		ValorUnitario:     elemento.ValorUnitario,
-		ValorTotal:        elemento.ValorTotal,
-		SaldoCantidad:     elemento.SaldoCantidad,
-		SaldoValor:        elemento.SaldoValor,
-		VidaUtil:          elemento.VidaUtil,
-		ValorResidual:     elemento.ValorResidual,
-		Activo:            elemento.Activo,
+		Unidad:             elemento.Unidad,
+		ValorUnitario:      elemento.ValorUnitario,
+		ValorTotal:         elemento.ValorTotal,
+		SaldoCantidad:      elemento.SaldoCantidad,
+		SaldoValor:         elemento.SaldoValor,
+		VidaUtil:           elemento.VidaUtil,
+		ValorResidual:      elemento.ValorResidual,
+		Activo:             elemento.Activo,
 	}
 
 	if elemento.ElementoActaId != nil {
@@ -249,7 +280,139 @@ func normalizarElementoMovimientoHistoricoSalida(
 		elementoHistorico.FechaModificacion = normalizarFechaModificacionHistoricaSalida(data)
 	}
 
+	hidratarElementoMovimientoHistoricoSalida(elementoHistorico, seed, elementoActa)
+
 	return elementoHistorico
+}
+
+func construirSeedsElementosHistoricosSalida(data *models.TransaccionSalidaHistorica) map[int]*elementoMovimientoHistoricoSalidaSeed {
+	seeds := make(map[int]*elementoMovimientoHistoricoSalidaSeed)
+	if data == nil || len(data.Salidas) == 0 {
+		return seeds
+	}
+
+	for _, trSalida := range data.Salidas {
+		for _, elemento := range trSalida.Elementos {
+			if elemento == nil || elemento.ElementoActaId == nil || *elemento.ElementoActaId <= 0 {
+				continue
+			}
+			seeds[*elemento.ElementoActaId] = &elementoMovimientoHistoricoSalidaSeed{
+				ValorUnitario: elemento.ValorUnitario,
+				ValorTotal:    elemento.ValorTotal,
+				VidaUtil:      elemento.VidaUtil,
+				ValorResidual: elemento.ValorResidual,
+				Unidad:        elemento.Unidad,
+				SaldoCantidad: elemento.SaldoCantidad,
+				SaldoValor:    elemento.SaldoValor,
+			}
+		}
+	}
+
+	return seeds
+}
+
+func consultarElementosActaHistoricoSalidaPorTrSalida(trSalida *models.TrSalida) (map[int]*models.DetalleElemento, map[string]interface{}) {
+	elementosPorID := make(map[int]*models.DetalleElemento)
+	if trSalida == nil || len(trSalida.Elementos) == 0 {
+		return elementosPorID, nil
+	}
+
+	ids := make([]int, 0, len(trSalida.Elementos))
+	for _, elemento := range trSalida.Elementos {
+		if elemento == nil || elemento.ElementoActaId == nil || *elemento.ElementoActaId <= 0 {
+			continue
+		}
+		ids = append(ids, *elemento.ElementoActaId)
+	}
+	if len(ids) == 0 {
+		return elementosPorID, nil
+	}
+
+	elementosActa, outputError := consultarElementosActaHistoricoSalida(0, ids)
+	if outputError != nil {
+		return nil, outputError
+	}
+
+	for _, elementoActa := range elementosActa {
+		if elementoActa != nil && elementoActa.Id > 0 {
+			elementosPorID[elementoActa.Id] = elementoActa
+		}
+	}
+
+	return elementosPorID, nil
+}
+
+func hidratarElementoMovimientoHistoricoSalida(
+	elementoHistorico *models.ElementosMovimiento,
+	seed *elementoMovimientoHistoricoSalidaSeed,
+	elementoActa *models.DetalleElemento,
+) {
+	if elementoHistorico == nil {
+		return
+	}
+
+	if seed != nil {
+		if seed.Unidad > 0 {
+			elementoHistorico.Unidad = seed.Unidad
+		}
+		if seed.SaldoCantidad > 0 {
+			elementoHistorico.SaldoCantidad = seed.SaldoCantidad
+		}
+		if seed.SaldoValor > 0 {
+			elementoHistorico.SaldoValor = seed.SaldoValor
+		}
+		if seed.ValorUnitario > 0 {
+			elementoHistorico.ValorUnitario = seed.ValorUnitario
+		}
+		if seed.ValorTotal > 0 {
+			elementoHistorico.ValorTotal = seed.ValorTotal
+		}
+		if seed.VidaUtil > 0 {
+			elementoHistorico.VidaUtil = seed.VidaUtil
+		}
+		if seed.ValorResidual > 0 {
+			elementoHistorico.ValorResidual = seed.ValorResidual
+		}
+	}
+
+	if elementoActa == nil {
+		return
+	}
+
+	if elementoHistorico.Unidad == 0 && elementoActa.Cantidad > 0 {
+		elementoHistorico.Unidad = float64(elementoActa.Cantidad)
+	}
+	if elementoHistorico.ValorUnitario == 0 && elementoActa.ValorUnitario > 0 {
+		elementoHistorico.ValorUnitario = elementoActa.ValorUnitario
+	}
+	if elementoHistorico.ValorTotal == 0 && elementoActa.ValorTotal > 0 {
+		elementoHistorico.ValorTotal = elementoActa.ValorTotal
+	}
+	if elementoHistorico.SaldoCantidad == 0 {
+		elementoHistorico.SaldoCantidad = elementoHistorico.Unidad
+	}
+	if elementoHistorico.SaldoValor == 0 && elementoHistorico.ValorTotal > 0 {
+		elementoHistorico.SaldoValor = elementoHistorico.ValorTotal
+	}
+	if elementoHistorico.VidaUtil == 0 && elementoActa.SubgrupoCatalogoId != nil && elementoActa.SubgrupoCatalogoId.VidaUtil > 0 {
+		elementoHistorico.VidaUtil = elementoActa.SubgrupoCatalogoId.VidaUtil
+	}
+	if elementoHistorico.ValorResidual == 0 && elementoActa.SubgrupoCatalogoId != nil && elementoActa.SubgrupoCatalogoId.ValorResidual > 0 {
+		elementoHistorico.ValorResidual = resolverValorResidualHistoricoSalida(
+			elementoActa.SubgrupoCatalogoId.ValorResidual,
+			elementoHistorico.ValorTotal,
+		)
+	}
+}
+
+func resolverValorResidualHistoricoSalida(valorResidualBase, valorTotal float64) float64 {
+	if valorResidualBase <= 0 {
+		return 0
+	}
+	if valorResidualBase <= 1 && valorTotal > 0 {
+		return valorResidualBase * valorTotal
+	}
+	return valorResidualBase
 }
 
 func validarAprobacionHistoricaSalida(data *models.TransaccionSalidaHistorica) error {
