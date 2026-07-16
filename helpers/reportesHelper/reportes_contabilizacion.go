@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -415,22 +414,7 @@ func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada, elementos []*m
 		return "", "", nil
 	}
 
-	historicos, outputError := consultarHistoricosActaReporteFn(
-		"ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID),
-		"UbicacionId",
-		"Id",
-		"desc",
-		"",
-		"1",
-	)
-	if outputError != nil {
-		return "", "", outputError
-	}
-	if len(historicos) == 0 || historicos[0].UbicacionId <= 0 {
-		return "", "", nil
-	}
-
-	return consultarCentroCostoA11ByID(strconv.Itoa(historicos[0].UbicacionId))
+	return resolverCentroCostoActaRecibido(actaRecibidoID)
 }
 
 func consultarCentroCostoA11ByID(id string) (codigo, nombre string, outputError map[string]interface{}) {
@@ -486,7 +470,7 @@ func centroCostoContabilizacionEntradaInfo(movimiento *models.Movimiento, format
 		return "", "", outputError
 	}
 
-	return "", "", nil
+	return fallbackCentroCostoReporte()
 }
 
 func agruparElementosContabilizacion(
