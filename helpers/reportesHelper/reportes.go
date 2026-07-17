@@ -267,6 +267,8 @@ func GetDetalleCuentasEntradaPorConsecutivo(consecutivo string) (respuesta []*mo
 			ElementoNombre:            row.ElementoNombre,
 			ElementoValorFinal:        row.ElementoValorFinal,
 			SalidaFuncionarioAsignado: row.SalidaFuncionarioAsignado,
+			SalidaCentroCosto:         row.SalidaCentroCosto,
+			SalidaCodigoCentroCosto:   row.SalidaCodigoCentroCosto,
 			CuentaDebitoEntrada:       row.CuentaDebitoEntrada,
 			CuentaCreditoEntrada:      row.CuentaCreditoEntrada,
 		})

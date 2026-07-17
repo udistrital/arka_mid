@@ -770,6 +770,48 @@ func TestCentroCostoContabilizacionEntradaInfoUsaActaDeElementoCuandoFormatoNoLa
 	}
 }
 
+func TestCentroCostoContabilizacionEntradaInfoPriorizaSalidaAsociada(t *testing.T) {
+	mockResolverSalidasPorElemento(t, map[int]*salidaReporteData{
+		101: {
+			CentroCostoNombre:  "Centro desde salida",
+			CentroCostoCodigo:  "999",
+			Movimiento:         &models.Movimiento{Detalle: `{"ubicacion":999}`},
+			CuentasPorSubgrupo: map[int]models.CuentasSubgrupo{},
+		},
+	})
+
+	originalHistoricos := consultarHistoricosActaReporteFn
+	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+		return []models.HistoricoActa{{UbicacionId: 422}}, nil
+	}
+	t.Cleanup(func() {
+		consultarHistoricosActaReporteFn = originalHistoricos
+	})
+
+	mockConsultarCentroCostosByQuery(t, func(query string) ([]models.CentroCostos, map[string]interface{}) {
+		switch {
+		case strings.Contains(query, "query=Id:422"):
+			return []models.CentroCostos{{Id: 422, Codigo: "1205", Nombre: "Oficina Planeación"}}, nil
+		case strings.Contains(query, "query=Id:999"):
+			return []models.CentroCostos{{Id: 999, Codigo: "999", Nombre: "Centro desde salida"}}, nil
+		default:
+			return []models.CentroCostos{}, nil
+		}
+	})
+
+	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(
+		nil,
+		models.FormatoBaseEntrada{ActaRecibidoId: 555},
+		[]*models.DetalleElemento{{Id: 101}},
+	)
+	if err != nil {
+		t.Fatalf("centroCostoContabilizacionEntradaInfo retornó error: %v", err)
+	}
+	if nombre != "Centro desde salida" || codigo != "A999" {
+		t.Fatalf("centro de costo inesperado: nombre=%q codigo=%q", nombre, codigo)
+	}
+}
+
 func TestCentroCostoContabilizacionEntradaInfoUsaUbicacionHistoricaAlterna(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
 	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
@@ -877,6 +919,8 @@ func TestGetDetalleCuentasEntradaPorConsecutivo(t *testing.T) {
 	mockResolverSalidasPorElemento(t, map[int]*salidaReporteData{
 		101: {
 			FuncionarioAsignado: "12345 - Funcionario Uno",
+			CentroCostoNombre:   "Centro salida entrada",
+			CentroCostoCodigo:   "A777",
 		},
 	})
 	mockGetCuentasByMovimientoAndSubgrupos(t, map[int]models.CuentasSubgrupo{
@@ -907,6 +951,12 @@ func TestGetDetalleCuentasEntradaPorConsecutivo(t *testing.T) {
 	}
 	if respuesta[0].SalidaFuncionarioAsignado != "12345 - Funcionario Uno" {
 		t.Fatalf("SalidaFuncionarioAsignado inesperado: %q", respuesta[0].SalidaFuncionarioAsignado)
+	}
+	if respuesta[0].SalidaCentroCosto != "Centro salida entrada" {
+		t.Fatalf("SalidaCentroCosto inesperado: %q", respuesta[0].SalidaCentroCosto)
+	}
+	if respuesta[0].SalidaCodigoCentroCosto != "A777" {
+		t.Fatalf("SalidaCodigoCentroCosto inesperado: %q", respuesta[0].SalidaCodigoCentroCosto)
 	}
 	if respuesta[0].CuentaDebitoEntrada != "151001 - Equipo de cómputo" {
 		t.Fatalf("CuentaDebitoEntrada inesperada: %q", respuesta[0].CuentaDebitoEntrada)

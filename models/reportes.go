@@ -39,6 +39,8 @@ type ReporteDetalleEntradaResponse struct {
 	ElementoNombre            string  `json:"ElementoNombre"`
 	ElementoValorFinal        float64 `json:"ElementoValorFinal"`
 	SalidaFuncionarioAsignado string  `json:"SalidaFuncionarioAsignado"`
+	SalidaCentroCosto         string  `json:"SalidaCentroCosto"`
+	SalidaCodigoCentroCosto   string  `json:"SalidaCodigoCentroCosto"`
 	CuentaDebitoEntrada       string  `json:"CuentaDebitoEntrada"`
 	CuentaCreditoEntrada      string  `json:"CuentaCreditoEntrada"`
 }
