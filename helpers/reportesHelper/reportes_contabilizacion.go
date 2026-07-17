@@ -452,6 +452,11 @@ func entradaPadreYActaIDSalida(movimiento *models.Movimiento) (entradaPadre *mod
 func centroCostoContabilizacionEntradaInfo(movimiento *models.Movimiento, formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) (nombre, codigo string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("centroCostoContabilizacionEntradaInfo - Unhandled Error!", "500")
 
+	nombre, codigo, outputError = centroCostoEntradaDesdeSalidaInfo(elementos)
+	if outputError == nil && (nombre != "" || codigo != "") {
+		return nombre, normalizarCodigoCentroCostoReporte(codigo), nil
+	}
+
 	codigoRaw, nombre, outputError := centroCostoEntradaA11Info(formato, elementos)
 	if outputError == nil && (nombre != "" || codigoRaw != "") {
 		return nombre, normalizarCodigoCentroCostoReporte(codigoRaw), nil
@@ -471,6 +476,39 @@ func centroCostoContabilizacionEntradaInfo(movimiento *models.Movimiento, format
 	}
 
 	return fallbackCentroCostoReporte()
+}
+
+func centroCostoEntradaDesdeSalidaInfo(elementos []*models.DetalleElemento) (nombre, codigo string, outputError map[string]interface{}) {
+	if len(elementos) == 0 {
+		return "", "", nil
+	}
+
+	salidasPorElemento, outputError := resolverSalidasPorElementoFn(elementos)
+	if outputError != nil {
+		return "", "", outputError
+	}
+
+	for _, elemento := range elementos {
+		if elemento == nil || elemento.Id <= 0 {
+			continue
+		}
+
+		salida := salidasPorElemento[elemento.Id]
+		if salida == nil {
+			continue
+		}
+		if salida.CentroCostoNombre != "" || salida.CentroCostoCodigo != "" {
+			return salida.CentroCostoNombre, normalizarCodigoCentroCostoReporte(salida.CentroCostoCodigo), nil
+		}
+		if salida.Movimiento != nil {
+			centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(salida.Movimiento)
+			if centroCostoNombre != "" || centroCostoCodigo != "" {
+				return centroCostoNombre, centroCostoCodigo, nil
+			}
+		}
+	}
+
+	return "", "", nil
 }
 
 func agruparElementosContabilizacion(
