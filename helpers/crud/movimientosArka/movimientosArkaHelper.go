@@ -14,6 +14,7 @@ import (
 )
 
 var basePath, _ = beego.AppConfig.String("movimientosArkaService")
+var getAllMovimientoRequest = request.GetJsonTest
 
 // GetAllEstadoMovimiento query controlador estado_movimiento del api movimientos_arka_crud
 func GetAllEstadoMovimiento(query string) (estados []*models.EstadoMovimiento, outputError map[string]interface{}) {
@@ -79,14 +80,18 @@ func GetAllMovimiento(payload string) (movimientos []*models.Movimiento, count s
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "movimiento?" + payload
-	response, err := request.GetJsonTest(urlcrud, &movimientos)
+	response, err := getAllMovimientoRequest(urlcrud, &movimientos)
 	if err != nil {
 		eval := "request.GetJson(urlcrud, &movimientos)"
-		outputError = errorCtrl.Error(funcion+eval, err, "502")
+		return nil, "", errorCtrl.Error(funcion+eval, err, "502")
+	}
+	if response == nil {
+		eval := "request.GetJson(urlcrud, &movimientos)"
+		return nil, "", errorCtrl.Error(funcion+eval, "respuesta HTTP vacía de movimientos_arka_crud", "502")
 	}
 
 	count = response.Header.Get("total-count")
-	return
+	return movimientos, count, nil
 }
 
 // GetAllNovedadElemento query controlador novedad_elemento del api movimientos_arka_crud
