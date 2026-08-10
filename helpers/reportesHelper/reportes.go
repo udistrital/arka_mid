@@ -407,9 +407,18 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 		return []*salidaReporteData{}, nil
 	}
 
-	movimientos, outputError := consultarMovimientosPorEstado(codigosSalida, estadoSalidaAnuladaReporte)
+	movimientos, outputError := consultarMovimientosPorFechaYEstado(
+		fechaInicial,
+		fechaFinal,
+		codigosSalida,
+		estadoSalidaAnuladaReporte,
+	)
 	if outputError != nil {
-		return nil, outputError
+		return nil, errorCtrl.Error(
+			"consultarSalidasAnuladasReporteDataDefault - consultarMovimientosPorFechaYEstado",
+			outputError,
+			"502",
+		)
 	}
 
 	salidas = make([]*salidaReporteData, 0, len(movimientos))
@@ -420,7 +429,11 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 
 		base, outputError := construirSalidaReporteBaseData(movimiento, nil)
 		if outputError != nil {
-			return nil, outputError
+			return nil, errorCtrl.Error(
+				fmt.Sprintf("consultarSalidasAnuladasReporteDataDefault - construirSalidaReporteBaseData(movimiento=%d)", movimiento.Id),
+				outputError,
+				"502",
+			)
 		}
 		if base == nil {
 			continue
@@ -438,15 +451,15 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 		if movimiento.MovimientoPadreId != nil && movimiento.MovimientoPadreId.Id > 0 {
 			entradaPadre, outputError := consultarMovimientoPorID(movimiento.MovimientoPadreId.Id)
 			if outputError != nil {
-				return nil, outputError
+				return nil, errorCtrl.Error(
+					fmt.Sprintf("consultarSalidasAnuladasReporteDataDefault - consultarMovimientoPorID(id=%d)", movimiento.MovimientoPadreId.Id),
+					outputError,
+					"502",
+				)
 			}
 			if entradaPadre != nil {
 				salida.Movimiento.MovimientoPadreId = entradaPadre
 			}
-		}
-
-		if !movimientoEnRangoPorFechaReporteSalida(salida.Movimiento, fechaInicial, fechaFinal) {
-			continue
 		}
 
 		salidas = append(salidas, salida)
@@ -547,13 +560,13 @@ func consultarEntradasPorFecha(fechaInicial, fechaFinal time.Time, codigosEntrad
 
 	params := url.Values{}
 	params.Add("limit", "-1")
-	params.Add("sortby", "FechaCreacion")
+	params.Add("sortby", "FechaCorte")
 	params.Add("order", "asc")
 	params.Add(
 		"query",
 		"Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion__in:"+strings.Join(codigosEntrada, "|")+
-			",FechaCreacion__gte:"+fechaInicial.Format(time.RFC3339)+
-			",FechaCreacion__lte:"+fechaFinal.Format(time.RFC3339),
+			",FechaCorte__gte:"+fechaInicial.Format(time.RFC3339)+
+			",FechaCorte__lte:"+fechaFinal.Format(time.RFC3339),
 	)
 
 	movimientos, _, outputError = consultarMovimientosReporteFn(params.Encode())
@@ -573,7 +586,7 @@ func consultarMovimientosPorEstado(codigos []string, estado string) (movimientos
 
 	params := url.Values{}
 	params.Add("limit", "-1")
-	params.Add("sortby", "FechaCreacion")
+	params.Add("sortby", "FechaCorte")
 	params.Add("order", "asc")
 	params.Add(
 		"query",
@@ -601,7 +614,7 @@ func consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal time.Time, cod
 
 	params := url.Values{}
 	params.Add("limit", "-1")
-	params.Add("sortby", "FechaCreacion")
+	params.Add("sortby", "FechaCorte")
 	params.Add("order", "asc")
 	params.Add(
 		"query",

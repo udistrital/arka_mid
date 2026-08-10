@@ -249,7 +249,7 @@ func TestGenerarReporteElementosFechaFinalMenor(t *testing.T) {
 	}
 }
 
-func TestConsultarEntradasPorFechaFiltraPorFechaCreacion(t *testing.T) {
+func TestConsultarEntradasPorFechaFiltraPorFechaCorte(t *testing.T) {
 	original := consultarMovimientosReporteFn
 	var capturedQuery string
 	consultarMovimientosReporteFn = func(query string) ([]*models.Movimiento, string, map[string]interface{}) {
@@ -273,14 +273,55 @@ func TestConsultarEntradasPorFechaFiltraPorFechaCreacion(t *testing.T) {
 	if decodeErr != nil {
 		t.Fatalf("no se pudo decodificar el query capturado: %v", decodeErr)
 	}
-	if !strings.Contains(decodedQuery, "FechaCreacion__gte:2026-04-01T00:00:00Z") {
-		t.Fatalf("el query no filtró por FechaCreacion inicial: %q", decodedQuery)
+	if !strings.Contains(decodedQuery, "FechaCorte__gte:2026-04-01T00:00:00Z") {
+		t.Fatalf("el query no filtró por FechaCorte inicial: %q", decodedQuery)
 	}
-	if !strings.Contains(decodedQuery, "FechaCreacion__lte:2026-04-30T23:59:59Z") {
-		t.Fatalf("el query no filtró por FechaCreacion final: %q", decodedQuery)
+	if !strings.Contains(decodedQuery, "FechaCorte__lte:2026-04-30T23:59:59Z") {
+		t.Fatalf("el query no filtró por FechaCorte final: %q", decodedQuery)
 	}
-	if strings.Contains(decodedQuery, "FechaCorte__gte") || strings.Contains(decodedQuery, "FechaCorte__lte") {
-		t.Fatalf("el query no debe filtrar entradas normales por FechaCorte: %q", decodedQuery)
+	if strings.Contains(decodedQuery, "FechaCreacion__gte") || strings.Contains(decodedQuery, "FechaModificacion__gte") {
+		t.Fatalf("el query solo debe filtrar por FechaCorte: %q", decodedQuery)
+	}
+	if !strings.Contains(decodedQuery, "sortby=FechaCorte") {
+		t.Fatalf("el query debe ordenar por FechaCorte: %q", decodedQuery)
+	}
+}
+
+func TestConsultarMovimientosPorFechaYEstadoFiltraPorFechaCorte(t *testing.T) {
+	original := consultarMovimientosReporteFn
+	var capturedQuery string
+	consultarMovimientosReporteFn = func(query string) ([]*models.Movimiento, string, map[string]interface{}) {
+		capturedQuery = query
+		return []*models.Movimiento{}, "0", nil
+	}
+	t.Cleanup(func() {
+		consultarMovimientosReporteFn = original
+	})
+
+	_, err := consultarMovimientosPorFechaYEstado(
+		time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC),
+		[]string{"SAL", "SAL_CONS"},
+		estadoSalidaAnuladaReporte,
+	)
+	if err != nil {
+		t.Fatalf("consultarMovimientosPorFechaYEstado retornó error: %v", err)
+	}
+
+	decodedQuery, decodeErr := url.QueryUnescape(capturedQuery)
+	if decodeErr != nil {
+		t.Fatalf("no se pudo decodificar el query capturado: %v", decodeErr)
+	}
+	for _, expected := range []string{
+		"sortby=FechaCorte",
+		"EstadoMovimientoId__Nombre:" + estadoSalidaAnuladaReporte,
+		"FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS",
+		"FechaCorte__gte:2026-07-01T00:00:00Z",
+		"FechaCorte__lte:2026-07-31T23:59:59Z",
+	} {
+		if !strings.Contains(decodedQuery, expected) {
+			t.Fatalf("el query no contiene %q: %q", expected, decodedQuery)
+		}
 	}
 }
 
