@@ -407,7 +407,12 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 		return []*salidaReporteData{}, nil
 	}
 
-	movimientos, outputError := consultarMovimientosPorEstado(codigosSalida, estadoSalidaAnuladaReporte)
+	movimientos, outputError := consultarMovimientosPorFechaYEstado(
+		fechaInicial,
+		fechaFinal,
+		codigosSalida,
+		estadoSalidaAnuladaReporte,
+	)
 	if outputError != nil {
 		return nil, outputError
 	}
