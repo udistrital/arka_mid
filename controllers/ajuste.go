@@ -67,7 +67,7 @@ func (c *AjusteController) PostAjuste() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorCtrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
-		if v, err := ajustesHelper.GenerarAjusteAutomatico(v); err != nil {
+		if v, err := ajustesHelper.GenerarAjusteAutomatico(c.Ctx.Request.Context(), v); err != nil {
 			logs.Error(err)
 			c.Data["system"] = err
 			c.Abort("404")
@@ -104,7 +104,7 @@ func (c *AjusteController) GetOneManual() {
 		id = v
 	}
 
-	if respuesta, err := ajustesHelper.GetDetalleAjuste(id); err == nil || respuesta != nil {
+	if respuesta, err := ajustesHelper.GetDetalleAjuste(c.Ctx.Request.Context(), id); err == nil || respuesta != nil {
 		c.Data["json"] = respuesta
 	} else {
 		if err != nil {
@@ -147,7 +147,7 @@ func (c *AjusteController) Put() {
 		id = v
 	}
 
-	if respuesta, err := ajustesHelper.AprobarAjuste(id); err == nil || respuesta != nil {
+	if respuesta, err := ajustesHelper.AprobarAjuste(c.Ctx.Request.Context(), id); err == nil || respuesta != nil {
 		c.Data["json"] = respuesta
 	} else {
 		if err != nil {
@@ -190,7 +190,7 @@ func (c *AjusteController) GetElementos() {
 		id = v
 	}
 
-	if respuesta, err := ajustesHelper.GetDetalleElementosActa(id); err == nil || respuesta != nil {
+	if respuesta, err := ajustesHelper.GetDetalleElementosActa(c.Ctx.Request.Context(), id); err == nil || respuesta != nil {
 		c.Data["json"] = respuesta
 	} else {
 		if err != nil {
@@ -233,7 +233,7 @@ func (c *AjusteController) GetOneAuto() {
 		id = v
 	}
 
-	if respuesta, err := ajustesHelper.GetAjusteAutomatico(id); err == nil || respuesta != nil {
+	if respuesta, err := ajustesHelper.GetAjusteAutomatico(c.Ctx.Request.Context(), id); err == nil || respuesta != nil {
 		c.Data["json"] = respuesta
 	} else {
 		if err != nil {

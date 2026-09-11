@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
@@ -13,7 +14,7 @@ import (
 const queryUD string = "query=TipoDocumentoId__Nombre:NIT,Numero:"
 
 // calcularAjusteMediciones Vuelve a generar las novedades y calcula las transacciones contables según las modificaciones que hayan afectado mediciones posteriores aprobadas
-func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
+func calcularAjusteMediciones(ctx context.Context, novedades map[int][]*models.NovedadElemento,
 	sg, vls, mp []*models.DetalleElemento_,
 	org []*models.Elemento) (movimientos []*models.MovimientoTransaccion,
 	novedades_ []*models.NovedadElemento, outputError map[string]interface{}) {
@@ -31,7 +32,7 @@ func calcularAjusteMediciones(novedades map[int][]*models.NovedadElemento,
 
 	novedadesNuevas := make(map[int][]*models.NovedadElemento)
 
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		return nil, nil, err
 	} else {
 		movDebito = db_

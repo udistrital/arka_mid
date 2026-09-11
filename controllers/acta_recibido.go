@@ -39,7 +39,7 @@ func (c *ActaRecibidoController) Post() {
 	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
 	if multipartFile, _, err := c.GetFile("archivo"); err == nil {
-		if Archivo, err := actaRecibido.DecodeXlsx2Json(multipartFile); err == nil {
+		if Archivo, err := actaRecibido.DecodeXlsx2Json(c.Ctx.Request.Context(), multipartFile); err == nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = Archivo
 		} else {
@@ -66,7 +66,7 @@ func (c *ActaRecibidoController) GetParametros() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "ActaRecibidoController")
 
-	if l, err := actaRecibido.GetAllParametrosActa(); err != nil {
+	if l, err := actaRecibido.GetAllParametrosActa(c.Ctx.Request.Context()); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = l
@@ -125,7 +125,7 @@ func (c *ActaRecibidoController) GetElementosActa() {
 		})
 	}
 
-	if v, err := actaRecibido.GetElementos(id, nil); err == nil {
+	if v, err := actaRecibido.GetElementos(c.Ctx.Request.Context(), id, nil); err == nil {
 		if v != nil {
 			c.Data["json"] = v
 		} else {
@@ -208,7 +208,7 @@ func (c *ActaRecibidoController) GetAllActas() {
 		offset = v
 	}
 
-	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(WSO2user, id, tipos, reqStates, creacion, modificacion, vistoBueno, unidadEjecutora, sortby, order, limit, offset); err == nil {
+	if l, t, err := actaRecibido.GetAllActasRecibidoActivas(c.Ctx.Request.Context(), WSO2user, id, tipos, reqStates, creacion, modificacion, vistoBueno, unidadEjecutora, sortby, order, limit, offset); err == nil {
 		c.Ctx.Output.Header("x-total-count", t)
 		if l == nil {
 			l = []map[string]interface{}{}

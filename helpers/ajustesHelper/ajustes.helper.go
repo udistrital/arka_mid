@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -55,7 +56,7 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 }
 
 // GetDetalleAjuste Consulta los detalles de un ajuste contable
-func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[string]interface{}) {
+func GetDetalleAjuste(ctx context.Context, id int) (Ajuste *models.DetalleAjuste, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetDetalleAjuste - Unhandled Error!", "500")
 
@@ -76,7 +77,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		return
 	}
 
-	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito()
+	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito(ctx)
 	if outputError != nil {
 		return
 	}
@@ -142,7 +143,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 }
 
 // AprobarAjuste Realiza la transacción contable correspondiente
-func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
+func AprobarAjuste(ctx context.Context, id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("AprobarAjuste - Unhandled Error!", "500")
 
@@ -161,7 +162,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		return nil, err
 	}
 
-	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito()
+	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito(ctx)
 	if outputError != nil {
 		return
 	}

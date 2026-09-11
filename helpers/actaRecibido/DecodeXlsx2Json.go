@@ -1,6 +1,7 @@
 package actaRecibido
 
 import (
+	"context"
 	"io"
 	"mime/multipart"
 	"strings"
@@ -14,18 +15,18 @@ import (
 )
 
 // DecodeXlsx2Json Convierte el archivo excel en una lista de elementos
-func DecodeXlsx2Json(c multipart.File) (resultado map[string]interface{}, outputError map[string]interface{}) {
+func DecodeXlsx2Json(ctx context.Context, c multipart.File) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "DecodeXlsx2Json - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	var Ivas []models.Iva
-	if err := parametros.GetAllIVAByPeriodo("2023", &Ivas); err != nil {
+	if err := parametros.GetAllIVAByPeriodo(ctx, "2023", &Ivas); err != nil {
 		return nil, err
 	}
 
 	const payload = "limit=-1&fields=Id,Nombre&sortby=Nombre&order=asc&query=TipoParametroId__CodigoAbreviacion__in:L|M|T|C|S"
-	Unidades, err_ := parametros.GetAllParametro(payload)
+	Unidades, err_ := parametros.GetAllParametro(ctx, payload)
 	if err_ != nil {
 		return nil, err_
 	}

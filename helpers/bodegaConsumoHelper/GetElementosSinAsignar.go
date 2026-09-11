@@ -1,6 +1,7 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -9,7 +10,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
+func GetElementosSinAsignar(ctx context.Context) (Elementos []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetElementosSinAsignar - Unhandled Error", "500")
 
@@ -26,7 +27,7 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 	for _, el := range elementos {
 
 		var el_ models.Elemento
-		outputError = actaRecibido.GetElementoById(*el.ElementoActaId, &el_)
+		outputError = actaRecibido.GetElementoById(ctx, *el.ElementoActaId, &el_)
 		if outputError != nil {
 			return
 		}

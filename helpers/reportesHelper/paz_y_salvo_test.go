@@ -1,6 +1,7 @@
 package reportesHelper
 
 import (
+	"context"
 	"encoding/base64"
 	"strings"
 	"testing"
@@ -35,7 +36,7 @@ func TestGenerarPazYSalvoSinElementos(t *testing.T) {
 		Elementos: []models.DetalleElementoPlaca{},
 	})
 
-	respuesta, err := GenerarPazYSalvo(&models.PazYSalvoRequest{
+	respuesta, err := GenerarPazYSalvo(context.TODO(), &models.PazYSalvoRequest{
 		Usuario:          "usuario@udistrital.edu.co",
 		ElaboroTerceroId: 999,
 		NumeroDocumento:  "52083089",
@@ -101,7 +102,7 @@ func TestGenerarPazYSalvoConElementos(t *testing.T) {
 		},
 	})
 
-	respuesta, err := GenerarPazYSalvo(&models.PazYSalvoRequest{
+	respuesta, err := GenerarPazYSalvo(context.TODO(), &models.PazYSalvoRequest{
 		Usuario:          "usuario@udistrital.edu.co",
 		ElaboroTerceroId: 999,
 		NumeroDocumento:  "123456",
@@ -150,7 +151,7 @@ func TestGenerarPazYSalvoContinuaSinElaborador(t *testing.T) {
 		Elementos: []models.DetalleElementoPlaca{},
 	})
 
-	respuesta, err := GenerarPazYSalvo(&models.PazYSalvoRequest{
+	respuesta, err := GenerarPazYSalvo(context.TODO(), &models.PazYSalvoRequest{
 		Usuario:          "usuario@udistrital.edu.co",
 		ElaboroTerceroId: 999,
 		NumeroDocumento:  "770001",
@@ -178,7 +179,7 @@ func mockConsultarTerceroPorDocumento(t *testing.T, detalle models.DetalleTercer
 	t.Helper()
 
 	original := consultarTerceroPorDocumentoFn
-	consultarTerceroPorDocumentoFn = func(numeroDocumento string) (models.DetalleTercero, map[string]interface{}) {
+	consultarTerceroPorDocumentoFn = func(context.Context, string) (models.DetalleTercero, map[string]interface{}) {
 		return detalle, nil
 	}
 	t.Cleanup(func() {
@@ -190,7 +191,7 @@ func mockConsultarInventarioTercero(t *testing.T, inventario *models.InventarioT
 	t.Helper()
 
 	original := consultarInventarioTerceroFn
-	consultarInventarioTerceroFn = func(terceroId int) (*models.InventarioTercero, map[string]interface{}) {
+	consultarInventarioTerceroFn = func(context.Context, int) (*models.InventarioTercero, map[string]interface{}) {
 		return inventario, nil
 	}
 	t.Cleanup(func() {
@@ -229,7 +230,7 @@ func mockConsultarResponsableFirma(t *testing.T) {
 	t.Helper()
 
 	original := consultarResponsableFirmaFn
-	consultarResponsableFirmaFn = func(models.DetalleTercero) (*pazYSalvoFirmante, map[string]interface{}) {
+	consultarResponsableFirmaFn = func(context.Context, models.DetalleTercero) (*pazYSalvoFirmante, map[string]interface{}) {
 		return &pazYSalvoFirmante{
 			Nombre:          "Firmante Prueba",
 			Cargo:           "Cargo Firmante",

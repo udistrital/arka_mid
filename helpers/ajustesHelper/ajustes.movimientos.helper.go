@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"errors"
 	"net/url"
 	"time"
@@ -20,7 +21,7 @@ import (
 // vls: Cambios a valores, elementos a los que se les debe cambiar el valor total.
 // sg: Cambia el subgrupo del elemento. Se ajusta la placa de acuerdo al nuevo subgrupo.
 // mp: Cambian los parametros de las mediciones posteriores. vida util o valor residual.
-func separarElementosPorModificacion(originales []*models.Elemento,
+func separarElementosPorModificacion(ctx context.Context, originales []*models.Elemento,
 	actualizados []*models.DetalleElemento_,
 	mediciones bool) (
 	msc, vls, sg, mp []*models.DetalleElemento_,
@@ -36,7 +37,7 @@ func separarElementosPorModificacion(originales []*models.Elemento,
 
 	for _, el_ := range originales {
 		if idx := findElementoInArrayD(actualizados, el_.Id); idx > -1 {
-			if msc_, vls_, sg_, err := determinarDeltaActa(el_, actualizados[idx]); err != nil {
+			if msc_, vls_, sg_, err := determinarDeltaActa(ctx, el_, actualizados[idx]); err != nil {
 				return nil, nil, nil, nil, err
 			} else if msc_ {
 				msc = append(msc, actualizados[idx])
@@ -57,7 +58,7 @@ func separarElementosPorModificacion(originales []*models.Elemento,
 // calcularAjusteMovimiento Calcula la transacción contable generada a partir de los elementos y el cambio de cada uno.
 // actualizarVl: Elementos para actualizar los montos de las transacciones contables.
 // actualizarSg: Elementos para actualizar el subgrupo y por tanto, pueden cambiar las cuentas.
-func calcularAjusteMovimiento(originales []*models.Elemento,
+func calcularAjusteMovimiento(ctx context.Context, originales []*models.Elemento,
 	actualizarVl, actualizarSg []*models.DetalleElemento_,
 	movimientoId, proveedorId int,
 	consecutivo, tipoMovimiento string) (movimientos []*models.MovimientoTransaccion,
@@ -75,7 +76,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 	)
 
 	detalleCuenta = make(map[string]*models.CuentaContable)
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		return nil, err
 	} else {
 		movDebito = db_
@@ -164,12 +165,12 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 }
 
 // submitUpdates Actualiza los registros relacionados a las novedades y elementos
-func submitUpdates(elementosActa []*models.Elemento,
+func submitUpdates(ctx context.Context, elementosActa []*models.Elemento,
 	elementosMovimiento []*models.ElementosMovimiento,
 	novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
 
 	for _, el := range elementosActa {
-		if err := crudActas.PutElemento(el, el.Id); err != nil {
+		if err := crudActas.PutElemento(ctx, el, el.Id); err != nil {
 			return err
 		}
 	}

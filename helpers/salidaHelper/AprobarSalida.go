@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -12,7 +13,7 @@ import (
 )
 
 // AprobarSalida Aprobacion de una salida
-func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func AprobarSalida(ctx context.Context, salidaId int, res *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("AprobarSalida - Unhandled Error!", "500")
 
@@ -56,7 +57,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	}
 
 	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
-	elementosActa, outputError := actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
+	elementosActa, outputError := actaRecibido.GetAllElemento(ctx, query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
 	if outputError != nil {
 		return
 	}
@@ -71,7 +72,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	if trSalida.Salida.FechaCorte != nil && !trSalida.Salida.FechaCorte.IsZero() {
 		transaccion.FechaTransaccion = *trSalida.Salida.FechaCorte
 	}
-	res.Error, outputError = asientoContable.CalcularMovimientosContables(elementosActa, dsc, res.Movimiento.MovimientoPadreId.FormatoTipoMovimientoId.Id, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas, nil, &transaccion.Movimientos)
+	res.Error, outputError = asientoContable.CalcularMovimientosContables(ctx, elementosActa, dsc, res.Movimiento.MovimientoPadreId.FormatoTipoMovimientoId.Id, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas, nil, &transaccion.Movimientos)
 	if outputError != nil || res.Error != "" {
 		return
 	}
@@ -81,7 +82,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 		return
 	}
 
-	res.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	res.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(ctx, transaccion.Movimientos, bufferCuentas)
 	if outputError != nil {
 		return
 	}

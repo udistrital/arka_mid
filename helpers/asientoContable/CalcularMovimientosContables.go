@@ -1,6 +1,7 @@
 package asientoContable
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -12,6 +13,7 @@ import (
 
 // CalcularMovimientosContables Calcula los movimientos contables dados los valores y parametrización correspondiente de cada elemento.
 func CalcularMovimientosContables(
+	ctx context.Context,
 	elementos []*models.Elemento,
 	dsc string,
 	movId, sMovId, terceroCr, terceroDb int,
@@ -45,7 +47,7 @@ func CalcularMovimientosContables(
 
 	payloadDetalleSubgrupoBase := "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		logs.Error("CalcularMovimientosContables -> GetParametrosDebitoCredito err=%v", err)
 		return "", err
 	} else {
@@ -81,7 +83,7 @@ func CalcularMovimientosContables(
 			payloadDetalleSubgrupo := payloadDetalleSubgrupoBase + strconv.Itoa(el.SubgrupoCatalogoId)
 			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetAllDetalleSubgrupo payload=%s", payloadDetalleSubgrupo)
 
-			sg, outputError := catalogoElementos.GetAllDetalleSubgrupo(payloadDetalleSubgrupo)
+			sg, outputError := catalogoElementos.GetAllDetalleSubgrupo(ctx, payloadDetalleSubgrupo)
 			logs.Info("CalcularMovimientosContables -> DEBUG GetAllDetalleSubgrupo outputError=%v len=%d", outputError, len(sg))
 			if outputError != nil {
 				return "", outputError
@@ -130,7 +132,7 @@ func CalcularMovimientosContables(
 				var tipoBien models.TipoBien
 				logs.Info("CalcularMovimientosContables -> DEBUG helper=GetTipoBienById TipoBienId=%d", el.TipoBienId)
 
-				outputError = catalogoElementos.GetTipoBienById(el.TipoBienId, &tipoBien)
+				outputError = catalogoElementos.GetTipoBienById(ctx, el.TipoBienId, &tipoBien)
 				logs.Info("CalcularMovimientosContables -> DEBUG GetTipoBienById outputError=%v tipoBien=%+v",
 					outputError, tipoBien)
 				if outputError != nil {

@@ -1,6 +1,7 @@
 package depreciacionHelper
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -29,7 +30,7 @@ func TestElementoValidoParaDepreciacion(t *testing.T) {
 
 func TestConsultarElementosParaCierre(t *testing.T) {
 	originalGetter := getAllElementoDepreciacionCierre
-	getAllElementoDepreciacionCierre = func(query string, fields string, sortby string, order string, offset string, limit string) (elementos []*models.Elemento, outputError map[string]interface{}) {
+	getAllElementoDepreciacionCierre = func(ctx context.Context, query string, fields string, sortby string, order string, offset string, limit string) (elementos []*models.Elemento, outputError map[string]interface{}) {
 		result := make([]*models.Elemento, 0)
 		if strings.Contains(query, "1") {
 			result = append(result, &models.Elemento{Id: 1, Activo: true, TipoBienId: 10, SubgrupoCatalogoId: 100})
@@ -44,7 +45,7 @@ func TestConsultarElementosParaCierre(t *testing.T) {
 	}
 	defer func() { getAllElementoDepreciacionCierre = originalGetter }()
 
-	detalles, errMsg, outputError := consultarElementosParaCierre([]models.DepreciacionElemento{
+	detalles, errMsg, outputError := consultarElementosParaCierre(context.Background(), []models.DepreciacionElemento{
 		{ElementoActaId: 1, DeltaValor: 15},
 		{ElementoActaId: 2, DeltaValor: 20},
 		{ElementoActaId: 3, DeltaValor: 25},

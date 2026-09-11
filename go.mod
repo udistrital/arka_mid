@@ -10,7 +10,7 @@ require (
 	github.com/beego/beego/v2 v2.3.10
 	github.com/phpdave11/gofpdf v1.4.3
 	github.com/tealeg/xlsx v1.0.5
-	github.com/udistrital/utils_oas/v2 v2.0.0-beta.2
+	github.com/udistrital/utils_oas/v2 v2.0.0-beta.5
 	golang.org/x/text v0.40.0
 )
 

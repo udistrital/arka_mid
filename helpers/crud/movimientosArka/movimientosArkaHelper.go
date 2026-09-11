@@ -1,6 +1,7 @@
 package movimientosArka
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("movimientosArkaService")
@@ -509,16 +511,16 @@ func GetAperturas(conSaldo bool, aperturas *[]models.Apertura) (outputError map[
 	return
 }
 
-func GetAllCentroCostos(payload string) (centroCostos []models.CentroCostos, outputError map[string]interface{}) {
+func GetAllCentroCostos(ctx context.Context, payload string) (centroCostos []models.CentroCostos, outputError map[string]interface{}) {
 
 	funcion := "GetAllCentroCostos - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "centro_costos?" + payload
-	err := request.GetJson(urlcrud, &centroCostos)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, &centroCostos)
 	if err != nil {
 		logs.Error(err)
-		eval := "request.GetJson(urlcrud, &centroCostos)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &centroCostos)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 

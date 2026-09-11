@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -9,7 +10,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetOne(id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
+func GetOne(ctx context.Context, id int) (Salida map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
@@ -29,7 +30,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 	}
 
 	if len(ids) > 0 {
-		if elementosActa, outputError = actaRecibido.GetElementos(0, ids); outputError != nil {
+		if elementosActa, outputError = actaRecibido.GetElementos(ctx, 0, ids); outputError != nil {
 			return nil, outputError
 		}
 	}
@@ -65,7 +66,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 		return
 	}
 
-	detalle, outputError := traerDetalle(trSalida.Salida, formato, nil, nil, nil, nil)
+	detalle, outputError := traerDetalle(ctx, trSalida.Salida, formato, nil, nil, nil, nil)
 	if outputError != nil {
 		return
 	}
@@ -77,7 +78,7 @@ func GetOne(id int) (Salida map[string]interface{}, outputError map[string]inter
 
 	if trSalida.Salida.EstadoMovimientoId.Nombre == "Salida Aprobada" && trSalida.Salida.ConsecutivoId != nil && *trSalida.Salida.ConsecutivoId > 0 {
 		Salida["TransaccionContable"] = models.InfoTransaccionContable{}
-		Salida["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(*trSalida.Salida.ConsecutivoId)
+		Salida["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(ctx, *trSalida.Salida.ConsecutivoId)
 	}
 
 	return

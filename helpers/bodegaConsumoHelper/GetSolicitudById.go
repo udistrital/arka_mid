@@ -1,6 +1,7 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -12,7 +13,7 @@ import (
 )
 
 // GetSolicitudById trae el nombre de un encargado por su id
-func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
+func GetSolicitudById(ctx context.Context, id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetSolicitudById - Unhandled Error", "500")
 

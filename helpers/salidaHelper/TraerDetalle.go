@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"regexp"
 	"strconv"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
+func traerDetalle(ctx context.Context, movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
 	asignaciones map[int]models.AsignacionEspacioFisicoDependencia,
 	sedes map[string]models.EspacioFisico,
 	centrosCostos map[string]models.CentroCostos,
@@ -59,7 +60,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		_, ok := centrosCostos[salida.CentroCostos]
 		if !ok {
 			payload := "query=Codigo:" + salida.CentroCostos
-			centroCostos_, err := movimientosArka.GetAllCentroCostos(payload)
+			centroCostos_, err := movimientosArka.GetAllCentroCostos(ctx, payload)
 			if err != nil {
 				return nil, err
 			} else if len(centroCostos_) == 1 {
@@ -99,7 +100,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 	if salida.Funcionario > 0 {
 
 		if val, ok := funcionarios[salida.Funcionario]; !ok {
-			if funcionario_, err := terceros.GetTerceroById(salida.Funcionario); err != nil {
+			if funcionario_, err := terceros.GetTerceroById(ctx, salida.Funcionario); err != nil {
 				return nil, err
 			} else {
 				funcionario = *funcionario_

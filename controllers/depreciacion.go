@@ -40,7 +40,7 @@ func (c *DepreciacionController) Post() {
 	} else {
 		var resultado models.ResultadoMovimiento
 		if !v.Rechazar {
-			if err := depreciacionHelper.GenerarCierre(v, &resultado); err != nil {
+			if err := depreciacionHelper.GenerarCierre(c.Ctx.Request.Context(), v, &resultado); err != nil {
 				logs.Error(err)
 				panic(map[string]interface{}{
 					"funcion": "Post - depreciacionHelper.GenerarCierre(v, &resultado)",

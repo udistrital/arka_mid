@@ -1,6 +1,7 @@
 package trasladoshelper
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -11,7 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetElementosTercero(terceroId int, inventario *models.InventarioTercero) (outputError map[string]interface{}) {
+func GetElementosTercero(ctx context.Context, terceroId int, inventario *models.InventarioTercero) (outputError map[string]interface{}) {
 
 	funcion := "GetElementosTercero - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -57,7 +58,7 @@ func GetElementosTercero(terceroId int, inventario *models.InventarioTercero) (o
 
 	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud
 	query := "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elemento_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
+	if elemento_, err := actaRecibido.GetAllElemento(ctx, query, "", "Id", "desc", "", "-1"); err != nil {
 		return err
 	} else {
 		elementosActa = elemento_
