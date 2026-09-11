@@ -85,6 +85,11 @@ func init() {
 				&controllers.ReportesController{},
 			),
 		),
+		beego.NSNamespace("/auditoria",
+			beego.NSInclude(
+				&controllers.AuditoriaController{},
+			),
+		),
 	)
 
 	beego.AddNamespace(ns)
