@@ -1,7 +1,8 @@
 swagger: "2.0"
 info:
   title: beego Test API
-  description: beego has a very cool tools to autogenerate documents for your API
+  description: |
+    beego has a very cool tools to autogenerate documents for your API
   version: 1.0.0
   termsOfService: http://beego.me/
   contact:
@@ -15,7 +16,9 @@ paths:
     get:
       tags:
       - acta_recibido
-      description: Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud
+      description: |-
+        Consulta a tablas paramétricas de los APIs acta_recibido_crud y catalogo_elementos_crud
+        <br>
       operationId: ActaRecibidoController.Consulta de valores paramétricos
       responses:
         "200":
@@ -27,7 +30,9 @@ paths:
     post:
       tags:
       - acta_recibido
-      description: create Acta_recibido
+      description: |-
+        create Acta_recibido
+        <br>
       operationId: ActaRecibidoController.Create
       parameters:
       - in: formData
@@ -46,7 +51,9 @@ paths:
     get:
       tags:
       - acta_recibido
-      description: get Elementos by id
+      description: |-
+        get Elementos by id
+        <br>
       operationId: ActaRecibidoController.Get Elementos
       parameters:
       - in: path
@@ -76,12 +83,15 @@ paths:
     get:
       tags:
       - acta_recibido
-      description: get ActaRecibido
+      description: |-
+        get ActaRecibido
+        <br>
       operationId: ActaRecibidoController.Get All Actas
       parameters:
       - in: query
         name: u
-        description: WSO2 User. When specified, acts will be filtered upon the available roles for the specified user
+        description: WSO2 User. When specified, acts will be filtered upon the available
+          roles for the specified user
         type: string
       - in: query
         name: limit
@@ -146,7 +156,9 @@ paths:
     get:
       tags:
       - acta_recibido
-      description: Retorna la plantilla Excel para cargue masivo de elementos
+      description: |-
+        Retorna la plantilla Excel para cargue masivo de elementos
+        <br>
       operationId: ActaRecibidoController.Descargar plantilla de cargue masivo
       responses:
         "200":
@@ -159,7 +171,9 @@ paths:
     post:
       tags:
       - ajustes
-      description: create Ajuste
+      description: |-
+        create Ajuste
+        <br>
       operationId: AjusteController.Create
       parameters:
       - in: body
@@ -179,7 +193,9 @@ paths:
     get:
       tags:
       - ajustes
-      description: get Ajuste by id
+      description: |-
+        get Ajuste by id
+        <br>
       operationId: AjusteController.GetOneManual
       parameters:
       - in: path
@@ -197,7 +213,9 @@ paths:
     put:
       tags:
       - ajustes
-      description: update the Ajuste
+      description: |-
+        update the Ajuste
+        <br>
       operationId: AjusteController.Put
       parameters:
       - in: path
@@ -216,7 +234,9 @@ paths:
     post:
       tags:
       - ajustes
-      description: create Ajuste
+      description: |-
+        create Ajuste
+        <br>
       operationId: AjusteController.Create
       parameters:
       - in: body
@@ -238,7 +258,9 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un ajuste y su transaccion contable
+      description: |-
+        Retorna la lista de elementos asociados a un ajuste y su transaccion contable
+        <br>
       operationId: AjusteController.GetOneAuto
       parameters:
       - in: path
@@ -257,7 +279,9 @@ paths:
     get:
       tags:
       - ajustes
-      description: Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
+      description: |-
+        Retorna la lista de elementos asociados a un acta con su respectiva vida útil y valor residual iniciales
+        <br>
       operationId: AjusteController.GetElementos
       parameters:
       - in: path
@@ -275,11 +299,33 @@ paths:
               $ref: '#/definitions/models.DetalleElemento__'
         "403":
           description: :id is empty
+  /auditoria/evento:
+    post:
+      tags:
+      - auditoria
+      description: |-
+        Registra en los logs de arka_mid una operación funcional relevante. El usuario es obtenido desde el token Authorization por utils_oas/v2.
+        <br>
+      operationId: AuditoriaController.Registrar evento de auditoría
+      parameters:
+      - in: body
+        name: body
+        description: Evento de auditoría
+        required: true
+        schema:
+          $ref: '#/definitions/models.EventoAuditoria'
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: solicitud inválida
   /avaluo/:
     get:
       tags:
       - avaluo
-      description: get Avaluo
+      description: |-
+        get Avaluo
+        <br>
       operationId: AvaluoController.GetAll
       parameters:
       - in: query
@@ -296,7 +342,8 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -316,7 +363,9 @@ paths:
     post:
       tags:
       - avaluo
-      description: create Avaluo
+      description: |-
+        create Avaluo
+        <br>
       operationId: AvaluoController.Create
       parameters:
       - in: body
@@ -336,7 +385,9 @@ paths:
     get:
       tags:
       - avaluo
-      description: get Avaluo by id
+      description: |-
+        get Avaluo by id
+        <br>
       operationId: AvaluoController.GetOne
       parameters:
       - in: path
@@ -354,7 +405,9 @@ paths:
     put:
       tags:
       - avaluo
-      description: update the Avaluo
+      description: |-
+        update the Avaluo
+        <br>
       operationId: AvaluoController.Put
       parameters:
       - in: path
@@ -378,7 +431,9 @@ paths:
     delete:
       tags:
       - avaluo
-      description: delete the Avaluo
+      description: |-
+        delete the Avaluo
+        <br>
       operationId: AvaluoController.Delete
       parameters:
       - in: path
@@ -395,7 +450,9 @@ paths:
     get:
       tags:
       - bajas_elementos
-      description: Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite
+      description: |-
+        Consulta todas las bajas y permite filtrar por las que estan para revision de almacen o comite
+        <br>
       operationId: BajaController.Get All
       parameters:
       - in: query
@@ -405,7 +462,8 @@ paths:
         type: string
       - in: query
         name: revComite
-        description: Indica si se traen las bajas en espera de comite. Tiene prioridad sobre la revision de almacen
+        description: Indica si se traen las bajas en espera de comite. Tiene prioridad
+          sobre la revision de almacen
         type: boolean
       - in: query
         name: revAlmacen
@@ -423,7 +481,9 @@ paths:
     post:
       tags:
       - bajas_elementos
-      description: Registrar Baja. Crea el registro del soporte y crea el consecutivo
+      description: |-
+        Registrar Baja. Crea el registro del soporte y crea el consecutivo
+        <br>
       operationId: BajaController.Post
       parameters:
       - in: body
@@ -444,7 +504,9 @@ paths:
     get:
       tags:
       - bajas_elementos
-      description: consulta detalle de Baja
+      description: |-
+        consulta detalle de Baja
+        <br>
       operationId: BajaController.Get User
       parameters:
       - in: path
@@ -466,7 +528,9 @@ paths:
     put:
       tags:
       - bajas_elementos
-      description: Update Baja. Actualiza los detalles de la baja y el documento
+      description: |-
+        Update Baja. Actualiza los detalles de la baja y el documento
+        <br>
       operationId: BajaController.Put
       parameters:
       - in: path
@@ -488,7 +552,9 @@ paths:
     put:
       tags:
       - bajas_elementos
-      description: Realiza la transacciones contables y actualiza los movimientos
+      description: |-
+        Realiza la transacciones contables y actualiza los movimientos
+        <br>
       operationId: BajaController.Put
       parameters:
       - in: body
@@ -511,7 +577,9 @@ paths:
     get:
       tags:
       - bajas_elementos
-      description: Get Info relacionada con el historial de un determinado elemento
+      description: |-
+        Get Info relacionada con el historial de un determinado elemento
+        <br>
       operationId: BajaController.GetElemento
       parameters:
       - in: path
@@ -531,7 +599,9 @@ paths:
     get:
       tags:
       - bodega_consumo
-      description: get Bodega-Consumo
+      description: |-
+        get Bodega-Consumo
+        <br>
       operationId: BodegaConsumoController.GetAll
       responses:
         "200":
@@ -546,7 +616,9 @@ paths:
     get:
       tags:
       - bodega_consumo
-      description: get Bodega-Consumo
+      description: |-
+        get Bodega-Consumo
+        <br>
       operationId: BodegaConsumoController.GetAll
       responses:
         "200":
@@ -561,7 +633,9 @@ paths:
     get:
       tags:
       - bodega_consumo
-      description: get Bodega-Consumo
+      description: |-
+        get Bodega-Consumo
+        <br>
       operationId: BodegaConsumoController.GetAll
       responses:
         "200":
@@ -576,7 +650,9 @@ paths:
     get:
       tags:
       - bodega_consumo
-      description: get Lista solicitudes de elementos de la bodega de consumo.
+      description: |-
+        get Lista solicitudes de elementos de la bodega de consumo.
+        <br>
       operationId: BodegaConsumoController.GetAllSolicitud
       parameters:
       - in: query
@@ -598,7 +674,9 @@ paths:
     post:
       tags:
       - bodega_consumo
-      description: Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
+      description: |-
+        Genera el movimiento correspondiente a una solicitud de bodega de consumo. Asigna el consecutivo correspondiente.
+        <br>
       operationId: BodegaConsumoController.Post
       parameters:
       - in: body
@@ -618,7 +696,9 @@ paths:
     get:
       tags:
       - bodega_consumo
-      description: get Bodega-Consumo by id
+      description: |-
+        get Bodega-Consumo by id
+        <br>
       operationId: BodegaConsumoController.GetOneSolicitud
       parameters:
       - in: path
@@ -644,7 +724,9 @@ paths:
     get:
       tags:
       - catalogo_elementos
-      description: Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado
+      description: |-
+        Devuelve el detalle de la última cuenta de cada movimiento requerido y subgrupo determinado
+        <br>
       operationId: CatalogoElementosController.GetCuentasSubgrupoById
       parameters:
       - in: path
@@ -668,7 +750,9 @@ paths:
     post:
       tags:
       - depreciacion
-      description: Actualiza el estado de las solicitudes una vez se registra la revision del comite de almacen
+      description: |-
+        Actualiza el estado de las solicitudes una vez se registra la revision del comite de almacen
+        <br>
       operationId: DepreciacionController.GetCorte
       parameters:
       - in: body
@@ -687,7 +771,9 @@ paths:
     get:
       tags:
       - depreciacion
-      description: get Depreciacion by id
+      description: |-
+        get Depreciacion by id
+        <br>
       operationId: DepreciacionController.Get Info Depreciacion
       parameters:
       - in: path
@@ -706,7 +792,9 @@ paths:
     put:
       tags:
       - depreciacion
-      description: update the ElementosMovimiento
+      description: |-
+        update the ElementosMovimiento
+        <br>
       operationId: DepreciacionController.Put
       parameters:
       - in: path
@@ -725,7 +813,9 @@ paths:
     post:
       tags:
       - entrada
-      description: Transaccion entrada. Estado de registro o aprobacion
+      description: |-
+        Transaccion entrada. Estado de registro o aprobacion
+        <br>
       operationId: EntradaController.Post
       parameters:
       - in: query
@@ -754,51 +844,13 @@ paths:
           description: the request contains incorrect syntax
         "403":
           description: body is empty
-  /entrada/historico:
-    post:
-      tags:
-      - entrada
-      description: Registra y aprueba una entrada histórica para procesos de migración usando un consecutivo existente y fechas históricas.
-      operationId: EntradaController.PostHistorico
-      parameters:
-      - in: body
-        name: body
-        description: Detalles de la entrada histórica
-        required: true
-        schema:
-          $ref: '#/definitions/models.TransaccionEntradaHistorica'
-      responses:
-        "201":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.ResultadoMovimiento'
-        "400":
-          description: the request contains incorrect syntax
-  /salida/historico:
-    post:
-      tags:
-      - salida
-      description: Registra y aprueba una salida histórica para procesos de migración usando un consecutivo existente y fechas históricas.
-      operationId: SalidaController.PostHistorico
-      parameters:
-      - in: body
-        name: body
-        description: Detalles de la salida histórica
-        required: true
-        schema:
-          $ref: '#/definitions/models.TransaccionSalidaHistorica'
-      responses:
-        "201":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.ResultadoMovimiento'
-        "400":
-          description: the request contains incorrect syntax
   /entrada/{id}:
     get:
       tags:
       - entrada
-      description: get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya fue aprobada
+      description: |-
+        get Detalle de entrada por Id. Retorna la transaccion contable si la entrada ya fue aprobada
+        <br>
       operationId: EntradaController.GetOne
       parameters:
       - in: path
@@ -817,7 +869,9 @@ paths:
     put:
       tags:
       - entrada
-      description: Anula una entrada, registra un movimiento de reversión contable y devuelve el acta a estado en verificación.
+      description: |-
+        Anula una entrada, registra un movimiento de reversión contable y devuelve el acta a estado en verificación.
+        <br>
       operationId: EntradaController.PutAnular
       parameters:
       - in: path
@@ -838,11 +892,35 @@ paths:
             $ref: '#/definitions/models.ResultadoAnulacionEntrada'
         "400":
           description: the request contains incorrect syntax
+  /entrada/historico:
+    post:
+      tags:
+      - entrada
+      description: |-
+        Registra y aprueba una entrada histórica para procesos de migración usando un consecutivo existente y fechas históricas.
+        <br>
+      operationId: EntradaController.PostHistorico
+      parameters:
+      - in: body
+        name: body
+        description: Detalles de la entrada histórica
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransaccionEntradaHistorica'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.ResultadoMovimiento'
+        "400":
+          description: the request contains incorrect syntax
   /inmuebles/:
     get:
       tags:
       - inmuebles
-      description: get Inmuebles
+      description: |-
+        get Inmuebles
+        <br>
       operationId: InmueblesController.GetAll
       parameters:
       - in: query
@@ -859,7 +937,8 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -879,7 +958,9 @@ paths:
     post:
       tags:
       - inmuebles
-      description: create Inmuebles
+      description: |-
+        create Inmuebles
+        <br>
       operationId: InmueblesController.Create
       parameters:
       - in: body
@@ -899,7 +980,9 @@ paths:
     get:
       tags:
       - inmuebles
-      description: get Inmuebles by id
+      description: |-
+        get Inmuebles by id
+        <br>
       operationId: InmueblesController.GetOne
       parameters:
       - in: path
@@ -917,7 +1000,9 @@ paths:
     put:
       tags:
       - inmuebles
-      description: update the Inmuebles
+      description: |-
+        update the Inmuebles
+        <br>
       operationId: InmueblesController.Put
       parameters:
       - in: path
@@ -942,7 +1027,9 @@ paths:
     get:
       tags:
       - polizas
-      description: get AllElementosParaPoliza
+      description: |-
+        get AllElementosParaPoliza
+        <br>
       operationId: PolizasController.GetAll
       parameters:
       - in: query
@@ -959,7 +1046,8 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -980,11 +1068,35 @@ paths:
               $ref: '#/definitions/models.Elemento'
         "404":
           description: not found resource
+  /reportes/contabilizacion:
+    post:
+      tags:
+      - reportes
+      description: |-
+        Genera un reporte base64 en formato Excel de contabilización para un rango de fechas.
+        <br>
+      operationId: ReportesController.PostReporteContabilizacion
+      parameters:
+      - in: body
+        name: body
+        description: Rango de fechas del reporte
+        required: true
+        schema:
+          $ref: '#/definitions/models.ReporteFechasRequest'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.ReporteExcelBase64Response'
+        "400":
+          description: error en los datos de entrada
   /reportes/detalle_cuentas_entrada:
     get:
       tags:
       - reportes
-      description: Consulta el detalle contable por elemento de una entrada usando su consecutivo.
+      description: |-
+        Consulta el detalle contable por elemento de una entrada usando su consecutivo.
+        <br>
       operationId: ReportesController.GetDetalleCuentasEntrada
       parameters:
       - in: query
@@ -1005,7 +1117,9 @@ paths:
     get:
       tags:
       - reportes
-      description: Consulta el detalle contable por elemento de una salida usando su consecutivo.
+      description: |-
+        Consulta el detalle contable por elemento de una salida usando su consecutivo.
+        <br>
       operationId: ReportesController.GetDetalleCuentasSalida
       parameters:
       - in: query
@@ -1022,31 +1136,13 @@ paths:
               $ref: '#/definitions/models.ReporteDetalleSalidaResponse'
         "400":
           description: error en los datos de entrada
-  /reportes/contabilizacion:
-    post:
-      tags:
-      - reportes
-      description: Genera un reporte base64 en formato Excel de contabilización para un rango de fechas.
-      operationId: ReportesController.PostReporteContabilizacion
-      parameters:
-      - in: body
-        name: body
-        description: Rango de fechas del reporte
-        required: true
-        schema:
-          $ref: '#/definitions/models.ReporteFechasRequest'
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.ReporteExcelBase64Response'
-        "400":
-          description: error en los datos de entrada
   /reportes/elementos:
     post:
       tags:
       - reportes
-      description: Genera un reporte base64 en formato Excel para un rango de fechas.
+      description: |-
+        Genera un reporte base64 en formato Excel para un rango de fechas.
+        <br>
       operationId: ReportesController.PostReporteElementos
       parameters:
       - in: body
@@ -1066,7 +1162,9 @@ paths:
     post:
       tags:
       - reportes
-      description: Genera un paz y salvo de inventario en PDF base64 a partir del número de documento consultado.
+      description: |-
+        Genera un paz y salvo de inventario en PDF base64 a partir del número de documento consultado.
+        <br>
       operationId: ReportesController.PostPazYSalvo
       parameters:
       - in: body
@@ -1086,7 +1184,9 @@ paths:
     get:
       tags:
       - salida
-      description: Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas
+      description: |-
+        Consulta lista de salidas registradas. Permite filtrar aquellas que están pendientes por ser aprobadas
+        <br>
       operationId: SalidaController.Get User
       parameters:
       - in: query
@@ -1137,7 +1237,9 @@ paths:
     post:
       tags:
       - salida
-      description: Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
+      description: |-
+        Realiza la aprobacion de una salida en caso de especificarse un Id, de lo contrario, genera los consecutivos de las salidas y hace el respectivo registro en api movimientos_arka_crud
+        <br>
       operationId: SalidaController.Post transaccion salidas asociadas a una entrada
       parameters:
       - in: query
@@ -1150,7 +1252,8 @@ paths:
         type: boolean
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
@@ -1165,7 +1268,9 @@ paths:
     get:
       tags:
       - salida
-      description: get Salida by id
+      description: |-
+        get Salida by id
+        <br>
       operationId: SalidaController.Get User
       parameters:
       - in: path
@@ -1184,8 +1289,11 @@ paths:
     put:
       tags:
       - salida
-      description: genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
-      operationId: SalidaController.Put transaccion salidas generadas a partir de otra
+      description: |-
+        genera los consecutivos de las nuevas salidas generadas y hace el put en el api movimientos_arka_crud
+        <br>
+      operationId: SalidaController.Put transaccion salidas generadas a partir de
+        otra
       parameters:
       - in: path
         name: id
@@ -1199,7 +1307,8 @@ paths:
         type: boolean
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si no se debe rechazar
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si no se debe rechazar
         schema:
           $ref: '#/definitions/models.SalidaGeneral'
       responses:
@@ -1213,7 +1322,9 @@ paths:
     put:
       tags:
       - salida
-      description: Anula una salida aprobada, registra un movimiento de reversión contable y restablece la entrada padre cuando corresponda.
+      description: |-
+        Anula una salida aprobada, registra un movimiento de reversión contable y restablece la entrada padre cuando corresponda.
+        <br>
       operationId: SalidaController.PutAnular
       parameters:
       - in: path
@@ -1238,7 +1349,9 @@ paths:
     get:
       tags:
       - salida
-      description: Get elementos para asignar en salida segun la entrada o la salida
+      description: |-
+        Get elementos para asignar en salida segun la entrada o la salida
+        <br>
       operationId: SalidaController.GetElementos
       parameters:
       - in: query
@@ -1262,11 +1375,35 @@ paths:
               $ref: '#/definitions/models.DetalleElementoSalida'
         "404":
           description: not found resource
+  /salida/historico:
+    post:
+      tags:
+      - salida
+      description: |-
+        Registra y aprueba una salida histórica para procesos de migración usando un consecutivo existente y fechas históricas.
+        <br>
+      operationId: SalidaController.PostHistorico
+      parameters:
+      - in: body
+        name: body
+        description: Detalles de la salida histórica
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransaccionSalidaHistorica'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.ResultadoMovimiento'
+        "400":
+          description: the request contains incorrect syntax
   /terceros/{id}:
     get:
       tags:
       - terceros
-      description: get Terceros by id
+      description: |-
+        get Terceros by id
+        <br>
       operationId: TercerosController.GetOne
       parameters:
       - in: path
@@ -1285,7 +1422,9 @@ paths:
     get:
       tags:
       - traslados
-      description: Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
+      description: |-
+        Consulta todos los traslados, permitiendo filtrar por las que estan pendientes de ser revisados
+        <br>
       operationId: TrasladosController.Get All
       parameters:
       - in: query
@@ -1294,11 +1433,13 @@ paths:
         type: string
       - in: query
         name: confirmar
-        description: Consulta los traslados que están pendientes por ser confirmados por el tercero que consulta.
+        description: Consulta los traslados que están pendientes por ser confirmados
+          por el tercero que consulta.
         type: boolean
       - in: query
         name: aprobar
-        description: Consulta los traslados que están pendientes por ser aprobados por almacén.
+        description: Consulta los traslados que están pendientes por ser aprobados
+          por almacén.
         type: boolean
       responses:
         "200":
@@ -1312,12 +1453,15 @@ paths:
     post:
       tags:
       - traslados
-      description: Genera el consecutivo y hace el respectivo registro en api movimientos_arka_crud
+      description: |-
+        Genera el consecutivo y hace el respectivo registro en api movimientos_arka_crud
+        <br>
       operationId: TrasladosController.Post Traslado
       parameters:
       - in: body
         name: body
-        description: Informacion de las salidas y elementos asociados a cada una de ellas. Se valida solo si el id es 0
+        description: Informacion de las salidas y elementos asociados a cada una de
+          ellas. Se valida solo si el id es 0
         required: true
         schema:
           $ref: '#/definitions/models.Movimiento'
@@ -1332,7 +1476,9 @@ paths:
     get:
       tags:
       - traslados
-      description: get Traslado by id
+      description: |-
+        get Traslado by id
+        <br>
       operationId: TrasladosController.Get User
       parameters:
       - in: path
@@ -1351,7 +1497,9 @@ paths:
     put:
       tags:
       - traslados
-      description: Actualiza el estado del traslado y genera la transacción contable correspondiente.
+      description: |-
+        Actualiza el estado del traslado y genera la transacción contable correspondiente.
+        <br>
       operationId: TrasladosController.Put Aprobar traslado
       parameters:
       - in: path
@@ -1371,7 +1519,9 @@ paths:
     get:
       tags:
       - traslados
-      description: get Elementos by Tercero Origen
+      description: |-
+        get Elementos by Tercero Origen
+        <br>
       operationId: TrasladosController.Get Elementos
       parameters:
       - in: path
@@ -1391,7 +1541,9 @@ paths:
     post:
       tags:
       - traslados
-      description: Genera un nuevo traslado interno en estado confirmado, validando que funcionario origen y destino sean distintos
+      description: |-
+        Genera un nuevo traslado interno en estado confirmado, validando que funcionario origen y destino sean distintos
+        <br>
       operationId: TrasladosController.Post Traslado Interno
       parameters:
       - in: body
@@ -2494,6 +2646,16 @@ definitions:
         format: int64
       Nombre:
         type: string
+  models.EventoAuditoria:
+    title: EventoAuditoria
+    type: object
+    properties:
+      evento:
+        type: string
+      request_original:
+        $ref: '#/definitions/models.RequestAuditoria'
+      resultado_original:
+        $ref: '#/definitions/models.ResultAuditoria'
   models.ExistenciasKardex:
     title: ExistenciasKardex
     type: object
@@ -2957,6 +3119,10 @@ definitions:
       ElementoValorFinal:
         type: number
         format: double
+      SalidaCentroCosto:
+        type: string
+      SalidaCodigoCentroCosto:
+        type: string
       SalidaFuncionarioAsignado:
         type: string
   models.ReporteDetalleSalidaResponse:
@@ -2992,6 +3158,25 @@ definitions:
         type: string
       fecha_inicial:
         type: string
+  models.RequestAuditoria:
+    title: RequestAuditoria
+    type: object
+    properties:
+      body:
+        $ref: '#/definitions/models.interface'
+      endpoint:
+        type: string
+      method:
+        type: string
+  models.ResultAuditoria:
+    title: ResultAuditoria
+    type: object
+    properties:
+      body:
+        $ref: '#/definitions/models.interface'
+      http_status:
+        type: integer
+        format: int64
   models.ResultadoAnulacionEntrada:
     title: ResultadoAnulacionEntrada
     type: object
@@ -3378,20 +3563,8 @@ definitions:
     title: TransaccionEntradaHistorica
     type: object
     properties:
-      ConsecutivoId:
-        type: integer
-        format: int64
       Detalle:
         $ref: '#/definitions/models.FormatoBaseEntrada'
-      FechaCorte:
-        type: string
-        format: date-time
-      FechaCreacion:
-        type: string
-        format: date-time
-      FechaModificacion:
-        type: string
-        format: date-time
       FormatoTipoMovimientoId:
         type: string
       Id:
@@ -3402,32 +3575,47 @@ definitions:
       SoporteMovimientoId:
         type: integer
         format: int64
-      Year:
+      consecutivo_id:
+        type: integer
+        format: int64
+      fecha_corte:
+        type: string
+        format: datetime
+      fecha_creacion:
+        type: string
+        format: datetime
+      fecha_modificacion:
+        type: string
+        format: datetime
+      year:
         type: integer
         format: int64
   models.TransaccionSalidaHistorica:
     title: TransaccionSalidaHistorica
     type: object
     properties:
-      ConsecutivoId:
-        type: integer
-        format: int64
-      FechaCorte:
-        type: string
-        format: date-time
-      FechaCreacion:
-        type: string
-        format: date-time
-      FechaModificacion:
-        type: string
-        format: date-time
       Salidas:
         type: array
         items:
           $ref: '#/definitions/models.TrSalida'
-      Year:
+      consecutivo_id:
         type: integer
         format: int64
+      fecha_corte:
+        type: string
+        format: datetime
+      fecha_creacion:
+        type: string
+        format: datetime
+      fecha_modificacion:
+        type: string
+        format: datetime
+      year:
+        type: integer
+        format: int64
+  models.interface:
+    title: interface
+    type: object
 tags:
 - name: acta_recibido
   description: |
@@ -3468,3 +3656,7 @@ tags:
 - name: reportes
   description: |
     ReportesController operations for reportes
+- name: auditoria
+  description: |
+    AuditoriaController maneja eventos funcionales que deben quedar
+    registrados explícitamente en los logs de arka_mid.
