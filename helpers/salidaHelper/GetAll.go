@@ -16,8 +16,6 @@ func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entra
 
 	defer errorCtrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
 
-	asignaciones := make(map[int]models.AsignacionEspacioFisicoDependencia)
-	sedes := make(map[string]models.EspacioFisico)
 	centrosCostos := make(map[string]models.CentroCostos)
 	funcionarios := make(map[int]models.Tercero)
 	Salidas = make([]map[string]interface{}, 0)
@@ -76,7 +74,7 @@ func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entra
 			return
 		}
 
-		salida_, err := traerDetalle(salida, formato, asignaciones, sedes, centrosCostos, funcionarios)
+		salida_, err := traerDetalle(salida, formato, centrosCostos, funcionarios)
 		if err != nil {
 			outputError = err
 			return
