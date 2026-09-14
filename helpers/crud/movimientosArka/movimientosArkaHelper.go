@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -514,7 +515,7 @@ func GetAllCentroCostos(payload string) (centroCostos []models.CentroCostos, out
 	funcion := "GetAllCentroCostos - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
-	urlcrud := basePath + "centro_costos?" + payload
+	urlcrud := basePath + "centro_costos?" + normalizarConsultaCentroCostos(payload)
 	err := request.GetJson(urlcrud, &centroCostos)
 	if err != nil {
 		logs.Error(err)
@@ -523,4 +524,17 @@ func GetAllCentroCostos(payload string) (centroCostos []models.CentroCostos, out
 	}
 
 	return
+}
+
+// normalizarConsultaCentroCostos evita el filtro exacto por Id del CRUD, que
+// conserva un plan de PostgreSQL incompatible desde que Codigo pasó a ser
+// texto. Id__in con un único valor tiene la misma semántica y retorna el
+// arreglo esperado por este MID.
+func normalizarConsultaCentroCostos(payload string) string {
+	const filtroID = "query=Id:"
+	if strings.HasPrefix(payload, filtroID) {
+		return "query=Id__in:" + strings.TrimPrefix(payload, filtroID)
+	}
+
+	return payload
 }
