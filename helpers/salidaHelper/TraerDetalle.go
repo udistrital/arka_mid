@@ -1,39 +1,30 @@
 package salidaHelper
 
 import (
-	"regexp"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
-	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
+var consultarCentroCostosSalida = movimientosArka.GetAllCentroCostos
+
+const mensajeCentroCostosNoEncontrado = "Error en la búsqueda, consultar a soporte"
+
 func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
-	asignaciones map[int]models.AsignacionEspacioFisicoDependencia,
-	sedes map[string]models.EspacioFisico,
 	centrosCostos map[string]models.CentroCostos,
 	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
 
 	var (
-		query       string
-		sede        models.EspacioFisico
-		ubicacion   models.AsignacionEspacioFisicoDependencia
-		funcionario models.Tercero
+		sede         models.EspacioFisico
+		centroCostos models.CentroCostos
+		funcionario  models.Tercero
 	)
-
-	if asignaciones == nil {
-		asignaciones = make(map[int]models.AsignacionEspacioFisicoDependencia)
-	}
-
-	if sedes == nil {
-		sedes = make(map[string]models.EspacioFisico)
-	}
 
 	if funcionarios == nil {
 		funcionarios = make(map[int]models.Tercero)
@@ -43,57 +34,53 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		centrosCostos = make(map[string]models.CentroCostos)
 	}
 
+	buscaCentroCostos := salida.Ubicacion > 0 || salida.CentroCostos != ""
 	if salida.Ubicacion > 0 {
-		if val, ok := asignaciones[salida.Ubicacion]; !ok {
-			query = "query=Id:" + strconv.Itoa(salida.Ubicacion)
-			if asignacion_, err := oikos.GetAllAsignacion(query); err != nil {
+		key := "id:" + strconv.Itoa(salida.Ubicacion)
+		if val, ok := centrosCostos[key]; !ok {
+			payload := "query=Id:" + strconv.Itoa(salida.Ubicacion)
+			if centrosCostos_, err := consultarCentroCostosSalida(payload); err != nil {
 				return nil, err
-			} else if len(asignacion_) == 1 {
-				ubicacion = asignacion_[0]
-				asignaciones[salida.Ubicacion] = ubicacion
+			} else if len(centrosCostos_) == 1 {
+				centroCostos = centrosCostos_[0]
+				centrosCostos[key] = centroCostos
 			}
 		} else {
-			ubicacion = val
+			centroCostos = val
 		}
 	} else if salida.CentroCostos != "" {
-		_, ok := centrosCostos[salida.CentroCostos]
-		if !ok {
+		key := "codigo:" + salida.CentroCostos
+		if val, ok := centrosCostos[key]; !ok {
 			payload := "query=Codigo:" + salida.CentroCostos
-			centroCostos_, err := movimientosArka.GetAllCentroCostos(payload)
+			centroCostos_, err := consultarCentroCostosSalida(payload)
 			if err != nil {
 				return nil, err
 			} else if len(centroCostos_) == 1 {
-				centrosCostos[salida.CentroCostos] = centroCostos_[0]
-			}
-		}
-
-		centroCostos_ := centrosCostos[salida.CentroCostos]
-		if centroCostos_.Sede == "" && centroCostos_.Dependencia == "" {
-			ubicacion = models.AsignacionEspacioFisicoDependencia{
-				DependenciaId: &models.Dependencia{Nombre: centroCostos_.Nombre},
+				centroCostos = centroCostos_[0]
+				centrosCostos[key] = centroCostos
 			}
 		} else {
-			sede = models.EspacioFisico{Nombre: centroCostos_.Sede}
-			ubicacion.DependenciaId = &models.Dependencia{Nombre: centroCostos_.Dependencia}
+			centroCostos = val
 		}
 	}
 
-	if ubicacion.Id > 0 && ubicacion.EspacioFisicoId.CodigoAbreviacion != "" {
-		rgxp := regexp.MustCompile(`\d.*`)
-		str := ubicacion.EspacioFisicoId.CodigoAbreviacion
-		str = str[0:2] + rgxp.ReplaceAllString(str[2:], "")
-
-		if val, ok := sedes[str]; !ok {
-			sede_, err := oikos.GetSedeEspacioFisico(*ubicacion.EspacioFisicoId)
-			if err != nil {
-				return nil, err
-			} else if sede_.Id > 0 {
-				sede = sede_
-				sedes[str] = sede
-			}
-		} else {
-			sede = val
+	if buscaCentroCostos && centroCostos.Id == 0 {
+		centroCostos = models.CentroCostos{
+			Codigo: "0",
+			Nombre: mensajeCentroCostosNoEncontrado,
 		}
+	}
+
+	var dependencia *models.Dependencia
+	if centroCostos.Id > 0 {
+		if centroCostos.Sede == "" && centroCostos.Dependencia == "" {
+			dependencia = &models.Dependencia{Nombre: centroCostos.Nombre}
+		} else {
+			sede = models.EspacioFisico{Nombre: centroCostos.Sede}
+			dependencia = &models.Dependencia{Nombre: centroCostos.Dependencia}
+		}
+	} else if buscaCentroCostos {
+		dependencia = &models.Dependencia{Nombre: mensajeCentroCostosNoEncontrado}
 	}
 
 	if salida.Funcionario > 0 {
@@ -114,8 +101,8 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		"Id":                      movimiento.Id,
 		"Observacion":             movimiento.Observacion,
 		"Sede":                    sede,
-		"Dependencia":             ubicacion.DependenciaId,
-		"Ubicacion":               ubicacion,
+		"Dependencia":             dependencia,
+		"Ubicacion":               centroCostos,
 		"FechaCreacion":           movimiento.FechaCreacion,
 		"FechaCorte":              movimiento.FechaCorte,
 		"Activo":                  movimiento.Activo,
