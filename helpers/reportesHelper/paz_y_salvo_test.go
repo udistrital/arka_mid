@@ -203,7 +203,7 @@ func mockConsultarElaboradorPazYSalvo(t *testing.T) {
 	t.Helper()
 
 	original := consultarElaboradorPazYSalvoFn
-	consultarElaboradorPazYSalvoFn = func(string, int) (*pazYSalvoFirmante, map[string]interface{}) {
+	consultarElaboradorPazYSalvoFn = func(context.Context, string, int) (*pazYSalvoFirmante, map[string]interface{}) {
 		return &pazYSalvoFirmante{
 			Nombre: "Usuario Prueba",
 			Cargo:  "Cargo Prueba",
@@ -218,7 +218,7 @@ func mockConsultarElaboradorPazYSalvoConError(t *testing.T) {
 	t.Helper()
 
 	original := consultarElaboradorPazYSalvoFn
-	consultarElaboradorPazYSalvoFn = func(string, int) (*pazYSalvoFirmante, map[string]interface{}) {
+	consultarElaboradorPazYSalvoFn = func(context.Context, string, int) (*pazYSalvoFirmante, map[string]interface{}) {
 		return nil, map[string]interface{}{"status": "500", "err": "sin usuario"}
 	}
 	t.Cleanup(func() {

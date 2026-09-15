@@ -1,6 +1,7 @@
 package trasladoshelper
 
 import (
+	"context"
 	"errors"
 
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -11,12 +12,12 @@ import (
 )
 
 // Post Crea registro de traslado en estado en trámite
-func Post(traslado *models.Movimiento) (outputError map[string]interface{}) {
+func Post(ctx context.Context, traslado *models.Movimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
-	outputError = consecutivos.Get("contxtAjusteCons", "Registro Traslado Arka", &consecutivo)
+	outputError = consecutivos.Get(ctx, "contxtAjusteCons", "Registro Traslado Arka", &consecutivo)
 	if outputError != nil {
 		return
 	}
@@ -24,13 +25,13 @@ func Post(traslado *models.Movimiento) (outputError map[string]interface{}) {
 	traslado.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo))
 	traslado.ConsecutivoId = &consecutivo.Id
 
-	outputError = movimientosArka.PostMovimiento(traslado)
+	outputError = movimientosArka.PostMovimiento(ctx, traslado)
 
 	return
 }
 
 // PostInterno crea registro de traslado interno en estado confirmado
-func PostInterno(traslado *models.Movimiento) (outputError map[string]interface{}) {
+func PostInterno(ctx context.Context, traslado *models.Movimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("PostInterno - Unhandled Error!", "500")
 
@@ -39,7 +40,7 @@ func PostInterno(traslado *models.Movimiento) (outputError map[string]interface{
 	}
 
 	var consecutivo models.Consecutivo
-	outputError = consecutivos.Get("contxtAjusteCons", "Registro Traslado Arka", &consecutivo)
+	outputError = consecutivos.Get(ctx, "contxtAjusteCons", "Registro Traslado Arka", &consecutivo)
 	if outputError != nil {
 		return
 	}
@@ -47,7 +48,7 @@ func PostInterno(traslado *models.Movimiento) (outputError map[string]interface{
 	if traslado.EstadoMovimientoId == nil {
 		traslado.EstadoMovimientoId = &models.EstadoMovimiento{}
 	}
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&traslado.EstadoMovimientoId.Id, "Traslado Confirmado")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &traslado.EstadoMovimientoId.Id, "Traslado Confirmado")
 	if outputError != nil {
 		return
 	}
@@ -55,7 +56,7 @@ func PostInterno(traslado *models.Movimiento) (outputError map[string]interface{
 	traslado.Consecutivo = utilsHelper.String(consecutivos.Format("%05d", getTipoComprobanteTraslados(), &consecutivo))
 	traslado.ConsecutivoId = &consecutivo.Id
 
-	outputError = movimientosArka.PostMovimiento(traslado)
+	outputError = movimientosArka.PostMovimiento(ctx, traslado)
 
 	return
 }

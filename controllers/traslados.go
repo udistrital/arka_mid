@@ -46,7 +46,7 @@ func (c *TrasladosController) Post() {
 		})
 	}
 
-	err := trasladoshelper.Post(&v)
+	err := trasladoshelper.Post(c.Ctx.Request.Context(), &v)
 	if err != nil {
 		panic(err)
 	} else {
@@ -78,7 +78,7 @@ func (c *TrasladosController) PostInterno() {
 		})
 	}
 
-	err := trasladoshelper.PostInterno(&v)
+	err := trasladoshelper.PostInterno(c.Ctx.Request.Context(), &v)
 	if err != nil {
 		panic(err)
 	} else {

@@ -1,6 +1,8 @@
 package bajasHelper
 
 import (
+	"context"
+
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -9,12 +11,12 @@ import (
 )
 
 // Post Crea registro de baja
-func Post(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
+func Post(ctx context.Context, baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
-	outputError = consecutivos.Get("contxtBajaCons", "Registro Baja Arka", &consecutivo)
+	outputError = consecutivos.Get(ctx, "contxtBajaCons", "Registro Baja Arka", &consecutivo)
 	if outputError != nil {
 		return
 	}
@@ -23,14 +25,14 @@ func Post(baja *models.TrSoporteMovimiento) (bajaR *models.Movimiento, outputErr
 	baja.Movimiento.ConsecutivoId = &consecutivo.Id
 
 	// Crea registro en api movimientos_arka_crud
-	outputError = movimientosArka.PostMovimiento(baja.Movimiento)
+	outputError = movimientosArka.PostMovimiento(ctx, baja.Movimiento)
 	if outputError != nil {
 		return
 	}
 
 	// Crea registro en table soporte_movimiento si es necesario
 	baja.Soporte.MovimientoId = baja.Movimiento
-	outputError = movimientosArka.PostSoporteMovimiento(baja.Soporte)
+	outputError = movimientosArka.PostSoporteMovimiento(ctx, baja.Soporte)
 	if outputError != nil {
 		return
 	}

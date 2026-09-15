@@ -46,7 +46,7 @@ func (c *TercerosController) GetOne() {
 		id = v
 	}
 
-	if v, err := terceros.GetNombreTerceroById(id); err != nil {
+	if v, err := terceros.GetNombreTerceroById(c.Ctx.Request.Context(), id); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v

@@ -36,7 +36,7 @@ func determinarDeltaActa(ctx context.Context, org *models.Elemento, nvo *models.
 		} else {
 			if detalleSubgrupo_[0].TipoBienId.NecesitaPlaca && nvo.Placa == "" {
 				var consecutivo models.Consecutivo
-				if err := consecutivos.Get("contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {
+				if err := consecutivos.Get(ctx, "contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {
 					return false, false, false, err
 				}
 				year, month, day := time.Now().Date()

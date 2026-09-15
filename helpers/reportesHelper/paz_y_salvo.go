@@ -71,7 +71,7 @@ func GenerarPazYSalvo(ctx context.Context, req *models.PazYSalvoRequest) (respue
 		return nil, outputError
 	}
 
-	elaborador, outputError := consultarElaboradorPazYSalvoFn(req.Usuario, req.ElaboroTerceroId)
+	elaborador, outputError := consultarElaboradorPazYSalvoFn(ctx, req.Usuario, req.ElaboroTerceroId)
 	if outputError != nil {
 		elaborador = nil
 	}
@@ -138,14 +138,14 @@ func consultarInventarioTercero(ctx context.Context, terceroId int) (inventario 
 	return inventario, nil
 }
 
-func consultarElaboradorPazYSalvo(_ string, terceroId int) (*pazYSalvoFirmante, map[string]interface{}) {
+func consultarElaboradorPazYSalvo(ctx context.Context, _ string, terceroId int) (*pazYSalvoFirmante, map[string]interface{}) {
 	funcion := "consultarElaboradorPazYSalvo"
 
 	if terceroId <= 0 {
 		return nil, errorCtrl.Error(funcion+" - elaboro_tercero_id", "no se recibió terceroId válido para resolver Elaboró", "400")
 	}
 
-	detalleFuncionario, outputError := tercerosmid.GetDetalleFuncionario(terceroId)
+	detalleFuncionario, outputError := tercerosmid.GetDetalleFuncionario(ctx, terceroId)
 	if outputError != nil || detalleFuncionario == nil || len(detalleFuncionario.Tercero) == 0 {
 		return nil, outputError
 	}
@@ -171,7 +171,7 @@ func consultarResponsableFirma(ctx context.Context, _ models.DetalleTercero) (*p
 	payload := "limit=-1&sortby=Id&order=desc&fields=Id,Nombre,Documento,Cargo,FechaInicio,FechaFin"
 
 	var supervisores []supervisorContrato
-	if outputError := administrativa.GetSupervisorByQuery(payload, &supervisores); outputError != nil {
+	if outputError := administrativa.GetSupervisorByQuery(ctx, payload, &supervisores); outputError != nil {
 		return nil, outputError
 	}
 

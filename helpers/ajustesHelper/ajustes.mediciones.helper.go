@@ -39,13 +39,13 @@ func calcularAjusteMediciones(ctx context.Context, novedades map[int][]*models.N
 		movCredito = cr_
 	}
 
-	if terceroUD_, err := terceros.GetAllDatosIdentificacion(queryUD + terceros.GetDocUD()); err != nil {
+	if terceroUD_, err := terceros.GetAllDatosIdentificacion(ctx, queryUD+terceros.GetDocUD()); err != nil {
 		return nil, nil, err
 	} else {
 		terceroUD = terceroUD_[0].TerceroId.Id
 	}
 
-	if cuentasSg, cuentas, err := consultaCuentasMp(novedades, sg, vls, mp, org); err != nil {
+	if cuentasSg, cuentas, err := consultaCuentasMp(ctx, novedades, sg, vls, mp, org); err != nil {
 		return nil, nil, err
 	} else {
 		cuentasSubgrupo = cuentasSg
@@ -140,7 +140,7 @@ func calcularAjusteMediciones(ctx context.Context, novedades map[int][]*models.N
 }
 
 // consultaCuentasMp Consulta las cuentas asignadas a cada subgrupo y su detalle según el tipo de novedad
-func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
+func consultaCuentasMp(ctx context.Context, novedades map[int][]*models.NovedadElemento,
 	sg, vls, mp []*models.DetalleElemento_,
 	org []*models.Elemento) (
 	ctasSg map[int]*models.CuentasSubgrupo,
@@ -188,7 +188,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 	}
 
 	if idD > 0 {
-		if ctas, err := getCuentasByMovimientoSubgrupos(idD, idsD); err != nil {
+		if ctas, err := getCuentasByMovimientoSubgrupos(ctx, idD, idsD); err != nil {
 			return nil, nil, err
 		} else {
 			ctasD = ctas
@@ -196,7 +196,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 	}
 
 	if idA > 0 {
-		if ctas, err := getCuentasByMovimientoSubgrupos(idA, idsA); err != nil {
+		if ctas, err := getCuentasByMovimientoSubgrupos(ctx, idA, idsA); err != nil {
 			return nil, nil, err
 		} else {
 			ctasA = ctas
@@ -211,7 +211,7 @@ func consultaCuentasMp(novedades map[int][]*models.NovedadElemento,
 	}
 
 	ctas = make(map[string]*models.CuentaContable)
-	if detalleCuenta_, err := fillCuentas(ctas, idsCtas); err != nil {
+	if detalleCuenta_, err := fillCuentas(ctx, ctas, idsCtas); err != nil {
 		return nil, nil, err
 	} else {
 		ctas = detalleCuenta_

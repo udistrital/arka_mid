@@ -52,7 +52,7 @@ func GetDetalleContable(ctx context.Context, movimientos []*models.MovimientoTra
 	for _, mov := range movs {
 		mov_ := new(models.DetalleMovimientoContable)
 		if cta, ok := detalleCuentas[mov.Cuenta]; !ok {
-			if cta_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
+			if cta_, err := cuentasContables.GetCuentaContable(ctx, mov.Cuenta); err != nil {
 				return nil, err
 			} else {
 				if cta_ != nil {
@@ -78,7 +78,7 @@ func GetDetalleContable(ctx context.Context, movimientos []*models.MovimientoTra
 		}
 
 		if mov.TerceroId > 0 {
-			if tercero, err := terceros.GetNombreTerceroById(mov.TerceroId); err != nil {
+			if tercero, err := terceros.GetNombreTerceroById(ctx, mov.TerceroId); err != nil {
 				return nil, err
 			} else {
 				mov_.TerceroId = tercero
@@ -98,7 +98,7 @@ func GetFullDetalleContable(ctx context.Context, consecutivoId int) (trContable 
 
 	defer errorCtrl.ErrorControlFunction("GetFullDetalleContable - Unhandled Error!", "500")
 
-	transaccion, outputError := movimientosContables.GetTransaccion(consecutivoId, "consecutivo", true)
+	transaccion, outputError := movimientosContables.GetTransaccion(ctx, consecutivoId, "consecutivo", true)
 	if outputError != nil {
 		return
 	}

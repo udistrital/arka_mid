@@ -91,7 +91,7 @@ func (c *PolizasController) GetAllElementosPoliza() {
 		}
 	}
 
-	if l, err := polizasHelper.GetElementosPoliza(offset, limit, fields, order, query, sortby); err != nil {
+	if l, err := polizasHelper.GetElementosPoliza(c.Ctx.Request.Context(), offset, limit, fields, order, query, sortby); err != nil {
 		panic(err)
 	} else {
 		if l == nil {

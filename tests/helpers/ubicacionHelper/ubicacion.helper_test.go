@@ -1,6 +1,7 @@
 package ubicacionHelper_test
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -25,7 +26,7 @@ func TestMain(m *testing.M) {
 // GetAsignacionSedeDependencia ...
 func TestGetSedeDependenciaUbicacion(t *testing.T) {
 
-	if s, err := oikos.GetSedeDependenciaUbicacion(2); err != nil {
+	if s, err := oikos.GetSedeDependenciaUbicacion(context.Background(), 2); err != nil {
 		t.Error("No se pudo consultar la ubicacion", err)
 		t.Fail()
 	} else {

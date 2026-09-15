@@ -91,7 +91,7 @@ func calcularAjusteMovimiento(ctx context.Context, originales []*models.Elemento
 		ids = append(ids, el.SubgrupoCatalogoId)
 	}
 
-	if cuentasSg, err := getCuentasByMovimientoSubgrupos(movimientoId, ids); err != nil {
+	if cuentasSg, err := getCuentasByMovimientoSubgrupos(ctx, movimientoId, ids); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = cuentasSg
@@ -107,7 +107,7 @@ func calcularAjusteMovimiento(ctx context.Context, originales []*models.Elemento
 				return
 			}
 
-			if detalleCuenta_, err := fillCuentas(detalleCuenta,
+			if detalleCuenta_, err := fillCuentas(ctx, detalleCuenta,
 				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId,
@@ -135,7 +135,7 @@ func calcularAjusteMovimiento(ctx context.Context, originales []*models.Elemento
 	for _, el := range actualizarVl {
 		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
 
-			if detalleCuenta_, err := fillCuentas(detalleCuenta,
+			if detalleCuenta_, err := fillCuentas(ctx, detalleCuenta,
 				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId,
@@ -176,13 +176,13 @@ func submitUpdates(ctx context.Context, elementosActa []*models.Elemento,
 	}
 
 	for _, el := range elementosMovimiento {
-		if _, err := movimientosArka.PutElementosMovimiento(el, el.Id); err != nil {
+		if _, err := movimientosArka.PutElementosMovimiento(ctx, el, el.Id); err != nil {
 			return err
 		}
 	}
 
 	for _, nv := range novedades {
-		if _, err := movimientosArka.PutNovedadElemento(nv, nv.Id); err != nil {
+		if _, err := movimientosArka.PutNovedadElemento(ctx, nv, nv.Id); err != nil {
 			return err
 		}
 	}
@@ -252,7 +252,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 }
 
 // generarMovimientoAjuste Crea el registro del movimiento de inventario y contable resultantes del ajuste
-func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (
+func generarMovimientoAjuste(ctx context.Context, sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (
 	movimiento *models.Movimiento, trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("generarMovimientoAjuste - Unhandled Error!", "500")
@@ -261,13 +261,13 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 	detalle := new(models.FormatoAjusteAutomatico)
 
 	query := "query=Nombre:" + url.QueryEscape("Ajuste Automático")
-	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(ctx, query); err != nil {
 		return nil, nil, err
 	} else {
 		movimiento.FormatoTipoMovimientoId = fm[0]
 	}
 
-	if sm, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste Aprobado")); err != nil {
+	if sm, err := movimientosArka.GetAllEstadoMovimiento(ctx, "query=Nombre:"+url.QueryEscape("Ajuste Aprobado")); err != nil {
 		return nil, nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -285,7 +285,7 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 	}
 
 	var consecutivo models.Consecutivo
-	if err := consecutivos.Get("contxtAjusteCons", "Ajuste automático Arka", &consecutivo); err != nil {
+	if err := consecutivos.Get(ctx, "contxtAjusteCons", "Ajuste automático Arka", &consecutivo); err != nil {
 		return nil, nil, err
 	}
 
@@ -301,14 +301,14 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 		trContable.Etiquetas = ""
 		trContable.Descripcion = "Ajuste contable almacén"
 
-		_, outputError = movimientosContables.PostTrContable(trContable)
+		_, outputError = movimientosContables.PostTrContable(ctx, trContable)
 		if outputError != nil {
 			return
 		}
 	}
 
 	movimiento.Activo = true
-	outputError = movimientosArka.PostMovimiento(movimiento)
+	outputError = movimientosArka.PostMovimiento(ctx, movimiento)
 
 	return
 }

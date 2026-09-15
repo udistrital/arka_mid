@@ -22,7 +22,7 @@ func AprobarSalida(ctx context.Context, salidaId int, res *models.ResultadoMovim
 		tipoMovimiento int
 	)
 
-	trSalida, outputError := movimientosArka.GetTrSalida(salidaId)
+	trSalida, outputError := movimientosArka.GetTrSalida(ctx, salidaId)
 	if outputError != nil || trSalida.Salida.EstadoMovimientoId.Nombre != "Salida En Trámite" {
 		return
 	} else if len(trSalida.Elementos) == 0 || trSalida.Salida.ConsecutivoId == nil || *trSalida.Salida.ConsecutivoId == 0 {
@@ -41,12 +41,12 @@ func AprobarSalida(ctx context.Context, salidaId int, res *models.ResultadoMovim
 		return
 	}
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, "SAL")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &tipoMovimiento, "SAL")
 	if outputError != nil {
 		return
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&trSalida.Salida.EstadoMovimientoId.Id, "Salida Aprobada")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &trSalida.Salida.EstadoMovimientoId.Id, "Salida Aprobada")
 	if outputError != nil {
 		return
 	}
@@ -77,7 +77,7 @@ func AprobarSalida(ctx context.Context, salidaId int, res *models.ResultadoMovim
 		return
 	}
 
-	res.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteSalidas(), "Salida de Almacén", &transaccion)
+	res.Error, outputError = asientoContable.CreateTransaccionContable(ctx, getTipoComprobanteSalidas(), "Salida de Almacén", &transaccion)
 	if outputError != nil || res.Error != "" {
 		return
 	}
@@ -87,7 +87,7 @@ func AprobarSalida(ctx context.Context, salidaId int, res *models.ResultadoMovim
 		return
 	}
 
-	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	_, outputError = movimientosContables.PostTrContable(ctx, &transaccion)
 	if outputError != nil {
 		return
 	}
@@ -97,7 +97,7 @@ func AprobarSalida(ctx context.Context, salidaId int, res *models.ResultadoMovim
 	if trSalida.Salida.FechaCorte == nil || trSalida.Salida.FechaCorte.IsZero() {
 		trSalida.Salida.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
 	}
-	outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
+	outputError = movimientosArka.PutMovimiento(ctx, trSalida.Salida, trSalida.Salida.Id)
 
 	return
 }

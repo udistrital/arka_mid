@@ -1,6 +1,7 @@
 package contratoHelper_test
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -27,7 +28,7 @@ func TestMain(m *testing.M) {
 // GetCatalogoById ...
 func TestGetContrato(t *testing.T) {
 	var contrato models.InformacionContrato
-	err := administrativa.GetContrato(15, "2020", &contrato)
+	err := administrativa.GetContrato(context.Background(), 15, "2020", &contrato)
 	if err != nil {
 		if err != nil {
 			t.Error("No se pudo consultar el contrato", err)

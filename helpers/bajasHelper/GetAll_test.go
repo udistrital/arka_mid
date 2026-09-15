@@ -19,7 +19,7 @@ func TestEsTerceroNoEncontrado(t *testing.T) {
 func TestCargarNombreTerceroBajaIdInvalido(t *testing.T) {
 	buffer := make(map[int]string)
 
-	if err := cargarNombreTerceroBaja(context.TODO(), 0, buffer); err != nil {
+	if err := cargarNombreTerceroBaja(context.Background(), 0, buffer); err != nil {
 		t.Fatalf("no se esperaba error para tercero 0: %v", err)
 	}
 

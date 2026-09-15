@@ -124,7 +124,7 @@ func loadBajas(ctx context.Context, user string, revAlmacen, revComite bool, baj
 			payload += url.QueryEscape("Baja En Trámite")
 		}
 
-		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(ctx, payload); err != nil {
 			return err
 		} else {
 			*bajas = solicitudes_
@@ -143,19 +143,19 @@ func loadBajas(ctx context.Context, user string, revAlmacen, revComite bool, baj
 	}
 
 	query := "limit=-1&query=Opcion__Nombre:bajasVerTodaSolicitud,Perfil__Nombre__in:" + strings.Join(roles, "|")
-	if err := configuracion.GetAllPerfilXMenuOpcion(query, &opciones); err != nil {
+	if err := configuracion.GetAllPerfilXMenuOpcion(ctx, query, &opciones); err != nil {
 		return err
 	}
 
 	if len(opciones) > 0 {
 		query := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre__startswith:Baja"
-		if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
+		if tr_, _, err := movimientosArka.GetAllMovimiento(ctx, query); err != nil {
 			return err
 		} else {
 			*bajas = tr_
 		}
 	} else {
-		if err := movimientosArka.GetBajasByTerceroId(terceroId, bajas); err != nil {
+		if err := movimientosArka.GetBajasByTerceroId(ctx, terceroId, bajas); err != nil {
 			return err
 		}
 	}

@@ -56,14 +56,14 @@ func ConstruirMovimientosContables(ctx context.Context, totales map[int]float64,
 				movCr := CreaMovimiento(valor, descripcion, terceroIdCr, &val_, parCredito)
 				*movimientos = append(*movimientos, movCr)
 			} else {
-				if subgrupo, err := catalogoElementos.GetSubgrupoById(sg); err != nil {
+				if subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, sg); err != nil {
 					return "", err
 				} else {
 					return "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre, nil
 				}
 			}
 		} else {
-			if subgrupo, err := catalogoElementos.GetSubgrupoById(sg); err != nil {
+			if subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, sg); err != nil {
 				return "", err
 			} else {
 				return "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre, nil
@@ -75,14 +75,14 @@ func ConstruirMovimientosContables(ctx context.Context, totales map[int]float64,
 				movCr := CreaMovimiento(valor, descripcion, terceroIdCr, &val_, parDebito)
 				*movimientos = append(*movimientos, movCr)
 			} else {
-				if subgrupo, err := catalogoElementos.GetSubgrupoById(sg); err != nil {
+				if subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, sg); err != nil {
 					return "", err
 				} else {
 					return "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre, nil
 				}
 			}
 		} else {
-			if subgrupo, err := catalogoElementos.GetSubgrupoById(sg); err != nil {
+			if subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, sg); err != nil {
 				return "", err
 			} else {
 				return "Debe parametrizar las cuentas del subgrupo " + subgrupo.Codigo + " " + subgrupo.Nombre, nil
