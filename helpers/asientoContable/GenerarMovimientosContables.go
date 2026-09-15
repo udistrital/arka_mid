@@ -1,6 +1,7 @@
 package asientoContable
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
@@ -31,14 +32,14 @@ func GenerarMovimientosContables(totales map[int]float64, detalleCuentas map[str
 }
 
 // ConstruirMovimientosContables Genera los movimientos contables para una serie de cuentas y valores
-func ConstruirMovimientosContables(totales map[int]float64, detalleCuentas map[string]models.CuentaContable, cuentasSubgrupo map[int]models.CuentasSubgrupo,
+func ConstruirMovimientosContables(ctx context.Context, totales map[int]float64, detalleCuentas map[string]models.CuentaContable, cuentasSubgrupo map[int]models.CuentasSubgrupo,
 	terceroIdCr, terceroIdDb int, descripcion string, ajuste bool, movimientos *[]*models.MovimientoTransaccion) (
 	err string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("ConstruirMovimientosContables - Unhandled Error!", "500")
 
 	var parDebito, parCredito int
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		return "", err
 	} else {
 		parDebito = db_

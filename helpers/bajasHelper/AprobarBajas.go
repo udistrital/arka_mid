@@ -1,6 +1,7 @@
 package bajasHelper
 
 import (
+	"context"
 	"net/url"
 	"strconv"
 
@@ -18,7 +19,7 @@ import (
 )
 
 // AprobarBajas Aprobación masiva de bajas: transacciones contables, actualización de movmientos y registro de novedades
-func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func AprobarBajas(ctx context.Context, data *models.TrRevisionBaja, response *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("AprobarBajas - Unhandled Error!", "500")
 
@@ -89,13 +90,13 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 			}
 
 			var elementoActa models.Elemento
-			outputError = actaRecibido.GetElementoById(*historial.Elemento.ElementoActaId, &elementoActa)
+			outputError = actaRecibido.GetElementoById(ctx, *historial.Elemento.ElementoActaId, &elementoActa)
 			if outputError != nil {
 				return
 			}
 
 			if _, ok := detalleSubgrupos[elementoActa.SubgrupoCatalogoId]; !ok {
-				if detalle, err := catalogoElementos.GetAllDetalleSubgrupo(getPayloadDetalleSubgrupo(elementoActa.SubgrupoCatalogoId)); err != nil {
+				if detalle, err := catalogoElementos.GetAllDetalleSubgrupo(ctx, getPayloadDetalleSubgrupo(elementoActa.SubgrupoCatalogoId)); err != nil {
 					return err
 				} else if len(detalle) == 1 {
 					detalleSubgrupos[elementoActa.SubgrupoCatalogoId] = *detalle[0]
@@ -131,12 +132,12 @@ func AprobarBajas(data *models.TrRevisionBaja, response *models.ResultadoMovimie
 			}
 		}
 
-		response.Error, outputError = asientoContable.CalcularMovimientosContables(bajas, descBaja(), 0, movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
+		response.Error, outputError = asientoContable.CalcularMovimientosContables(ctx, bajas, descBaja(), 0, movBj, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
 		if outputError != nil || response.Error != "" {
 			return
 		}
 
-		response.Error, outputError = asientoContable.CalcularMovimientosContables(mediciones, descMovCr(), 0, movCr, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
+		response.Error, outputError = asientoContable.CalcularMovimientosContables(ctx, mediciones, descMovCr(), 0, movCr, terceroUD, terceroUD, bufferCuentas, detalleSubgrupos, &transaccion.Movimientos)
 		if outputError != nil || response.Error != "" {
 			return
 		}

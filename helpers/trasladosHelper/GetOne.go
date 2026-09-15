@@ -1,6 +1,7 @@
 package trasladoshelper
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
@@ -14,7 +15,7 @@ import (
 )
 
 // GetOne Consulta los funcionarios, ubicación y elementos asociados a un traslado
-func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
+func GetOne(ctx context.Context, id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
@@ -52,14 +53,14 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 	}
 
 	// Se consultan los detalles de los elementos del traslado
-	Traslado.Elementos, outputError = getElementosTraslado(detalle.Elementos)
+	Traslado.Elementos, outputError = getElementosTraslado(ctx, detalle.Elementos)
 	if outputError != nil {
 		return
 	}
 
 	if Traslado.Movimiento.EstadoMovimientoId.Nombre == "Traslado Aprobado" && Traslado.Movimiento.ConsecutivoId != nil && *Traslado.Movimiento.ConsecutivoId > 0 {
 		Traslado.TrContable = &models.InfoTransaccionContable{}
-		*Traslado.TrContable, outputError = asientoContable.GetFullDetalleContable(*Traslado.Movimiento.ConsecutivoId)
+		*Traslado.TrContable, outputError = asientoContable.GetFullDetalleContable(ctx, *Traslado.Movimiento.ConsecutivoId)
 		if outputError != nil {
 			return
 		}
@@ -70,7 +71,7 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 	return
 }
 
-func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
+func getElementosTraslado(ctx context.Context, ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
 	funcion := "getElementosTraslado"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -88,7 +89,7 @@ func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 	}
 
 	query = "Id__in:" + utilsHelper.ArrayToString(idsActa, "|")
-	if response, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
+	if response, err := actaRecibido.GetAllElemento(ctx, query, "", "Id", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		if len(response) == len(elementos) {

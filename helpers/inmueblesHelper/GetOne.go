@@ -1,6 +1,7 @@
 package inmuebleshelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -13,11 +14,11 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}) {
+func GetOne(ctx context.Context, id int) (detalle models.Inmueble, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
-	outputError = actaRecibido.GetElementoById(id, &detalle.Elemento)
+	outputError = actaRecibido.GetElementoById(ctx, id, &detalle.Elemento)
 	if outputError != nil {
 		return
 	}
@@ -32,7 +33,7 @@ func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}
 		detalle.ElementoMovimiento = *elementoMovimiento[0]
 	}
 
-	elementosCampo, outputError := actaRecibido.GetAllElementoCampo(getPayloadElementoCampo(id))
+	elementosCampo, outputError := actaRecibido.GetAllElementoCampo(ctx, getPayloadElementoCampo(id))
 	if outputError != nil {
 		return
 	}

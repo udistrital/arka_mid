@@ -1,11 +1,12 @@
 package inmuebleshelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/models"
 )
 
-func Update(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outputError map[string]interface{}) {
+func Update(ctx context.Context, inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outputError map[string]interface{}) {
 
 	if inmueble.ElementoMovimiento.ValorTotal <= 0 {
 		resultado.Error = "No se indicó un valor no nulo para el inmueble."
@@ -24,7 +25,7 @@ func Update(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, ou
 	}
 
 	var elemento models.Elemento
-	outputError = actaRecibido.GetElementoById(inmueble.Elemento.Id, &elemento)
+	outputError = actaRecibido.GetElementoById(ctx, inmueble.Elemento.Id, &elemento)
 	if outputError != nil {
 		return
 	}
@@ -33,12 +34,12 @@ func Update(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, ou
 	elemento.Nombre = inmueble.Elemento.Nombre
 	elemento.SubgrupoCatalogoId = inmueble.SubgrupoId.Id
 
-	outputError = actaRecibido.PutElemento(&elemento, elemento.Id)
+	outputError = actaRecibido.PutElemento(ctx, &elemento, elemento.Id)
 	if outputError != nil {
 		return
 	}
 
-	resultado.Error, outputError = registrarCuentas(*inmueble)
+	resultado.Error, outputError = registrarCuentas(ctx, *inmueble)
 
 	return
 }

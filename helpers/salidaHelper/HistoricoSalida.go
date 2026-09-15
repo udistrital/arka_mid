@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -28,7 +29,7 @@ type elementoMovimientoHistoricoSalidaSeed struct {
 }
 
 // RegistrarSalidaHistorica crea y aprueba una salida histórica usando un consecutivo y año específicos.
-func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalidaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("RegistrarSalidaHistorica - Unhandled Error!", "500")
 
 	if data == nil {
@@ -121,7 +122,7 @@ func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado
 		)
 	}
 
-	elementosActaPorID, outputError := consultarElementosActaHistoricoSalidaPorTrSalida(trSalida)
+	elementosActaPorID, outputError := consultarElementosActaHistoricoSalidaPorTrSalida(ctx, trSalida)
 	if outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
 			"consultar detalle de elementos del acta",
@@ -186,7 +187,7 @@ func RegistrarSalidaHistorica(data *models.TransaccionSalidaHistorica, resultado
 		}
 	}
 
-	outputError = AprobarSalida(payload.Salidas[0].Salida.Id, resultado)
+	outputError = AprobarSalida(ctx, payload.Salidas[0].Salida.Id, resultado)
 	if outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
 			"aprobar salida histórica",
@@ -311,7 +312,7 @@ func construirSeedsElementosHistoricosSalida(data *models.TransaccionSalidaHisto
 	return seeds
 }
 
-func consultarElementosActaHistoricoSalidaPorTrSalida(trSalida *models.TrSalida) (map[int]*models.DetalleElemento, map[string]interface{}) {
+func consultarElementosActaHistoricoSalidaPorTrSalida(ctx context.Context, trSalida *models.TrSalida) (map[int]*models.DetalleElemento, map[string]interface{}) {
 	elementosPorID := make(map[int]*models.DetalleElemento)
 	if trSalida == nil || len(trSalida.Elementos) == 0 {
 		return elementosPorID, nil
@@ -328,7 +329,7 @@ func consultarElementosActaHistoricoSalidaPorTrSalida(trSalida *models.TrSalida)
 		return elementosPorID, nil
 	}
 
-	elementosActa, outputError := consultarElementosActaHistoricoSalida(0, ids)
+	elementosActa, outputError := consultarElementosActaHistoricoSalida(ctx, 0, ids)
 	if outputError != nil {
 		return nil, outputError
 	}

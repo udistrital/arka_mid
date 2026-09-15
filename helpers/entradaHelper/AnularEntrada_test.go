@@ -35,7 +35,7 @@ func TestAplicarEstadoActaEnVerificacionNoOpSiYaEstaEnVerificacion(t *testing.T)
 		},
 	}
 
-	if err := aplicarEstadoActaEnVerificacion(transaccion); err != nil {
+	if err := aplicarEstadoActaEnVerificacion(t.Context(), transaccion); err != nil {
 		t.Fatalf("expected nil error, got %#v", err)
 	}
 

@@ -2,6 +2,7 @@ package reportesHelper
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"net/url"
 	"strings"
@@ -142,7 +143,7 @@ func TestGenerarReporteElementos(t *testing.T) {
 	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{})
 	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{})
 
-	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteElementos(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-05-01",
 		FechaFinal:   "2026-05-31",
 	})
@@ -236,7 +237,7 @@ func TestGenerarReporteElementos(t *testing.T) {
 }
 
 func TestGenerarReporteElementosFechaFinalMenor(t *testing.T) {
-	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteElementos(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-02-01",
 		FechaFinal:   "2026-01-31",
 	})
@@ -366,7 +367,7 @@ func TestExcelGeneradoEsBinarioValido(t *testing.T) {
 	mockConsultarEntradasAnuladasReporteData(t, []*entradaReporteData{})
 	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{})
 
-	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteElementos(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-03-01",
 		FechaFinal:   "2026-03-15",
 	})
@@ -438,7 +439,7 @@ func TestGenerarReporteIncluyeMovimientosAnuladosSinElementos(t *testing.T) {
 		},
 	})
 
-	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteElementos(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-05-01",
 		FechaFinal:   "2026-05-31",
 	})
@@ -534,7 +535,7 @@ func TestGenerarReporteEntradaAnuladaConElementosGeneraSoloUnRenglon(t *testing.
 	})
 	mockConsultarSalidasAnuladasReporteData(t, []*salidaReporteData{})
 
-	respuesta, err := GenerarReporteElementos(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteElementos(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-05-01",
 		FechaFinal:   "2026-05-31",
 	})
@@ -590,7 +591,7 @@ func TestExtraerCodigosEntradaIncluyeFormatosInactivos(t *testing.T) {
 
 func TestSalidaUbicacionInfoPriorizaCentroCostosSobreEntradaPadre(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(context.Context, string, string, string, string, string, string) ([]models.HistoricoActa, map[string]interface{}) {
 		return []models.HistoricoActa{
 			{UbicacionId: 422},
 		}, nil
@@ -610,7 +611,7 @@ func TestSalidaUbicacionInfoPriorizaCentroCostosSobreEntradaPadre(t *testing.T) 
 		}
 	})
 
-	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+	nombre, codigo := salidaUbicacionInfo(context.TODO(), &models.Movimiento{
 		MovimientoPadreId: &models.Movimiento{
 			Id:      9001,
 			Detalle: `{"acta_recibido_id":555}`,
@@ -628,7 +629,7 @@ func TestSalidaUbicacionInfoPriorizaCentroCostosSobreEntradaPadre(t *testing.T) 
 
 func TestSalidaUbicacionInfoUsaUbicacionCuandoCentroCostosVacio(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(context.Context, string, string, string, string, string, string) ([]models.HistoricoActa, map[string]interface{}) {
 		return []models.HistoricoActa{
 			{UbicacionId: 422},
 		}, nil
@@ -648,7 +649,7 @@ func TestSalidaUbicacionInfoUsaUbicacionCuandoCentroCostosVacio(t *testing.T) {
 		}
 	})
 
-	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+	nombre, codigo := salidaUbicacionInfo(context.TODO(), &models.Movimiento{
 		MovimientoPadreId: &models.Movimiento{
 			Id:      9001,
 			Detalle: `{"acta_recibido_id":555}`,
@@ -666,7 +667,7 @@ func TestSalidaUbicacionInfoUsaUbicacionCuandoCentroCostosVacio(t *testing.T) {
 
 func TestSalidaUbicacionInfoUsaEntradaPadreComoFallback(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(context.Context, string, string, string, string, string, string) ([]models.HistoricoActa, map[string]interface{}) {
 		return []models.HistoricoActa{
 			{UbicacionId: 422},
 		}, nil
@@ -682,7 +683,7 @@ func TestSalidaUbicacionInfoUsaEntradaPadreComoFallback(t *testing.T) {
 		return []models.CentroCostos{}, nil
 	})
 
-	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+	nombre, codigo := salidaUbicacionInfo(context.TODO(), &models.Movimiento{
 		MovimientoPadreId: &models.Movimiento{
 			Id:      9001,
 			Detalle: `{"acta_recibido_id":555}`,
@@ -700,7 +701,7 @@ func TestSalidaUbicacionInfoUsaEntradaPadreComoFallback(t *testing.T) {
 
 func TestSalidaUbicacionInfoUsaOtraUbicacionHistoricaCuandoLaActualNoExisteEnCentroCostos(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(context.Context, string, string, string, string, string, string) ([]models.HistoricoActa, map[string]interface{}) {
 		return []models.HistoricoActa{
 			{UbicacionId: 15934},
 			{UbicacionId: 1205},
@@ -721,7 +722,7 @@ func TestSalidaUbicacionInfoUsaOtraUbicacionHistoricaCuandoLaActualNoExisteEnCen
 		}
 	})
 
-	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+	nombre, codigo := salidaUbicacionInfo(context.TODO(), &models.Movimiento{
 		MovimientoPadreId: &models.Movimiento{
 			Id:      9001,
 			Detalle: `{"acta_recibido_id":555}`,
@@ -746,7 +747,7 @@ func TestSalidaUbicacionInfoUsaFallbackAleatorioCuandoNoEncuentraCentroCosto(t *
 		return []models.CentroCostos{}, nil
 	})
 
-	nombre, codigo := salidaUbicacionInfo(&models.Movimiento{
+	nombre, codigo := salidaUbicacionInfo(context.TODO(), &models.Movimiento{
 		Detalle: `{"funcionario":12345}`,
 	})
 
@@ -770,7 +771,7 @@ func TestConsultarCentroCostoA11ByIDBuscaPorCodigoCuandoNoExistePorId(t *testing
 		}
 	})
 
-	codigo, nombre, err := consultarCentroCostoA11ByID("1205")
+	codigo, nombre, err := consultarCentroCostoA11ByID(context.TODO(), "1205")
 	if err != nil {
 		t.Fatalf("consultarCentroCostoA11ByID retornó error: %v", err)
 	}
@@ -781,7 +782,7 @@ func TestConsultarCentroCostoA11ByIDBuscaPorCodigoCuandoNoExistePorId(t *testing
 
 func TestCentroCostoContabilizacionEntradaInfoUsaActaDeElementoCuandoFormatoNoLaTrae(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(_ context.Context, query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
 		if !strings.Contains(query, "ActaRecibidoId__Id:555") {
 			t.Fatalf("query historico inesperado: %q", query)
 		}
@@ -799,6 +800,7 @@ func TestCentroCostoContabilizacionEntradaInfoUsaActaDeElementoCuandoFormatoNoLa
 	})
 
 	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(
+		context.TODO(),
 		nil,
 		models.FormatoBaseEntrada{},
 		[]*models.DetalleElemento{{ActaRecibidoId: &models.ActaRecibido{Id: 555}}},
@@ -822,7 +824,7 @@ func TestCentroCostoContabilizacionEntradaInfoPriorizaSalidaAsociada(t *testing.
 	})
 
 	originalHistoricos := consultarHistoricosActaReporteFn
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(context.Context, string, string, string, string, string, string) ([]models.HistoricoActa, map[string]interface{}) {
 		return []models.HistoricoActa{{UbicacionId: 422}}, nil
 	}
 	t.Cleanup(func() {
@@ -841,6 +843,7 @@ func TestCentroCostoContabilizacionEntradaInfoPriorizaSalidaAsociada(t *testing.
 	})
 
 	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(
+		context.TODO(),
 		nil,
 		models.FormatoBaseEntrada{ActaRecibidoId: 555},
 		[]*models.DetalleElemento{{Id: 101}},
@@ -855,7 +858,7 @@ func TestCentroCostoContabilizacionEntradaInfoPriorizaSalidaAsociada(t *testing.
 
 func TestCentroCostoContabilizacionEntradaInfoUsaUbicacionHistoricaAlterna(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(_ context.Context, query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
 		if !strings.Contains(query, "ActaRecibidoId__Id:555") {
 			t.Fatalf("query historico inesperado: %q", query)
 		}
@@ -880,6 +883,7 @@ func TestCentroCostoContabilizacionEntradaInfoUsaUbicacionHistoricaAlterna(t *te
 	})
 
 	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(
+		context.TODO(),
 		nil,
 		models.FormatoBaseEntrada{ActaRecibidoId: 555},
 		nil,
@@ -901,6 +905,7 @@ func TestCentroCostoContabilizacionEntradaInfoUsaMovimientoCuandoNoHayActa(t *te
 	})
 
 	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(
+		context.TODO(),
 		&models.Movimiento{Detalle: `{"centro_costos":"888"}`},
 		models.FormatoBaseEntrada{},
 		nil,
@@ -922,7 +927,7 @@ func TestCentroCostoContabilizacionEntradaInfoUsaFallbackAleatorioCuandoNoHayRef
 		return []models.CentroCostos{}, nil
 	})
 
-	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(nil, models.FormatoBaseEntrada{}, nil)
+	nombre, codigo, err := centroCostoContabilizacionEntradaInfo(context.TODO(), nil, models.FormatoBaseEntrada{}, nil)
 	if err != nil {
 		t.Fatalf("centroCostoContabilizacionEntradaInfo retornó error: %v", err)
 	}
@@ -977,7 +982,7 @@ func TestGetDetalleCuentasEntradaPorConsecutivo(t *testing.T) {
 		},
 	})
 
-	respuesta, err := GetDetalleCuentasEntradaPorConsecutivo("ENT-7995")
+	respuesta, err := GetDetalleCuentasEntradaPorConsecutivo(context.TODO(), "ENT-7995")
 	if err != nil {
 		t.Fatalf("GetDetalleCuentasEntradaPorConsecutivo retornó error: %v", err)
 	}
@@ -1059,7 +1064,7 @@ func TestGetDetalleCuentasSalidaPorConsecutivo(t *testing.T) {
 		},
 	})
 
-	respuesta, err := GetDetalleCuentasSalidaPorConsecutivo("SAL-9001")
+	respuesta, err := GetDetalleCuentasSalidaPorConsecutivo(context.TODO(), "SAL-9001")
 	if err != nil {
 		t.Fatalf("GetDetalleCuentasSalidaPorConsecutivo retornó error: %v", err)
 	}
@@ -1084,7 +1089,7 @@ func TestGetDetalleCuentasSalidaPorConsecutivo(t *testing.T) {
 }
 
 func TestGenerarReporteContabilizacionRequestNil(t *testing.T) {
-	respuesta, err := GenerarReporteContabilizacion(nil)
+	respuesta, err := GenerarReporteContabilizacion(context.TODO(), nil)
 	if err == nil {
 		t.Fatal("se esperaba error cuando request es nil")
 	}
@@ -1097,7 +1102,7 @@ func TestConsultarProveedorActaFallbackCuandoTerceroNoExiste(t *testing.T) {
 	originalHistoricos := consultarHistoricosActaReporteFn
 	originalGetNombre := getNombreTerceroByID
 
-	consultarHistoricosActaReporteFn = func(query, fields, sortby, order, offset, limit string) ([]models.HistoricoActa, map[string]interface{}) {
+	consultarHistoricosActaReporteFn = func(context.Context, string, string, string, string, string, string) ([]models.HistoricoActa, map[string]interface{}) {
 		return []models.HistoricoActa{
 			{ProveedorId: 123456},
 		}, nil
@@ -1114,7 +1119,7 @@ func TestConsultarProveedorActaFallbackCuandoTerceroNoExiste(t *testing.T) {
 		getNombreTerceroByID = originalGetNombre
 	})
 
-	proveedor, err := consultarProveedorActa(555)
+	proveedor, err := consultarProveedorActa(context.TODO(), 555)
 	if err != nil {
 		t.Fatalf("no se esperaba error: %v", err)
 	}
@@ -1124,7 +1129,7 @@ func TestConsultarProveedorActaFallbackCuandoTerceroNoExiste(t *testing.T) {
 }
 
 func TestGenerarReporteContabilizacionFechaFinalMenor(t *testing.T) {
-	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteContabilizacion(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-06-16",
 		FechaFinal:   "2026-06-01",
 	})
@@ -1205,7 +1210,7 @@ func TestGenerarReporteContabilizacionEncabezadosYRenglones(t *testing.T) {
 		},
 	})
 
-	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteContabilizacion(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-06-01",
 		FechaFinal:   "2026-06-16",
 	})
@@ -1322,7 +1327,7 @@ func TestGenerarReporteContabilizacionOmiteDocumentoSinCuentas(t *testing.T) {
 		{Consecutivo: "H21-00003-2026", SubgrupoNombre: "Sin cuentas", ValorTotal: 500},
 	})
 
-	respuesta, err := GenerarReporteContabilizacion(&models.ReporteFechasRequest{
+	respuesta, err := GenerarReporteContabilizacion(context.TODO(), &models.ReporteFechasRequest{
 		FechaInicial: "2026-06-01",
 		FechaFinal:   "2026-06-16",
 	})
@@ -1352,7 +1357,7 @@ func mockConsultarEntradasReporteData(t *testing.T, entradas []*entradaReporteDa
 	t.Helper()
 
 	original := consultarEntradasReporteData
-	consultarEntradasReporteData = func(fechaInicial, fechaFinal time.Time) ([]*entradaReporteData, map[string]interface{}) {
+	consultarEntradasReporteData = func(context.Context, time.Time, time.Time) ([]*entradaReporteData, map[string]interface{}) {
 		return entradas, nil
 	}
 
@@ -1365,7 +1370,7 @@ func mockConsultarEntradasAnuladasReporteData(t *testing.T, entradas []*entradaR
 	t.Helper()
 
 	original := consultarEntradasAnuladasReporteData
-	consultarEntradasAnuladasReporteData = func(fechaInicial, fechaFinal time.Time) ([]*entradaReporteData, map[string]interface{}) {
+	consultarEntradasAnuladasReporteData = func(context.Context, time.Time, time.Time) ([]*entradaReporteData, map[string]interface{}) {
 		return entradas, nil
 	}
 
@@ -1378,7 +1383,7 @@ func mockConsultarSalidasAnuladasReporteData(t *testing.T, salidas []*salidaRepo
 	t.Helper()
 
 	original := consultarSalidasAnuladasReporteData
-	consultarSalidasAnuladasReporteData = func(fechaInicial, fechaFinal time.Time) ([]*salidaReporteData, map[string]interface{}) {
+	consultarSalidasAnuladasReporteData = func(context.Context, time.Time, time.Time) ([]*salidaReporteData, map[string]interface{}) {
 		return salidas, nil
 	}
 
@@ -1422,7 +1427,7 @@ func mockConsultarEntradasContabilizacionReporteData(t *testing.T, entradas []*r
 	t.Helper()
 
 	original := consultarEntradasContabilizacionReporteData
-	consultarEntradasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionGrupo, map[string]interface{}) {
+	consultarEntradasContabilizacionReporteData = func(context.Context, time.Time, time.Time) ([]*reporteContabilizacionGrupo, map[string]interface{}) {
 		return entradas, nil
 	}
 
@@ -1435,7 +1440,7 @@ func mockConsultarSalidasContabilizacionReporteData(t *testing.T, salidas []*rep
 	t.Helper()
 
 	original := consultarSalidasContabilizacionReporteData
-	consultarSalidasContabilizacionReporteData = func(fechaInicial, fechaFinal time.Time) ([]*reporteContabilizacionGrupo, map[string]interface{}) {
+	consultarSalidasContabilizacionReporteData = func(context.Context, time.Time, time.Time) ([]*reporteContabilizacionGrupo, map[string]interface{}) {
 		return salidas, nil
 	}
 
@@ -1461,7 +1466,7 @@ func mockConsultarCentroCostos(t *testing.T, centros []models.CentroCostos) {
 	t.Helper()
 
 	original := consultarCentroCostosFn
-	consultarCentroCostosFn = func(query string) ([]models.CentroCostos, map[string]interface{}) {
+	consultarCentroCostosFn = func(context.Context, string) ([]models.CentroCostos, map[string]interface{}) {
 		return centros, nil
 	}
 
@@ -1474,7 +1479,7 @@ func mockConsultarCentroCostosByQuery(t *testing.T, handler func(query string) (
 	t.Helper()
 
 	original := consultarCentroCostosFn
-	consultarCentroCostosFn = func(query string) ([]models.CentroCostos, map[string]interface{}) {
+	consultarCentroCostosFn = func(_ context.Context, query string) ([]models.CentroCostos, map[string]interface{}) {
 		return handler(query)
 	}
 
@@ -1500,7 +1505,7 @@ func mockConsultarElementosActa(t *testing.T, elementos []*models.DetalleElement
 	t.Helper()
 
 	original := consultarElementosActa
-	consultarElementosActa = func(actaID int, ids []int) ([]*models.DetalleElemento, map[string]interface{}) {
+	consultarElementosActa = func(context.Context, int, []int) ([]*models.DetalleElemento, map[string]interface{}) {
 		return elementos, nil
 	}
 
@@ -1513,7 +1518,7 @@ func mockConsultarMetadataEntrada(t *testing.T, proveedor, facturaConsecutivo st
 	t.Helper()
 
 	original := consultarMetadataEntradaFn
-	consultarMetadataEntradaFn = func(formato models.FormatoBaseEntrada) (string, string, time.Time, map[string]interface{}) {
+	consultarMetadataEntradaFn = func(context.Context, models.FormatoBaseEntrada) (string, string, time.Time, map[string]interface{}) {
 		return proveedor, facturaConsecutivo, facturaFecha, nil
 	}
 
@@ -1526,7 +1531,7 @@ func mockResolverSalidasPorElemento(t *testing.T, salidas map[int]*salidaReporte
 	t.Helper()
 
 	original := resolverSalidasPorElementoFn
-	resolverSalidasPorElementoFn = func(elementos []*models.DetalleElemento) (map[int]*salidaReporteData, map[string]interface{}) {
+	resolverSalidasPorElementoFn = func(context.Context, []*models.DetalleElemento) (map[int]*salidaReporteData, map[string]interface{}) {
 		return salidas, nil
 	}
 
@@ -1568,7 +1573,7 @@ func mockConsultarTransaccionContable(t *testing.T, transaccion *models.InfoTran
 	t.Helper()
 
 	original := consultarTransaccionContableMovimientoFn
-	consultarTransaccionContableMovimientoFn = func(movimiento *models.Movimiento, estadosPermitidos ...string) *models.InfoTransaccionContable {
+	consultarTransaccionContableMovimientoFn = func(context.Context, *models.Movimiento, ...string) *models.InfoTransaccionContable {
 		return transaccion
 	}
 

@@ -55,7 +55,7 @@ func (c *EntradaController) Post() {
 		logs.Info("Entró en rama de APROBACIÓN. entradaId=%d", entradaId)
 
 		var res models.ResultadoMovimiento
-		if err := entradaHelper.AprobarEntrada(entradaId, &res); err != nil {
+		if err := entradaHelper.AprobarEntrada(c.Ctx.Request.Context(), entradaId, &res); err != nil {
 			logs.Error("Error en entradaHelper.AprobarEntrada(%d): %v", entradaId, err)
 			panic(err)
 		}
@@ -99,7 +99,7 @@ func (c *EntradaController) Post() {
 		} else if entradaId == 0 {
 			logs.Info("Entró en REGISTRO de entrada nueva. etl=%v", etl)
 
-			if err := entradaHelper.RegistrarEntrada(&v, etl, &entrada); err != nil {
+			if err := entradaHelper.RegistrarEntrada(c.Ctx.Request.Context(), &v, etl, &entrada); err != nil {
 				logs.Error("Error en entradaHelper.RegistrarEntrada(&v, %v, &entrada): %v", etl, err)
 				logs.Error("Payload usado para registro: %+v", v)
 				panic(err)
@@ -147,7 +147,7 @@ func (c *EntradaController) PostHistorico() {
 	}
 
 	var resultado models.ResultadoMovimiento
-	if err := entradaHelper.RegistrarEntradaHistorica(&payload, &resultado); err != nil {
+	if err := entradaHelper.RegistrarEntradaHistorica(c.Ctx.Request.Context(), &payload, &resultado); err != nil {
 		panic(err)
 	}
 	panicOnResultadoMovimientoError("PostHistorico - entradaHelper.RegistrarEntradaHistorica", resultado)
@@ -264,7 +264,7 @@ func (c *EntradaController) GetOne() {
 
 	logs.Info("Consultando detalle de entrada con id=%d", id)
 
-	respuesta, err := entradaHelper.DetalleEntrada(id)
+	respuesta, err := entradaHelper.DetalleEntrada(c.Ctx.Request.Context(), id)
 	if err == nil || respuesta != nil {
 		logs.Info("DetalleEntrada respuesta -> err: %v, respuesta: %+v", err, respuesta)
 		c.Data["json"] = respuesta
@@ -324,7 +324,7 @@ func (c *EntradaController) PutAnular() {
 	}
 
 	var resultado models.ResultadoAnulacionEntrada
-	if err := entradaHelper.AnularEntrada(id, &request, &resultado); err != nil {
+	if err := entradaHelper.AnularEntrada(c.Ctx.Request.Context(), id, &request, &resultado); err != nil {
 		panic(err)
 	}
 

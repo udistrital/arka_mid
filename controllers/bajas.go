@@ -134,7 +134,7 @@ func (c *BajaController) GetSolicitud() {
 		id = v
 	}
 
-	if err := bajasHelper.GetOne(id, &baja); err == nil {
+	if err := bajasHelper.GetOne(c.Ctx.Request.Context(), id, &baja); err == nil {
 		c.Data["json"] = baja
 	} else {
 		panic(err)
@@ -181,7 +181,7 @@ func (c *BajaController) GetAll() {
 	}
 
 	var bajas = make([]models.DetalleBaja, 0)
-	if err := bajasHelper.GetAll(terceroId, revComite, revAlmacen, &bajas); err != nil {
+	if err := bajasHelper.GetAll(c.Ctx.Request.Context(), terceroId, revComite, revAlmacen, &bajas); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = bajas
@@ -217,7 +217,7 @@ func (c *BajaController) GetDetalleElemento() {
 	}
 
 	var elemento models.DetalleElementoBaja
-	err := inventarioHelper.GetDetalleElemento(id, &elemento)
+	err := inventarioHelper.GetDetalleElemento(c.Ctx.Request.Context(), id, &elemento)
 	if err != nil {
 		panic(err)
 	}
@@ -250,7 +250,7 @@ func (c *BajaController) PutRevision() {
 		}
 	} else {
 		var response models.ResultadoMovimiento
-		if err := bajasHelper.AprobarBajas(trBaja, &response); err != nil {
+		if err := bajasHelper.AprobarBajas(c.Ctx.Request.Context(), trBaja, &response); err != nil {
 			panic(errorCtrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
 		} else {
 			c.Data["json"] = response

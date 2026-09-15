@@ -40,7 +40,7 @@ func (c *ReportesController) PostReporteElementos() {
 		panic(errorCtrl.Error("PostReporteElementos - utilsHelper.Unmarshal(RequestBody, &request)", err, "400"))
 	}
 
-	respuesta, outputError := reportesHelper.GenerarReporteElementos(&request)
+	respuesta, outputError := reportesHelper.GenerarReporteElementos(c.Ctx.Request.Context(), &request)
 	if outputError != nil {
 		panic(outputError)
 	}
@@ -64,7 +64,7 @@ func (c *ReportesController) PostReporteContabilizacion() {
 		panic(errorCtrl.Error("PostReporteContabilizacion - utilsHelper.Unmarshal(RequestBody, &request)", err, "400"))
 	}
 
-	respuesta, outputError := reportesHelper.GenerarReporteContabilizacion(&request)
+	respuesta, outputError := reportesHelper.GenerarReporteContabilizacion(c.Ctx.Request.Context(), &request)
 	if outputError != nil {
 		panic(outputError)
 	}
@@ -92,7 +92,7 @@ func (c *ReportesController) PostPazYSalvo() {
 	request.SetHeader(c.Ctx.Request.Header.Get("Authorization"))
 	defer request.SetHeader(headerAnterior)
 
-	respuesta, outputError := reportesHelper.GenerarPazYSalvo(&payload)
+	respuesta, outputError := reportesHelper.GenerarPazYSalvo(c.Ctx.Request.Context(), &payload)
 	if outputError != nil {
 		panic(outputError)
 	}
@@ -116,7 +116,7 @@ func (c *ReportesController) GetDetalleCuentasEntrada() {
 		panic(errorCtrl.Error("GetDetalleCuentasEntrada - c.GetString(EntradaConsecutivo)", errors.New("se debe especificar EntradaConsecutivo"), "400"))
 	}
 
-	respuesta, outputError := reportesHelper.GetDetalleCuentasEntradaPorConsecutivo(consecutivo)
+	respuesta, outputError := reportesHelper.GetDetalleCuentasEntradaPorConsecutivo(c.Ctx.Request.Context(), consecutivo)
 	if outputError != nil {
 		panic(outputError)
 	}
@@ -140,7 +140,7 @@ func (c *ReportesController) GetDetalleCuentasSalida() {
 		panic(errorCtrl.Error("GetDetalleCuentasSalida - c.GetString(SalidaConsecutivo)", errors.New("se debe especificar SalidaConsecutivo"), "400"))
 	}
 
-	respuesta, outputError := reportesHelper.GetDetalleCuentasSalidaPorConsecutivo(consecutivo)
+	respuesta, outputError := reportesHelper.GetDetalleCuentasSalidaPorConsecutivo(c.Ctx.Request.Context(), consecutivo)
 	if outputError != nil {
 		panic(outputError)
 	}

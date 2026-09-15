@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -25,7 +26,7 @@ const (
 )
 
 // AnularSalida anula una salida aprobada, genera la reversa contable y restablece la entrada padre cuando corresponde.
-func AnularSalida(salidaID int, request *models.AnulacionSalidaRequest, resultado *models.ResultadoAnulacionSalida) (outputError map[string]interface{}) {
+func AnularSalida(ctx context.Context, salidaID int, request *models.AnulacionSalidaRequest, resultado *models.ResultadoAnulacionSalida) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("AnularSalida - Unhandled Error!", "500")
 
 	if resultado == nil {
@@ -88,7 +89,7 @@ func AnularSalida(salidaID int, request *models.AnulacionSalidaRequest, resultad
 		}
 	}
 
-	movimientoReversion, transaccionReversion, outputError := construirReversionSalida(trSalida, transaccionOriginal, request.Observacion)
+	movimientoReversion, transaccionReversion, outputError := construirReversionSalida(ctx, trSalida, transaccionOriginal, request.Observacion)
 	if outputError != nil {
 		return outputError
 	}
@@ -99,7 +100,7 @@ func AnularSalida(salidaID int, request *models.AnulacionSalidaRequest, resultad
 
 	resultado.TransaccionContable.Concepto = transaccionReversion.Descripcion
 	resultado.TransaccionContable.Fecha = transaccionReversion.FechaTransaccion
-	resultado.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccionReversion.Movimientos, nil)
+	resultado.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(ctx, transaccionReversion.Movimientos, nil)
 	if outputError != nil {
 		return outputError
 	}
@@ -202,6 +203,7 @@ func historialPermiteAnularSalida(historial *models.Historial, salidaID int) (bo
 }
 
 func construirReversionSalida(
+	ctx context.Context,
 	trSalida *models.TrSalida,
 	transaccionOriginal *models.TransaccionMovimientos,
 	observacion string,
@@ -258,7 +260,7 @@ func construirReversionSalida(
 		ConsecutivoId: consecutivo.Id,
 		Activo:        true,
 	}
-	transaccion.Movimientos, outputError = invertirMovimientosContablesSalida(transaccionOriginal, descripcionReversionSalida(trSalida.Salida, observacion))
+	transaccion.Movimientos, outputError = invertirMovimientosContablesSalida(ctx, transaccionOriginal, descripcionReversionSalida(trSalida.Salida, observacion))
 	if outputError != nil {
 		return nil, nil, outputError
 	}
@@ -278,7 +280,7 @@ func construirReversionSalida(
 	return movimiento, transaccion, nil
 }
 
-func invertirMovimientosContablesSalida(original *models.TransaccionMovimientos, descripcion string) (movimientos []*models.MovimientoTransaccion, outputError map[string]interface{}) {
+func invertirMovimientosContablesSalida(ctx context.Context, original *models.TransaccionMovimientos, descripcion string) (movimientos []*models.MovimientoTransaccion, outputError map[string]interface{}) {
 	if original == nil || len(original.Movimientos) == 0 {
 		return nil, map[string]interface{}{
 			"funcion": "invertirMovimientosContablesSalida - original",
@@ -287,7 +289,7 @@ func invertirMovimientosContablesSalida(original *models.TransaccionMovimientos,
 		}
 	}
 
-	dbID, crID, outputError := parametros.GetParametrosDebitoCredito()
+	dbID, crID, outputError := parametros.GetParametrosDebitoCredito(ctx)
 	if outputError != nil {
 		return nil, outputError
 	}

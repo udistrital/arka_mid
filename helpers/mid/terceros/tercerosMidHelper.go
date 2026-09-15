@@ -1,9 +1,14 @@
 package terceros
 
 import (
+	"strconv"
+
+	beego "github.com/beego/beego/v2/server/web"
+
 	crudTerceros "github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
 // GetDetalleFuncionario Consulta El nombre, número de identificación, correo y cargo asociado a un funcionario
@@ -46,8 +51,12 @@ func GetInfoTerceroById(id int) (InfoTercero *models.InfoTercero, outputError ma
 	InfoTercero = new(models.InfoTercero)
 
 	// Consulta nombre
-	if tercero_, err := crudTerceros.GetTerceroById(id); err != nil {
-		return nil, err
+	tercerosService, _ := beego.AppConfig.String("tercerosService")
+	urltercero := tercerosService + "tercero/" + strconv.Itoa(id)
+	tercero_ := new(models.Tercero)
+	if err := request.GetJson(urltercero, &tercero_); err != nil {
+		eval := " - request.GetJson(urltercero, &tercero_)"
+		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	} else {
 		InfoTercero.Tercero = tercero_
 	}

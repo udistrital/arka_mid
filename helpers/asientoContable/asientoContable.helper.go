@@ -1,6 +1,7 @@
 package asientoContable
 
 import (
+	"context"
 	"net/url"
 	"time"
 
@@ -34,7 +35,7 @@ func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
-func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero, consecutivoId int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
+func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero, consecutivoId int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "AsientoContable"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -51,7 +52,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	res = make(map[string]interface{})
 	res["errorTransaccion"] = ""
 
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		return nil, err
 	} else {
 		parametroTipoDebito = db_

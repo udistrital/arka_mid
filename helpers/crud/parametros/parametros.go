@@ -1,6 +1,7 @@
 package parametros
 
 import (
+	"context"
 	"strconv"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -9,20 +10,21 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("parametrosService")
 
 // GetAllParametro query controlador parametro del api parametros_crud
-func GetAllParametro(query string) (parametros []*models.Parametro, outputError map[string]interface{}) {
+func GetAllParametro(ctx context.Context, query string) (parametros []*models.Parametro, outputError map[string]interface{}) {
 
 	funcion := "GetAllParametro"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "parametro?" + query
 	response := new(models.RespuestaAPI1Arr)
-	if err := request.GetJson(urlcrud, &response); err != nil {
-		eval := " - request.GetJson(urlcrud, &response)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &response); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &response)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	} else {
 		outputError = utilsHelper.FillStruct(response.Data, &parametros)
@@ -51,15 +53,15 @@ func GetParametroById(id int, parametro interface{}) (outputError map[string]int
 }
 
 // GetAllParametro query controlador parametro del api parametros_crud
-func GetAllParametroPeriodo(payload string, parametros *[]models.ParametroPeriodo) (outputError map[string]interface{}) {
+func GetAllParametroPeriodo(ctx context.Context, payload string, parametros *[]models.ParametroPeriodo) (outputError map[string]interface{}) {
 
 	funcion := "GetAllParametroPeriodo - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "parametro_periodo?" + payload
 	response := new(models.RespuestaAPI1Arr)
-	if err := request.GetJson(urlcrud, &response); err != nil {
-		eval := "request.GetJson(urlcrud, &response)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &response); err != nil {
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &response)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	} else {
 		outputError = utilsHelper.FillStruct(response.Data, &parametros)

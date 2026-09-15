@@ -1,12 +1,14 @@
 package parametros
 
 import (
+	"context"
+
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetAllIVAByPeriodo(vigencia string, ivas *[]models.Iva) (outputError map[string]interface{}) {
+func GetAllIVAByPeriodo(ctx context.Context, vigencia string, ivas *[]models.Iva) (outputError map[string]interface{}) {
 
 	funcion := "GetAllIVAByPeriodo - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -14,7 +16,7 @@ func GetAllIVAByPeriodo(vigencia string, ivas *[]models.Iva) (outputError map[st
 	var parametros__ []models.ParametroPeriodo
 
 	payload := "query=ParametroId__CodigoAbreviacion:IVA,PeriodoId__Nombre:" + vigencia
-	if err := GetAllParametroPeriodo(payload, &parametros__); err != nil {
+	if err := GetAllParametroPeriodo(ctx, payload, &parametros__); err != nil {
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
@@ -15,7 +16,7 @@ import (
 
 const estadoSolicitudPendiente = "Solicitud Pendiente"
 
-func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.DetalleSolicitudBodega) (outputError map[string]interface{}) {
+func GetAllSolicitudes(ctx context.Context, user string, revision bool, solictudes_ *[]models.DetalleSolicitudBodega) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetAllSolicitudes - Unhandled Error!", "500")
 
@@ -24,7 +25,7 @@ func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.Detalle
 		terceros    map[int]models.IdentificacionTercero
 	)
 
-	if err := loadSolicitudes(user, revision, &solicitudes); err != nil {
+	if err := loadSolicitudes(ctx, user, revision, &solicitudes); err != nil {
 		return err
 	}
 
@@ -62,7 +63,7 @@ func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.Detalle
 	return
 }
 
-func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
+func loadSolicitudes(ctx context.Context, user string, revision bool, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("loadSolicitudes - Unhandled Error!", "500")
 
@@ -88,7 +89,7 @@ func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimien
 
 	}
 
-	if err := autenticacion.GetInfoUser(user, &terceroId, &roles); err != nil {
+	if err := autenticacion.GetInfoUser(ctx, user, &terceroId, &roles); err != nil {
 		return err
 	}
 

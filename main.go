@@ -30,7 +30,7 @@ func main() {
 
 	apiStatus.Init()
 	xray.Init()
-	auditoria.InitMiddleware()
+	auditoria.InitWithAuthEnforcer()
 	security.SetSecurityHeaders()
 
 	web.ErrorController(&customErrorv2.CustomErrorController{})

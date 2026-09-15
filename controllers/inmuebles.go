@@ -39,7 +39,7 @@ func (c *InmueblesController) Post() {
 		panic(err)
 	}
 
-	data, err_ := inmuebleshelper.Post(&v)
+	data, err_ := inmuebleshelper.Post(c.Ctx.Request.Context(), &v)
 	if err_ == nil {
 		c.Data["json"] = data
 	} else {
@@ -65,7 +65,7 @@ func (c *InmueblesController) GetOne() {
 		panic(err)
 	}
 
-	data, err_ := inmuebleshelper.GetOne(int(id))
+	data, err_ := inmuebleshelper.GetOne(c.Ctx.Request.Context(), int(id))
 	if err_ == nil {
 		c.Data["json"] = data
 	} else {
@@ -116,7 +116,7 @@ func (c *InmueblesController) Put() {
 	}
 
 	v.Elemento.Id = int(id)
-	data, err_ := inmuebleshelper.Update(&v)
+	data, err_ := inmuebleshelper.Update(c.Ctx.Request.Context(), &v)
 	if err_ == nil {
 		c.Data["json"] = data
 	} else {
