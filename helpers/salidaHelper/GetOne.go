@@ -2,6 +2,7 @@ package salidaHelper
 
 import (
 	"context"
+
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -66,7 +67,8 @@ func GetOne(ctx context.Context, id int) (Salida map[string]interface{}, outputE
 		return
 	}
 
-	detalle, outputError := traerDetalle(ctx, trSalida.Salida, formato, nil, nil, nil, nil)
+	detalle, outputError := traerDetalle(ctx, trSalida.Salida, formato, nil, nil)
+
 	if outputError != nil {
 		return
 	}
