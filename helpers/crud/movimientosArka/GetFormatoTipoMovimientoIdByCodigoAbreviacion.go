@@ -1,6 +1,7 @@
 package movimientosArka
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -8,13 +9,13 @@ import (
 )
 
 // GetFormatoTipoMovimientoIdByCodigoAbreviacion Consulta el Id de un FormatoTipoMovimiento según el Codigo de abreviación del mismo
-func GetFormatoTipoMovimientoIdByCodigoAbreviacion(id *int, codigoAbreviacion string) (outputError map[string]interface{}) {
+func GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx context.Context, id *int, codigoAbreviacion string) (outputError map[string]interface{}) {
 
 	funcion := "GetFormatoTipoMovimientoIdByCodigoAbreviacion"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	query := "query=CodigoAbreviacion:" + url.QueryEscape(codigoAbreviacion)
-	if fm, err := GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := GetAllFormatoTipoMovimiento(ctx, query); err != nil {
 		return err
 	} else if len(fm) == 0 {
 		err := "No se encuentra el formato tipo movimiento: " + codigoAbreviacion
@@ -29,13 +30,13 @@ func GetFormatoTipoMovimientoIdByCodigoAbreviacion(id *int, codigoAbreviacion st
 }
 
 // GetEstadoMovimientoIdByNombre Consulta el Id de un EstadoMovimiento según el nombre del mismo
-func GetEstadoMovimientoIdByNombre(id *int, nombre string) (outputError map[string]interface{}) {
+func GetEstadoMovimientoIdByNombre(ctx context.Context, id *int, nombre string) (outputError map[string]interface{}) {
 
 	funcion := "GetEstadoMovimientoIdByNombre"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	query := "query=Nombre:" + url.QueryEscape(nombre)
-	if em, err := GetAllEstadoMovimiento(query); err != nil {
+	if em, err := GetAllEstadoMovimiento(ctx, query); err != nil {
 		return err
 	} else if len(em) == 0 {
 		err := "No se encuentra el estado movimiento: " + nombre

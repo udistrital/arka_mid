@@ -87,7 +87,7 @@ func (c *EntradaController) Post() {
 		if entradaId > 0 {
 			logs.Info("Entró en UPDATE de entrada. entradaId=%d", entradaId)
 
-			if err := entradaHelper.UpdateEntrada(&v, entradaId, &entrada); err != nil {
+			if err := entradaHelper.UpdateEntrada(c.Ctx.Request.Context(), &v, entradaId, &entrada); err != nil {
 				logs.Error("Error en entradaHelper.UpdateEntrada(&v, %d, &entrada): %v", entradaId, err)
 				logs.Error("Payload usado para update: %+v", v)
 				panic(err)

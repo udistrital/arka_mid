@@ -24,7 +24,7 @@ func RegistrarEntrada(ctx context.Context, data *models.TransaccionEntrada, etl 
 	}
 
 	logs.Info("DEBUG [RegistrarEntrada] PASO 1: GetEstadoMovimientoIdByNombre")
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
 	if outputError != nil {
 		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 1: %v", outputError)
 		return
@@ -32,7 +32,7 @@ func RegistrarEntrada(ctx context.Context, data *models.TransaccionEntrada, etl 
 	logs.Info("DEBUG [RegistrarEntrada] PASO 1 OK - EstadoId: %d", resultado.Movimiento.EstadoMovimientoId.Id)
 
 	logs.Info("DEBUG [RegistrarEntrada] PASO 2: GetFormatoTipoMovimientoIdByCodigoAbreviacion(%s)", data.FormatoTipoMovimientoId)
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
 	if outputError != nil {
 		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 2: %v", outputError)
 		return
@@ -63,7 +63,7 @@ func RegistrarEntrada(ctx context.Context, data *models.TransaccionEntrada, etl 
 	}
 
 	logs.Info("DEBUG [RegistrarEntrada] PASO 5: getConsecutivoEntrada")
-	outputError = getConsecutivoEntrada(&resultado.Movimiento, etl)
+	outputError = getConsecutivoEntrada(ctx, &resultado.Movimiento, etl)
 	if outputError != nil {
 		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 5: %v", outputError)
 		return
@@ -85,7 +85,7 @@ func RegistrarEntrada(ctx context.Context, data *models.TransaccionEntrada, etl 
 	}
 
 	logs.Info("DEBUG [RegistrarEntrada] PASO 7: PostMovimiento")
-	outputError = movimientosArka.PostMovimiento(&resultado.Movimiento)
+	outputError = movimientosArka.PostMovimiento(ctx, &resultado.Movimiento)
 	if outputError != nil {
 		logs.Error("DEBUG [RegistrarEntrada] FALLO EN PASO 7: %v", outputError)
 		return
@@ -99,7 +99,7 @@ func RegistrarEntrada(ctx context.Context, data *models.TransaccionEntrada, etl 
 			MovimientoId: &models.Movimiento{Id: resultado.Movimiento.Id},
 		}
 
-		outputError = movimientosArka.PostSoporteMovimiento(&soporte)
+		outputError = movimientosArka.PostSoporteMovimiento(ctx, &soporte)
 		if outputError != nil {
 			return
 		}
@@ -185,7 +185,7 @@ func crearDetalleEntrada(completo models.FormatoBaseEntrada, necesario *string) 
 	return
 }
 
-func getConsecutivoEntrada(entrada *models.Movimiento, etl bool) (outputError map[string]interface{}) {
+func getConsecutivoEntrada(ctx context.Context, entrada *models.Movimiento, etl bool) (outputError map[string]interface{}) {
 
 	if etl {
 		return
@@ -193,7 +193,7 @@ func getConsecutivoEntrada(entrada *models.Movimiento, etl bool) (outputError ma
 
 	if entrada.ConsecutivoId == nil || *entrada.ConsecutivoId <= 0 {
 		var consecutivo models.Consecutivo
-		outputError = consecutivos.Get("contxtEntradaCons", "Entradas Arka", &consecutivo)
+		outputError = consecutivos.Get(ctx, "contxtEntradaCons", "Entradas Arka", &consecutivo)
 		if outputError != nil {
 			return
 		}

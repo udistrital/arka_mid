@@ -1,6 +1,7 @@
 package oikos
 
 import (
+	"context"
 	"regexp"
 	"strconv"
 
@@ -8,53 +9,53 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("oikosService")
 
-func GetAllAsignacion(payload string) (asignaciones []models.AsignacionEspacioFisicoDependencia, outputError map[string]interface{}) {
+func GetAllAsignacion(ctx context.Context, payload string) (asignaciones []models.AsignacionEspacioFisicoDependencia, outputError map[string]interface{}) {
 
 	funcion := "GetAllAsignacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "asignacion_espacio_fisico_dependencia?" + payload
-	_, err := request.GetJsonTest(urlcrud, &asignaciones)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, &asignaciones)
 	if err != nil {
 		logs.Info(urlcrud)
-		eval := "request.GetJsonTest(urlcrud, &asignaciones)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &asignaciones)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
 }
 
-func GetAllEspacioFisico(payload string) (espacios []models.EspacioFisico, outputError map[string]interface{}) {
+func GetAllEspacioFisico(ctx context.Context, payload string) (espacios []models.EspacioFisico, outputError map[string]interface{}) {
 
 	funcion := "GetAllEspacioFisico - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "espacio_fisico?" + payload
-	err := request.GetJson(urlcrud, &espacios)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, &espacios)
 	if err != nil {
 		logs.Error(err)
-		eval := `request.GetJson(urlcrud, &espacios)`
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &espacios)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	return
 }
 
-func GetAllEspacioFisicoCampo(payload string) (espacios []models.EspacioFisicoCampo, outputError map[string]interface{}) {
+func GetAllEspacioFisicoCampo(ctx context.Context, payload string) (espacios []models.EspacioFisicoCampo, outputError map[string]interface{}) {
 
 	funcion := "GetAllEspacioFisicoCampo - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "espacio_fisico_campo?" + payload
-	err := request.GetJson(urlcrud, &espacios)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, &espacios)
 	if err != nil {
 		logs.Error(err)
-		eval := `request.GetJson(urlcrud, &espacios)`
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &espacios)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -62,7 +63,7 @@ func GetAllEspacioFisicoCampo(payload string) (espacios []models.EspacioFisicoCa
 }
 
 // GetSedeEspacioFisico
-func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.EspacioFisico, outputError map[string]interface{}) {
+func GetSedeEspacioFisico(ctx context.Context, espacioFisico models.EspacioFisico) (sede models.EspacioFisico, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetSedeEspacioFisico - Unhandled Error", "500")
 
@@ -71,7 +72,7 @@ func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.Espac
 	codigoSede = codigoSede[0:2] + rgxp.ReplaceAllString(codigoSede[2:], "")
 
 	payload := "query=TipoEspacioFisicoId__Nombre:SEDE,CodigoAbreviacion:" + codigoSede
-	sede_, outputError := GetAllEspacioFisico(payload)
+	sede_, outputError := GetAllEspacioFisico(ctx, payload)
 	if outputError != nil {
 		return
 	}
@@ -84,15 +85,15 @@ func GetSedeEspacioFisico(espacioFisico models.EspacioFisico) (sede models.Espac
 }
 
 // GetDependenciaById consulta controlador dependencia/{id} del api oikos_crud
-func GetDependenciaById(id int) (dependencia *models.Dependencia, outputError map[string]interface{}) {
+func GetDependenciaById(ctx context.Context, id int) (dependencia *models.Dependencia, outputError map[string]interface{}) {
 
 	funcion := "GetDependenciaById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "dependencia/" + strconv.Itoa(id)
-	err := request.GetJson(urlcrud, &dependencia)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, dependencia)
 	if err != nil {
-		eval := "request.GetJson(urlcrud, &dependencia)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, dependencia)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 

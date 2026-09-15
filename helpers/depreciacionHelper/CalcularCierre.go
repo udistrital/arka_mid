@@ -49,12 +49,12 @@ func calcularCierre(ctx context.Context, fechaCorte string, cuentas map[string]m
 		payload     string
 	)
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formtatoCrr, "CRR")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &formtatoCrr, "CRR")
 	if outputError != nil {
 		return
 	}
 
-	infoCorte, outputError := movimientosArka.GetCorteDepreciacion(fechaCorte)
+	infoCorte, outputError := movimientosArka.GetCorteDepreciacion(ctx, fechaCorte)
 	if outputError != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func calcularCierre(ctx context.Context, fechaCorte string, cuentas map[string]m
 		return
 	}
 
-	terceroUD, outputError := terceros.GetTerceroUD()
+	terceroUD, outputError := terceros.GetTerceroUD(ctx)
 	if outputError != nil {
 		return
 	} else if terceroUD == 0 {

@@ -1,9 +1,9 @@
 package movimientosArka
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
 	"strings"
 	"testing"
 
@@ -26,12 +26,12 @@ func TestBuildCorteDepreciacionURL(t *testing.T) {
 
 func TestGetAllMovimientoControlaErrorHTTP(t *testing.T) {
 	original := getAllMovimientoRequest
-	getAllMovimientoRequest = func(string, interface{}) (*http.Response, error) {
-		return nil, errors.New("timeout")
+	getAllMovimientoRequest = func(context.Context, string, any) (int, int, error) {
+		return 0, 0, errors.New("timeout")
 	}
 	t.Cleanup(func() { getAllMovimientoRequest = original })
 
-	movimientos, count, outputError := GetAllMovimiento("limit=-1")
+	movimientos, count, outputError := GetAllMovimiento(context.Background(), "limit=-1")
 	if outputError == nil {
 		t.Fatal("se esperaba un error controlado")
 	}
@@ -43,16 +43,19 @@ func TestGetAllMovimientoControlaErrorHTTP(t *testing.T) {
 	}
 }
 
-func TestGetAllMovimientoControlaRespuestaNula(t *testing.T) {
+func TestGetAllMovimientoConservaCountVacioSinHeader(t *testing.T) {
 	original := getAllMovimientoRequest
-	getAllMovimientoRequest = func(string, interface{}) (*http.Response, error) {
-		return nil, nil
+	getAllMovimientoRequest = func(context.Context, string, any) (int, int, error) {
+		return 200, 0, nil
 	}
 	t.Cleanup(func() { getAllMovimientoRequest = original })
 
-	_, _, outputError := GetAllMovimiento("limit=-1")
-	if outputError == nil || outputError["status"] != "502" {
-		t.Fatalf("se esperaba error 502 para respuesta nula: %v", outputError)
+	_, count, outputError := GetAllMovimiento(context.Background(), "limit=-1")
+	if outputError != nil {
+		t.Fatalf("no se esperaba error sin header Total-Count: %v", outputError)
+	}
+	if count != "" {
+		t.Fatalf("count inesperado sin header Total-Count: %q", count)
 	}
 }
 

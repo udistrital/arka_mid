@@ -60,7 +60,7 @@ func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, 
 	}
 
 	if comprobante != "" {
-		if err := cuentasContables.GetComprobante(comprobante, &comprobanteID); err != nil {
+		if err := cuentasContables.GetComprobante(ctx, comprobante, &comprobanteID); err != nil {
 			return nil, err
 		}
 	}
@@ -92,7 +92,7 @@ func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, 
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + tipomvto + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
-	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
+	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(ctx, query); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = elementos_
@@ -102,10 +102,10 @@ func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, 
 	for id := range totales {
 		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
 
-			if ctaCr_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+			if ctaCr_, err := cuentasContables.GetCuentaContable(ctx, cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else if ctaCr_ == nil {
-				subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+				subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, id)
 				if err != nil {
 					return nil, err
 				} else {
@@ -116,10 +116,10 @@ func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, 
 				infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId] = ctaCr_
 			}
 
-			if ctaDb_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+			if ctaDb_, err := cuentasContables.GetCuentaContable(ctx, cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else if ctaDb_ == nil {
-				subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+				subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, id)
 				if err != nil {
 					return nil, err
 				} else {
@@ -136,7 +136,7 @@ func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, 
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+			subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, id)
 			if err != nil {
 				return nil, err
 			} else {
@@ -147,17 +147,17 @@ func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, 
 	}
 
 	if submit {
-		if tr, err := movimientosContables.PostTrContable(&transaccion); err != nil {
+		if tr, err := movimientosContables.PostTrContable(ctx, &transaccion); err != nil {
 			return nil, err
 		} else {
-			if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(ctx, idTercero); err != nil {
 				return nil, err
 			} else {
 				res["resultadoTransaccion"] = fillDetalle(infoCuentas, tr, tercero.Numero)
 			}
 		}
 	} else {
-		if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
+		if tercero, err := crudTerceros.GetNombreTerceroById(ctx, idTercero); err != nil {
 			return nil, err
 		} else {
 			res["simulacro"] = fillDetalle(infoCuentas, &transaccion, tercero.Numero)

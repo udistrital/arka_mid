@@ -59,7 +59,7 @@ func GetAll(ctx context.Context, estados []string, fechaCreacion, fechaAprobacio
 		payload += ",MovimientoPadreId__Consecutivo__icontains:" + entrada
 	}
 
-	salidas_, total, outputError := movimientosArka.GetAllMovimiento(payload)
+	salidas_, total, outputError := movimientosArka.GetAllMovimiento(ctx, payload)
 	if outputError != nil {
 		return
 	}

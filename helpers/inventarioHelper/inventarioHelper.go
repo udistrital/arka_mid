@@ -23,12 +23,12 @@ func GetDetalleElemento(ctx context.Context, id int, Elemento *models.DetalleEle
 		elementoMovimiento models.ElementosMovimiento
 	)
 
-	outputError = movimientosArka.GetElementosMovimientoById(id, &elementoMovimiento)
+	outputError = movimientosArka.GetElementosMovimientoById(ctx, id, &elementoMovimiento)
 	if outputError != nil || elementoMovimiento.Id == 0 {
 		return
 	}
 
-	Elemento.Historial, outputError = movimientosArka.GetHistorialElemento(elementoMovimiento.Id, true)
+	Elemento.Historial, outputError = movimientosArka.GetHistorialElemento(ctx, elementoMovimiento.Id, true)
 	if outputError != nil {
 		return
 	}
@@ -46,12 +46,12 @@ func GetDetalleElemento(ctx context.Context, id int, Elemento *models.DetalleEle
 		return
 	}
 
-	Elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ub)
+	Elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ctx, ub)
 	if outputError != nil {
 		return
 	}
 
-	Elemento.Funcionario, outputError = terceros.GetInfoTerceroById(fc)
+	Elemento.Funcionario, outputError = terceros.GetInfoTerceroById(ctx, fc)
 	if outputError != nil {
 		return
 	}

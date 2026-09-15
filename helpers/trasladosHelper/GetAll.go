@@ -57,7 +57,7 @@ func GetAll(ctx context.Context, user string, confirmar, aprobar bool, traslados
 
 		requestUbicacion := func(id int) func() (interface{}, map[string]interface{}) {
 			return func() (interface{}, map[string]interface{}) {
-				if Ubicacion, err := oikos.GetSedeDependenciaUbicacion(id); err == nil {
+				if Ubicacion, err := oikos.GetSedeDependenciaUbicacion(ctx, id); err == nil {
 					return Ubicacion, nil
 				}
 				return nil, nil
@@ -115,7 +115,7 @@ func getTraslados(ctx context.Context, user string, confirmar, aprobar bool, tra
 	}
 
 	if confirmar && !aprobar {
-		if err := movimientosArka.GetTrasladosByTerceroId(terceroId, confirmar, traslados); err != nil {
+		if err := movimientosArka.GetTrasladosByTerceroId(ctx, terceroId, confirmar, traslados); err != nil {
 			return err
 		}
 
@@ -124,26 +124,26 @@ func getTraslados(ctx context.Context, user string, confirmar, aprobar bool, tra
 	} else if !confirmar && !aprobar {
 
 		query := "limit=-1&query=Opcion__Nombre:trasladosVerTodaSolicitud,Perfil__Nombre__in:" + strings.Join(roles, "|")
-		if err := configuracion.GetAllPerfilXMenuOpcion(query, &opciones); err != nil {
+		if err := configuracion.GetAllPerfilXMenuOpcion(ctx, query, &opciones); err != nil {
 			return err
 		}
 
 		if len(opciones) > 0 {
 			query := "limit=-1&query=Activo:true,FormatoTipoMovimientoId__CodigoAbreviacion:SOL_TRD"
-			if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
+			if tr_, _, err := movimientosArka.GetAllMovimiento(ctx, query); err != nil {
 				return err
 			} else {
 				*traslados = tr_
 			}
 		} else {
-			if err := movimientosArka.GetTrasladosByTerceroId(terceroId, confirmar, traslados); err != nil {
+			if err := movimientosArka.GetTrasladosByTerceroId(ctx, terceroId, confirmar, traslados); err != nil {
 				return err
 			}
 		}
 
 	} else if aprobar {
 		query := "limit=-1&query=Activo:true,EstadoMovimientoId__Nombre:" + url.QueryEscape("Traslado Confirmado")
-		if tr_, _, err := movimientosArka.GetAllMovimiento(query); err != nil {
+		if tr_, _, err := movimientosArka.GetAllMovimiento(ctx, query); err != nil {
 			return err
 		} else {
 			*traslados = tr_

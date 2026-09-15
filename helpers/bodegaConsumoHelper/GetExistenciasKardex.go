@@ -1,6 +1,7 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
@@ -10,19 +11,19 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
+func GetExistenciasKardex(ctx context.Context) (Elementos []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetExistenciasKardex - Unhandled Error!", "500")
 
 	var aperturas []models.Apertura
-	outputError = movimientosArka.GetAperturas(true, &aperturas)
+	outputError = movimientosArka.GetAperturas(ctx, true, &aperturas)
 	if outputError != nil {
 		return nil, outputError
 	}
 
 	for _, apertura := range aperturas {
 
-		catalogo, err := detalleElementoCatalogo(apertura.ElementoCatalogoId)
+		catalogo, err := detalleElementoCatalogo(ctx, apertura.ElementoCatalogoId)
 		if err != nil {
 			return nil, err
 		}
@@ -41,12 +42,12 @@ func GetExistenciasKardex() (Elementos []map[string]interface{}, outputError map
 	return Elementos, nil
 }
 
-func detalleElementoCatalogo(elementoId int) (elemento models.ElementoCatalogo, outputError map[string]interface{}) {
+func detalleElementoCatalogo(ctx context.Context, elementoId int) (elemento models.ElementoCatalogo, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("detalleElementoCatalogo - Unhandled Error!", "500")
 
 	var elemento_ []models.ElementoCatalogo
-	outputError = catalogoElementos.GetAllElemento("query=Id:"+strconv.Itoa(elementoId), &elemento_)
+	outputError = catalogoElementos.GetAllElemento(ctx, "query=Id:"+strconv.Itoa(elementoId), &elemento_)
 	if outputError != nil || len(elemento_) != 1 {
 		return
 	}

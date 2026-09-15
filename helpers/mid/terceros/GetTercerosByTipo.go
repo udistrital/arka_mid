@@ -1,17 +1,18 @@
 package terceros
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var tercerosMID, _ = beego.AppConfig.String("tercerosMidService")
 
-func GetTercerosByTipo(tipo string, id int, terceros interface{}) (outputError map[string]interface{}) {
+func GetTercerosByTipo(ctx context.Context, tipo string, id int, terceros interface{}) (outputError map[string]interface{}) {
 
 	funcion := "GetTercerosByTipo"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -21,9 +22,9 @@ func GetTercerosByTipo(tipo string, id int, terceros interface{}) (outputError m
 		urlcrud += "/" + strconv.Itoa(id)
 	}
 
-	if err := request.GetJson(urlcrud, terceros); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, terceros); err != nil {
 		logs.Error(urlcrud + ", " + err.Error())
-		eval := " - request.GetJson(urlcrud, terceros)"
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, terceros)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 

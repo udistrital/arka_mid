@@ -23,7 +23,7 @@ func GetOne(ctx context.Context, id int) (Traslado *models.TrTraslado, outputErr
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	movimientoA, outputError := movimientosArka.GetMovimientoById(id)
+	movimientoA, outputError := movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	}
@@ -35,19 +35,19 @@ func GetOne(ctx context.Context, id int) (Traslado *models.TrTraslado, outputErr
 	}
 
 	// Se consulta el detalle del funcionario origen
-	Traslado.FuncionarioOrigen, outputError = terceros.GetDetalleFuncionario(detalle.FuncionarioOrigen)
+	Traslado.FuncionarioOrigen, outputError = terceros.GetDetalleFuncionario(ctx, detalle.FuncionarioOrigen)
 	if outputError != nil {
 		return
 	}
 
 	// Se consulta el detalle del funcionario destino
-	Traslado.FuncionarioDestino, outputError = terceros.GetDetalleFuncionario(detalle.FuncionarioDestino)
+	Traslado.FuncionarioDestino, outputError = terceros.GetDetalleFuncionario(ctx, detalle.FuncionarioDestino)
 	if outputError != nil {
 		return
 	}
 
 	// Se consulta la sede, dependencia correspondiente a la ubicacion
-	Traslado.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion)
+	Traslado.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ctx, detalle.Ubicacion)
 	if outputError != nil {
 		return
 	}
@@ -78,7 +78,7 @@ func getElementosTraslado(ctx context.Context, ids []int) (Elementos []*models.D
 
 	query := "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	elementos, outputError := movimientosArka.GetAllElementosMovimiento(query)
+	elementos, outputError := movimientosArka.GetAllElementosMovimiento(ctx, query)
 	if outputError != nil {
 		return
 	}

@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"net/url"
 	"strconv"
 	"strings"
@@ -15,7 +16,7 @@ var getAllElementosMovimientoSalidaPost = movimientosArka.GetAllElementosMovimie
 var putElementosMovimientoSalidaPost = movimientosArka.PutElementosMovimiento
 
 // Post Completa los detalles de las salidas y hace el respectivo registro en api movimientos_arka_crud
-func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, outputError map[string]interface{}) {
+func Post(ctx context.Context, m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
@@ -26,7 +27,7 @@ func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, 
 		return nil, errorCtrl.Error("Post - validacion salidas", "debe especificar al menos una salida", "400")
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &estadoMovimientoId, "Salida En Trámite")
 	if outputError != nil {
 		return
 	}
@@ -37,34 +38,34 @@ func Post(m *models.SalidaGeneral, etl bool) (resultado map[string]interface{}, 
 			return nil, errorCtrl.Error("Post - validacion salida", "una de las salidas no tiene movimiento asociado", "400")
 		}
 
-		if outputError = normalizarNuevaSalida(&m.Salidas[idx], estadoMovimientoId); outputError != nil {
+		if outputError = normalizarNuevaSalida(ctx, &m.Salidas[idx], estadoMovimientoId); outputError != nil {
 			return nil, outputError
 		}
 
 		if !etl {
 			salida.Consecutivo = nil
 			salida.ConsecutivoId = nil
-			outputError = setConsecutivoSalida(salida)
+			outputError = setConsecutivoSalida(ctx, salida)
 			if outputError != nil {
 				return
 			}
 		}
 
-		if outputError = liberarElementosDeSalidasAnuladas(&m.Salidas[idx]); outputError != nil {
+		if outputError = liberarElementosDeSalidasAnuladas(ctx, &m.Salidas[idx]); outputError != nil {
 			return nil, outputError
 		}
 	}
 
-	outputError = movimientosArka.PostTrSalida(m)
+	outputError = movimientosArka.PostTrSalida(ctx, m)
 	if outputError == nil {
-		outputError = completarSalidasPersistidas(m)
+		outputError = completarSalidasPersistidas(ctx, m)
 	}
 	resultado["trSalida"] = m
 
 	return
 }
 
-func normalizarNuevaSalida(trSalida *models.TrSalida, estadoMovimientoId int) (outputError map[string]interface{}) {
+func normalizarNuevaSalida(ctx context.Context, trSalida *models.TrSalida, estadoMovimientoId int) (outputError map[string]interface{}) {
 	if trSalida == nil || trSalida.Salida == nil {
 		return errorCtrl.Error("normalizarNuevaSalida - salida", "salida nil", "400")
 	}
@@ -78,7 +79,7 @@ func normalizarNuevaSalida(trSalida *models.TrSalida, estadoMovimientoId int) (o
 	if salida.MovimientoPadreId == nil || salida.MovimientoPadreId.Id <= 0 {
 		return errorCtrl.Error("normalizarNuevaSalida - MovimientoPadreId", "la salida debe tener una entrada padre válida", "400")
 	}
-	entradaPadre, err := getMovimientoByIDSalidaPost(salida.MovimientoPadreId.Id)
+	entradaPadre, err := getMovimientoByIDSalidaPost(ctx, salida.MovimientoPadreId.Id)
 	if err != nil {
 		return err
 	}
@@ -115,7 +116,7 @@ func normalizarNuevaSalida(trSalida *models.TrSalida, estadoMovimientoId int) (o
 	return nil
 }
 
-func completarSalidasPersistidas(m *models.SalidaGeneral) (outputError map[string]interface{}) {
+func completarSalidasPersistidas(ctx context.Context, m *models.SalidaGeneral) (outputError map[string]interface{}) {
 	for idx := range m.Salidas {
 		salida := m.Salidas[idx].Salida
 		if salida == nil || salida.Id > 0 || salida.Consecutivo == nil || *salida.Consecutivo == "" {
@@ -123,7 +124,7 @@ func completarSalidasPersistidas(m *models.SalidaGeneral) (outputError map[strin
 		}
 
 		query := "limit=1&sortby=Id&order=desc&query=Consecutivo:" + url.QueryEscape(*salida.Consecutivo)
-		movimientos, _, err := movimientosArka.GetAllMovimiento(query)
+		movimientos, _, err := movimientosArka.GetAllMovimiento(ctx, query)
 		if err != nil {
 			return err
 		}
@@ -137,7 +138,7 @@ func completarSalidasPersistidas(m *models.SalidaGeneral) (outputError map[strin
 	return nil
 }
 
-func liberarElementosDeSalidasAnuladas(trSalida *models.TrSalida) (outputError map[string]interface{}) {
+func liberarElementosDeSalidasAnuladas(ctx context.Context, trSalida *models.TrSalida) (outputError map[string]interface{}) {
 	if trSalida == nil || trSalida.Salida == nil || len(trSalida.Elementos) == 0 {
 		return nil
 	}
@@ -159,7 +160,7 @@ func liberarElementosDeSalidasAnuladas(trSalida *models.TrSalida) (outputError m
 			query += ",MovimientoId__MovimientoPadreId__Id:" + strconv.Itoa(parentID)
 		}
 
-		elementosMovimiento, err := getAllElementosMovimientoSalidaPost(query)
+		elementosMovimiento, err := getAllElementosMovimientoSalidaPost(ctx, query)
 		if err != nil {
 			return err
 		}
@@ -173,7 +174,7 @@ func liberarElementosDeSalidasAnuladas(trSalida *models.TrSalida) (outputError m
 			}
 
 			elementoMovimiento.Activo = false
-			if _, err = putElementosMovimientoSalidaPost(elementoMovimiento, elementoMovimiento.Id); err != nil {
+			if _, err = putElementosMovimientoSalidaPost(ctx, elementoMovimiento, elementoMovimiento.Id); err != nil {
 				return err
 			}
 

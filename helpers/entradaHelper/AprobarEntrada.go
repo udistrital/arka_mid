@@ -42,7 +42,7 @@ func AprobarEntrada(ctx context.Context, entradaId int, resultado_ *models.Resul
 		return
 	}
 
-	formato, outputError := getFormato(entradaId, resultado_)
+	formato, outputError := getFormato(ctx, entradaId, resultado_)
 	logs.Info("AprobarEntrada -> getFormato outputError=%v resultado.Error=%q formato=%+v", outputError, resultado_.Error, formato)
 	if outputError != nil || resultado_.Error != "" {
 		logs.Error("AprobarEntrada -> aborta en getFormato")
@@ -74,7 +74,7 @@ func AprobarEntrada(ctx context.Context, entradaId int, resultado_ *models.Resul
 
 	for i, nov := range novedades {
 		logs.Info("AprobarEntrada -> registrando novedad %d/%d: %+v", i+1, len(novedades), nov)
-		outputError = movimientosArka.PostNovedadElemento(&nov)
+		outputError = movimientosArka.PostNovedadElemento(ctx, &nov)
 		if outputError != nil {
 			logs.Error("AprobarEntrada -> error en PostNovedadElemento: %v", outputError)
 			return
@@ -85,13 +85,13 @@ func AprobarEntrada(ctx context.Context, entradaId int, resultado_ *models.Resul
 	logs.Info("AprobarEntrada -> actualizando movimiento Id=%d con FechaCorte=%v y EstadoMovimientoId=%+v",
 		resultado_.Movimiento.Id, resultado_.Movimiento.FechaCorte, resultado_.Movimiento.EstadoMovimientoId)
 
-	outputError = movimientosArka.PutMovimiento(&resultado_.Movimiento, resultado_.Movimiento.Id)
+	outputError = movimientosArka.PutMovimiento(ctx, &resultado_.Movimiento, resultado_.Movimiento.Id)
 	logs.Info("AprobarEntrada -> PutMovimiento outputError=%v", outputError)
 	logs.Info("==== FIN entradaHelper.AprobarEntrada ====")
 	return
 }
 
-func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato models.FormatoBaseEntrada, outputError map[string]interface{}) {
+func getFormato(ctx context.Context, entradaId int, resultado *models.ResultadoMovimiento) (formato models.FormatoBaseEntrada, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("getFormato - Unhandled Error!", "500")
 
 	logs.Info("==== INICIO getFormato ====")
@@ -107,7 +107,7 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 		return
 	}
 
-	movimiento, outputError := movimientosArka.GetMovimientoById(entradaId)
+	movimiento, outputError := movimientosArka.GetMovimientoById(ctx, entradaId)
 	logs.Info("getFormato -> GetMovimientoById outputError=%v movimiento=%+v", outputError, movimiento)
 
 	if outputError != nil {
@@ -171,7 +171,7 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 		return
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada Aprobada")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &resultado.Movimiento.EstadoMovimientoId.Id, "Entrada Aprobada")
 	logs.Info("getFormato -> GetEstadoMovimientoIdByNombre outputError=%v nuevoEstadoId=%d",
 		outputError, resultado.Movimiento.EstadoMovimientoId.Id)
 	if outputError != nil {
@@ -209,7 +209,7 @@ func getTerceroEntrada(ctx context.Context, detalle models.FormatoBaseEntrada, r
 		terceroId = historico[0].ProveedorId
 		logs.Info("getTerceroEntrada -> tercero tomado del historico: %d", terceroId)
 	} else {
-		terceroId, outputError = terceros.GetTerceroUD()
+		terceroId, outputError = terceros.GetTerceroUD(ctx)
 		logs.Info("getTerceroEntrada -> terceros.GetTerceroUD terceroId=%d outputError=%v", terceroId, outputError)
 	}
 
@@ -278,7 +278,7 @@ func getElementosEntrada(ctx context.Context, detalle models.FormatoBaseEntrada,
 			novedades = append(novedades, novedad)
 			logs.Info("getElementosEntrada -> novedad generada: %+v", novedad)
 
-			historial, err := movimientosArka.GetHistorialElemento(el.Id, true)
+			historial, err := movimientosArka.GetHistorialElemento(ctx, el.Id, true)
 			logs.Info("getElementosEntrada -> GetHistorialElemento el.Id=%d historial=%+v err=%v", el.Id, historial, err)
 			if err != nil {
 				outputError = err
@@ -452,7 +452,7 @@ func contabilidadEntrada(ctx context.Context, resultado_ *models.ResultadoMovimi
 		return
 	}
 
-	resultado_.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteEntradas(), "Entrada Almacén", &transaccion)
+	resultado_.Error, outputError = asientoContable.CreateTransaccionContable(ctx, getTipoComprobanteEntradas(), "Entrada Almacén", &transaccion)
 	logs.Info("contabilidadEntrada -> CreateTransaccionContable resultado.Error=%q outputError=%v transaccion=%+v",
 		resultado_.Error, outputError, transaccion)
 	if outputError != nil || resultado_.Error != "" {
@@ -490,7 +490,7 @@ func contabilidadEntrada(ctx context.Context, resultado_ *models.ResultadoMovimi
 	}
 
 	logs.Info("contabilidadEntrada -> ANTES de PostTrContable transaccion=%+v", transaccion)
-	postRes, outputError := movimientosContables.PostTrContable(&transaccion)
+	postRes, outputError := movimientosContables.PostTrContable(ctx, &transaccion)
 	logs.Info("contabilidadEntrada -> DESPUÉS de PostTrContable response=%+v outputError=%v", postRes, outputError)
 
 	if outputError != nil {

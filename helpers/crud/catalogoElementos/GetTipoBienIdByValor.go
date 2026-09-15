@@ -1,6 +1,7 @@
 package catalogoElementos
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // GetTipoBienIdByValor Determina el tipo bien al que pertenece un elemento dado el valor en UVT
-func GetTipoBienIdByValor(tbPadreId int, normalizado float64, bufferTiposBien map[int]models.TipoBien) (tipoBienId int, outputError map[string]interface{}) {
+func GetTipoBienIdByValor(ctx context.Context, tbPadreId int, normalizado float64, bufferTiposBien map[int]models.TipoBien) (tipoBienId int, outputError map[string]interface{}) {
 
 	funcion := "GetTipoBienIdByValor - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -27,7 +28,7 @@ func GetTipoBienIdByValor(tbPadreId int, normalizado float64, bufferTiposBien ma
 	var tb__ []models.TipoBien
 	payload := "limit=1&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(tbPadreId) + ",LimiteInferior__lte:" +
 		fmt.Sprintf("%f", normalizado) + ",LimiteSuperior__gt:" + fmt.Sprintf("%f", normalizado)
-	if err := GetAllTipoBien(payload, &tb__); err != nil || len(tb__) != 1 {
+	if err := GetAllTipoBien(ctx, payload, &tb__); err != nil || len(tb__) != 1 {
 		return 0, err
 	}
 

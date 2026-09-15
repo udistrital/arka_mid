@@ -76,7 +76,8 @@ func GetAllHistoricoActas(ctx context.Context, query string, fields string, sort
 		return nil, "", errorCtrl.Error(funcion+eval, err, "502")
 	}
 
-	if len(historicos) > 0 {
+	// GetWithTotalCount returns zero when Total-Count is absent or invalid.
+	if total != 0 {
 		count = strconv.Itoa(total)
 	}
 	return

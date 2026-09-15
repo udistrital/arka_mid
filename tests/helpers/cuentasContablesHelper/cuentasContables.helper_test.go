@@ -1,6 +1,7 @@
 package cuentasContablesHelper_test
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -24,7 +25,7 @@ func TestMain(m *testing.M) {
 
 // GetCuentaContable ...
 func TestGetCuentaContable(t *testing.T) {
-	valor, err := cuentasContables.GetCuentaContable("4")
+	valor, err := cuentasContables.GetCuentaContable(context.Background(), "4")
 	if err != nil {
 		t.Error("No se pudo consultar las cuentas contables", err)
 		t.Fail()

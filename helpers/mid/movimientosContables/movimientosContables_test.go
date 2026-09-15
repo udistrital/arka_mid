@@ -1,6 +1,7 @@
 package movimientosContables
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -8,16 +9,16 @@ import (
 )
 
 func TestPostTrContableRetryOnHTTP404(t *testing.T) {
-	originalSendJSON := sendJSONPostTrContable
+	originalPostWithContext := postWithContext
 	t.Cleanup(func() {
-		sendJSONPostTrContable = originalSendJSON
+		postWithContext = originalPostWithContext
 	})
 
 	calls := 0
-	sendJSONPostTrContable = func(urlp string, trequest string, target interface{}, datajson interface{}) error {
+	postWithContext = func(ctx context.Context, urlp string, body, target any) (int, error) {
 		calls++
 		if calls == 1 {
-			return errors.New(`http 404: {"Data":null,"Message":null,"Status":"404","Success":false}`)
+			return 404, errors.New("unexpected status code: 404")
 		}
 
 		resp, ok := target.(*map[string]interface{})
@@ -30,11 +31,11 @@ func TestPostTrContableRetryOnHTTP404(t *testing.T) {
 			"Status":  "201",
 			"Data":    "OK",
 		}
-		return nil
+		return 201, nil
 	}
 
 	tr := &models.TransaccionMovimientos{ConsecutivoId: 10764}
-	res, err := PostTrContable(tr)
+	res, err := PostTrContable(context.Background(), tr)
 	if err != nil {
 		t.Fatalf("unexpected error: %#v", err)
 	}

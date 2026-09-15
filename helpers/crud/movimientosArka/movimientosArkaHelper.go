@@ -12,22 +12,21 @@ import (
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
 	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("movimientosArkaService")
-var getAllMovimientoRequest = request.GetJsonTest
+var getAllMovimientoRequest = requestV2.GetWithTotalCount
 
 // GetAllEstadoMovimiento query controlador estado_movimiento del api movimientos_arka_crud
-func GetAllEstadoMovimiento(query string) (estados []*models.EstadoMovimiento, outputError map[string]interface{}) {
+func GetAllEstadoMovimiento(ctx context.Context, query string) (estados []*models.EstadoMovimiento, outputError map[string]interface{}) {
 
 	funcion := "GetAllEstadoMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	urlcrud := basePath + "estado_movimiento?" + query
-	if err := request.GetJson(urlcrud, &estados); err != nil {
-		eval := " - request.GetJson(urlcrud, &estados)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &estados); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &estados)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -35,92 +34,90 @@ func GetAllEstadoMovimiento(query string) (estados []*models.EstadoMovimiento, o
 }
 
 // GetAllFormatoTipoMovimiento query controlador formato_tipo_movimiento del api movimientos_arka_crud
-func GetAllFormatoTipoMovimiento(query string) (formatos []*models.FormatoTipoMovimiento, outputError map[string]interface{}) {
+func GetAllFormatoTipoMovimiento(ctx context.Context, query string) (formatos []*models.FormatoTipoMovimiento, outputError map[string]interface{}) {
 
 	funcion := "GetAllFormatoTipoMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "formato_tipo_movimiento?" + query
-	if err := request.GetJson(urlcrud, &formatos); err != nil {
-		eval := " - request.GetJson(urlcrud, &formatos)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &formatos); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &formatos)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return formatos, nil
 }
 
 // GetAllElementosMovimiento query controlador elementos_movimiento del api movimientos_arka_crud
-func GetAllElementosMovimiento(query string) (elementos []*models.ElementosMovimiento, outputError map[string]interface{}) {
+func GetAllElementosMovimiento(ctx context.Context, query string) (elementos []*models.ElementosMovimiento, outputError map[string]interface{}) {
 
 	funcion := "GetAllElementosMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "elementos_movimiento?" + query
-	if err := request.GetJson(urlcrud, &elementos); err != nil {
-		eval := " - request.GetJson(urlcrud, &elementos)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &elementos); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &elementos)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return elementos, nil
 }
 
 // GetAllSoporteMovimiento query controlador soporte_movimiento del api movimientos_arka_crud
-func GetAllSoporteMovimiento(query string) (soportes []models.SoporteMovimiento, outputError map[string]interface{}) {
+func GetAllSoporteMovimiento(ctx context.Context, query string) (soportes []models.SoporteMovimiento, outputError map[string]interface{}) {
 
 	funcion := "GetAllSoporteMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "soporte_movimiento?" + query
-	if err := request.GetJson(urlcrud, &soportes); err != nil {
-		eval := " - request.GetJson(urlcrud, &soportes)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &soportes); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &soportes)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return soportes, nil
 }
 
 // GetAllMovimiento query controlador movimiento del api movimientos_arka_crud
-func GetAllMovimiento(payload string) (movimientos []*models.Movimiento, count string, outputError map[string]interface{}) {
+func GetAllMovimiento(ctx context.Context, payload string) (movimientos []*models.Movimiento, count string, outputError map[string]interface{}) {
 
 	funcion := "GetAllMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "movimiento?" + payload
-	response, err := getAllMovimientoRequest(urlcrud, &movimientos)
+	_, total, err := getAllMovimientoRequest(ctx, urlcrud, &movimientos)
 	if err != nil {
-		eval := "request.GetJson(urlcrud, &movimientos)"
+		eval := "requestV2.GetWithTotalCount(ctx, urlcrud, &movimientos)"
 		return nil, "", errorCtrl.Error(funcion+eval, err, "502")
 	}
-	if response == nil {
-		eval := "request.GetJson(urlcrud, &movimientos)"
-		return nil, "", errorCtrl.Error(funcion+eval, "respuesta HTTP vacía de movimientos_arka_crud", "502")
+	// GetWithTotalCount returns zero when Total-Count is absent or invalid.
+	if total != 0 {
+		count = strconv.Itoa(total)
 	}
-
-	count = response.Header.Get("total-count")
 	return movimientos, count, nil
 }
 
 // GetAllNovedadElemento query controlador novedad_elemento del api movimientos_arka_crud
-func GetAllNovedadElemento(query string) (novedades []*models.NovedadElemento, outputError map[string]interface{}) {
+func GetAllNovedadElemento(ctx context.Context, query string) (novedades []*models.NovedadElemento, outputError map[string]interface{}) {
 
 	funcion := "GetAllNovedadElemento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "novedad_elemento?" + query
-	if err := request.GetJson(urlcrud, &novedades); err != nil {
-		eval := " - request.GetJson(urlcrud, &novedades)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &novedades); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &novedades)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return
 }
 
 // GetMovimientoById consulta controlador movimiento/{id} del api movimientos_arka_crud
-func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
+func GetMovimientoById(ctx context.Context, id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
 	funcion := "GetMovimientoById"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	// Se consulta el movimiento
 	urlcrud := basePath + "movimiento/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &movimiento); err != nil {
-		eval := " - request.GetJson(urlcrud, &movimiento)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &movimiento); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &movimiento)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -128,15 +125,15 @@ func GetMovimientoById(id int) (movimiento *models.Movimiento, outputError map[s
 }
 
 // GetElementosMovimientoById consulta controlador elementos_movimiento/{id} del api movimientos_arka_crud
-func GetElementosMovimientoById(id int, elemento *models.ElementosMovimiento) (outputError map[string]interface{}) {
+func GetElementosMovimientoById(ctx context.Context, id int, elemento *models.ElementosMovimiento) (outputError map[string]interface{}) {
 
 	funcion := "GetElementosMovimientoById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "elementos_movimiento/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &elemento); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &elemento); err != nil {
 		logs.Error(err, urlcrud)
-		eval := "request.GetJson(urlcrud, &elemento)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &elemento)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -144,15 +141,15 @@ func GetElementosMovimientoById(id int, elemento *models.ElementosMovimiento) (o
 }
 
 // GetTrSalida consulta controlador tr_salida/{id} del api movimientos_arka_crud
-func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]interface{}) {
+func GetTrSalida(ctx context.Context, id int) (trSalida *models.TrSalida, outputError map[string]interface{}) {
 
 	funcion := "GetTrSalida"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	// Se consulta el movimiento
 	urlcrud := basePath + "tr_salida/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &trSalida); err != nil {
-		eval := " - request.GetJson(urlcrud, &trSalida)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &trSalida); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &trSalida)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -160,7 +157,7 @@ func GetTrSalida(id int) (trSalida *models.TrSalida, outputError map[string]inte
 }
 
 // PostMovimiento post controlador movimiento del api movimientos_arka_crud
-func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]interface{}) {
+func PostMovimiento(ctx context.Context, movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "PostMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
@@ -169,9 +166,9 @@ func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]inter
 
 	var raw interface{}
 
-	if err := request.SendJson(urlcrud, "POST", &raw, movimiento); err != nil {
+	if _, err := requestV2.PostWithContext(ctx, urlcrud, movimiento, &raw); err != nil {
 		logs.Error(err)
-		eval := `request.SendJson(urlcrud, "POST", &raw, movimiento)`
+		eval := `requestV2.PostWithContext(ctx, urlcrud, movimiento, &raw)`
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -209,15 +206,15 @@ func PostMovimiento(movimiento *models.Movimiento) (outputError map[string]inter
 }
 
 // PostSoporteMovimiento post controlador soporte_movimiento del api movimientos_arka_crud
-func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (outputError map[string]interface{}) {
+func PostSoporteMovimiento(ctx context.Context, soporte *models.SoporteMovimiento) (outputError map[string]interface{}) {
 
 	funcion := "PostSoporteMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "soporte_movimiento"
-	if err := request.SendJson(urlcrud, "POST", &soporte, &soporte); err != nil {
+	if _, err := requestV2.PostWithContext(ctx, urlcrud, &soporte, &soporte); err != nil {
 		logs.Error(err)
-		eval := `request.SendJson(urlcrud, "POST", &soporte, &soporte)`
+		eval := `requestV2.PostWithContext(ctx, urlcrud, &soporte, &soporte)`
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -225,16 +222,16 @@ func PostSoporteMovimiento(soporte *models.SoporteMovimiento) (outputError map[s
 }
 
 // PostElementosMovimiento post controlador elementos_movimiento del api movimientos_arka_crud
-func PostElementosMovimiento(elemento *models.ElementosMovimiento) (outputError map[string]interface{}) {
+func PostElementosMovimiento(ctx context.Context, elemento *models.ElementosMovimiento) (outputError map[string]interface{}) {
 
 	funcion := "PostElementosMovimiento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "elementos_movimiento"
-	err := request.SendJson(urlcrud, "POST", &elemento, &elemento)
+	_, err := requestV2.PostWithContext(ctx, urlcrud, &elemento, &elemento)
 	if err != nil {
 		logs.Error(err, urlcrud)
-		eval := `request.SendJson(urlcrud, "POST", &elemento, &elemento)`
+		eval := `requestV2.PostWithContext(ctx, urlcrud, &elemento, &elemento)`
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -242,14 +239,14 @@ func PostElementosMovimiento(elemento *models.ElementosMovimiento) (outputError 
 }
 
 // PutTrSalida put controlador tr_salida del api movimientos_arka_crud
-func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGeneral, outputError map[string]interface{}) {
+func PutTrSalida(ctx context.Context, trSalida *models.SalidaGeneral) (trResultado *models.SalidaGeneral, outputError map[string]interface{}) {
 
 	funcion := "PutTrSalida"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "tr_salida/"
-	if err := request.SendJson(urlcrud, "PUT", &trResultado, trSalida); err != nil {
-		eval := " - request.SendJson(urlcrud, \"PUT\", &trResultado, &trSalida)"
+	if _, err := requestV2.PutWithContext(ctx, urlcrud, trSalida, &trResultado); err != nil {
+		eval := " - requestV2.PutWithContext(ctx, urlcrud, trSalida, &trResultado)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -258,16 +255,16 @@ func PutTrSalida(trSalida *models.SalidaGeneral) (trResultado *models.SalidaGene
 }
 
 // PostTrSalida post controlador tr_salida del api movimientos_arka_crud
-func PostTrSalida(trSalida *models.SalidaGeneral) (outputError map[string]interface{}) {
+func PostTrSalida(ctx context.Context, trSalida *models.SalidaGeneral) (outputError map[string]interface{}) {
 
 	funcion := "PostTrSalida - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tr_salida"
-	err := request.SendJson(urlcrud, "POST", trSalida, trSalida)
+	_, err := requestV2.PostWithContext(ctx, urlcrud, trSalida, trSalida)
 	if err != nil {
 		logs.Error(err)
-		eval := `request.SendJson(urlcrud, "POST", trSalida, trSalida)`
+		eval := `requestV2.PostWithContext(ctx, urlcrud, trSalida, trSalida)`
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -275,15 +272,15 @@ func PostTrSalida(trSalida *models.SalidaGeneral) (outputError map[string]interf
 }
 
 // PutMovimiento put controlador movimiento del api movimientos_arka_crud
-func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (outputError map[string]interface{}) {
+func PutMovimiento(ctx context.Context, movimiento *models.Movimiento, movimientoId int) (outputError map[string]interface{}) {
 
 	funcion := "PutMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "movimiento/" + strconv.Itoa(movimientoId)
-	err := request.SendJson(urlcrud, "PUT", &movimiento, &movimiento)
+	_, err := requestV2.PutWithContext(ctx, urlcrud, &movimiento, &movimiento)
 	if err != nil {
-		eval := `request.SendJson(urlcrud, "PUT", &movimientoRes, &movimiento)`
+		eval := `requestV2.PutWithContext(ctx, urlcrud, &movimiento, &movimiento)`
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -291,14 +288,14 @@ func PutMovimiento(movimiento *models.Movimiento, movimientoId int) (outputError
 }
 
 // PutRevision put controlador bajas/ del api movimientos_arka_crud
-func PutRevision(revision *models.TrRevisionBaja) (ids []int, outputError map[string]interface{}) {
+func PutRevision(ctx context.Context, revision *models.TrRevisionBaja) (ids []int, outputError map[string]interface{}) {
 
 	funcion := "PutRevision"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "bajas/"
-	if err := request.SendJson(urlcrud, "PUT", &ids, &revision); err != nil {
-		eval := " - request.SendJson(urlcrud, \"PUT\", &ids, &revision)"
+	if _, err := requestV2.PutWithContext(ctx, urlcrud, &revision, &ids); err != nil {
+		eval := " - requestV2.PutWithContext(ctx, urlcrud, &revision, &ids)"
 		return nil, errorCtrl.Error(funcion+eval, err, "500")
 	}
 
@@ -307,14 +304,14 @@ func PutRevision(revision *models.TrRevisionBaja) (ids []int, outputError map[st
 }
 
 // PutSoporteMovimiento put controlador soporte_movimiento del api movimientos_arka_crud
-func PutSoporteMovimiento(soporte *models.SoporteMovimiento, soporteId int) (soporteR *models.SoporteMovimiento, outputError map[string]interface{}) {
+func PutSoporteMovimiento(ctx context.Context, soporte *models.SoporteMovimiento, soporteId int) (soporteR *models.SoporteMovimiento, outputError map[string]interface{}) {
 
 	funcion := "PutSoporteMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "soporte_movimiento/" + strconv.Itoa(soporteId)
-	if err := request.SendJson(urlcrud, "PUT", &soporteR, &soporte); err != nil {
-		eval := " - request.SendJson(urlcrud, \"PUT\", &soporteR, &soporte)"
+	if _, err := requestV2.PutWithContext(ctx, urlcrud, &soporte, &soporteR); err != nil {
+		eval := " - requestV2.PutWithContext(ctx, urlcrud, &soporte, &soporteR)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -323,14 +320,14 @@ func PutSoporteMovimiento(soporte *models.SoporteMovimiento, soporteId int) (sop
 }
 
 // PutElementosMovimiento put controlador elementos_movimiento del api movimientos_arka_crud
-func PutElementosMovimiento(elementoM *models.ElementosMovimiento, elementoId int) (elementoM_ *models.ElementosMovimiento, outputError map[string]interface{}) {
+func PutElementosMovimiento(ctx context.Context, elementoM *models.ElementosMovimiento, elementoId int) (elementoM_ *models.ElementosMovimiento, outputError map[string]interface{}) {
 
 	funcion := "PutElementosMovimiento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "elementos_movimiento/" + strconv.Itoa(elementoId)
-	if err := request.SendJson(urlcrud, "PUT", &elementoM_, &elementoM); err != nil {
-		eval := ` - request.SendJson(urlcrud, "PUT", &soporteR, &soporte)`
+	if _, err := requestV2.PutWithContext(ctx, urlcrud, &elementoM, &elementoM_); err != nil {
+		eval := ` - requestV2.PutWithContext(ctx, urlcrud, &elementoM, &elementoM_)`
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -339,14 +336,14 @@ func PutElementosMovimiento(elementoM *models.ElementosMovimiento, elementoId in
 }
 
 // PutNovedadElemento put controlador novedad_elemento del api movimientos_arka_crud
-func PutNovedadElemento(novedad *models.NovedadElemento, novedadId int) (novedad_ *models.NovedadElemento, outputError map[string]interface{}) {
+func PutNovedadElemento(ctx context.Context, novedad *models.NovedadElemento, novedadId int) (novedad_ *models.NovedadElemento, outputError map[string]interface{}) {
 
 	funcion := "PutNovedadElemento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "novedad_elemento/" + strconv.Itoa(novedadId)
-	if err := request.SendJson(urlcrud, "PUT", &novedad_, &novedad); err != nil {
-		eval := ` - request.SendJson(urlcrud, "PUT", &novedad_, &novedad)`
+	if _, err := requestV2.PutWithContext(ctx, urlcrud, &novedad, &novedad_); err != nil {
+		eval := ` - requestV2.PutWithContext(ctx, urlcrud, &novedad, &novedad_)`
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -355,16 +352,16 @@ func PutNovedadElemento(novedad *models.NovedadElemento, novedadId int) (novedad
 }
 
 // PostNovedadElemento post controlador novedad_elemento del api movimientos_arka_crud
-func PostNovedadElemento(novedad *models.NovedadElemento) (outputError map[string]interface{}) {
+func PostNovedadElemento(ctx context.Context, novedad *models.NovedadElemento) (outputError map[string]interface{}) {
 
 	funcion := "PostNovedadElemento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error", "500")
 
 	urlcrud := basePath + "novedad_elemento"
-	err := request.SendJson(urlcrud, "POST", &novedad, &novedad)
+	_, err := requestV2.PostWithContext(ctx, urlcrud, &novedad, &novedad)
 	if err != nil {
 		logs.Error(err, urlcrud)
-		eval := `request.SendJson(urlcrud, "POST", &novedad, &novedad)`
+		eval := `requestV2.PostWithContext(ctx, urlcrud, &novedad, &novedad)`
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -372,44 +369,44 @@ func PostNovedadElemento(novedad *models.NovedadElemento) (outputError map[strin
 }
 
 // GetElementosFuncionario query controlador elementos_movimiento/funcionario/{funcionarioId} del api movimientos_arka_crud
-func GetElementosFuncionario(funcionarioId int) (movimientos []int, outputError map[string]interface{}) {
+func GetElementosFuncionario(ctx context.Context, funcionarioId int) (movimientos []int, outputError map[string]interface{}) {
 
 	funcion := "GetElementosFuncionario"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "elementos_movimiento/funcionario/" + strconv.Itoa(funcionarioId)
-	if err := request.GetJson(urlcrud, &movimientos); err != nil {
-		eval := " - request.GetJson(urlcrud, &movimientos)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &movimientos); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &movimientos)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return movimientos, nil
 }
 
 // GetHistorialElemento query controlador elementos_movimiento/historial/{elementoId} del api movimientos_arka_crud
-func GetHistorialElemento(elementoId int, final bool) (historial *models.Historial, outputError map[string]interface{}) {
+func GetHistorialElemento(ctx context.Context, elementoId int, final bool) (historial *models.Historial, outputError map[string]interface{}) {
 
 	funcion := "GetHistorialElemento"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "elementos_movimiento/historial/" + strconv.Itoa(elementoId)
 	urlcrud += "?final=" + strconv.FormatBool(final)
-	if err := request.GetJson(urlcrud, &historial); err != nil {
-		eval := " - request.GetJson(urlcrud, &historial)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &historial); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &historial)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return historial, nil
 }
 
 // GetCorteDepreciacion query controlador cierre/?fechaCorte={fechaCorte} del api movimientos_arka_crud
-func GetCorteDepreciacion(fechaCorte string) (corte []models.DepreciacionElemento, outputError map[string]interface{}) {
+func GetCorteDepreciacion(ctx context.Context, fechaCorte string) (corte []models.DepreciacionElemento, outputError map[string]interface{}) {
 
 	funcion := "GetCorteDepreciacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := buildCorteDepreciacionURL(fechaCorte)
-	if err := request.GetJson(urlcrud, &corte); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &corte); err != nil {
 		logs.Error(err, urlcrud)
-		eval := "request.GetJson(urlcrud, &corte)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &corte)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -421,15 +418,15 @@ func buildCorteDepreciacionURL(fechaCorte string) string {
 }
 
 // AprobarCierre post controlador cierre del api movimientos_arka_crud
-func AprobarCierre(cierre *models.Movimiento) (outputError map[string]interface{}) {
+func AprobarCierre(ctx context.Context, cierre *models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "AprobarCierre - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error", "500")
 
 	urlcrud := basePath + "cierre/"
-	if err := request.SendJson(urlcrud, "POST", &cierre, &cierre); err != nil {
+	if _, err := requestV2.PostWithContext(ctx, urlcrud, &cierre, &cierre); err != nil {
 		logs.Error(err, urlcrud)
-		eval := `request.SendJson(urlcrud, "POST", &cierre, &data)`
+		eval := `requestV2.PostWithContext(ctx, urlcrud, &cierre, &cierre)`
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -437,21 +434,21 @@ func AprobarCierre(cierre *models.Movimiento) (outputError map[string]interface{
 }
 
 // GetEntradaByActa consulta controlador movimiento/entrada/{acta_recibido_id} del api movimientos_arka_crud
-func GetEntradaByActa(acta_recibido_id int) (entrada *models.Movimiento, outputError map[string]interface{}) {
+func GetEntradaByActa(ctx context.Context, acta_recibido_id int) (entrada *models.Movimiento, outputError map[string]interface{}) {
 
 	funcion := "GetEntradaByActa"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "movimiento/entrada/" + strconv.Itoa(acta_recibido_id)
-	if err := request.GetJson(urlcrud, &entrada); err != nil {
-		eval := " - request.GetJson(urlcrud, &entrada)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &entrada); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &entrada)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return entrada, nil
 }
 
 // GetTrasladosByTerceroId consulta controlador movimiento/traslado/{tercero_id} del api movimientos_arka_crud
-func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
+func GetTrasladosByTerceroId(ctx context.Context, terceroId int, confirmar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "GetTrasladosByTerceroId - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -460,22 +457,22 @@ func GetTrasladosByTerceroId(terceroId int, confirmar bool, traslados *[]*models
 	if confirmar {
 		urlcrud += "?confirmar=true"
 	}
-	if err := request.GetJson(urlcrud, &traslados); err != nil {
-		eval := "request.GetJson(urlcrud, &traslados)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &traslados); err != nil {
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &traslados)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return
 }
 
 // GetBajasByTerceroId consulta controlador movimiento/baja/{tercero_id} del api movimientos_arka_crud
-func GetBajasByTerceroId(terceroId int, bajas *[]*models.Movimiento) (outputError map[string]interface{}) {
+func GetBajasByTerceroId(ctx context.Context, terceroId int, bajas *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "GetBajasByTerceroId - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "movimiento/baja/" + strconv.Itoa(terceroId)
-	if err := request.GetJson(urlcrud, &bajas); err != nil {
-		eval := "request.GetJson(urlcrud, &bajas)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &bajas); err != nil {
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &bajas)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -483,14 +480,14 @@ func GetBajasByTerceroId(terceroId int, bajas *[]*models.Movimiento) (outputErro
 }
 
 // GetBodegaByTerceroId consulta controlador movimiento/bodega/{tercero_id} del api movimientos_arka_crud
-func GetBodegaByTerceroId(terceroId int, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
+func GetBodegaByTerceroId(ctx context.Context, terceroId int, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	funcion := "GetBodegaByTerceroId - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "movimiento/bodega/" + strconv.Itoa(terceroId)
-	if err := request.GetJson(urlcrud, &solicitudes); err != nil {
-		eval := "request.GetJson(urlcrud, &solicitudes)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &solicitudes); err != nil {
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &solicitudes)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -498,14 +495,14 @@ func GetBodegaByTerceroId(terceroId int, solicitudes *[]*models.Movimiento) (out
 }
 
 // GetAperturas consulta controlador tr_kardex/aperturas del api movimientos_arka_crud
-func GetAperturas(conSaldo bool, aperturas *[]models.Apertura) (outputError map[string]interface{}) {
+func GetAperturas(ctx context.Context, conSaldo bool, aperturas *[]models.Apertura) (outputError map[string]interface{}) {
 
 	funcion := "GetAperturas - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tr_kardex/aperturas?ConSaldo=" + strconv.FormatBool(conSaldo)
-	if err := request.GetJson(urlcrud, &aperturas); err != nil {
-		eval := "request.GetJson(urlcrud, &aperturas)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &aperturas); err != nil {
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &aperturas)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 

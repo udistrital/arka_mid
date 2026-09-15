@@ -16,7 +16,7 @@ func GetElementosSinAsignar(ctx context.Context) (Elementos []map[string]interfa
 
 	payload := "limit=-1&query=Activo:true,MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion:SAL_CONS" +
 		",MovimientoId__EstadoMovimientoId__Nombre:Salida%20Aprobada"
-	elementos, err := movimientosArka.GetAllElementosMovimiento(payload)
+	elementos, err := movimientosArka.GetAllElementosMovimiento(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func GetElementosSinAsignar(ctx context.Context) (Elementos []map[string]interfa
 
 		_, ok := subgruposBuffer[el_.SubgrupoCatalogoId]
 		if !ok {
-			sg, err := catalogoElementos.GetSubgrupoById(el_.SubgrupoCatalogoId)
+			sg, err := catalogoElementos.GetSubgrupoById(ctx, el_.SubgrupoCatalogoId)
 			if err != nil {
 				return nil, err
 			}

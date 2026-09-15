@@ -253,7 +253,7 @@ func TestGenerarReporteElementosFechaFinalMenor(t *testing.T) {
 func TestConsultarEntradasPorFechaFiltraPorFechaCorte(t *testing.T) {
 	original := consultarMovimientosReporteFn
 	var capturedQuery string
-	consultarMovimientosReporteFn = func(query string) ([]*models.Movimiento, string, map[string]interface{}) {
+	consultarMovimientosReporteFn = func(_ context.Context, query string) ([]*models.Movimiento, string, map[string]interface{}) {
 		capturedQuery = query
 		return []*models.Movimiento{}, "0", nil
 	}
@@ -261,7 +261,7 @@ func TestConsultarEntradasPorFechaFiltraPorFechaCorte(t *testing.T) {
 		consultarMovimientosReporteFn = original
 	})
 
-	_, err := consultarEntradasPorFecha(
+	_, err := consultarEntradasPorFecha(context.TODO(),
 		time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
 		time.Date(2026, 4, 30, 0, 0, 0, 0, time.UTC),
 		[]string{"ENT_ADQ"},
@@ -291,7 +291,7 @@ func TestConsultarEntradasPorFechaFiltraPorFechaCorte(t *testing.T) {
 func TestConsultarMovimientosPorFechaYEstadoFiltraPorFechaCorte(t *testing.T) {
 	original := consultarMovimientosReporteFn
 	var capturedQuery string
-	consultarMovimientosReporteFn = func(query string) ([]*models.Movimiento, string, map[string]interface{}) {
+	consultarMovimientosReporteFn = func(_ context.Context, query string) ([]*models.Movimiento, string, map[string]interface{}) {
 		capturedQuery = query
 		return []*models.Movimiento{}, "0", nil
 	}
@@ -299,7 +299,7 @@ func TestConsultarMovimientosPorFechaYEstadoFiltraPorFechaCorte(t *testing.T) {
 		consultarMovimientosReporteFn = original
 	})
 
-	_, err := consultarMovimientosPorFechaYEstado(
+	_, err := consultarMovimientosPorFechaYEstado(context.TODO(),
 		time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC),
 		time.Date(2026, 7, 31, 0, 0, 0, 0, time.UTC),
 		[]string{"SAL", "SAL_CONS"},
@@ -1107,7 +1107,7 @@ func TestConsultarProveedorActaFallbackCuandoTerceroNoExiste(t *testing.T) {
 			{ProveedorId: 123456},
 		}, nil
 	}
-	getNombreTerceroByID = func(terceroID int) (*models.IdentificacionTercero, map[string]interface{}) {
+	getNombreTerceroByID = func(_ context.Context, terceroID int) (*models.IdentificacionTercero, map[string]interface{}) {
 		return nil, map[string]interface{}{
 			"err":    "http 404: {\"Message\":\"Not found resource\"}",
 			"status": "502",
@@ -1396,7 +1396,7 @@ func mockConsultarMovimientoPorConsecutivo(t *testing.T, movimiento *models.Movi
 	t.Helper()
 
 	original := consultarMovimientoPorConsec
-	consultarMovimientoPorConsec = func(consecutivo string) (*models.Movimiento, map[string]interface{}) {
+	consultarMovimientoPorConsec = func(_ context.Context, consecutivo string) (*models.Movimiento, map[string]interface{}) {
 		return movimiento, nil
 	}
 
@@ -1453,7 +1453,7 @@ func mockConsultarTrSalida(t *testing.T, trSalida *models.TrSalida) {
 	t.Helper()
 
 	original := consultarTrSalida
-	consultarTrSalida = func(id int) (*models.TrSalida, map[string]interface{}) {
+	consultarTrSalida = func(_ context.Context, id int) (*models.TrSalida, map[string]interface{}) {
 		return trSalida, nil
 	}
 
@@ -1544,7 +1544,7 @@ func mockGetCuentasByMovimientoAndSubgrupos(t *testing.T, cuentas map[int]models
 	t.Helper()
 
 	original := getCuentasByMovimientoAndSubgrupos
-	getCuentasByMovimientoAndSubgrupos = func(movimientoID int, subgrupos []int, cuentasPorSubgrupo map[int]models.CuentasSubgrupo) map[string]interface{} {
+	getCuentasByMovimientoAndSubgrupos = func(_ context.Context, movimientoID int, subgrupos []int, cuentasPorSubgrupo map[int]models.CuentasSubgrupo) map[string]interface{} {
 		for id, cuenta := range cuentas {
 			cuentasPorSubgrupo[id] = cuenta
 		}
@@ -1560,7 +1560,7 @@ func mockGetNombreTerceroByID(t *testing.T, tercero *models.IdentificacionTercer
 	t.Helper()
 
 	original := getNombreTerceroByID
-	getNombreTerceroByID = func(terceroID int) (*models.IdentificacionTercero, map[string]interface{}) {
+	getNombreTerceroByID = func(_ context.Context, terceroID int) (*models.IdentificacionTercero, map[string]interface{}) {
 		return tercero, nil
 	}
 
@@ -1586,7 +1586,7 @@ func mockConsultarCuentaContableReporte(t *testing.T, cuentas map[string]*models
 	t.Helper()
 
 	original := consultarCuentaContable
-	consultarCuentaContable = func(cuentaID string) (*models.CuentaContable, map[string]interface{}) {
+	consultarCuentaContable = func(_ context.Context, cuentaID string) (*models.CuentaContable, map[string]interface{}) {
 		if cuenta, ok := cuentas[cuentaID]; ok {
 			return cuenta, nil
 		}

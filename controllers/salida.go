@@ -78,7 +78,7 @@ func (c *SalidaController) Post() {
 	} else {
 		var v models.SalidaGeneral
 		if err := decodeSalidaGeneralRequest(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := salidaHelper.Post(&v, etl); err == nil && respuesta != nil {
+			if respuesta, err := salidaHelper.Post(c.Ctx.Request.Context(), &v, etl); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
 			} else {
@@ -363,7 +363,7 @@ func (c *SalidaController) Put() {
 	}
 
 	if !rechazar && v.Salidas != nil {
-		if respuesta, err := salidaHelper.Put(&v, id); err == nil && respuesta != nil {
+		if respuesta, err := salidaHelper.Put(c.Ctx.Request.Context(), &v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {
@@ -378,7 +378,7 @@ func (c *SalidaController) Put() {
 			})
 		}
 	} else if rechazar {
-		if salida, err := salidaHelper.RechazarSalida(id); err != nil {
+		if salida, err := salidaHelper.RechazarSalida(c.Ctx.Request.Context(), id); err != nil {
 			panic(err)
 		} else {
 			c.Data["json"] = salida

@@ -1,6 +1,7 @@
 package polizashelper
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -11,11 +12,11 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 	utilsHelper "github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 // GetElementosPoliza Obtiene todos los elementos que necesiten poliza
-func GetElementosPoliza(offset int, limit int, fields []string, order []string, query map[string]string, sortby []string) (ElementosPoliza *[]models.Elemento, outputError map[string]interface{}) {
+func GetElementosPoliza(ctx context.Context, offset int, limit int, fields []string, order []string, query map[string]string, sortby []string) (ElementosPoliza *[]models.Elemento, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -34,21 +35,21 @@ func GetElementosPoliza(offset int, limit int, fields []string, order []string, 
 	)
 
 	// Trae las ActasId que son entradas en movimientoservice.movimiento
-	if Elementos, err := GetIdsActasEntrada(); err != nil {
+	if Elementos, err := GetIdsActasEntrada(ctx); err != nil {
 		return nil, err
 	} else {
 		ActasIdsEntradas = Elementos
 	}
 
 	// Obtiene IdDetalleSubgrupo de los tipos de bien en catalogoelemento.detallesubgrupo
-	if idsubgrupo, err := GetSubgruposPoliza(); err != nil {
+	if idsubgrupo, err := GetSubgruposPoliza(ctx); err != nil {
 		return nil, err
 	} else {
 		SubgrupoPoliza = idsubgrupo
 	}
 
 	// Respuesta de los Elementos que necesiten poliza y pudiendo filtrar
-	if RElementosPoliza, err := GetElementosPolizas(ActasIdsEntradas, SubgrupoPoliza, limit, offset, fields, order, query, sortby); err != nil {
+	if RElementosPoliza, err := GetElementosPolizas(ctx, ActasIdsEntradas, SubgrupoPoliza, limit, offset, fields, order, query, sortby); err != nil {
 		return nil, err
 	} else {
 		ElementosPoliza = RElementosPoliza
@@ -58,7 +59,7 @@ func GetElementosPoliza(offset int, limit int, fields []string, order []string, 
 }
 
 // GetElementosEntrada obtiene todos las ActasId que sean entradas (P8)
-func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interface{}) {
+func GetIdsActasEntrada(ctx context.Context) (IdsActasEntradas []int, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -84,10 +85,10 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 	params.Add("limit", "-1")
 	path, _ := beego.AppConfig.String("movimientosArkaService")
 	urlRespuestaAPI := path + "movimiento?" + params.Encode()
-	if _, err := request.GetJsonTest(urlRespuestaAPI, &RespuestaAPI); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlRespuestaAPI, &RespuestaAPI); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetIdsActasEntrada - request.GetJsonTest(urlRespuestaAPI, &RespuestaAPI)",
+			"funcion": "GetIdsActasEntrada - requestV2.GetWithContext(ctx, urlRespuestaAPI, &RespuestaAPI)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -116,7 +117,7 @@ func GetIdsActasEntrada() (IdsActasEntradas []int, outputError map[string]interf
 }
 
 // Obtiene todos los idSubgrupos que necesitan poliza
-func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]interface{}) {
+func GetSubgruposPoliza(ctx context.Context) (IdSubgruposPoliza []int, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -141,10 +142,10 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 	params.Add("limit", "-1")
 	path, _ := beego.AppConfig.String("catalogoElementosService")
 	urlSubgrupos := path + "detalle_subgrupo?" + params.Encode()
-	if _, err := request.GetJsonTest(urlSubgrupos, &Respuesta); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlSubgrupos, &Respuesta); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetSubgruposPoliza - request.GetJsonTest(urlSubgrupos, &Respuesta)",
+			"funcion": "GetSubgruposPoliza - requestV2.GetWithContext(ctx, urlSubgrupos, &Respuesta)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -168,7 +169,7 @@ func GetSubgruposPoliza() (IdSubgruposPoliza []int, outputError map[string]inter
 }
 
 // Consulta los elementos por ActaId y retorna algunos parametros
-func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int, offset int, fields []string, order []string,
+func GetElementosPolizas(ctx context.Context, ActasIdsEntradas []int, SubgrupoPoliza []int, limit int, offset int, fields []string, order []string,
 	query map[string]string, sortby []string) (ElementosEntradas *[]models.Elemento, outputError map[string]interface{}) {
 
 	defer func() {
@@ -229,10 +230,10 @@ func GetElementosPolizas(ActasIdsEntradas []int, SubgrupoPoliza []int, limit int
 	path, _ := beego.AppConfig.String("actaRecibidoService")
 	urlElementosSubgrupos := path + "elemento?" + params.Encode()
 	//logs.Debug(urlElementosSubgrupos)
-	if _, err := request.GetJsonTest(urlElementosSubgrupos, &Respuest); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlElementosSubgrupos, &Respuest); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetElementosPolizas - request.GetJsonTest(urlElementosSubgrupos, &Respuest)",
+			"funcion": "GetElementosPolizas - requestV2.GetWithContext(ctx, urlElementosSubgrupos, &Respuest)",
 			"err":     err,
 			"status":  "502",
 		}

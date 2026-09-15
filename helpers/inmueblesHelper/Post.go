@@ -78,7 +78,7 @@ func Post(ctx context.Context, inmueble *models.Inmueble) (resultado models.Resu
 		fechaCorte = inmueble.ElementoMovimiento.MovimientoId.FechaCorte
 	}
 
-	movimientos, _, outputError := movimientosArka.GetAllMovimiento(payload)
+	movimientos, _, outputError := movimientosArka.GetAllMovimiento(ctx, payload)
 	if outputError != nil {
 		return
 	}
@@ -88,12 +88,12 @@ func Post(ctx context.Context, inmueble *models.Inmueble) (resultado models.Resu
 		movimiento = *movimientos[0]
 	} else {
 		var formato, estado int
-		outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formato, "INM_REG")
+		outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &formato, "INM_REG")
 		if outputError != nil {
 			return
 		}
 
-		outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estado, "Bienes inmuebles registrados")
+		outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &estado, "Bienes inmuebles registrados")
 		if outputError != nil {
 			return
 		}
@@ -106,7 +106,7 @@ func Post(ctx context.Context, inmueble *models.Inmueble) (resultado models.Resu
 			EstadoMovimientoId:      &models.EstadoMovimiento{Id: estado},
 		}
 
-		outputError = movimientosArka.PostMovimiento(&movimiento)
+		outputError = movimientosArka.PostMovimiento(ctx, &movimiento)
 		if outputError != nil {
 			return
 		}
@@ -116,7 +116,7 @@ func Post(ctx context.Context, inmueble *models.Inmueble) (resultado models.Resu
 	inmueble.ElementoMovimiento.ElementoActaId = utilsHelper.Int(inmueble.Elemento.Id)
 	inmueble.ElementoMovimiento.Activo = true
 
-	outputError = movimientosArka.PostElementosMovimiento(&inmueble.ElementoMovimiento)
+	outputError = movimientosArka.PostElementosMovimiento(ctx, &inmueble.ElementoMovimiento)
 
 	return
 }

@@ -45,7 +45,7 @@ func (c *BajaController) Post() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorCtrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
-		if respuesta, err := bajasHelper.Post(v); err == nil && respuesta != nil {
+		if respuesta, err := bajasHelper.Post(c.Ctx.Request.Context(), v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 			c.ServeJSON()
@@ -87,7 +87,7 @@ func (c *BajaController) Put() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorCtrl.Error("Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
-		if respuesta, err := bajasHelper.Put(v, id); err == nil && respuesta != nil {
+		if respuesta, err := bajasHelper.Put(c.Ctx.Request.Context(), v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 			c.ServeJSON()
@@ -243,7 +243,7 @@ func (c *BajaController) PutRevision() {
 	}
 
 	if !trBaja.Aprobacion {
-		if ids, err := movimientosArka.PutRevision(trBaja); err != nil {
+		if ids, err := movimientosArka.PutRevision(c.Ctx.Request.Context(), trBaja); err != nil {
 			panic(errorCtrl.Error("PutRevision - movimientosArkaHelper.PutRevision(trBaja)", err, "404"))
 		} else {
 			c.Data["json"] = ids

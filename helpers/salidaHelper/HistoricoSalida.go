@@ -47,7 +47,7 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 	}
 
 	var estadoMovimientoId int
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &estadoMovimientoId, "Salida En Trámite")
 	if outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
 			"resolver estado inicial",
@@ -64,7 +64,7 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 	copy(payload.Salidas, data.Salidas)
 	seedsPorElementoActa := construirSeedsElementosHistoricosSalida(data)
 
-	if outputError = normalizarNuevaSalida(&payload.Salidas[0], estadoMovimientoId); outputError != nil {
+	if outputError = normalizarNuevaSalida(ctx, &payload.Salidas[0], estadoMovimientoId); outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
 			"normalizar salida histórica",
 			"RegistrarSalidaHistorica - normalizarNuevaSalida",
@@ -76,7 +76,7 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 	payload.Salidas[0].Salida.FechaCreacion = data.FechaCreacion
 	payload.Salidas[0].Salida.FechaModificacion = normalizarFechaModificacionHistoricaSalida(data)
 
-	if outputError = aplicarConsecutivoHistoricoSalida(payload.Salidas[0].Salida, data.ConsecutivoId, data.Year); outputError != nil {
+	if outputError = aplicarConsecutivoHistoricoSalida(ctx, payload.Salidas[0].Salida, data.ConsecutivoId, data.Year); outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
 			"aplicar consecutivo histórico",
 			"RegistrarSalidaHistorica - aplicarConsecutivoHistoricoSalida",
@@ -86,10 +86,10 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 		)
 	}
 
-	if outputError = movimientosArka.PostTrSalida(payload); outputError != nil {
+	if outputError = movimientosArka.PostTrSalida(ctx, payload); outputError != nil {
 		return wrapPostTrSalidaHistoricaError(payload, outputError)
 	}
-	if outputError = completarSalidasPersistidas(payload); outputError != nil {
+	if outputError = completarSalidasPersistidas(ctx, payload); outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
 			"confirmar persistencia de la salida",
 			"RegistrarSalidaHistorica - completarSalidasPersistidas",
@@ -102,7 +102,7 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 		return buildHistoricoSalidaPasoError("confirmar persistencia de la salida", "RegistrarSalidaHistorica - completarSalidasPersistidas", "no se confirmó la salida histórica creada", "502", nil)
 	}
 
-	trSalida, outputError := movimientosArka.GetTrSalida(payload.Salidas[0].Salida.Id)
+	trSalida, outputError := movimientosArka.GetTrSalida(ctx, payload.Salidas[0].Salida.Id)
 	if outputError != nil {
 		return wrapHistoricoSalidaDependencyError(
 			"consultar salida recién creada",
@@ -136,7 +136,7 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 	trSalida.Salida.FechaCreacion = data.FechaCreacion
 	trSalida.Salida.FechaModificacion = normalizarFechaModificacionHistoricaSalida(data)
 	trSalida.Salida.FechaCorte = &data.FechaCorte
-	outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
+	outputError = movimientosArka.PutMovimiento(ctx, trSalida.Salida, trSalida.Salida.Id)
 	if outputError != nil {
 		payloadMovimiento, marshalErr := serializarMovimientoHistoricoSalida(*trSalida.Salida)
 		if marshalErr != nil {
@@ -167,7 +167,7 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 		if elementoHistorico != nil && (elementoHistorico.MovimientoId == nil || elementoHistorico.MovimientoId.Id <= 0) {
 			elementoHistorico.MovimientoId = &models.Movimiento{Id: trSalida.Salida.Id}
 		}
-		if _, outputError = movimientosArka.PutElementosMovimiento(elementoHistorico, elementoHistorico.Id); outputError != nil {
+		if _, outputError = movimientosArka.PutElementosMovimiento(ctx, elementoHistorico, elementoHistorico.Id); outputError != nil {
 			payloadElemento, marshalErr := serializarElementoMovimientoHistoricoSalida(*elementoHistorico)
 			if marshalErr != nil {
 				payloadElemento = "no se pudo serializar el payload de elemento_movimiento: " + marshalErr.Error()
@@ -201,7 +201,7 @@ func RegistrarSalidaHistorica(ctx context.Context, data *models.TransaccionSalid
 	return nil
 }
 
-func aplicarConsecutivoHistoricoSalida(salida *models.Movimiento, consecutivoID, year int) (outputError map[string]interface{}) {
+func aplicarConsecutivoHistoricoSalida(ctx context.Context, salida *models.Movimiento, consecutivoID, year int) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("aplicarConsecutivoHistoricoSalida - Unhandled Error!", "500")
 
 	if salida == nil {
@@ -209,7 +209,7 @@ func aplicarConsecutivoHistoricoSalida(salida *models.Movimiento, consecutivoID,
 	}
 
 	var consecutivo models.Consecutivo
-	outputError = getConsecutivoByIDSalidaHistorica(consecutivoID, &consecutivo)
+	outputError = getConsecutivoByIDSalidaHistorica(ctx, consecutivoID, &consecutivo)
 	if outputError != nil {
 		return
 	}
