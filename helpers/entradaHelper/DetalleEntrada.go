@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
@@ -16,7 +17,7 @@ import (
 )
 
 // DetalleEntrada Consulta el detalle de una entrada incluyendo la transaccion contable (si aplica)
-func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
+func DetalleEntrada(ctx context.Context, entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
@@ -41,7 +42,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	if detalle.ActaRecibidoId > 0 {
 		query = "ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
 		var acta models.HistoricoActa
-		if tr, err := actaRecibido.GetAllHistoricoActa(query, "", "Id", "desc", "", "1"); err != nil {
+		if tr, err := actaRecibido.GetAllHistoricoActa(ctx, query, "", "Id", "desc", "", "1"); err != nil {
 			return nil, err
 		} else {
 			acta = tr[0]
@@ -92,7 +93,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	if (movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida") && movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
 		resultado["TransaccionContable"] = models.InfoTransaccionContable{}
 
-		resultado["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
+		resultado["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(ctx, *movimiento.ConsecutivoId)
 		if outputError != nil {
 			return
 		}
@@ -100,7 +101,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if detalle.Factura > 0 {
 		soporte := *new(models.SoporteActa)
-		if err := actaRecibido.GetSoporteById(detalle.Factura, &soporte); err != nil {
+		if err := actaRecibido.GetSoporteById(ctx, detalle.Factura, &soporte); err != nil {
 			return nil, err
 		}
 		resultado["factura"] = soporte
@@ -155,7 +156,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			}
 
 			var elemento_ models.Elemento
-			outputError = actaRecibido.GetElementoById(*detalleMov[0].ElementoActaId, &elemento_)
+			outputError = actaRecibido.GetElementoById(ctx, *detalleMov[0].ElementoActaId, &elemento_)
 			if outputError != nil {
 				return
 			}
@@ -172,7 +173,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 			if el.AprovechadoId != nil && *el.AprovechadoId > 0 {
 				var elemento__ models.Elemento
-				outputError = actaRecibido.GetElementoById(*el.AprovechadoId, &elemento__)
+				outputError = actaRecibido.GetElementoById(ctx, *el.AprovechadoId, &elemento__)
 				if outputError != nil {
 					return
 				}

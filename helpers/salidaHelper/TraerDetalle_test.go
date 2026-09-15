@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"testing"
 
 	"github.com/udistrital/arka_mid/models"
@@ -8,7 +9,10 @@ import (
 
 func TestTraerDetalleResuelveUbicacionComoCentroCostosPorID(t *testing.T) {
 	original := consultarCentroCostosSalida
-	consultarCentroCostosSalida = func(payload string) ([]models.CentroCostos, map[string]interface{}) {
+	consultarCentroCostosSalida = func(
+		_ context.Context,
+		payload string,
+	) ([]models.CentroCostos, map[string]interface{}) {
 		if payload != "query=Id:57" {
 			t.Fatalf("consulta inesperada: %q", payload)
 		}
@@ -23,6 +27,7 @@ func TestTraerDetalleResuelveUbicacionComoCentroCostosPorID(t *testing.T) {
 	t.Cleanup(func() { consultarCentroCostosSalida = original })
 
 	detalle, outputError := traerDetalle(
+		context.Background(),
 		&models.Movimiento{Id: 13183},
 		models.FormatoSalidaCostos{FormatoSalida: models.FormatoSalida{Ubicacion: 57}},
 		nil,
@@ -48,7 +53,10 @@ func TestTraerDetalleResuelveUbicacionComoCentroCostosPorID(t *testing.T) {
 
 func TestTraerDetalleConservaConsultaPorCodigoCentroCostos(t *testing.T) {
 	original := consultarCentroCostosSalida
-	consultarCentroCostosSalida = func(payload string) ([]models.CentroCostos, map[string]interface{}) {
+	consultarCentroCostosSalida = func(
+		_ context.Context,
+		payload string,
+	) ([]models.CentroCostos, map[string]interface{}) {
 		if payload != "query=Codigo:A130101" {
 			t.Fatalf("consulta inesperada: %q", payload)
 		}
@@ -57,6 +65,7 @@ func TestTraerDetalleConservaConsultaPorCodigoCentroCostos(t *testing.T) {
 	t.Cleanup(func() { consultarCentroCostosSalida = original })
 
 	detalle, outputError := traerDetalle(
+		context.Background(),
 		&models.Movimiento{Id: 13183},
 		models.FormatoSalidaCostos{CentroCostos: "A130101"},
 		nil,
@@ -74,7 +83,10 @@ func TestTraerDetalleConservaConsultaPorCodigoCentroCostos(t *testing.T) {
 
 func TestTraerDetalleRetornaMarcadorCuandoCentroCostosNoExiste(t *testing.T) {
 	original := consultarCentroCostosSalida
-	consultarCentroCostosSalida = func(payload string) ([]models.CentroCostos, map[string]interface{}) {
+	consultarCentroCostosSalida = func(
+		_ context.Context,
+		payload string,
+	) ([]models.CentroCostos, map[string]interface{}) {
 		if payload != "query=Id:57" {
 			t.Fatalf("consulta inesperada: %q", payload)
 		}
@@ -83,6 +95,7 @@ func TestTraerDetalleRetornaMarcadorCuandoCentroCostosNoExiste(t *testing.T) {
 	t.Cleanup(func() { consultarCentroCostosSalida = original })
 
 	detalle, outputError := traerDetalle(
+		context.Background(),
 		&models.Movimiento{Id: 13183},
 		models.FormatoSalidaCostos{FormatoSalida: models.FormatoSalida{Ubicacion: 57}},
 		nil,

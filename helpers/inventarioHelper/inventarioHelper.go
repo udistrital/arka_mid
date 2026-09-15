@@ -1,6 +1,7 @@
 package inventarioHelper
 
 import (
+	"context"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
@@ -13,7 +14,7 @@ import (
 )
 
 // GetDetalleElemento Consulta historial de un elemento dado el id del elemento en el api acta_recibido_crud
-func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputError map[string]interface{}) {
+func GetDetalleElemento(ctx context.Context, id int, Elemento *models.DetalleElementoBaja) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetDetalleElemento - Unhandled Error!", "500")
 
@@ -34,7 +35,7 @@ func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputErr
 
 	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
 	ids := []int{*elementoMovimiento.ElementoActaId}
-	if elementos, err := actaRecibido.GetElementos(0, ids); err != nil || len(elementos) != 1 {
+	if elementos, err := actaRecibido.GetElementos(ctx, 0, ids); err != nil || len(elementos) != 1 {
 		return err
 	} else {
 		elemento = *elementos[0]

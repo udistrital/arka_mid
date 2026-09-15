@@ -1,6 +1,7 @@
 package bajasHelper
 
 import (
+	"context"
 	"net/url"
 	"strconv"
 
@@ -17,7 +18,7 @@ import (
 )
 
 // GetOne Consulta el detalle de la baja: elementos, revisor, solicitante, soporte, tipo
-func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
+func GetOne(ctx context.Context, id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
@@ -55,7 +56,7 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	if len(detalle.Elementos) > 0 {
-		Baja.Elementos, outputError = getDetalleElementos(detalle.Elementos)
+		Baja.Elementos, outputError = getDetalleElementos(ctx, detalle.Elementos)
 		if outputError != nil {
 			return
 		}
@@ -89,13 +90,13 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 		return
 	}
 
-	*Baja.TrContable, outputError = asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
+	*Baja.TrContable, outputError = asientoContable.GetFullDetalleContable(ctx, *movimiento.ConsecutivoId)
 
 	return
 }
 
 // getDetalleElementos consulta el historial de una serie de elementos dados los ids en el api movimientos_arka_crud
-func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
+func getDetalleElementos(ctx context.Context, ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("getDetalleElementos - Unhandled Error!", "500")
 
@@ -120,7 +121,7 @@ func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 	}
 
 	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
-	if elemento_, err := actaRecibido.GetElementos(0, ids); err != nil {
+	if elemento_, err := actaRecibido.GetElementos(ctx, 0, ids); err != nil {
 		return nil, err
 	} else {
 		elementosActa = elemento_

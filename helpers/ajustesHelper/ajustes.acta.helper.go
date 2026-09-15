@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -18,7 +19,7 @@ import (
 // msc: Cambios miscelaneos, elementos a los que unicamente se les debe ajustar nombre, marca, serie, unidad.
 // vls: Cambios a valores, elementos a los que se les debe cambiar el valor total.
 // sg: Cambia el subgrupo del elemento. Se ajusta la placa de acuerdo al nuevo subgrupo.
-func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg bool, outputError map[string]interface{}) {
+func determinarDeltaActa(ctx context.Context, org *models.Elemento, nvo *models.DetalleElemento_) (msc, vls, sg bool, outputError map[string]interface{}) {
 
 	funcion := "determinarDeltaActa"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -26,7 +27,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 	if org.SubgrupoCatalogoId != nvo.SubgrupoCatalogoId {
 
 		urlcrud := "fields=TipoBienId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(nvo.SubgrupoCatalogoId)
-		if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(urlcrud); err != nil {
+		if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(ctx, urlcrud); err != nil {
 			return false, false, false, err
 		} else if len(detalleSubgrupo_) == 0 {
 			err := "len(detalleSubgrupo_) = 0"
@@ -70,7 +71,7 @@ func determinarDeltaActa(org *models.Elemento, nvo *models.DetalleElemento_) (ms
 }
 
 // fillElementos Consulta el detalle de los subgrupos
-func fillElementos(elsOrg []*models.DetalleElemento_) (completos []*models.DetalleElemento__, outputError map[string]interface{}) {
+func fillElementos(ctx context.Context, elsOrg []*models.DetalleElemento_) (completos []*models.DetalleElemento__, outputError map[string]interface{}) {
 
 	funcion := "fillElementos"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -87,7 +88,7 @@ func fillElementos(elsOrg []*models.DetalleElemento_) (completos []*models.Detal
 
 	query = "fields=SubgrupoId,TipoBienId,Depreciacion,Amortizacion,ValorResidual,VidaUtil&sortby=Id&order=desc"
 	query += "&query=Activo:true,SubgrupoId__Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if sg, err := catalogoElementos.GetAllDetalleSubgrupo(query); err != nil {
+	if sg, err := catalogoElementos.GetAllDetalleSubgrupo(ctx, query); err != nil {
 		return nil, err
 	} else {
 		subgrupos = make(map[int]*models.DetalleSubgrupo)

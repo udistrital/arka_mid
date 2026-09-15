@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -9,7 +10,7 @@ import (
 )
 
 // GetElementosByTipoBien Consulta la lista de elementos para asociar en una salida determinada agrupando por si son asignables a bodega de consumo.
-func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, outputError map[string]interface{}) {
+func GetElementosByTipoBien(ctx context.Context, entradaId, salidaId int) (elementos_ interface{}, outputError map[string]interface{}) {
 
 	var uvt float64 = 1
 	// if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
@@ -46,7 +47,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 			return
 		}
 
-		if el, err := actaRecibido.GetElementos(detalle.ActaRecibidoId, []int{}); err != nil {
+		if el, err := actaRecibido.GetElementos(ctx, detalle.ActaRecibidoId, []int{}); err != nil {
 			return nil, err
 		} else {
 			elementos = el
@@ -76,7 +77,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 	} else if salidaId > 0 {
 
-		if salida, err := GetOne(salidaId); err != nil {
+		if salida, err := GetOne(ctx, salidaId); err != nil {
 			return nil, err
 		} else {
 			var elementos []models.DetalleElementoSalida = salida["Elementos"].([]models.DetalleElementoSalida)

@@ -2,6 +2,7 @@ package reportesHelper
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/url"
@@ -76,7 +77,7 @@ var (
 	consultarHistoricosActaReporteFn            = crudActaRecibido.GetAllHistoricoActa
 )
 
-func GenerarReporteContabilizacion(req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
+func GenerarReporteContabilizacion(ctx context.Context, req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("GenerarReporteContabilizacion - Unhandled Error!", "500")
 
 	if req == nil {
@@ -97,12 +98,12 @@ func GenerarReporteContabilizacion(req *models.ReporteFechasRequest) (respuesta 
 		return nil, errorCtrl.Error("GenerarReporteContabilizacion - rango_fechas", "fecha_final debe ser mayor o igual a fecha_inicial", "400")
 	}
 
-	entradas, outputError := consultarEntradasContabilizacionReporteData(fechaInicial, fechaFinal)
+	entradas, outputError := consultarEntradasContabilizacionReporteData(ctx, fechaInicial, fechaFinal)
 	if outputError != nil {
 		return nil, outputError
 	}
 
-	salidas, outputError := consultarSalidasContabilizacionReporteData(fechaInicial, fechaFinal)
+	salidas, outputError := consultarSalidasContabilizacionReporteData(ctx, fechaInicial, fechaFinal)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -143,7 +144,7 @@ func GenerarReporteContabilizacion(req *models.ReporteFechasRequest) (respuesta 
 	}, nil
 }
 
-func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal time.Time) (entradas []*reporteContabilizacionGrupo, outputError map[string]interface{}) {
+func consultarEntradasContabilizacionReporteDataDefault(ctx context.Context, fechaInicial, fechaFinal time.Time) (entradas []*reporteContabilizacionGrupo, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarEntradasContabilizacionReporteDataDefault - Unhandled Error!", "500")
 
 	codigosEntrada, outputError := consultarCodigosEntrada()
@@ -184,15 +185,15 @@ func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal
 
 		var elementos []*models.DetalleElemento
 		if formato.ActaRecibidoId > 0 {
-			elementos, outputError = consultarElementosActa(formato.ActaRecibidoId, nil)
+			elementos, outputError = consultarElementosActa(ctx, formato.ActaRecibidoId, nil)
 		} else {
-			elementos, outputError = resolverElementosEntrada(formato)
+			elementos, outputError = resolverElementosEntrada(ctx, formato)
 		}
 		if outputError != nil {
 			return nil, outputError
 		}
 
-		centroCostoNombre, centroCostoCodigo, outputError := centroCostoContabilizacionEntradaInfo(movimiento, formato, elementos)
+		centroCostoNombre, centroCostoCodigo, outputError := centroCostoContabilizacionEntradaInfo(ctx, movimiento, formato, elementos)
 		if outputError != nil {
 			return nil, outputError
 		}
@@ -211,7 +212,7 @@ func consultarEntradasContabilizacionReporteDataDefault(fechaInicial, fechaFinal
 	return entradas, nil
 }
 
-func consultarSalidasContabilizacionReporteDataDefault(fechaInicial, fechaFinal time.Time) (salidas []*reporteContabilizacionGrupo, outputError map[string]interface{}) {
+func consultarSalidasContabilizacionReporteDataDefault(ctx context.Context, fechaInicial, fechaFinal time.Time) (salidas []*reporteContabilizacionGrupo, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarSalidasContabilizacionReporteDataDefault - Unhandled Error!", "500")
 
 	codigosSalida, outputError := consultarCodigosSalida()
@@ -259,12 +260,12 @@ func consultarSalidasContabilizacionReporteDataDefault(fechaInicial, fechaFinal 
 			trSalida.Salida.MovimientoPadreId = entradaPadre
 		}
 
-		elementos, outputError := resolverElementosSalida(trSalida)
+		elementos, outputError := resolverElementosSalida(ctx, trSalida)
 		if outputError != nil {
 			return nil, outputError
 		}
 
-		centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(trSalida.Salida)
+		centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(ctx, trSalida.Salida)
 
 		agrupados := agruparElementosContabilizacion(
 			trSalida.Salida,
@@ -406,7 +407,7 @@ func consultarCodigoCuentaContabilizacion(cuentaID string, cache map[string]stri
 	return codigo
 }
 
-func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) (codigo, nombre string, outputError map[string]interface{}) {
+func centroCostoEntradaA11Info(ctx context.Context, formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) (codigo, nombre string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("centroCostoEntradaA11Info - Unhandled Error!", "500")
 
 	actaRecibidoID := resolverActaRecibidoIDCentroCostoEntrada(formato, elementos)
@@ -414,13 +415,13 @@ func centroCostoEntradaA11Info(formato models.FormatoBaseEntrada, elementos []*m
 		return "", "", nil
 	}
 
-	return resolverCentroCostoActaRecibido(actaRecibidoID)
+	return resolverCentroCostoActaRecibido(ctx, actaRecibidoID)
 }
 
-func consultarCentroCostoA11ByID(id string) (codigo, nombre string, outputError map[string]interface{}) {
+func consultarCentroCostoA11ByID(ctx context.Context, id string) (codigo, nombre string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarCentroCostoA11ByID - Unhandled Error!", "500")
 
-	return consultarCentroCostoA11ByReferencia(id)
+	return consultarCentroCostoA11ByReferencia(ctx, id)
 }
 
 func entradaPadreYActaIDSalida(movimiento *models.Movimiento) (entradaPadre *models.Movimiento, actaID int, outputError map[string]interface{}) {
@@ -449,20 +450,20 @@ func entradaPadreYActaIDSalida(movimiento *models.Movimiento) (entradaPadre *mod
 	return entradaPadre, formato.ActaRecibidoId, nil
 }
 
-func centroCostoContabilizacionEntradaInfo(movimiento *models.Movimiento, formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) (nombre, codigo string, outputError map[string]interface{}) {
+func centroCostoContabilizacionEntradaInfo(ctx context.Context, movimiento *models.Movimiento, formato models.FormatoBaseEntrada, elementos []*models.DetalleElemento) (nombre, codigo string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("centroCostoContabilizacionEntradaInfo - Unhandled Error!", "500")
 
-	nombre, codigo, outputError = centroCostoEntradaDesdeSalidaInfo(elementos)
+	nombre, codigo, outputError = centroCostoEntradaDesdeSalidaInfo(ctx, elementos)
 	if outputError == nil && (nombre != "" || codigo != "") {
 		return nombre, normalizarCodigoCentroCostoReporte(codigo), nil
 	}
 
-	codigoRaw, nombre, outputError := centroCostoEntradaA11Info(formato, elementos)
+	codigoRaw, nombre, outputError := centroCostoEntradaA11Info(ctx, formato, elementos)
 	if outputError == nil && (nombre != "" || codigoRaw != "") {
 		return nombre, normalizarCodigoCentroCostoReporte(codigoRaw), nil
 	}
 
-	if centroCostoNombre, centroCostoCodigo, movimientoErr := resolverCentroCostoMovimiento(movimiento); movimientoErr != nil {
+	if centroCostoNombre, centroCostoCodigo, movimientoErr := resolverCentroCostoMovimiento(ctx, movimiento); movimientoErr != nil {
 		if outputError != nil {
 			return "", "", outputError
 		}
@@ -475,15 +476,15 @@ func centroCostoContabilizacionEntradaInfo(movimiento *models.Movimiento, format
 		return "", "", outputError
 	}
 
-	return fallbackCentroCostoReporte()
+	return fallbackCentroCostoReporte(ctx)
 }
 
-func centroCostoEntradaDesdeSalidaInfo(elementos []*models.DetalleElemento) (nombre, codigo string, outputError map[string]interface{}) {
+func centroCostoEntradaDesdeSalidaInfo(ctx context.Context, elementos []*models.DetalleElemento) (nombre, codigo string, outputError map[string]interface{}) {
 	if len(elementos) == 0 {
 		return "", "", nil
 	}
 
-	salidasPorElemento, outputError := resolverSalidasPorElementoFn(elementos)
+	salidasPorElemento, outputError := resolverSalidasPorElementoFn(ctx, elementos)
 	if outputError != nil {
 		return "", "", outputError
 	}
@@ -501,7 +502,7 @@ func centroCostoEntradaDesdeSalidaInfo(elementos []*models.DetalleElemento) (nom
 			return salida.CentroCostoNombre, normalizarCodigoCentroCostoReporte(salida.CentroCostoCodigo), nil
 		}
 		if salida.Movimiento != nil {
-			centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(salida.Movimiento)
+			centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(ctx, salida.Movimiento)
 			if centroCostoNombre != "" || centroCostoCodigo != "" {
 				return centroCostoNombre, centroCostoCodigo, nil
 			}

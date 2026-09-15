@@ -1,6 +1,7 @@
 package bajasHelper
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -16,13 +17,13 @@ import (
 )
 
 // GetAll Consulta información general de todas las bajas filtrando por usuario o las que están pendientes por revisar.
-func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja) (outputError map[string]interface{}) {
+func GetAll(ctx context.Context, user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
 
 	var solicitudes []*models.Movimiento
 
-	if err := loadBajas(user, revAlmacen, revComite, &solicitudes); err != nil {
+	if err := loadBajas(ctx, user, revAlmacen, revComite, &solicitudes); err != nil {
 		return err
 	}
 
@@ -40,11 +41,11 @@ func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja
 			return err
 		}
 
-		if err := cargarNombreTerceroBaja(detalle.Funcionario, bufferTerceros); err != nil {
+		if err := cargarNombreTerceroBaja(ctx, detalle.Funcionario, bufferTerceros); err != nil {
 			return err
 		}
 
-		if err := cargarNombreTerceroBaja(detalle.Revisor, bufferTerceros); err != nil {
+		if err := cargarNombreTerceroBaja(ctx, detalle.Revisor, bufferTerceros); err != nil {
 			return err
 		}
 
@@ -66,7 +67,7 @@ func GetAll(user string, revComite, revAlmacen bool, bajas *[]models.DetalleBaja
 
 }
 
-func cargarNombreTerceroBaja(terceroID int, buffer map[int]string) (outputError map[string]interface{}) {
+func cargarNombreTerceroBaja(ctx context.Context, terceroID int, buffer map[int]string) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("cargarNombreTerceroBaja - Unhandled Error!", "500")
 
 	if buffer == nil {
@@ -80,7 +81,7 @@ func cargarNombreTerceroBaja(terceroID int, buffer map[int]string) (outputError 
 		return nil
 	}
 
-	tercero, err := terceros.GetTerceroById(terceroID)
+	tercero, err := terceros.GetTerceroById(ctx, terceroID)
 	if err != nil {
 		if esTerceroNoEncontrado(err) {
 			buffer[terceroID] = strconv.Itoa(terceroID)
@@ -104,7 +105,7 @@ func esTerceroNoEncontrado(err map[string]interface{}) bool {
 }
 
 // loadBajas Consulta lista de bajas asociadas a un usuario de acuerdo a las revisiones y permisos del usuario
-func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimiento) (outputError map[string]interface{}) {
+func loadBajas(ctx context.Context, user string, revAlmacen, revComite bool, bajas *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("loadBajas - Unhandled Error!", "500")
 
@@ -133,7 +134,7 @@ func loadBajas(user string, revAlmacen, revComite bool, bajas *[]*models.Movimie
 
 	}
 
-	if err := autenticacion.GetInfoUser(user, &terceroId, &roles); err != nil {
+	if err := autenticacion.GetInfoUser(ctx, user, &terceroId, &roles); err != nil {
 		return err
 	}
 

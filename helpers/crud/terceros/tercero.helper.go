@@ -34,8 +34,11 @@ func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero,
 	} else {
 		tercero = new(models.IdentificacionTercero)
 		if len(datosId) == 0 || datosId[0].Id == 0 {
-			if tercero_, err := GetTerceroById(idTercero); err != nil {
-				return nil, err
+			urltercero := basePath + "tercero/" + strconv.Itoa(idTercero)
+			tercero_ := new(models.Tercero)
+			if err := request.GetJson(urltercero, &tercero_); err != nil {
+				eval := " - request.GetJson(urltercero, &tercero_)"
+				return nil, errorCtrl.Error(funcion+eval, err, "502")
 			} else {
 				tercero.Id = tercero_.Id
 				tercero.NombreCompleto = tercero_.NombreCompleto

@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -25,7 +26,7 @@ import (
 const errNoElementos = "No se encontraron elementos para asociar a la entrada."
 
 // AprobarEntrada Actualiza una entrada a estado aprobada, calcula la transacción contable y genera las novedades correspondientes
-func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func AprobarEntrada(ctx context.Context, entradaId int, resultado_ *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("AprobarEntrada - Unhandled Error!", "500")
 
 	logs.Info("==== INICIO entradaHelper.AprobarEntrada ====")
@@ -48,14 +49,14 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 		return
 	}
 
-	terceroId, outputError := getTerceroEntrada(formato, resultado_)
+	terceroId, outputError := getTerceroEntrada(ctx, formato, resultado_)
 	logs.Info("AprobarEntrada -> getTerceroEntrada outputError=%v resultado.Error=%q terceroId=%d", outputError, resultado_.Error, terceroId)
 	if outputError != nil || resultado_.Error != "" {
 		logs.Error("AprobarEntrada -> aborta en getTerceroEntrada")
 		return
 	}
 
-	elementos, novedades, outputError := getElementosEntrada(formato, entradaId, resultado_)
+	elementos, novedades, outputError := getElementosEntrada(ctx, formato, entradaId, resultado_)
 	logs.Info("AprobarEntrada -> getElementosEntrada outputError=%v resultado.Error=%q len(elementos)=%d len(novedades)=%d",
 		outputError, resultado_.Error, len(elementos), len(novedades))
 	if outputError != nil || resultado_.Error != "" {
@@ -63,7 +64,7 @@ func AprobarEntrada(entradaId int, resultado_ *models.ResultadoMovimiento) (outp
 		return
 	}
 
-	outputError = contabilidadEntrada(resultado_, formato, elementos, terceroId)
+	outputError = contabilidadEntrada(ctx, resultado_, formato, elementos, terceroId)
 	logs.Info("AprobarEntrada -> contabilidadEntrada outputError=%v resultado.Error=%q transaccionContable=%+v",
 		outputError, resultado_.Error, resultado_.TransaccionContable)
 	if outputError != nil || resultado_.Error != "" {
@@ -181,7 +182,7 @@ func getFormato(entradaId int, resultado *models.ResultadoMovimiento) (formato m
 	return
 }
 
-func getTerceroEntrada(detalle models.FormatoBaseEntrada, resutado *models.ResultadoMovimiento) (terceroId int, outputError map[string]interface{}) {
+func getTerceroEntrada(ctx context.Context, detalle models.FormatoBaseEntrada, resutado *models.ResultadoMovimiento) (terceroId int, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("getTerceroEntrada - Unhandled Error!", "500")
 
 	logs.Info("==== INICIO getTerceroEntrada ====")
@@ -192,7 +193,7 @@ func getTerceroEntrada(detalle models.FormatoBaseEntrada, resutado *models.Resul
 
 	if detalle.ActaRecibidoId > 0 {
 		logs.Info("getTerceroEntrada -> consultando historico con query=%s", query)
-		historico, outputError = actaRecibido.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "1")
+		historico, outputError = actaRecibido.GetAllHistoricoActa(ctx, query, "", "FechaCreacion", "desc", "", "1")
 		logs.Info("getTerceroEntrada -> historico len=%d outputError=%v historico=%+v", len(historico), outputError, historico)
 
 		if outputError != nil || len(historico) != 1 {
@@ -221,7 +222,7 @@ func getTerceroEntrada(detalle models.FormatoBaseEntrada, resutado *models.Resul
 	return
 }
 
-func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, resultado *models.ResultadoMovimiento) (elementos []*models.Elemento, novedades []models.NovedadElemento, outputError map[string]interface{}) {
+func getElementosEntrada(ctx context.Context, detalle models.FormatoBaseEntrada, movimientoId int, resultado *models.ResultadoMovimiento) (elementos []*models.Elemento, novedades []models.NovedadElemento, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("getElementosEntrada - Unhandled Error!", "500")
 
 	logs.Info("==== INICIO getElementosEntrada ====")
@@ -238,6 +239,7 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 		logs.Info("getElementosEntrada -> consultando elementos por acta query=%s", query)
 
 		elementos, outputError = actaRecibido.GetAllElemento(
+			ctx,
 			query,
 			"Id,ActaRecibidoId,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId",
 			"SubgrupoCatalogoId",
@@ -306,7 +308,7 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 			}
 
 			var elementoActa models.Elemento
-			outputError = actaRecibido.GetElementoById(*historial.Elemento.ElementoActaId, &elementoActa)
+			outputError = actaRecibido.GetElementoById(ctx, *historial.Elemento.ElementoActaId, &elementoActa)
 			logs.Info("getElementosEntrada -> GetElementoById id=%d outputError=%v elementoActa=%+v",
 				*historial.Elemento.ElementoActaId, outputError, elementoActa)
 			if outputError != nil {
@@ -337,7 +339,7 @@ func getElementosEntrada(detalle models.FormatoBaseEntrada, movimientoId int, re
 	return
 }
 
-func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada models.FormatoBaseEntrada, elementos []*models.Elemento, terceroId int) (outputError map[string]interface{}) {
+func contabilidadEntrada(ctx context.Context, resultado_ *models.ResultadoMovimiento, formatoEntrada models.FormatoBaseEntrada, elementos []*models.Elemento, terceroId int) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("contabilidadEntrada - Unhandled Error!", "500")
 
 	logs.Info("==== INICIO contabilidadEntrada ====")
@@ -394,7 +396,7 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	logs.Info("contabilidadEntrada -> Movimiento=%+v", resultado_.Movimiento)
 	logs.Info("contabilidadEntrada -> detalle movimiento crudo=%s", resultado_.Movimiento.Detalle)
 
-	detalleContable, outputError := descripcionMovimientoContable(resultado_.Movimiento.Detalle)
+	detalleContable, outputError := descripcionMovimientoContable(ctx, resultado_.Movimiento.Detalle)
 	logs.Info("contabilidadEntrada -> descripcionMovimientoContable detalleContable=%q outputError=%v", detalleContable, outputError)
 	if outputError != nil {
 		outputError = wrapContabilidadEntradaError(
@@ -420,6 +422,7 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	logs.Info("contabilidadEntrada -> antes de CalcularMovimientosContables, transaccion=%+v", transaccion)
 
 	resultado_.Error, outputError = asientoContable.CalcularMovimientosContables(
+		ctx,
 		elementos,
 		detalleContable,
 		0,
@@ -470,7 +473,7 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 	resultado_.TransaccionContable.Concepto = transaccion.Descripcion
 	resultado_.TransaccionContable.Fecha = transaccion.FechaTransaccion
 
-	resultado_.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	resultado_.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(ctx, transaccion.Movimientos, bufferCuentas)
 	logs.Info("contabilidadEntrada -> GetDetalleContable outputError=%v movimientosDetalle=%+v",
 		outputError, resultado_.TransaccionContable.Movimientos)
 	if outputError != nil {
@@ -513,7 +516,7 @@ func contabilidadEntrada(resultado_ *models.ResultadoMovimiento, formatoEntrada 
 }
 
 // descripcionMovimientoContable Genera la descripción de cada uno de los movimientos contables asociados a una entrada.
-func descripcionMovimientoContable(detalle string) (detalle_ string, outputError map[string]interface{}) {
+func descripcionMovimientoContable(ctx context.Context, detalle string) (detalle_ string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("descripcionMovimientoContable - Unhandled Error!", "500")
 
 	logs.Info("==== INICIO descripcionMovimientoContable ====")
@@ -552,7 +555,7 @@ func descripcionMovimientoContable(detalle string) (detalle_ string, outputError
 			}
 
 			var sop models.SoporteActa
-			outputError = actaRecibido.GetSoporteById(int(facturaFloat), &sop)
+			outputError = actaRecibido.GetSoporteById(ctx, int(facturaFloat), &sop)
 			logs.Info("descripcionMovimientoContable -> GetSoporteById factura=%v outputError=%v soporte=%+v", facturaFloat, outputError, sop)
 			if outputError != nil {
 				return

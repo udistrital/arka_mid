@@ -2,6 +2,7 @@ package reportesHelper
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"math"
@@ -170,7 +171,7 @@ var (
 	}
 )
 
-func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
+func GenerarReporteElementos(ctx context.Context, req *models.ReporteFechasRequest) (respuesta *models.ReporteExcelBase64Response, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("GenerarReporteElementos - Unhandled Error!", "500")
 
 	if req == nil {
@@ -191,20 +192,20 @@ func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *model
 		return nil, errorCtrl.Error("GenerarReporteElementos - rango_fechas", "fecha_final debe ser mayor o igual a fecha_inicial", "400")
 	}
 
-	entradas, outputError := consultarEntradasReporteData(fechaInicial, fechaFinal)
+	entradas, outputError := consultarEntradasReporteData(ctx, fechaInicial, fechaFinal)
 	if outputError != nil {
 		return nil, outputError
 	}
 
 	rows := construirFilasReporteEntradas(entradas)
 
-	entradasAnuladas, outputError := consultarEntradasAnuladasReporteData(fechaInicial, fechaFinal)
+	entradasAnuladas, outputError := consultarEntradasAnuladasReporteData(ctx, fechaInicial, fechaFinal)
 	if outputError != nil {
 		return nil, outputError
 	}
 	rows = appendRowsEntradasAnuladasUnicas(rows, construirFilasMovimientosEntradaSinElementos(entradasAnuladas)...)
 
-	salidasAnuladas, outputError := consultarSalidasAnuladasReporteData(fechaInicial, fechaFinal)
+	salidasAnuladas, outputError := consultarSalidasAnuladasReporteData(ctx, fechaInicial, fechaFinal)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -241,7 +242,7 @@ func GenerarReporteElementos(req *models.ReporteFechasRequest) (respuesta *model
 	return respuesta, nil
 }
 
-func GetDetalleCuentasEntradaPorConsecutivo(consecutivo string) (respuesta []*models.ReporteDetalleEntradaResponse, outputError map[string]interface{}) {
+func GetDetalleCuentasEntradaPorConsecutivo(ctx context.Context, consecutivo string) (respuesta []*models.ReporteDetalleEntradaResponse, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("GetDetalleCuentasEntradaPorConsecutivo - Unhandled Error!", "500")
 
 	movimiento, outputError := consultarMovimientoPorConsec(consecutivo)
@@ -249,7 +250,7 @@ func GetDetalleCuentasEntradaPorConsecutivo(consecutivo string) (respuesta []*mo
 		return nil, outputError
 	}
 
-	entrada, outputError := construirEntradaReporteData(movimiento)
+	entrada, outputError := construirEntradaReporteData(ctx, movimiento)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -277,7 +278,7 @@ func GetDetalleCuentasEntradaPorConsecutivo(consecutivo string) (respuesta []*mo
 	return respuesta, nil
 }
 
-func GetDetalleCuentasSalidaPorConsecutivo(consecutivo string) (respuesta []*models.ReporteDetalleSalidaResponse, outputError map[string]interface{}) {
+func GetDetalleCuentasSalidaPorConsecutivo(ctx context.Context, consecutivo string) (respuesta []*models.ReporteDetalleSalidaResponse, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("GetDetalleCuentasSalidaPorConsecutivo - Unhandled Error!", "500")
 
 	movimiento, outputError := consultarMovimientoPorConsec(consecutivo)
@@ -293,7 +294,7 @@ func GetDetalleCuentasSalidaPorConsecutivo(consecutivo string) (respuesta []*mod
 		return []*models.ReporteDetalleSalidaResponse{}, nil
 	}
 
-	elementos, outputError := resolverElementosSalida(trSalida)
+	elementos, outputError := resolverElementosSalida(ctx, trSalida)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -309,8 +310,8 @@ func GetDetalleCuentasSalidaPorConsecutivo(consecutivo string) (respuesta []*mod
 		}
 	}
 
-	transaccion := consultarTransaccionContableSalida(trSalida.Salida)
-	funcionario := funcionarioSalidaLabel(trSalida.Salida)
+	transaccion := consultarTransaccionContableSalida(ctx, trSalida.Salida)
+	funcionario := funcionarioSalidaLabel(ctx, trSalida.Salida)
 
 	respuesta = make([]*models.ReporteDetalleSalidaResponse, 0, len(elementos))
 	for _, elemento := range elementos {
@@ -332,7 +333,7 @@ func GetDetalleCuentasSalidaPorConsecutivo(consecutivo string) (respuesta []*mod
 	return respuesta, nil
 }
 
-func consultarEntradasReporteDataDefault(fechaInicial, fechaFinal time.Time) (entradas []*entradaReporteData, outputError map[string]interface{}) {
+func consultarEntradasReporteDataDefault(ctx context.Context, fechaInicial, fechaFinal time.Time) (entradas []*entradaReporteData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarEntradasReporteDataDefault - Unhandled Error!", "500")
 
 	codigosEntrada, outputError := consultarCodigosEntrada()
@@ -354,7 +355,7 @@ func consultarEntradasReporteDataDefault(fechaInicial, fechaFinal time.Time) (en
 			continue
 		}
 
-		entrada, outputError := construirEntradaReporteData(movimiento)
+		entrada, outputError := construirEntradaReporteData(ctx, movimiento)
 		if outputError != nil {
 			return nil, outputError
 		}
@@ -366,7 +367,7 @@ func consultarEntradasReporteDataDefault(fechaInicial, fechaFinal time.Time) (en
 	return entradas, nil
 }
 
-func consultarEntradasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Time) (entradas []*entradaReporteData, outputError map[string]interface{}) {
+func consultarEntradasAnuladasReporteDataDefault(ctx context.Context, fechaInicial, fechaFinal time.Time) (entradas []*entradaReporteData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarEntradasAnuladasReporteDataDefault - Unhandled Error!", "500")
 
 	codigosEntrada, outputError := consultarCodigosEntrada()
@@ -384,7 +385,7 @@ func consultarEntradasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.T
 
 	entradas = make([]*entradaReporteData, 0, len(movimientos))
 	for _, movimiento := range movimientos {
-		entrada, outputError := construirEntradaReporteSinElementosData(movimiento)
+		entrada, outputError := construirEntradaReporteSinElementosData(ctx, movimiento)
 		if outputError != nil {
 			return nil, outputError
 		}
@@ -396,7 +397,7 @@ func consultarEntradasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.T
 	return entradas, nil
 }
 
-func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Time) (salidas []*salidaReporteData, outputError map[string]interface{}) {
+func consultarSalidasAnuladasReporteDataDefault(ctx context.Context, fechaInicial, fechaFinal time.Time) (salidas []*salidaReporteData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarSalidasAnuladasReporteDataDefault - Unhandled Error!", "500")
 
 	codigosSalida, outputError := consultarCodigosSalida()
@@ -427,7 +428,7 @@ func consultarSalidasAnuladasReporteDataDefault(fechaInicial, fechaFinal time.Ti
 			continue
 		}
 
-		base, outputError := construirSalidaReporteBaseData(movimiento, nil)
+		base, outputError := construirSalidaReporteBaseData(ctx, movimiento, nil)
 		if outputError != nil {
 			return nil, errorCtrl.Error(
 				fmt.Sprintf("consultarSalidasAnuladasReporteDataDefault - construirSalidaReporteBaseData(movimiento=%d)", movimiento.Id),
@@ -632,7 +633,7 @@ func consultarMovimientosPorFechaYEstado(fechaInicial, fechaFinal time.Time, cod
 	return movimientos, nil
 }
 
-func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entradaReporteData, outputError map[string]interface{}) {
+func construirEntradaReporteData(ctx context.Context, movimiento *models.Movimiento) (entrada *entradaReporteData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("construirEntradaReporteData - Unhandled Error!", "500")
 
 	if movimiento == nil {
@@ -645,17 +646,17 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 		return nil, outputError
 	}
 
-	elementos, outputError := resolverElementosEntrada(formato)
+	elementos, outputError := resolverElementosEntrada(ctx, formato)
 	if outputError != nil {
 		return nil, outputError
 	}
 
-	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntradaFn(formato)
+	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntradaFn(ctx, formato)
 	if outputError != nil {
 		return nil, outputError
 	}
 
-	salidasPorElemento, outputError := resolverSalidasPorElementoFn(elementos)
+	salidasPorElemento, outputError := resolverSalidasPorElementoFn(ctx, elementos)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -674,7 +675,7 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 	entrada = &entradaReporteData{
 		Movimiento:          movimiento,
 		Formato:             formato,
-		TransaccionContable: consultarTransaccionContableEntrada(movimiento),
+		TransaccionContable: consultarTransaccionContableEntrada(ctx, movimiento),
 		Elementos:           elementos,
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
 		SalidasPorElemento:  salidasPorElemento,
@@ -686,7 +687,7 @@ func construirEntradaReporteData(movimiento *models.Movimiento) (entrada *entrad
 	return entrada, nil
 }
 
-func construirEntradaReporteSinElementosData(movimiento *models.Movimiento) (entrada *entradaReporteData, outputError map[string]interface{}) {
+func construirEntradaReporteSinElementosData(ctx context.Context, movimiento *models.Movimiento) (entrada *entradaReporteData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("construirEntradaReporteSinElementosData - Unhandled Error!", "500")
 
 	if movimiento == nil {
@@ -701,7 +702,7 @@ func construirEntradaReporteSinElementosData(movimiento *models.Movimiento) (ent
 		}
 	}
 
-	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntradaFn(formato)
+	proveedor, facturaConsecutivo, facturaFecha, outputError := consultarMetadataEntradaFn(ctx, formato)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -709,7 +710,7 @@ func construirEntradaReporteSinElementosData(movimiento *models.Movimiento) (ent
 	return &entradaReporteData{
 		Movimiento:          movimiento,
 		Formato:             formato,
-		TransaccionContable: consultarTransaccionContableEntrada(movimiento),
+		TransaccionContable: consultarTransaccionContableEntrada(ctx, movimiento),
 		Elementos:           []*models.DetalleElemento{},
 		CuentasPorSubgrupo:  map[int]models.CuentasSubgrupo{},
 		SalidasPorElemento:  map[int]*salidaReporteData{},
@@ -719,7 +720,7 @@ func construirEntradaReporteSinElementosData(movimiento *models.Movimiento) (ent
 	}, nil
 }
 
-func consultarMetadataEntrada(formato models.FormatoBaseEntrada) (proveedor, facturaConsecutivo string, facturaFecha time.Time, outputError map[string]interface{}) {
+func consultarMetadataEntrada(ctx context.Context, formato models.FormatoBaseEntrada) (proveedor, facturaConsecutivo string, facturaFecha time.Time, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarMetadataEntrada - Unhandled Error!", "500")
 
 	var (
@@ -743,7 +744,7 @@ func consultarMetadataEntrada(formato models.FormatoBaseEntrada) (proveedor, fac
 		wg.Add(1)
 		go func(actaRecibidoID int) {
 			defer wg.Done()
-			proveedor_, err := consultarProveedorActa(actaRecibidoID)
+			proveedor_, err := consultarProveedorActa(ctx, actaRecibidoID)
 			if err != nil {
 				setErr(err)
 				return
@@ -758,7 +759,7 @@ func consultarMetadataEntrada(formato models.FormatoBaseEntrada) (proveedor, fac
 		wg.Add(1)
 		go func(facturaID int) {
 			defer wg.Done()
-			consecutivo, fecha, err := consultarFacturaSoporte(facturaID)
+			consecutivo, fecha, err := consultarFacturaSoporte(ctx, facturaID)
 			if err != nil {
 				setErr(err)
 				return
@@ -778,14 +779,14 @@ func consultarMetadataEntrada(formato models.FormatoBaseEntrada) (proveedor, fac
 	return proveedor, facturaConsecutivo, facturaFecha, nil
 }
 
-func consultarProveedorActa(actaRecibidoID int) (proveedor string, outputError map[string]interface{}) {
+func consultarProveedorActa(ctx context.Context, actaRecibidoID int) (proveedor string, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarProveedorActa - Unhandled Error!", "500")
 
 	if actaRecibidoID <= 0 {
 		return "", nil
 	}
 
-	historicos, outputError := consultarHistoricosActaReporteFn("ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID), "", "Id", "desc", "", "1")
+	historicos, outputError := consultarHistoricosActaReporteFn(ctx, "ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID), "", "Id", "desc", "", "1")
 	if outputError != nil || len(historicos) == 0 || historicos[0].ProveedorId <= 0 {
 		return "", outputError
 	}
@@ -808,7 +809,7 @@ func esTerceroNoEncontradoReporte(err map[string]interface{}) bool {
 	return strings.Contains(fmt.Sprint(err["err"]), "http 404:")
 }
 
-func consultarFacturaSoporte(facturaID int) (consecutivo string, fecha time.Time, outputError map[string]interface{}) {
+func consultarFacturaSoporte(ctx context.Context, facturaID int) (consecutivo string, fecha time.Time, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarFacturaSoporte - Unhandled Error!", "500")
 
 	if facturaID <= 0 {
@@ -816,7 +817,7 @@ func consultarFacturaSoporte(facturaID int) (consecutivo string, fecha time.Time
 	}
 
 	var soporte models.SoporteActa
-	outputError = crudActaRecibido.GetSoporteById(facturaID, &soporte)
+	outputError = crudActaRecibido.GetSoporteById(ctx, facturaID, &soporte)
 	if outputError != nil {
 		return "", time.Time{}, outputError
 	}
@@ -824,11 +825,11 @@ func consultarFacturaSoporte(facturaID int) (consecutivo string, fecha time.Time
 	return soporte.Consecutivo, soporte.FechaSoporte, nil
 }
 
-func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*models.DetalleElemento, outputError map[string]interface{}) {
+func resolverElementosEntrada(ctx context.Context, formato models.FormatoBaseEntrada) (elementos []*models.DetalleElemento, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("resolverElementosEntrada - Unhandled Error!", "500")
 
 	if formato.ActaRecibidoId > 0 {
-		return consultarElementosActa(formato.ActaRecibidoId, nil)
+		return consultarElementosActa(ctx, formato.ActaRecibidoId, nil)
 	}
 
 	if len(formato.Elementos) == 0 {
@@ -872,7 +873,7 @@ func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*m
 		return []*models.DetalleElemento{}, nil
 	}
 
-	elementos, outputError = consultarElementosActa(0, elementosActaIds)
+	elementos, outputError = consultarElementosActa(ctx, 0, elementosActaIds)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -880,7 +881,7 @@ func resolverElementosEntrada(formato models.FormatoBaseEntrada) (elementos []*m
 	return ordenarElementosPorIds(elementosActaIds, elementos), nil
 }
 
-func resolverElementosSalida(trSalida *models.TrSalida) (elementos []*models.DetalleElemento, outputError map[string]interface{}) {
+func resolverElementosSalida(ctx context.Context, trSalida *models.TrSalida) (elementos []*models.DetalleElemento, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("resolverElementosSalida - Unhandled Error!", "500")
 
 	if trSalida == nil || len(trSalida.Elementos) == 0 {
@@ -898,7 +899,7 @@ func resolverElementosSalida(trSalida *models.TrSalida) (elementos []*models.Det
 		return []*models.DetalleElemento{}, nil
 	}
 
-	elementos, outputError = consultarElementosActa(0, ids)
+	elementos, outputError = consultarElementosActa(ctx, 0, ids)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -906,15 +907,15 @@ func resolverElementosSalida(trSalida *models.TrSalida) (elementos []*models.Det
 	return ordenarElementosPorIds(ids, elementos), nil
 }
 
-func consultarTransaccionContableEntrada(movimiento *models.Movimiento) *models.InfoTransaccionContable {
-	return consultarTransaccionContableMovimientoFn(movimiento, "Entrada Aprobada", "Entrada Con Salida")
+func consultarTransaccionContableEntrada(ctx context.Context, movimiento *models.Movimiento) *models.InfoTransaccionContable {
+	return consultarTransaccionContableMovimientoFn(ctx, movimiento, "Entrada Aprobada", "Entrada Con Salida")
 }
 
-func consultarTransaccionContableSalida(movimiento *models.Movimiento) *models.InfoTransaccionContable {
-	return consultarTransaccionContableMovimientoFn(movimiento, "Salida Aprobada")
+func consultarTransaccionContableSalida(ctx context.Context, movimiento *models.Movimiento) *models.InfoTransaccionContable {
+	return consultarTransaccionContableMovimientoFn(ctx, movimiento, "Salida Aprobada")
 }
 
-func consultarTransaccionContableMovimiento(movimiento *models.Movimiento, estadosPermitidos ...string) *models.InfoTransaccionContable {
+func consultarTransaccionContableMovimiento(ctx context.Context, movimiento *models.Movimiento, estadosPermitidos ...string) *models.InfoTransaccionContable {
 	if movimiento == nil || movimiento.EstadoMovimientoId == nil || movimiento.ConsecutivoId == nil || *movimiento.ConsecutivoId <= 0 {
 		return nil
 	}
@@ -923,7 +924,7 @@ func consultarTransaccionContableMovimiento(movimiento *models.Movimiento, estad
 		return nil
 	}
 
-	transaccion, outputError := asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
+	transaccion, outputError := asientoContable.GetFullDetalleContable(ctx, *movimiento.ConsecutivoId)
 	if outputError != nil {
 		return nil
 	}
@@ -931,7 +932,7 @@ func consultarTransaccionContableMovimiento(movimiento *models.Movimiento, estad
 	return &transaccion
 }
 
-func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPorElemento map[int]*salidaReporteData, outputError map[string]interface{}) {
+func resolverSalidasPorElemento(ctx context.Context, elementos []*models.DetalleElemento) (salidasPorElemento map[int]*salidaReporteData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("resolverSalidasPorElemento - Unhandled Error!", "500")
 
 	salidasPorElemento = make(map[int]*salidaReporteData)
@@ -976,7 +977,7 @@ func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPor
 		ultimoMovimientoPorElemento[elementoActaID] = elementoMovimiento
 	}
 
-	historialesPorElemento, outputError := consultarHistorialesElementos(ultimoMovimientoPorElemento)
+	historialesPorElemento, outputError := consultarHistorialesElementos(ctx, ultimoMovimientoPorElemento)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -1007,7 +1008,7 @@ func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPor
 		}
 	}
 
-	salidasBasePorID, outputError := construirSalidasReporteBaseData(salidasDescriptor, subgruposPorSalida)
+	salidasBasePorID, outputError := construirSalidasReporteBaseData(ctx, salidasDescriptor, subgruposPorSalida)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -1037,7 +1038,7 @@ func resolverSalidasPorElemento(elementos []*models.DetalleElemento) (salidasPor
 	return salidasPorElemento, nil
 }
 
-func consultarHistorialesElementos(ultimoMovimientoPorElemento map[int]*models.ElementosMovimiento) (historialesPorElemento map[int]*models.Historial, outputError map[string]interface{}) {
+func consultarHistorialesElementos(ctx context.Context, ultimoMovimientoPorElemento map[int]*models.ElementosMovimiento) (historialesPorElemento map[int]*models.Historial, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("consultarHistorialesElementos - Unhandled Error!", "500")
 
 	historialesPorElemento = make(map[int]*models.Historial, len(ultimoMovimientoPorElemento))
@@ -1096,6 +1097,7 @@ func consultarHistorialesElementos(ultimoMovimientoPorElemento map[int]*models.E
 }
 
 func construirSalidasReporteBaseData(
+	ctx context.Context,
 	salidasDescriptor map[int]*salidaReporteBaseData,
 	subgruposPorSalida map[int]map[int]struct{},
 ) (salidasBasePorID map[int]*salidaReporteBaseData, outputError map[string]interface{}) {
@@ -1128,7 +1130,7 @@ func construirSalidasReporteBaseData(
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			salida, outputError := construirSalidaReporteBaseData(movimiento, subgrupos)
+			salida, outputError := construirSalidaReporteBaseData(ctx, movimiento, subgrupos)
 			results <- salidaResult{
 				salidaID:    salidaID,
 				salida:      salida,
@@ -1159,14 +1161,14 @@ func construirSalidasReporteBaseData(
 	return salidasBasePorID, nil
 }
 
-func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []int) (salida *salidaReporteBaseData, outputError map[string]interface{}) {
+func construirSalidaReporteBaseData(ctx context.Context, movimiento *models.Movimiento, subgrupos []int) (salida *salidaReporteBaseData, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("construirSalidaReporteBaseData - Unhandled Error!", "500")
 
 	if movimiento == nil {
 		return nil, nil
 	}
 
-	centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(movimiento)
+	centroCostoNombre, centroCostoCodigo := salidaUbicacionInfo(ctx, movimiento)
 
 	cuentasPorSubgrupo := make(map[int]models.CuentasSubgrupo)
 	if movimiento.FormatoTipoMovimientoId != nil && movimiento.FormatoTipoMovimientoId.Id > 0 && len(subgrupos) > 0 {
@@ -1178,8 +1180,8 @@ func construirSalidaReporteBaseData(movimiento *models.Movimiento, subgrupos []i
 
 	salida = &salidaReporteBaseData{
 		Movimiento:          movimiento,
-		TransaccionContable: consultarTransaccionContableSalida(movimiento),
-		FuncionarioAsignado: funcionarioSalidaLabel(movimiento),
+		TransaccionContable: consultarTransaccionContableSalida(ctx, movimiento),
+		FuncionarioAsignado: funcionarioSalidaLabel(ctx, movimiento),
 		CuentasPorSubgrupo:  cuentasPorSubgrupo,
 		CentroCostoNombre:   centroCostoNombre,
 		CentroCostoCodigo:   centroCostoCodigo,
@@ -1613,7 +1615,7 @@ func detalleCuentaLabel(cuenta *models.DetalleCuenta) string {
 	return cuenta.Id
 }
 
-func funcionarioSalidaLabel(movimiento *models.Movimiento) string {
+func funcionarioSalidaLabel(ctx context.Context, movimiento *models.Movimiento) string {
 	if movimiento == nil {
 		return ""
 	}
@@ -1794,14 +1796,14 @@ func vidaUtilCatalogo(elemento *models.DetalleElemento) float64 {
 	return elemento.SubgrupoCatalogoId.VidaUtil
 }
 
-func salidaUbicacionInfo(movimiento *models.Movimiento) (centroCostoNombre, centroCostoCodigo string) {
-	centroCostoNombre, centroCostoCodigo, _ = resolverCentroCostoMovimiento(movimiento)
+func salidaUbicacionInfo(ctx context.Context, movimiento *models.Movimiento) (centroCostoNombre, centroCostoCodigo string) {
+	centroCostoNombre, centroCostoCodigo, _ = resolverCentroCostoMovimiento(ctx, movimiento)
 	return centroCostoNombre, centroCostoCodigo
 }
 
-func resolverCentroCostoMovimiento(movimiento *models.Movimiento) (centroCostoNombre, centroCostoCodigo string, outputError map[string]interface{}) {
+func resolverCentroCostoMovimiento(ctx context.Context, movimiento *models.Movimiento) (centroCostoNombre, centroCostoCodigo string, outputError map[string]interface{}) {
 	if movimiento == nil {
-		return fallbackCentroCostoReporte()
+		return fallbackCentroCostoReporte(ctx)
 	}
 
 	var (
@@ -1844,7 +1846,7 @@ func resolverCentroCostoMovimiento(movimiento *models.Movimiento) (centroCostoNo
 
 	if formato, ok := formatoEntradaPadreSalida(movimiento); ok {
 		actaRecibidoID := resolverActaRecibidoIDCentroCostoEntrada(formato, nil)
-		ubicacionesActa, err := ubicacionesHistoricasActaCentroCosto(actaRecibidoID)
+		ubicacionesActa, err := ubicacionesHistoricasActaCentroCosto(ctx, actaRecibidoID)
 		if err != nil {
 			setErr(err)
 		}
@@ -1856,7 +1858,7 @@ func resolverCentroCostoMovimiento(movimiento *models.Movimiento) (centroCostoNo
 	}
 
 	for _, referencia := range referencias {
-		codigo, nombre, err := consultarCentroCostoA11ByID(referencia)
+		codigo, nombre, err := consultarCentroCostoA11ByID(ctx, referencia)
 		if err != nil {
 			setErr(err)
 		} else if nombre != "" || codigo != "" {
@@ -1864,7 +1866,7 @@ func resolverCentroCostoMovimiento(movimiento *models.Movimiento) (centroCostoNo
 		}
 	}
 
-	fallbackNombre, fallbackCodigo, fallbackErr := fallbackCentroCostoReporte()
+	fallbackNombre, fallbackCodigo, fallbackErr := fallbackCentroCostoReporte(ctx)
 	if fallbackErr != nil {
 		setErr(fallbackErr)
 	}
@@ -1915,14 +1917,14 @@ func codigoCentroCostoQueryCandidates(referencia string) []string {
 	return candidatos
 }
 
-func consultarCentroCostoA11ByReferencia(referencia string) (codigo, nombre string, outputError map[string]interface{}) {
+func consultarCentroCostoA11ByReferencia(ctx context.Context, referencia string) (codigo, nombre string, outputError map[string]interface{}) {
 	referencia = strings.TrimSpace(referencia)
 	if referencia == "" {
 		return "", "", nil
 	}
 
 	var firstErr map[string]interface{}
-	if centrosCostos, err := consultarCentroCostosFn("query=Id:" + referencia); err == nil {
+	if centrosCostos, err := consultarCentroCostosFn(ctx, "query=Id:"+referencia); err == nil {
 		if len(centrosCostos) > 0 {
 			return strings.TrimSpace(centrosCostos[0].Codigo), strings.TrimSpace(centrosCostos[0].Nombre), nil
 		}
@@ -1931,7 +1933,7 @@ func consultarCentroCostoA11ByReferencia(referencia string) (codigo, nombre stri
 	}
 
 	for _, candidate := range codigoCentroCostoQueryCandidates(referencia) {
-		centrosCostos, err := consultarCentroCostosFn("query=Codigo:" + candidate)
+		centrosCostos, err := consultarCentroCostosFn(ctx, "query=Codigo:"+candidate)
 		if err != nil {
 			if firstErr == nil {
 				firstErr = err
@@ -1946,12 +1948,13 @@ func consultarCentroCostoA11ByReferencia(referencia string) (codigo, nombre stri
 	return "", "", firstErr
 }
 
-func ubicacionesHistoricasActaCentroCosto(actaRecibidoID int) ([]int, map[string]interface{}) {
+func ubicacionesHistoricasActaCentroCosto(ctx context.Context, actaRecibidoID int) ([]int, map[string]interface{}) {
 	if actaRecibidoID <= 0 {
 		return nil, nil
 	}
 
 	historicos, outputError := consultarHistoricosActaReporteFn(
+		ctx,
 		"ActaRecibidoId__Id:"+strconv.Itoa(actaRecibidoID),
 		"UbicacionId",
 		"Id",
@@ -1979,15 +1982,15 @@ func ubicacionesHistoricasActaCentroCosto(actaRecibidoID int) ([]int, map[string
 	return ubicaciones, nil
 }
 
-func resolverCentroCostoActaRecibido(actaRecibidoID int) (codigo, nombre string, outputError map[string]interface{}) {
-	ubicaciones, outputError := ubicacionesHistoricasActaCentroCosto(actaRecibidoID)
+func resolverCentroCostoActaRecibido(ctx context.Context, actaRecibidoID int) (codigo, nombre string, outputError map[string]interface{}) {
+	ubicaciones, outputError := ubicacionesHistoricasActaCentroCosto(ctx, actaRecibidoID)
 	if outputError != nil {
 		return "", "", outputError
 	}
 
 	var firstErr map[string]interface{}
 	for _, ubicacionID := range ubicaciones {
-		codigo, nombre, err := consultarCentroCostoA11ByID(strconv.Itoa(ubicacionID))
+		codigo, nombre, err := consultarCentroCostoA11ByID(ctx, strconv.Itoa(ubicacionID))
 		if err != nil {
 			if firstErr == nil {
 				firstErr = err
@@ -2002,7 +2005,7 @@ func resolverCentroCostoActaRecibido(actaRecibidoID int) (codigo, nombre string,
 	return "", "", firstErr
 }
 
-func fallbackCentroCostoReporte() (nombre, codigo string, outputError map[string]interface{}) {
+func fallbackCentroCostoReporte(ctx context.Context) (nombre, codigo string, outputError map[string]interface{}) {
 	randomID := centroCostoFallbackRandomIDFn()
 	if randomID < 1 || randomID > 400 {
 		randomID = 1
@@ -2011,7 +2014,7 @@ func fallbackCentroCostoReporte() (nombre, codigo string, outputError map[string
 	var firstErr map[string]interface{}
 	for offset := 0; offset < 400; offset++ {
 		candidateID := ((randomID - 1 + offset) % 400) + 1
-		codigo, nombre, err := consultarCentroCostoA11ByID(strconv.Itoa(candidateID))
+		codigo, nombre, err := consultarCentroCostoA11ByID(ctx, strconv.Itoa(candidateID))
 		if err != nil {
 			if firstErr == nil {
 				firstErr = err

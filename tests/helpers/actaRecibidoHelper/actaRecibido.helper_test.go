@@ -1,6 +1,7 @@
 package actaRecibidoHelper_test
 
 import (
+	"context"
 	"flag"
 	"mime/multipart"
 	"os"
@@ -30,7 +31,7 @@ func TestMain(m *testing.M) {
 
 // TestGetAllActasRecibidoActivas ...
 func TestGetAllActasRecibidoActivas(t *testing.T) {
-	valor, _, err := actaRecibido.GetAllActasRecibidoActivas("", "", "", []string{"Registrada"}, "", "", "", "", "", "", 1, 0)
+	valor, _, err := actaRecibido.GetAllActasRecibidoActivas(context.Background(), "", "", "", []string{"Registrada"}, "", "", "", "", "", "", 1, 0)
 	if err != nil {
 		t.Error("No se pudo consultar las actas de recibido - err:", err)
 		t.Fail()
@@ -42,7 +43,7 @@ func TestGetAllActasRecibidoActivas(t *testing.T) {
 
 // TestGetAllParametrosActa ...
 func TestGetAllParametrosActa(t *testing.T) {
-	valor, err := actaRecibido.GetAllParametrosActa()
+	valor, err := actaRecibido.GetAllParametrosActa(context.Background())
 	if err != nil {
 		t.Error("No se pudo traer los parametros - err:", err)
 		t.Fail()
@@ -59,7 +60,7 @@ func TestDecodeXlsx2Json(t *testing.T) {
 	// y ubicarla de alguna manera en la siguiente variable:
 	var file multipart.File
 
-	valor, err := actaRecibido.DecodeXlsx2Json(file)
+	valor, err := actaRecibido.DecodeXlsx2Json(context.Background(), file)
 	if err != nil {
 		t.Error("No se pudo procesar la plantilla - err:", err)
 		t.Fail()
@@ -72,7 +73,7 @@ func TestDecodeXlsx2Json(t *testing.T) {
 // TestGetElementos ...
 func TestGetElementos(t *testing.T) {
 	id := 14
-	valor, err := actaRecibido.GetElementos(id, nil)
+	valor, err := actaRecibido.GetElementos(context.Background(), id, nil)
 	if err != nil {
 		t.Error("No se pudo consultar los elementos del acta de recibido", err)
 		t.Fail()

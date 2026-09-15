@@ -1,6 +1,7 @@
 package depreciacionHelper
 
 import (
+	"context"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
@@ -17,7 +18,7 @@ var launchCierreAsync = func(fn func()) {
 }
 
 // GenerarCierre Crear el movimiento y transacción contable correspondientes al cierre a una fecha determinada
-func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func GenerarCierre(ctx context.Context, info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GenerarCierre - Unhandled Error!", "500")
 
@@ -116,7 +117,7 @@ func GenerarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMov
 	movimientoID := resultado.Movimiento.Id
 	fechaCorte := info.FechaCorte
 	launchCierreAsync(func() {
-		procesarCierreDepreciacionAsync(movimientoID, fechaCorte)
+		procesarCierreDepreciacionAsync(ctx, movimientoID, fechaCorte)
 	})
 
 	return
@@ -130,7 +131,7 @@ func desbloquearSistema(parametro models.ParametroConfiguracion, resultado model
 	}
 }
 
-func procesarCierreDepreciacionAsync(movimientoID int, fechaCorte time.Time) {
+func procesarCierreDepreciacionAsync(ctx context.Context, movimientoID int, fechaCorte time.Time) {
 	movimiento, outputError := movimientosArka.GetMovimientoById(movimientoID)
 	if outputError != nil || movimiento == nil {
 		return
@@ -158,7 +159,7 @@ func procesarCierreDepreciacionAsync(movimientoID int, fechaCorte time.Time) {
 		transaccion.FechaTransaccion = fechaCorte
 	}
 
-	outputError = calcularCierre(fechaCorte.Format("2006-01-02"), cuentas, &transaccion, &resultado)
+	outputError = calcularCierre(ctx, fechaCorte.Format("2006-01-02"), cuentas, &transaccion, &resultado)
 	if outputError != nil {
 		persistirFalloCalculoCierreAsync(movimiento, "No se pudo calcular el cierre de depreciación.")
 		return
@@ -180,7 +181,7 @@ func procesarCierreDepreciacionAsync(movimientoID int, fechaCorte time.Time) {
 		return
 	}
 
-	detalleContable, outputError := asientoContable.GetDetalleContable(transaccion.Movimientos, cuentas)
+	detalleContable, outputError := asientoContable.GetDetalleContable(ctx, transaccion.Movimientos, cuentas)
 	if outputError != nil {
 		persistirFalloCalculoCierreAsync(movimiento, "No se pudo construir la vista previa contable del cierre.")
 		return

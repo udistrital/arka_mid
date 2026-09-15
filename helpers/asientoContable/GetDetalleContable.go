@@ -1,6 +1,7 @@
 package asientoContable
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
@@ -10,7 +11,7 @@ import (
 )
 
 // GetDetalleContable Consulta los detalles de una transacción contable para ser mostrada en el cliente
-func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuentas map[string]models.CuentaContable) (movimientos_ []*models.DetalleMovimientoContable, outputError map[string]interface{}) {
+func GetDetalleContable(ctx context.Context, movimientos []*models.MovimientoTransaccion, detalleCuentas map[string]models.CuentaContable) (movimientos_ []*models.DetalleMovimientoContable, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleContable"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -23,7 +24,7 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuen
 
 	movimientos_ = make([]*models.DetalleMovimientoContable, 0)
 
-	if dbId, crId, outputError = parametros.GetParametrosDebitoCredito(); outputError != nil {
+	if dbId, crId, outputError = parametros.GetParametrosDebitoCredito(ctx); outputError != nil {
 		return nil, outputError
 	}
 
@@ -93,7 +94,7 @@ func GetDetalleContable(movimientos []*models.MovimientoTransaccion, detalleCuen
 
 }
 
-func GetFullDetalleContable(consecutivoId int) (trContable models.InfoTransaccionContable, outputError map[string]interface{}) {
+func GetFullDetalleContable(ctx context.Context, consecutivoId int) (trContable models.InfoTransaccionContable, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetFullDetalleContable - Unhandled Error!", "500")
 
@@ -108,7 +109,7 @@ func GetFullDetalleContable(consecutivoId int) (trContable models.InfoTransaccio
 	}
 
 	if len(transaccion.Movimientos) > 0 {
-		trContable.Movimientos, outputError = GetDetalleContable(transaccion.Movimientos, nil)
+		trContable.Movimientos, outputError = GetDetalleContable(ctx, transaccion.Movimientos, nil)
 	}
 
 	return

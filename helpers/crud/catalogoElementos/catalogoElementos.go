@@ -1,6 +1,7 @@
 package catalogoElementos
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -8,6 +9,7 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("catalogoElementosService")
@@ -49,15 +51,15 @@ func GetTrCuentasSubgrupo(id, movimientoId int, cuentas *[]models.CuentasSubgrup
 }
 
 // GetAllDetalleSubgrupo query controlador cuentas_subgrupo del api catalogo_elementos_crud
-func GetAllDetalleSubgrupo(query string) (detalle []*models.DetalleSubgrupo, outputError map[string]interface{}) {
+func GetAllDetalleSubgrupo(ctx context.Context, query string) (detalle []*models.DetalleSubgrupo, outputError map[string]interface{}) {
 
 	funcion := "GetAllDetalleSubgrupo"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "detalle_subgrupo?" + query
-	if err := request.GetJson(urlcrud, &detalle); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &detalle); err != nil {
 		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &detalle)"
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &detalle)"
 		return nil, errorCtrl.Error(funcion+eval, err, "500")
 	}
 
@@ -81,15 +83,15 @@ func GetAllTipoBien(query string, tiposBien *[]models.TipoBien) (outputError map
 }
 
 // GetTipoBienById query controlador tipo_bien/{id} del api catalogo_elementos_crud
-func GetTipoBienById(id int, tipoBien *models.TipoBien) (outputError map[string]interface{}) {
+func GetTipoBienById(ctx context.Context, id int, tipoBien *models.TipoBien) (outputError map[string]interface{}) {
 
 	funcion := "GetTipoBienById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tipo_bien/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &tipoBien); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &tipoBien); err != nil {
 		logs.Error(err)
-		eval := "request.GetJson(urlcrud, &tipoBien)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &tipoBien)"
 		return errorCtrl.Error(funcion+eval, err, "500")
 	}
 

@@ -2,6 +2,7 @@ package reportesHelper
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/url"
@@ -48,7 +49,7 @@ type supervisorContrato struct {
 	FechaFin    time.Time `json:"FechaFin"`
 }
 
-func GenerarPazYSalvo(req *models.PazYSalvoRequest) (respuesta *models.PazYSalvoResponse, outputError map[string]interface{}) {
+func GenerarPazYSalvo(ctx context.Context, req *models.PazYSalvoRequest) (respuesta *models.PazYSalvoResponse, outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("GenerarPazYSalvo - Unhandled Error!", "500")
 
 	if req == nil {
@@ -60,12 +61,12 @@ func GenerarPazYSalvo(req *models.PazYSalvoRequest) (respuesta *models.PazYSalvo
 		return nil, errorCtrl.Error("GenerarPazYSalvo - numero_documento", "se debe indicar un número de documento válido", "400")
 	}
 
-	tercero, outputError := consultarTerceroPorDocumentoFn(numeroDocumento)
+	tercero, outputError := consultarTerceroPorDocumentoFn(ctx, numeroDocumento)
 	if outputError != nil {
 		return nil, outputError
 	}
 
-	inventario, outputError := consultarInventarioTerceroFn(tercero.Tercero.Id)
+	inventario, outputError := consultarInventarioTerceroFn(ctx, tercero.Tercero.Id)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -75,7 +76,7 @@ func GenerarPazYSalvo(req *models.PazYSalvoRequest) (respuesta *models.PazYSalvo
 		elaborador = nil
 	}
 
-	responsableFirma, outputError := consultarResponsableFirmaFn(tercero)
+	responsableFirma, outputError := consultarResponsableFirmaFn(ctx, tercero)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -106,11 +107,11 @@ func GenerarPazYSalvo(req *models.PazYSalvoRequest) (respuesta *models.PazYSalvo
 	return respuesta, nil
 }
 
-func consultarTerceroPorDocumento(numeroDocumento string) (detalle models.DetalleTercero, outputError map[string]interface{}) {
+func consultarTerceroPorDocumento(ctx context.Context, numeroDocumento string) (detalle models.DetalleTercero, outputError map[string]interface{}) {
 	funcion := "consultarTerceroPorDocumento"
 	payload := "documento=" + url.QueryEscape(numeroDocumento)
 
-	terceros, outputError := crudTerceros.GetAllTrTerceroIdentificacion(payload)
+	terceros, outputError := crudTerceros.GetAllTrTerceroIdentificacion(ctx, payload)
 	if outputError != nil {
 		return detalle, outputError
 	}
@@ -126,11 +127,11 @@ func consultarTerceroPorDocumento(numeroDocumento string) (detalle models.Detall
 	return terceros[0], nil
 }
 
-func consultarInventarioTercero(terceroId int) (inventario *models.InventarioTercero, outputError map[string]interface{}) {
+func consultarInventarioTercero(ctx context.Context, terceroId int) (inventario *models.InventarioTercero, outputError map[string]interface{}) {
 	funcion := "consultarInventarioTercero"
 
 	inventario = new(models.InventarioTercero)
-	if err := trasladoshelper.GetElementosTercero(terceroId, inventario); err != nil {
+	if err := trasladoshelper.GetElementosTercero(ctx, terceroId, inventario); err != nil {
 		return nil, errorCtrl.Error(funcion+" - trasladoshelper.GetElementosTercero", err, "502")
 	}
 
@@ -164,7 +165,7 @@ func consultarElaboradorPazYSalvo(_ string, terceroId int) (*pazYSalvoFirmante, 
 	return elaborador, nil
 }
 
-func consultarResponsableFirma(_ models.DetalleTercero) (*pazYSalvoFirmante, map[string]interface{}) {
+func consultarResponsableFirma(ctx context.Context, _ models.DetalleTercero) (*pazYSalvoFirmante, map[string]interface{}) {
 	funcion := "consultarResponsableFirma"
 
 	payload := "limit=-1&sortby=Id&order=desc&fields=Id,Nombre,Documento,Cargo,FechaInicio,FechaFin"
@@ -184,7 +185,7 @@ func consultarResponsableFirma(_ models.DetalleTercero) (*pazYSalvoFirmante, map
 		return nil, errorCtrl.Error(funcion+" - supervisor.Documento", "el supervisor encontrado no tiene documento válido", "502")
 	}
 
-	detalleSupervisor, outputError := consultarTerceroPorDocumentoFn(strconv.Itoa(supervisor.Documento))
+	detalleSupervisor, outputError := consultarTerceroPorDocumentoFn(ctx, strconv.Itoa(supervisor.Documento))
 	if outputError != nil {
 		return nil, outputError
 	}

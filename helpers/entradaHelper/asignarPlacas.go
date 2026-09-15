@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -12,12 +13,12 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
+func asignarPlacas(ctx context.Context, actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("asignarPlacas - Unhandled Error!", "500")
 
 	var detalle_ []*models.DetalleElemento
-	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
+	if detalleElementos, err := actaRecibido.GetElementos(ctx, actaRecibidoId, nil); err != nil {
 		return "", err
 	} else {
 		detalle_ = detalleElementos

@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -11,7 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entrada,
+func GetAll(ctx context.Context, estados []string, fechaCreacion, fechaAprobacion, consecutivo, entrada,
 	sortby, order string, limit, page int) (Salidas []map[string]interface{}, total string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
@@ -74,7 +75,8 @@ func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entra
 			return
 		}
 
-		salida_, err := traerDetalle(salida, formato, centrosCostos, funcionarios)
+		salida_, err := traerDetalle(ctx, salida, formato, centrosCostos, funcionarios)
+
 		if err != nil {
 			outputError = err
 			return

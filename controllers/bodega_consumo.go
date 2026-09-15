@@ -85,7 +85,7 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 		})
 	}
 
-	if v, err := bodegaConsumoHelper.GetSolicitudById(id); err == nil {
+	if v, err := bodegaConsumoHelper.GetSolicitudById(c.Ctx.Request.Context(), id); err == nil {
 		c.Data["json"] = v
 	} else {
 		panic(err)
@@ -120,7 +120,7 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 	}
 
 	solicitudes := make([]models.DetalleSolicitudBodega, 0)
-	if err := bodegaConsumoHelper.GetAllSolicitudes(user, tramiteOnly, &solicitudes); err != nil {
+	if err := bodegaConsumoHelper.GetAllSolicitudes(c.Ctx.Request.Context(), user, tramiteOnly, &solicitudes); err != nil {
 		panic(err)
 	}
 
@@ -143,7 +143,7 @@ func (c *BodegaConsumoController) GetElementos() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
-	if v, err := bodegaConsumoHelper.GetElementosSinAsignar(); err != nil {
+	if v, err := bodegaConsumoHelper.GetElementosSinAsignar(c.Ctx.Request.Context()); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v

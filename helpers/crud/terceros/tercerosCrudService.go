@@ -1,6 +1,7 @@
 package terceros
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("tercerosService")
@@ -60,14 +62,14 @@ func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificaci
 }
 
 // GetTerceroById get controlador tercero/{id} del api terceros_crud
-func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
+func GetTerceroById(ctx context.Context, id int) (tercero *models.Tercero, outputError map[string]interface{}) {
 
 	funcion := "GetTerceroById"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "tercero/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &tercero); err != nil {
-		eval := " - request.GetJson(urlcrud, &tercero)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &tercero); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &tercero)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return tercero, nil
@@ -91,16 +93,16 @@ func GetTrTerceroIdentificacionById(id int) (tercero models.DetalleTercero, outp
 }
 
 // GetAllTrTerceroIdentificacion get controlador tercero/identificacion del api terceros_crud
-func GetAllTrTerceroIdentificacion(payload string) (terceros []models.DetalleTercero, outputError map[string]interface{}) {
+func GetAllTrTerceroIdentificacion(ctx context.Context, payload string) (terceros []models.DetalleTercero, outputError map[string]interface{}) {
 
 	funcion := "GetAllTrTerceroIdentificacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tercero/identificacion?" + payload
-	err := request.GetJson(urlcrud, &terceros)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, &terceros)
 	if err != nil {
 		logs.Error(err, urlcrud)
-		eval := "request.GetJson(urlcrud, &terceros)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &terceros)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 

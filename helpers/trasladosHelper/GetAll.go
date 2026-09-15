@@ -1,6 +1,7 @@
 package trasladoshelper
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
@@ -15,13 +16,13 @@ import (
 )
 
 // GetAll Consulta información general de todos los traslados asociados a un usuario determinado. Permite filtrar por los que están pendientes por aprobar o confirmar
-func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleTrasladoLista) (outputError map[string]interface{}) {
+func GetAll(ctx context.Context, user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleTrasladoLista) (outputError map[string]interface{}) {
 
 	funcion := "GetAll"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	var traslados []*models.Movimiento
-	if err := getTraslados(user, confirmar, aprobar, &traslados); err != nil {
+	if err := getTraslados(ctx, user, confirmar, aprobar, &traslados); err != nil {
 		return err
 	}
 
@@ -47,7 +48,7 @@ func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleT
 
 		requestTercero := func(id int) func() (interface{}, map[string]interface{}) {
 			return func() (interface{}, map[string]interface{}) {
-				if Tercero, err := terceros.GetTerceroById(id); err == nil {
+				if Tercero, err := terceros.GetTerceroById(ctx, id); err == nil {
 					return Tercero, nil
 				}
 				return nil, nil
@@ -97,7 +98,7 @@ func GetAll(user string, confirmar, aprobar bool, traslados_ *[]*models.DetalleT
 }
 
 // getTraslados Consulta lista de traslados asociados a un usuario de acuerdo al filtro y permisos del usuario
-func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
+func getTraslados(ctx context.Context, user string, confirmar, aprobar bool, traslados *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	var (
 		terceroId int
@@ -105,7 +106,7 @@ func getTraslados(user string, confirmar, aprobar bool, traslados *[]*models.Mov
 		opciones  []*models.PerfilXMenuOpcion
 	)
 
-	if err := autenticacion.GetInfoUser(user, &terceroId, &roles); err != nil {
+	if err := autenticacion.GetInfoUser(ctx, user, &terceroId, &roles); err != nil {
 		return err
 	}
 

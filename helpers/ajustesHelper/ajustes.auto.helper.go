@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
@@ -15,7 +16,7 @@ import (
 )
 
 // GenerarAjusteAutomatico Genera transacción contable, actualiza elementos y novedades como consecuencia de actualizar una serie de elementos de un acta
-func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
+func GenerarAjusteAutomatico(ctx context.Context, elementos []*models.DetalleElemento_) (resultado *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
 
 	funcion := "GenerarAjusteAutomatico"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -44,7 +45,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 	}
 
 	query = "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elementos_, err := crudActas.GetAllElemento(query, "", "Id", "desc", "0", "-1"); err != nil {
+	if elementos_, err := crudActas.GetAllElemento(ctx, query, "", "Id", "desc", "0", "-1"); err != nil {
 		return nil, err
 	} else {
 		orgiginalesActa = elementos_
@@ -58,7 +59,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		entrada = entrada_
 	}
 
-	if msc, vls, sg, mp, err := separarElementosPorModificacion(orgiginalesActa, elementos, entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida"); err != nil {
+	if msc, vls, sg, mp, err := separarElementosPorModificacion(ctx, orgiginalesActa, elementos, entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida"); err != nil {
 		return nil, err
 	} else {
 		updateMsc = msc
@@ -72,7 +73,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		var consecutivo string
 
 		query = "Activo:true,ActaRecibidoId__Id:" + strconv.Itoa(orgiginalesActa[0].ActaRecibidoId.Id)
-		if ha, err := crudActas.GetAllHistoricoActa(query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
+		if ha, err := crudActas.GetAllHistoricoActa(ctx, query, "", "FechaCreacion", "desc", "", "-1"); err != nil {
 			return nil, err
 		} else {
 			proveedorId = ha[0].ProveedorId
@@ -82,7 +83,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 			consecutivo = *entrada.Consecutivo
 		}
 
-		if movsEntrada, err := calcularAjusteMovimiento(orgiginalesActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, proveedorId, consecutivo, "Entrada"); err != nil {
+		if movsEntrada, err := calcularAjusteMovimiento(ctx, orgiginalesActa, updateVls, updateSg, entrada.FormatoTipoMovimientoId.Id, proveedorId, consecutivo, "Entrada"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsEntrada...)
@@ -130,7 +131,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 			ids = append(ids, el.Id)
 		}
 
-		if movsSalida, err := calcularAjusteMovimiento(orgiginalesActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, funcionario, *elms.Salida.Consecutivo, "Salida"); err != nil {
+		if movsSalida, err := calcularAjusteMovimiento(ctx, orgiginalesActa, elms.UpdateVls, elms.UpdateSg, tipoMovimientoSalida, funcionario, *elms.Salida.Consecutivo, "Salida"); err != nil {
 			return nil, err
 		} else {
 			movimientos = append(movimientos, movsSalida...)
@@ -149,7 +150,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		} else {
 			novedadesMedicion := separarNovedadesPorElemento(novedades_)
 
-			if movimientos_, novedades_, err := calcularAjusteMediciones(novedadesMedicion, updateSg, updateVls, updateMp, orgiginalesActa); err != nil {
+			if movimientos_, novedades_, err := calcularAjusteMediciones(ctx, novedadesMedicion, updateSg, updateVls, updateMp, orgiginalesActa); err != nil {
 				return nil, err
 			} else {
 				nuevosNovedades = novedades_
@@ -168,7 +169,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		return resultado, nil
 	}
 
-	if err := submitUpdates(nuevosActa, nuevosMovArka, nuevosNovedades); err != nil {
+	if err := submitUpdates(ctx, nuevosActa, nuevosMovArka, nuevosNovedades); err != nil {
 		return nil, err
 	}
 
@@ -177,7 +178,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 	} else {
 		resultado.Movimiento = rs
 		if tr != nil && tr.Movimientos != nil && len(tr.Movimientos) > 0 {
-			if tr_, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
+			if tr_, err := asientoContable.GetDetalleContable(ctx, tr.Movimientos, nil); err != nil {
 				return nil, err
 			} else {
 				resultado.TrContable = tr_
@@ -185,7 +186,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 		}
 	}
 
-	if elementos_, err := fillElementos(append(updateSg, (append(updateVls, append(updateMsc, updateMp...)...))...)); err != nil {
+	if elementos_, err := fillElementos(ctx, append(updateSg, (append(updateVls, append(updateMsc, updateMp...)...))...)); err != nil {
 		return nil, err
 	} else {
 		resultado.Elementos = elementos_
@@ -196,7 +197,7 @@ func GenerarAjusteAutomatico(elementos []*models.DetalleElemento_) (resultado *m
 }
 
 // GetAjusteAutomatico Consulta el detalle de los elementos y la transacción contable asociada a un ajuste.
-func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
+func GetAjusteAutomatico(ctx context.Context, movimientoId int) (ajuste *models.DetalleAjusteAutomatico, outputError map[string]interface{}) {
 
 	funcion := "GetAjusteAutomatico"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -222,7 +223,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 		return
 	}
 
-	if elementosActa, outputError = actaRecibido.GetElementos(0, detalle.Elementos); outputError != nil {
+	if elementosActa, outputError = actaRecibido.GetElementos(ctx, 0, detalle.Elementos); outputError != nil {
 		return nil, outputError
 	}
 
@@ -259,7 +260,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 		if tr, err := movimientosContables.GetTransaccion(*movimiento.ConsecutivoId, "consecutivo", true); err != nil {
 			return nil, err
 		} else if len(tr.Movimientos) > 0 {
-			if detalleContable, err := asientoContable.GetDetalleContable(tr.Movimientos, nil); err != nil {
+			if detalleContable, err := asientoContable.GetDetalleContable(ctx, tr.Movimientos, nil); err != nil {
 				return nil, err
 			} else {
 				ajuste.TrContable = detalleContable
@@ -275,7 +276,7 @@ func GetAjusteAutomatico(movimientoId int) (ajuste *models.DetalleAjusteAutomati
 }
 
 // GetDetalleElementosActa Genera transacción contable, actualiza elementos y novedades como consecuencia de actualizar una serie de elementos de un acta
-func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleElemento__, outputError map[string]interface{}) {
+func GetDetalleElementosActa(ctx context.Context, actaRecibidoId int) (elementos []*models.DetalleElemento__, outputError map[string]interface{}) {
 
 	funcion := "GetDetalleElementosActa"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -287,7 +288,7 @@ func GetDetalleElementosActa(actaRecibidoId int) (elementos []*models.DetalleEle
 		elsMov  []*models.ElementosMovimiento
 	)
 
-	if elsActa, outputError = actaRecibido.GetElementos(actaRecibidoId, []int{}); outputError != nil {
+	if elsActa, outputError = actaRecibido.GetElementos(ctx, actaRecibidoId, []int{}); outputError != nil {
 		return nil, outputError
 	} else if len(elsActa) == 0 {
 		return nil, nil
