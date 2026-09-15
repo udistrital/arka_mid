@@ -25,14 +25,14 @@ func GetElementosTercero(ctx context.Context, terceroId int, inventario *models.
 
 	inventario.Elementos = make([]models.DetalleElementoPlaca, 0)
 
-	if tercero, err := terceros.GetDetalleFuncionario(terceroId); err != nil {
+	if tercero, err := terceros.GetDetalleFuncionario(ctx, terceroId); err != nil {
 		return err
 	} else {
 		inventario.Tercero = *tercero
 	}
 
 	// Consulta lista de elementos asignados al tercero
-	if elemento_, err := movimientosArka.GetElementosFuncionario(terceroId); err != nil {
+	if elemento_, err := movimientosArka.GetElementosFuncionario(ctx, terceroId); err != nil {
 		return err
 	} else {
 		elementosF = elemento_
@@ -42,7 +42,7 @@ func GetElementosTercero(ctx context.Context, terceroId int, inventario *models.
 	if len(elementosF) > 0 {
 		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
 		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
-		if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
+		if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(ctx, query); err != nil {
 			return err
 		} else {
 			elementosM = elementoMovimiento_

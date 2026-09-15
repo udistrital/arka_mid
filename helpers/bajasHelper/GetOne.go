@@ -29,7 +29,7 @@ func GetOne(ctx context.Context, id int, Baja *models.TrBaja) (outputError map[s
 	)
 
 	// Se consulta el movimiento
-	movimiento, outputError = movimientosArka.GetMovimientoById(id)
+	movimiento, outputError = movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	}
@@ -40,7 +40,7 @@ func GetOne(ctx context.Context, id int, Baja *models.TrBaja) (outputError map[s
 
 	// Se consulta el detalle del funcionario solicitante
 	if detalle.Funcionario > 0 {
-		Baja.Funcionario, outputError = terceros.GetInfoTerceroById(detalle.Funcionario)
+		Baja.Funcionario, outputError = terceros.GetInfoTerceroById(ctx, detalle.Funcionario)
 		if outputError != nil {
 			return
 		}
@@ -48,7 +48,7 @@ func GetOne(ctx context.Context, id int, Baja *models.TrBaja) (outputError map[s
 
 	// Se consulta el detalle del revisor si lo hay
 	if detalle.Revisor > 0 {
-		Baja.Revisor, outputError = terceros.GetInfoTerceroById(detalle.Revisor)
+		Baja.Revisor, outputError = terceros.GetInfoTerceroById(ctx, detalle.Revisor)
 		if outputError != nil {
 			return
 		}
@@ -64,14 +64,14 @@ func GetOne(ctx context.Context, id int, Baja *models.TrBaja) (outputError map[s
 
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	query := "query=MovimientoId__Id:" + strconv.Itoa(id)
-	if soportes, err := movimientosArka.GetAllSoporteMovimiento(query); err != nil {
+	if soportes, err := movimientosArka.GetAllSoporteMovimiento(ctx, query); err != nil {
 		return err
 	} else if len(soportes) > 0 {
 		Baja.Soporte = soportes[0].DocumentoId
 	}
 
 	if detalle.DependenciaId > 0 {
-		if err := parametros.GetParametroById(detalle.DependenciaId, &dependencia); err != nil {
+		if err := parametros.GetParametroById(ctx, detalle.DependenciaId, &dependencia); err != nil {
 			return err
 		}
 	}
@@ -109,7 +109,7 @@ func getDetalleElementos(ctx context.Context, ids []int) (Elementos []*models.De
 	// Consulta asignación de los elementos
 	query := "sortby=ElementoActaId&order=desc&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
+	if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(ctx, query); err != nil {
 		return nil, err
 	} else {
 		elementosMovimiento = elementoMovimiento_
@@ -132,7 +132,7 @@ func getDetalleElementos(ctx context.Context, ids []int) (Elementos []*models.De
 		for i := 0; i < len(elementosActa); i++ {
 
 			elemento := new(models.DetalleElementoBaja)
-			elemento.Historial, outputError = movimientosArka.GetHistorialElemento(elementosMovimiento[i].Id, true)
+			elemento.Historial, outputError = movimientosArka.GetHistorialElemento(ctx, elementosMovimiento[i].Id, true)
 			if outputError != nil {
 				return
 			}
@@ -143,14 +143,14 @@ func getDetalleElementos(ctx context.Context, ids []int) (Elementos []*models.De
 			}
 
 			if ubicacion > 0 {
-				elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ubicacion)
+				elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ctx, ubicacion)
 				if outputError != nil {
 					return
 				}
 			}
 
 			if funcionario > 0 {
-				elemento.Funcionario, outputError = terceros.GetInfoTerceroById(funcionario)
+				elemento.Funcionario, outputError = terceros.GetInfoTerceroById(ctx, funcionario)
 				if outputError != nil {
 					return
 				}

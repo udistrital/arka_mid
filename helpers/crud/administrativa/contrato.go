@@ -1,6 +1,7 @@
 package administrativa
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,13 +11,13 @@ import (
 
 	"github.com/udistrital/arka_mid/models"
 	e "github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("administrativaJbpmService")
 
 // GetContrato ...
-func GetContrato(contratoId int, vigencia string, contrato *models.InformacionContrato) (outputError map[string]interface{}) {
+func GetContrato(ctx context.Context, contratoId int, vigencia string, contrato *models.InformacionContrato) (outputError map[string]interface{}) {
 
 	const funcion = "GetContrato - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
@@ -29,27 +30,27 @@ func GetContrato(contratoId int, vigencia string, contrato *models.InformacionCo
 	}
 
 	urlCrud := basePath + fmt.Sprintf("informacion_contrato/%d/%s", contratoId, vigencia)
-	err := request.GetJsonWSO2(urlCrud, &contrato)
+	_, err := requestV2.GetWithContext(ctx, urlCrud, contrato)
 	if err != nil {
 		logs.Error(err, urlCrud)
-		context := "request.GetJsonWSO2(urlCrud, &contrato)"
-		outputError = e.Error(funcion+context, err, fmt.Sprint(http.StatusBadGateway))
+		eval := "requestV2.GetWithContext(ctx, urlCrud, contrato)"
+		outputError = e.Error(funcion+eval, err, fmt.Sprint(http.StatusBadGateway))
 	}
 
 	return
 }
 
 // GetTipoContratoById Consulta endpoint tipo_contrato/:id del api administrativa_amazon_api
-func GetTipoContratoById(tipoContratoId string, tipoContrato interface{}) (outputError map[string]interface{}) {
+func GetTipoContratoById(ctx context.Context, tipoContratoId string, tipoContrato interface{}) (outputError map[string]interface{}) {
 
 	const funcion = "GetTipoContratoById - "
 	defer e.ErrorControlFunction(funcion+"Unhandled Error!", fmt.Sprint(http.StatusInternalServerError))
 
 	urlcrud := basePath + "tipo_contrato/" + tipoContratoId
-	err := request.GetJsonWSO2(urlcrud, &tipoContrato)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, tipoContrato)
 	if err != nil {
 		logs.Error(err, urlcrud)
-		eval := "request.GetJson(urlcrud, &tipoContrato)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, tipoContrato)"
 		outputError = e.Error(funcion+eval, err, "502")
 	}
 

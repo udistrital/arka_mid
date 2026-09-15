@@ -21,7 +21,7 @@ func GetOne(ctx context.Context, id int) (Salida map[string]interface{}, outputE
 		elementosActa []*models.DetalleElemento
 	)
 
-	trSalida, outputError := movimientosArka.GetTrSalida(id)
+	trSalida, outputError := movimientosArka.GetTrSalida(ctx, id)
 	if outputError != nil || (trSalida.Salida.FormatoTipoMovimientoId.CodigoAbreviacion != "SAL" && trSalida.Salida.FormatoTipoMovimientoId.CodigoAbreviacion != "SAL_CONS") {
 		return
 	}

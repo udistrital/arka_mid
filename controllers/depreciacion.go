@@ -51,7 +51,7 @@ func (c *DepreciacionController) Post() {
 				c.Data["json"] = resultado
 			}
 		} else {
-			if err := depreciacionHelper.RechazarCierre(v, &resultado); err != nil {
+			if err := depreciacionHelper.RechazarCierre(c.Ctx.Request.Context(), v, &resultado); err != nil {
 				logs.Error(err)
 				panic(map[string]interface{}{
 					"funcion": "Post - depreciacionHelper.RechazarCierre(v, &resultado)",
@@ -93,7 +93,7 @@ func (c *DepreciacionController) GetOne() {
 	}
 
 	var detalle models.ResultadoMovimiento
-	if err := depreciacionHelper.GetCierre(id, &detalle); err != nil {
+	if err := depreciacionHelper.GetCierre(c.Ctx.Request.Context(), id, &detalle); err != nil {
 		logs.Error(err)
 		panic(map[string]interface{}{
 			"funcion": "GetOne - depreciacionHelper.GetCierre(id, &detalle)",
@@ -134,7 +134,7 @@ func (c *DepreciacionController) Put() {
 	}
 
 	var detalle models.ResultadoMovimiento
-	if err := depreciacionHelper.AprobarDepreciacion(id, &detalle); err == nil {
+	if err := depreciacionHelper.AprobarDepreciacion(c.Ctx.Request.Context(), id, &detalle); err == nil {
 		c.Data["json"] = detalle
 	} else {
 		if err != nil {

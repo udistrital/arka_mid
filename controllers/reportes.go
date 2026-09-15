@@ -8,7 +8,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
 )
 
 // ReportesController operations for reportes
@@ -87,10 +86,6 @@ func (c *ReportesController) PostPazYSalvo() {
 	if err := utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &payload); err != nil {
 		panic(errorCtrl.Error("PostPazYSalvo - utilsHelper.Unmarshal(RequestBody, &payload)", err, "400"))
 	}
-
-	headerAnterior := request.GetHeader()
-	request.SetHeader(c.Ctx.Request.Header.Get("Authorization"))
-	defer request.SetHeader(headerAnterior)
 
 	respuesta, outputError := reportesHelper.GenerarPazYSalvo(c.Ctx.Request.Context(), &payload)
 	if outputError != nil {

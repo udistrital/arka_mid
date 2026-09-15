@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
@@ -8,7 +9,7 @@ import (
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
 )
 
-func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
+func Put(ctx context.Context, m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("Put - Unhandled Error!", "500")
 
@@ -26,7 +27,7 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 	// El objetivo es generar los respectivos consecutivos en caso de generarse más de una salida a partir de la original
 
 	// Se consulta la salida original
-	salidaOriginal, outputError := movimientosArka.GetMovimientoById(salidaId)
+	salidaOriginal, outputError := movimientosArka.GetMovimientoById(ctx, salidaId)
 	if outputError != nil || salidaOriginal.EstadoMovimientoId.Nombre != "Salida Rechazada" {
 		return
 	}
@@ -36,7 +37,7 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 		return
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoId, "Salida En Trámite")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &estadoMovimientoId, "Salida En Trámite")
 	if outputError != nil {
 		return
 	}
@@ -84,13 +85,13 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 
 		salida.Salida.Id = id
 		salida.Salida.EstadoMovimientoId.Id = estadoMovimientoId
-		outputError = setConsecutivoSalida(salida.Salida)
+		outputError = setConsecutivoSalida(ctx, salida.Salida)
 		if outputError != nil {
 			return
 		}
 	}
 
-	trRes, outputError := movimientosArka.PutTrSalida(m)
+	trRes, outputError := movimientosArka.PutTrSalida(ctx, m)
 	if outputError != nil {
 		return
 	}
@@ -99,14 +100,14 @@ func Put(m *models.SalidaGeneral, salidaId int) (resultado map[string]interface{
 	return
 }
 
-func setConsecutivoSalida(salida *models.Movimiento) (outputError map[string]interface{}) {
+func setConsecutivoSalida(ctx context.Context, salida *models.Movimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("setConsecutivoSalida - Unhandled Error!", "500")
 
 	if salida.Consecutivo == nil || salida.ConsecutivoId == nil || *salida.Consecutivo == "" || *salida.ConsecutivoId <= 0 {
 
 		var consecutivo models.Consecutivo
-		outputError = consecutivos.Get("contxtSalidaCons", "Registro Salida Arka", &consecutivo)
+		outputError = consecutivos.Get(ctx, "contxtSalidaCons", "Registro Salida Arka", &consecutivo)
 		if outputError != nil {
 			return
 		}

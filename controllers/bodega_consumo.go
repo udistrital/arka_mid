@@ -47,7 +47,7 @@ func (c *BodegaConsumoController) Post() {
 		panic(errorCtrl.Error("Post - utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v)", err, "400"))
 	}
 
-	if err := bodegaConsumoHelper.PostSolicitud(&v, &solicitud); err != nil {
+	if err := bodegaConsumoHelper.PostSolicitud(c.Ctx.Request.Context(), &v, &solicitud); err != nil {
 		panic(err)
 	}
 
@@ -161,7 +161,7 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
-	if v, err := bodegaConsumoHelper.GetAperturasKardex(); err != nil {
+	if v, err := bodegaConsumoHelper.GetAperturasKardex(c.Ctx.Request.Context()); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
@@ -180,7 +180,7 @@ func (c *BodegaConsumoController) GetAllExistencias() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
-	if v, err := bodegaConsumoHelper.GetExistenciasKardex(); err != nil {
+	if v, err := bodegaConsumoHelper.GetExistenciasKardex(c.Ctx.Request.Context()); err != nil {
 		panic(err)
 	} else {
 		if v == nil {

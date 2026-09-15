@@ -1,6 +1,7 @@
 package consecutivos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -8,25 +9,25 @@ import (
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 // GetById consulta controlador consecutivo/{id} del api consecutivos_crud.
-func GetById(id int, consecutivo *models.Consecutivo) (outputError map[string]interface{}) {
+func GetById(ctx context.Context, id int, consecutivo *models.Consecutivo) (outputError map[string]interface{}) {
 	funcion := "GetById - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := ConsecutivosCRUD + "consecutivo/" + strconv.Itoa(id)
 	response := new(models.RespuestaAPI1Interface)
-	if err := request.GetJson(urlcrud, response); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, response); err != nil {
 		logs.Error(urlcrud, err)
-		eval := "request.GetJson(urlcrud, response)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, response)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	if !response.Success {
 		err := fmt.Errorf("%v", response.Message)
-		eval := "request.GetJson(urlcrud, response)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, response)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 

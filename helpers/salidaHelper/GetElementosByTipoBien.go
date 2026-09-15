@@ -32,7 +32,7 @@ func GetElementosByTipoBien(ctx context.Context, entradaId, salidaId int) (eleme
 		var consumo = make([]*models.DetalleElemento, 0)
 		var devolutivo = make([]*models.DetalleElemento, 0)
 
-		if mov, err := movimientosArka.GetMovimientoById(entradaId); err != nil {
+		if mov, err := movimientosArka.GetMovimientoById(ctx, entradaId); err != nil {
 			return nil, err
 		} else {
 			movimiento = *mov
@@ -55,7 +55,7 @@ func GetElementosByTipoBien(ctx context.Context, entradaId, salidaId int) (eleme
 
 		for _, el := range elementos {
 
-			if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
+			if bodega, msg, err := checkBodegaConsumo(ctx, el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
 				return nil, err
 			} else if msg != "" {
 				return map[string]interface{}{
@@ -86,7 +86,7 @@ func GetElementosByTipoBien(ctx context.Context, entradaId, salidaId int) (eleme
 
 			for _, el := range elementos {
 
-				if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
+				if bodega, msg, err := checkBodegaConsumo(ctx, el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
 					return nil, err
 				} else if msg != "" {
 					return map[string]interface{}{
@@ -112,11 +112,11 @@ func GetElementosByTipoBien(ctx context.Context, entradaId, salidaId int) (eleme
 
 }
 
-func checkBodegaConsumo(tipoBienId *models.TipoBien, subgrupo *models.DetalleSubgrupo, valor float64, tiposBien map[int]models.TipoBien) (
+func checkBodegaConsumo(ctx context.Context, tipoBienId *models.TipoBien, subgrupo *models.DetalleSubgrupo, valor float64, tiposBien map[int]models.TipoBien) (
 	bodega bool, msg string, outputError map[string]interface{}) {
 
 	if (tipoBienId == nil || tipoBienId.Id == 0) && (subgrupo != nil && subgrupo.TipoBienId.Id > 0) {
-		if tb, err := catalogoElementos.GetTipoBienIdByValor(subgrupo.TipoBienId.Id, valor, tiposBien); err != nil {
+		if tb, err := catalogoElementos.GetTipoBienIdByValor(ctx, subgrupo.TipoBienId.Id, valor, tiposBien); err != nil {
 			return false, "", err
 		} else if tb == 0 {
 			return false, "No se pudo determinar el tipo de bien de los elementos. Revise la parametriazación o contacte soporte.", nil

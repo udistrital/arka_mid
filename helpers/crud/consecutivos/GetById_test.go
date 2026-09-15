@@ -1,6 +1,7 @@
 package consecutivos
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -41,7 +42,7 @@ func TestGetByIdDecodesWrappedDataResponse(t *testing.T) {
 	}()
 
 	var consecutivo models.Consecutivo
-	if err := GetById(10764, &consecutivo); err != nil {
+	if err := GetById(context.Background(), 10764, &consecutivo); err != nil {
 		t.Fatalf("GetById() error = %#v", err)
 	}
 

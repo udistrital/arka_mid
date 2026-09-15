@@ -47,7 +47,7 @@ func GetAllSolicitudes(ctx context.Context, user string, revision bool, solictud
 			if val, ok := terceros[detalle.Funcionario]; ok {
 				solicitud.Solicitante = val
 			} else {
-				if tercero, err := crudTerceros.GetNombreTerceroById(detalle.Funcionario); err != nil {
+				if tercero, err := crudTerceros.GetNombreTerceroById(ctx, detalle.Funcionario); err != nil {
 					return err
 				} else if tercero != nil {
 					terceros[detalle.Funcionario] = *tercero
@@ -79,7 +79,7 @@ func loadSolicitudes(ctx context.Context, user string, revision bool, solicitude
 
 		payload += ",EstadoMovimientoId__Nombre:" + url.QueryEscape(estadoSolicitudPendiente)
 
-		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(ctx, payload); err != nil {
 			return err
 		} else {
 			*solicitudes = solicitudes_
@@ -98,18 +98,18 @@ func loadSolicitudes(ctx context.Context, user string, revision bool, solicitude
 	}
 
 	query := "limit=-1&query=Opcion__Nombre:bodegaVerTodasLasSolicitudes,Perfil__Nombre__in:" + strings.Join(roles, "|")
-	if err := configuracion.GetAllPerfilXMenuOpcion(query, &opciones); err != nil {
+	if err := configuracion.GetAllPerfilXMenuOpcion(ctx, query, &opciones); err != nil {
 		return err
 	}
 
 	if len(opciones) > 0 {
-		if sol_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if sol_, _, err := movimientosArka.GetAllMovimiento(ctx, payload); err != nil {
 			return err
 		} else {
 			*solicitudes = sol_
 		}
 	} else {
-		if err := movimientosArka.GetBodegaByTerceroId(terceroId, solicitudes); err != nil {
+		if err := movimientosArka.GetBodegaByTerceroId(ctx, terceroId, solicitudes); err != nil {
 			return err
 		}
 	}

@@ -25,17 +25,17 @@ func AprobarBajas(ctx context.Context, data *models.TrRevisionBaja, response *mo
 
 	var movBj, movCr int
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movBj, "BJ_HT")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &movBj, "BJ_HT")
 	if outputError != nil {
 		return
 	}
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movCr, "CRR")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &movCr, "CRR")
 	if outputError != nil {
 		return
 	}
 
-	terceroUD, outputError := terceros.GetTerceroUD()
+	terceroUD, outputError := terceros.GetTerceroUD(ctx)
 	if outputError != nil {
 		return
 	} else if terceroUD == 0 {
@@ -48,7 +48,7 @@ func AprobarBajas(ctx context.Context, data *models.TrRevisionBaja, response *mo
 		detalleSubgrupos = make(map[int]models.DetalleSubgrupo)
 	)
 
-	bajas, _, outputError := movimientosArka.GetAllMovimiento(payloadBajas(data.Bajas))
+	bajas, _, outputError := movimientosArka.GetAllMovimiento(ctx, payloadBajas(data.Bajas))
 	if outputError != nil {
 		return
 	} else if len(bajas) != len(data.Bajas) {
@@ -72,7 +72,7 @@ func AprobarBajas(ctx context.Context, data *models.TrRevisionBaja, response *mo
 
 		for _, el := range detalleBaja.Elementos {
 
-			historial, err := movimientosArka.GetHistorialElemento(el, true)
+			historial, err := movimientosArka.GetHistorialElemento(ctx, el, true)
 			if err != nil {
 				return err
 			} else if historial == nil {
@@ -143,13 +143,13 @@ func AprobarBajas(ctx context.Context, data *models.TrRevisionBaja, response *mo
 		}
 
 		if len(transaccion.Movimientos) > 0 {
-			response.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteBajas(), "Baja de elementos almacén.", &transaccion)
+			response.Error, outputError = asientoContable.CreateTransaccionContable(ctx, getTipoComprobanteBajas(), "Baja de elementos almacén.", &transaccion)
 			if outputError != nil || response.Error != "" {
 				return
 			}
 
 			transaccion.ConsecutivoId = *baja.ConsecutivoId
-			_, outputError = movimientosContables.PostTrContable(&transaccion)
+			_, outputError = movimientosContables.PostTrContable(ctx, &transaccion)
 			if outputError != nil {
 				return
 			}
@@ -157,7 +157,7 @@ func AprobarBajas(ctx context.Context, data *models.TrRevisionBaja, response *mo
 
 		data_ := data
 		data_.Bajas = []int{baja.Id}
-		_, outputError = movimientosArka.PutRevision(data_)
+		_, outputError = movimientosArka.PutRevision(ctx, data_)
 		if outputError != nil {
 			return
 		}

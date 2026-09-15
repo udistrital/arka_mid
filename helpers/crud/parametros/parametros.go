@@ -9,7 +9,6 @@ import (
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
 	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
@@ -33,18 +32,18 @@ func GetAllParametro(ctx context.Context, query string) (parametros []*models.Pa
 }
 
 // GetParametroById query controlador parametro/{id} del api parametros_crud
-func GetParametroById(id int, parametro interface{}) (outputError map[string]interface{}) {
+func GetParametroById(ctx context.Context, id int, parametro interface{}) (outputError map[string]interface{}) {
 
 	funcion := "GetAllParametro - "
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "parametro/" + strconv.Itoa(id)
 	response := new(models.RespuestaAPI1Interface)
-	if err := request.GetJson(urlcrud, &response); err != nil {
-		eval := "request.GetJson(urlcrud, &response)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, response); err != nil {
+		eval := "requestV2.GetWithContext(ctx, urlcrud, response)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	} else if !response.Success {
-		eval := "request.GetJson(urlcrud, &response)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, response)"
 		return errorCtrl.Error(funcion+eval, response.Message, response.Status)
 	} else {
 		outputError = utilsHelper.FillStruct(response.Data, &parametro)

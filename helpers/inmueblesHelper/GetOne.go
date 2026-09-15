@@ -23,12 +23,12 @@ func GetOne(ctx context.Context, id int) (detalle models.Inmueble, outputError m
 		return
 	}
 
-	detalle.SubgrupoId, outputError = catalogoElementos.GetSubgrupoById(detalle.Elemento.SubgrupoCatalogoId)
+	detalle.SubgrupoId, outputError = catalogoElementos.GetSubgrupoById(ctx, detalle.Elemento.SubgrupoCatalogoId)
 	if outputError != nil {
 		return
 	}
 
-	elementoMovimiento, outputError := movimientosArka.GetAllElementosMovimiento(getPayloadElementosMovimiento(id))
+	elementoMovimiento, outputError := movimientosArka.GetAllElementosMovimiento(ctx, getPayloadElementosMovimiento(id))
 	if len(elementoMovimiento) == 1 {
 		detalle.ElementoMovimiento = *elementoMovimiento[0]
 	}
@@ -46,7 +46,7 @@ func GetOne(ctx context.Context, id int) (detalle models.Inmueble, outputError m
 		}
 
 		var cuentas_ models.ParametrizacionContable_
-		cuentaCredito, err := cuentasContables.GetCuentaContable(cuentas.CuentaCreditoId)
+		cuentaCredito, err := cuentasContables.GetCuentaContable(ctx, cuentas.CuentaCreditoId)
 		if err != nil {
 			outputError = err
 			return
@@ -54,7 +54,7 @@ func GetOne(ctx context.Context, id int) (detalle models.Inmueble, outputError m
 			cuentas_.CuentaCreditoId = *cuentaCredito
 		}
 
-		cuentaDebito, err := cuentasContables.GetCuentaContable(cuentas.CuentaDebitoId)
+		cuentaDebito, err := cuentasContables.GetCuentaContable(ctx, cuentas.CuentaDebitoId)
 		if err != nil {
 			outputError = err
 			return
@@ -70,20 +70,20 @@ func GetOne(ctx context.Context, id int) (detalle models.Inmueble, outputError m
 	}
 
 	if detalle.Elemento.EspacioFisicoId > 0 {
-		espacioFisico_, err := oikos.GetAllEspacioFisico(getPayloadEspacioFisico(detalle.Elemento.EspacioFisicoId))
+		espacioFisico_, err := oikos.GetAllEspacioFisico(ctx, getPayloadEspacioFisico(detalle.Elemento.EspacioFisicoId))
 		if err != nil {
 			return detalle, err
 		}
 
 		if len(espacioFisico_) == 1 {
 			detalle.EspacioFisico = espacioFisico_[0]
-			detalle.Sede, outputError = oikos.GetSedeEspacioFisico(espacioFisico_[0])
+			detalle.Sede, outputError = oikos.GetSedeEspacioFisico(ctx, espacioFisico_[0])
 			if outputError != nil {
 				return
 			}
 		}
 
-		detalle.Otros, outputError = oikos.GetAllEspacioFisicoCampo(getPayloadEspacioFisico(id))
+		detalle.Otros, outputError = oikos.GetAllEspacioFisicoCampo(ctx, getPayloadEspacioFisico(id))
 	}
 
 	return

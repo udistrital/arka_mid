@@ -1,6 +1,7 @@
 package asientoContable
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -16,7 +17,7 @@ func TestCreateTransaccionContablePreservaFechaExistente(t *testing.T) {
 	}
 
 	original := getComprobanteCreateTransaccionContable
-	getComprobanteCreateTransaccionContable = func(tipoComprobante string, comprobanteID *string) map[string]interface{} {
+	getComprobanteCreateTransaccionContable = func(ctx context.Context, tipoComprobante string, comprobanteID *string) map[string]interface{} {
 		*comprobanteID = "cmp-1"
 		return nil
 	}
@@ -24,7 +25,7 @@ func TestCreateTransaccionContablePreservaFechaExistente(t *testing.T) {
 		getComprobanteCreateTransaccionContable = original
 	}()
 
-	msg, err := CreateTransaccionContable("P8", "Entrada Almacén", transaccion)
+	msg, err := CreateTransaccionContable(context.Background(), "P8", "Entrada Almacén", transaccion)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

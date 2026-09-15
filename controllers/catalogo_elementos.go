@@ -47,7 +47,7 @@ func (c *CatalogoElementosController) GetOne() {
 	}
 
 	var cuentas = make([]models.DetalleCuentasSubgrupo, 0)
-	if err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id, movimientoId, &cuentas); err != nil {
+	if err := catalogoElementosHelper.GetCuentasContablesSubgrupo(c.Ctx.Request.Context(), id, movimientoId, &cuentas); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = cuentas

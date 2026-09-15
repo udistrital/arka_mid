@@ -51,7 +51,7 @@ func GenerarAjusteAutomatico(ctx context.Context, elementos []*models.DetalleEle
 		orgiginalesActa = elementos_
 	}
 
-	if entrada_, err := movimientosArka.GetEntradaByActa(orgiginalesActa[0].ActaRecibidoId.Id); err != nil {
+	if entrada_, err := movimientosArka.GetEntradaByActa(ctx, orgiginalesActa[0].ActaRecibidoId.Id); err != nil {
 		return nil, err
 	} else if entrada_ == nil {
 		return nil, nil
@@ -93,7 +93,7 @@ func GenerarAjusteAutomatico(ctx context.Context, elementos []*models.DetalleEle
 	if entrada.EstadoMovimientoId.Nombre == "Entrada Con Salida" {
 
 		query = "limit=-1&sortby=MovimientoId,ElementoActaId&order=desc,desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-		if elementos_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
+		if elementos_, err := movimientosArka.GetAllElementosMovimiento(ctx, query); err != nil {
 			return nil, err
 		} else {
 			if elementosSalida_, updateMp_, actualizados_, err := separarElementosPorSalida(elementos_, updateVls, updateSg, updateMp); err != nil {
@@ -106,7 +106,7 @@ func GenerarAjusteAutomatico(ctx context.Context, elementos []*models.DetalleEle
 
 			if len(elementosSalida) > 0 {
 				query = "query=CodigoAbreviacion:SAL"
-				if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
+				if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(ctx, query); err != nil {
 					return nil, err
 				} else {
 					tipoMovimientoSalida = fm[0].Id
@@ -145,7 +145,7 @@ func GenerarAjusteAutomatico(ctx context.Context, elementos []*models.DetalleEle
 
 	if len(ids) > 0 {
 		query = "limit=-1&sortby=MovimientoId,FechaCreacion&order=asc,asc&query=ElementoMovimientoId__ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-		if novedades_, err := movimientosArka.GetAllNovedadElemento(query); err != nil {
+		if novedades_, err := movimientosArka.GetAllNovedadElemento(ctx, query); err != nil {
 			return nil, err
 		} else {
 			novedadesMedicion := separarNovedadesPorElemento(novedades_)
@@ -173,7 +173,7 @@ func GenerarAjusteAutomatico(ctx context.Context, elementos []*models.DetalleEle
 		return nil, err
 	}
 
-	if rs, tr, err := generarMovimientoAjuste(updateSg, updateVls, updateMsc, updateMp, movimientos); err != nil {
+	if rs, tr, err := generarMovimientoAjuste(ctx, updateSg, updateVls, updateMsc, updateMp, movimientos); err != nil {
 		return nil, err
 	} else {
 		resultado.Movimiento = rs
@@ -214,7 +214,7 @@ func GetAjusteAutomatico(ctx context.Context, movimientoId int) (ajuste *models.
 
 	ajuste = new(models.DetalleAjusteAutomatico)
 
-	if movimiento, outputError = movimientosArka.GetMovimientoById(movimientoId); outputError != nil {
+	if movimiento, outputError = movimientosArka.GetMovimientoById(ctx, movimientoId); outputError != nil {
 		return nil, outputError
 	}
 
@@ -232,7 +232,7 @@ func GetAjusteAutomatico(ctx context.Context, movimientoId int) (ajuste *models.
 	}
 
 	query = "limit=-1&sortby=Id&order=desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elementosMov, outputError = movimientosArka.GetAllElementosMovimiento(query); outputError != nil {
+	if elementosMov, outputError = movimientosArka.GetAllElementosMovimiento(ctx, query); outputError != nil {
 		return nil, outputError
 	}
 
@@ -257,7 +257,7 @@ func GetAjusteAutomatico(ctx context.Context, movimientoId int) (ajuste *models.
 	}
 
 	if movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
-		if tr, err := movimientosContables.GetTransaccion(*movimiento.ConsecutivoId, "consecutivo", true); err != nil {
+		if tr, err := movimientosContables.GetTransaccion(ctx, *movimiento.ConsecutivoId, "consecutivo", true); err != nil {
 			return nil, err
 		} else if len(tr.Movimientos) > 0 {
 			if detalleContable, err := asientoContable.GetDetalleContable(ctx, tr.Movimientos, nil); err != nil {
@@ -299,7 +299,7 @@ func GetDetalleElementosActa(ctx context.Context, actaRecibidoId int) (elementos
 	}
 
 	query = "limit=-1&sortby=Id&order=desc&query=ElementoActaId__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elsMov, outputError = movimientosArka.GetAllElementosMovimiento(query); outputError != nil {
+	if elsMov, outputError = movimientosArka.GetAllElementosMovimiento(ctx, query); outputError != nil {
 		return nil, outputError
 	}
 

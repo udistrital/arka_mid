@@ -1,6 +1,7 @@
 package catalogoElementosHelper_test
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -26,7 +27,7 @@ func TestMain(m *testing.M) {
 // GetCuentasContablesGrupo ...
 func TestGetCuentasContablesSubgrupo(t *testing.T) {
 	var ctas []models.DetalleCuentasSubgrupo
-	err := catalogoElementosHelper.GetCuentasContablesSubgrupo(1, 1, &ctas)
+	err := catalogoElementosHelper.GetCuentasContablesSubgrupo(context.Background(), 1, 1, &ctas)
 	if err != nil || len(ctas) == 0 {
 		if err != nil {
 			t.Error("No se pudo consultar las cuentas contables del subgrupo", err)

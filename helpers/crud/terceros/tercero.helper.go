@@ -1,6 +1,7 @@
 package terceros
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -10,13 +11,13 @@ import (
 
 	"github.com/udistrital/arka_mid/models"
 	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var path, _ = beego.AppConfig.String("tercerosService")
 
 // GetNombreTerceroById trae el nombre de un encargado por su id
-func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero, outputError map[string]interface{}) {
+func GetNombreTerceroById(ctx context.Context, idTercero int) (tercero *models.IdentificacionTercero, outputError map[string]interface{}) {
 
 	funcion := "GetNombreTerceroById"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -29,15 +30,15 @@ func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero,
 	}
 
 	urlcrud := "limit=1&sortby=TipoDocumentoId&order=desc&query=Activo:true,TerceroId__Id:" + strconv.Itoa(idTercero) + ",TipoDocumentoId__Id__in:3|6|7"
-	if datosId, err := GetAllDatosIdentificacion(urlcrud); err != nil {
+	if datosId, err := GetAllDatosIdentificacion(ctx, urlcrud); err != nil {
 		return nil, err
 	} else {
 		tercero = new(models.IdentificacionTercero)
 		if len(datosId) == 0 || datosId[0].Id == 0 {
 			urltercero := basePath + "tercero/" + strconv.Itoa(idTercero)
 			tercero_ := new(models.Tercero)
-			if err := request.GetJson(urltercero, &tercero_); err != nil {
-				eval := " - request.GetJson(urltercero, &tercero_)"
+			if _, err := requestV2.GetWithContext(ctx, urltercero, tercero_); err != nil {
+				eval := " - requestV2.GetWithContext(ctx, urltercero, tercero_)"
 				return nil, errorCtrl.Error(funcion+eval, err, "502")
 			} else {
 				tercero.Id = tercero_.Id
@@ -54,7 +55,7 @@ func GetNombreTerceroById(idTercero int) (tercero *models.IdentificacionTercero,
 }
 
 // GetTerceroByUsuarioWSO2 trae la información de un tercero a partir de su UsuarioWSO2
-func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, outputError map[string]interface{}) {
+func GetTerceroByUsuarioWSO2(ctx context.Context, usuario string) (tercero map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -72,7 +73,7 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 	urltercero += "?fields=Id,NombreCompleto,TipoContribuyenteId"
 	urltercero += "&query=Activo:true,UsuarioWSO2:" + usuario
 	// logs.Info(urltercero)
-	if resp, err := request.GetJsonTest(urltercero, &terceros); err == nil && resp.StatusCode == 200 {
+	if status, err := requestV2.GetWithContext(ctx, urltercero, &terceros); err == nil && status == 200 {
 		if len(terceros) == 1 && terceros[0].TipoContribuyenteId != nil {
 			data := terceros[0]
 			tercero = map[string]interface{}{
@@ -105,11 +106,11 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 		}
 	} else {
 		if err == nil {
-			err = fmt.Errorf("undesired Status Code: %d", resp.StatusCode)
+			err = fmt.Errorf("undesired status code: %d", status)
 		}
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetTerceroByUsuarioWSO2 - request.GetJsonTest(urltercero, &datosTerceros)",
+			"funcion": "GetTerceroByUsuarioWSO2 - requestV2.GetWithContext(ctx, urltercero, &terceros)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -119,12 +120,12 @@ func GetTerceroByUsuarioWSO2(usuario string) (tercero map[string]interface{}, ou
 	return tercero, nil
 }
 
-func GetTerceroUD() (int, map[string]interface{}) {
+func GetTerceroUD(ctx context.Context) (int, map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetTerceroUD - Unhandled Error!", "500")
 
 	payload := "query=TipoDocumentoId__Nombre:NIT,Numero:" + GetDocUD()
-	if tercero, err := GetAllDatosIdentificacion(payload); err != nil {
+	if tercero, err := GetAllDatosIdentificacion(ctx, payload); err != nil {
 		return 0, err
 	} else if len(tercero) > 0 && tercero[0].TerceroId.Id > 0 {
 		return tercero[0].TerceroId.Id, nil

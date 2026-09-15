@@ -1,6 +1,7 @@
 package catalogoElementosHelper
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -14,17 +15,17 @@ import (
 )
 
 // GetCuentasContablesSubgrupo ...
-func GetCuentasContablesSubgrupo(subgrupoId, movimientoId int, cuentas *[]models.DetalleCuentasSubgrupo) (outputError map[string]interface{}) {
+func GetCuentasContablesSubgrupo(ctx context.Context, subgrupoId, movimientoId int, cuentas *[]models.DetalleCuentasSubgrupo) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetCuentasContablesSubgrupo - Unhandled Error!", "500")
 
 	query := "limit=-1&sortby=CodigoAbreviacion&order=asc&fields=Id,CodigoAbreviacion,Nombre&query=Activo:true"
-	tipos, outputError := movimientosArka.GetAllFormatoTipoMovimiento(query)
+	tipos, outputError := movimientosArka.GetAllFormatoTipoMovimiento(ctx, query)
 	if outputError != nil {
 		return
 	}
 
-	ctas, outputError := consultarCuentasSubgrupoRecientes(subgrupoId, movimientoId)
+	ctas, outputError := consultarCuentasSubgrupoRecientes(ctx, subgrupoId, movimientoId)
 	if outputError != nil {
 		return
 	}
@@ -45,12 +46,12 @@ func GetCuentasContablesSubgrupo(subgrupoId, movimientoId int, cuentas *[]models
 		detalle.CuentaCreditoId = new(models.DetalleCuenta)
 		detalle.CuentaDebitoId = new(models.DetalleCuenta)
 
-		outputError = findCuentaSubgrupo(detalle.CuentaCreditoId, cta.CuentaCreditoId, detalleCtas)
+		outputError = findCuentaSubgrupo(ctx, detalle.CuentaCreditoId, cta.CuentaCreditoId, detalleCtas)
 		if outputError != nil {
 			return
 		}
 
-		outputError = findCuentaSubgrupo(detalle.CuentaDebitoId, cta.CuentaDebitoId, detalleCtas)
+		outputError = findCuentaSubgrupo(ctx, detalle.CuentaDebitoId, cta.CuentaDebitoId, detalleCtas)
 		if outputError != nil {
 			return
 		}
@@ -61,10 +62,10 @@ func GetCuentasContablesSubgrupo(subgrupoId, movimientoId int, cuentas *[]models
 	return
 }
 
-func consultarCuentasSubgrupoRecientes(subgrupoId, movimientoId int) (ctas []models.CuentasSubgrupo, outputError map[string]interface{}) {
+func consultarCuentasSubgrupoRecientes(ctx context.Context, subgrupoId, movimientoId int) (ctas []models.CuentasSubgrupo, outputError map[string]interface{}) {
 	query := "limit=-1&fields=Id,CuentaDebitoId,CuentaCreditoId,TipoMovimientoId,SubtipoMovimientoId,SubgrupoId,TipoBienId" +
 		"&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:" + strconv.Itoa(subgrupoId)
-	cuentasSubgrupo, outputError := catalogoElementos.GetAllCuentasSubgrupo(query)
+	cuentasSubgrupo, outputError := catalogoElementos.GetAllCuentasSubgrupo(ctx, query)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -131,7 +132,7 @@ func formatoMovimientoByID(id int, formatos map[int]models.FormatoTipoMovimiento
 	return &models.FormatoTipoMovimiento{Id: id}
 }
 
-func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas map[string]models.DetalleCuenta) (outputError map[string]interface{}) {
+func findCuentaSubgrupo(ctx context.Context, ctaSg *models.DetalleCuenta, cuentaId string, cuentas map[string]models.DetalleCuenta) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("findCuentaSubgrupo - Unhandled Error!", "500")
 
@@ -140,7 +141,7 @@ func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas ma
 		return
 	}
 
-	cta, outputError := cuentasContables.GetCuentaContable(cuentaId)
+	cta, outputError := cuentasContables.GetCuentaContable(ctx, cuentaId)
 	if outputError != nil {
 		return
 	} else if cta != nil {
@@ -158,7 +159,7 @@ func findCuentaSubgrupo(ctaSg *models.DetalleCuenta, cuentaId string, cuentas ma
 }
 
 // GetCuentasByMovimientoSubgrupos Consulta las cuentas para una serie de subgrupos y las almacena en una estructura de fácil acceso
-func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentasSubgrupo) (
+func GetCuentasByMovimientoAndSubgrupos(ctx context.Context, movimientoId int, subgrupos []int, cuentasSubgrupo map[int]models.CuentasSubgrupo) (
 	outputError map[string]interface{}) {
 
 	funcion := "GetCuentasByMovimientoSubgrupos"
@@ -178,7 +179,7 @@ func GetCuentasByMovimientoAndSubgrupos(movimientoId int, subgrupos []int, cuent
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&" +
 		"query=Activo:true,SubtipoMovimientoId:" + strconv.Itoa(movimientoId) +
 		",SubgrupoId__Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(subgrupos_, "|"))
-	if cuentas_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
+	if cuentas_, err := catalogoElementos.GetAllCuentasSubgrupo(ctx, query); err != nil {
 		return err
 	} else {
 		for _, cuenta := range cuentas_ {

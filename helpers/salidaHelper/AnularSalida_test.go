@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"testing"
 
 	"github.com/udistrital/arka_mid/models"
@@ -128,18 +129,18 @@ func TestSincronizarEstadoMovimiento(t *testing.T) {
 func TestPostValidaSalidasVacias(t *testing.T) {
 	t.Parallel()
 
-	if _, err := Post(nil, false); err == nil {
+	if _, err := Post(context.Background(), nil, false); err == nil {
 		t.Fatal("expected nil request to be rejected")
 	}
 
-	if _, err := Post(&models.SalidaGeneral{}, false); err == nil {
+	if _, err := Post(context.Background(), &models.SalidaGeneral{}, false); err == nil {
 		t.Fatal("expected empty salidas request to be rejected")
 	}
 }
 
 func TestNormalizarNuevaSalida(t *testing.T) {
 	originalGetter := getMovimientoByIDSalidaPost
-	getMovimientoByIDSalidaPost = func(id int) (*models.Movimiento, map[string]interface{}) {
+	getMovimientoByIDSalidaPost = func(_ context.Context, id int) (*models.Movimiento, map[string]interface{}) {
 		return &models.Movimiento{
 			Id: 8079,
 			EstadoMovimientoId: &models.EstadoMovimiento{
@@ -175,7 +176,7 @@ func TestNormalizarNuevaSalida(t *testing.T) {
 		},
 	}
 
-	if err := normalizarNuevaSalida(trSalida, 3); err != nil {
+	if err := normalizarNuevaSalida(context.Background(), trSalida, 3); err != nil {
 		t.Fatalf("expected salida to be normalized, got %#v", err)
 	}
 
@@ -212,7 +213,7 @@ func TestNormalizarNuevaSalida(t *testing.T) {
 
 func TestNormalizarNuevaSalidaValidaPadre(t *testing.T) {
 	originalGetter := getMovimientoByIDSalidaPost
-	getMovimientoByIDSalidaPost = func(id int) (*models.Movimiento, map[string]interface{}) {
+	getMovimientoByIDSalidaPost = func(_ context.Context, id int) (*models.Movimiento, map[string]interface{}) {
 		return nil, nil
 	}
 	defer func() { getMovimientoByIDSalidaPost = originalGetter }()
@@ -224,7 +225,7 @@ func TestNormalizarNuevaSalidaValidaPadre(t *testing.T) {
 		},
 	}
 
-	if err := normalizarNuevaSalida(trSalida, 3); err == nil {
+	if err := normalizarNuevaSalida(context.Background(), trSalida, 3); err == nil {
 		t.Fatal("expected missing parent to be rejected")
 	}
 }
@@ -235,12 +236,12 @@ func TestLiberarElementosDeSalidasAnuladas(t *testing.T) {
 
 	originalGet := getAllElementosMovimientoSalidaPost
 	originalPut := putElementosMovimientoSalidaPost
-	getAllElementosMovimientoSalidaPost = func(query string) ([]*models.ElementosMovimiento, map[string]interface{}) {
+	getAllElementosMovimientoSalidaPost = func(_ context.Context, query string) ([]*models.ElementosMovimiento, map[string]interface{}) {
 		return []*models.ElementosMovimiento{
 			{Id: 55, Activo: true},
 		}, nil
 	}
-	putElementosMovimientoSalidaPost = func(elementoM *models.ElementosMovimiento, elementoId int) (*models.ElementosMovimiento, map[string]interface{}) {
+	putElementosMovimientoSalidaPost = func(_ context.Context, elementoM *models.ElementosMovimiento, elementoId int) (*models.ElementosMovimiento, map[string]interface{}) {
 		actualizados++
 		if elementoId != 55 || elementoM.Activo {
 			t.Fatalf("expected elemento 55 to be deactivated, got id=%d activo=%v", elementoId, elementoM.Activo)
@@ -261,7 +262,7 @@ func TestLiberarElementosDeSalidasAnuladas(t *testing.T) {
 		},
 	}
 
-	if err := liberarElementosDeSalidasAnuladas(trSalida); err != nil {
+	if err := liberarElementosDeSalidasAnuladas(context.Background(), trSalida); err != nil {
 		t.Fatalf("expected cleanup of annulled salidas, got %#v", err)
 	}
 
