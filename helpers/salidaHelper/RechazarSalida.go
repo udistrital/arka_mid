@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 func RechazarSalida(ctx context.Context, id int) (salida *models.Movimiento, outputError map[string]interface{}) {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetTipoBienIdByValor Determina el tipo bien al que pertenece un elemento dado el valor en UVT

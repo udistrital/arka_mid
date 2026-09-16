@@ -7,7 +7,7 @@ import (
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 	polizasHelper "github.com/udistrital/arka_mid/helpers/polizasHelper"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // PolizasController operations for Polizas

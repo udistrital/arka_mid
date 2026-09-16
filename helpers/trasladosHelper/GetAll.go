@@ -12,7 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetAll Consulta información general de todos los traslados asociados a un usuario determinado. Permite filtrar por los que están pendientes por aprobar o confirmar

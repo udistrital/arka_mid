@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 func GetSedeDependenciaUbicacion(ctx context.Context, ubicacionId int) (resultado *models.DetalleSedeDependencia, outputError map[string]interface{}) {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
