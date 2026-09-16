@@ -7,7 +7,7 @@ import (
 
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // Genera un consecutivo con el año actual y para un contextoId determinado

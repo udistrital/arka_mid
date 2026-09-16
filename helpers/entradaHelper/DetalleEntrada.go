@@ -13,7 +13,7 @@ import (
 	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // DetalleEntrada Consulta el detalle de una entrada incluyendo la transaccion contable (si aplica)
