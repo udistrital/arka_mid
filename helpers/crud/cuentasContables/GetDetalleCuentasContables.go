@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetCuentaContable Consulta controlador nodo_cuenta_contable/{UUID}

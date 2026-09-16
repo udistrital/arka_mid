@@ -7,7 +7,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // TercerosController operations for Terceros

@@ -3,7 +3,7 @@ package parametros
 import (
 	"context"
 
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetParametrosDebitoCredito consulta los parametros de movimientos credito y debito

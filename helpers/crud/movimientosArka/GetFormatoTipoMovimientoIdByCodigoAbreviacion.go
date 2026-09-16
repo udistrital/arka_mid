@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/beego/beego/v2/core/logs"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetFormatoTipoMovimientoIdByCodigoAbreviacion Consulta el Id de un FormatoTipoMovimiento según el Codigo de abreviación del mismo

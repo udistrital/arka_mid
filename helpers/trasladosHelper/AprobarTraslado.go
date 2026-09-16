@@ -9,8 +9,8 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	timebogota "github.com/udistrital/arka_mid/utils_oas/timeBogota"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
+	timebogota "github.com/udistrital/utils_oas/v2/time_bogota"
 )
 
 // AprobarTraslado Actualiza el estado del traslado y genera la transaccion contable correspondiente

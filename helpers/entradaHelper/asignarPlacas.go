@@ -10,7 +10,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 func asignarPlacas(ctx context.Context, actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
