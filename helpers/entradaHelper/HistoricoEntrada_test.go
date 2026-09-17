@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -107,7 +108,7 @@ func TestAplicarConsecutivoHistoricoEntradaConsecutivoNoEncontrado(t *testing.T)
 	t.Parallel()
 
 	original := getConsecutivoByIDEntradaHistorica
-	getConsecutivoByIDEntradaHistorica = func(id int, consecutivo *models.Consecutivo) map[string]interface{} {
+	getConsecutivoByIDEntradaHistorica = func(_ context.Context, id int, consecutivo *models.Consecutivo) map[string]interface{} {
 		return nil
 	}
 	defer func() {
@@ -115,7 +116,7 @@ func TestAplicarConsecutivoHistoricoEntradaConsecutivoNoEncontrado(t *testing.T)
 	}()
 
 	movimiento := &models.Movimiento{}
-	err := aplicarConsecutivoHistoricoEntrada(movimiento, 10764, 1997)
+	err := aplicarConsecutivoHistoricoEntrada(t.Context(), movimiento, 10764, 1997)
 	if err == nil {
 		t.Fatal("expected error for missing consecutivo")
 	}
@@ -164,30 +165,30 @@ func TestRegistrarEntradaHistoricaEnviaFechasAntesDelPost(t *testing.T) {
 	originalPostSoporte := postSoporteMovimientoEntradaHistorica
 	originalAprobar := aprobarEntradaHistoricaFn
 
-	getEstadoMovimientoIdByNombreEntradaHistorica = func(id *int, nombre string) map[string]interface{} {
+	getEstadoMovimientoIdByNombreEntradaHistorica = func(_ context.Context, id *int, nombre string) map[string]interface{} {
 		*id = 2
 		return nil
 	}
-	getFormatoTipoMovimientoIdByCodigoEntradaHistorica = func(id *int, codigo string) map[string]interface{} {
+	getFormatoTipoMovimientoIdByCodigoEntradaHistorica = func(_ context.Context, id *int, codigo string) map[string]interface{} {
 		*id = 1
 		return nil
 	}
-	getConsecutivoByIDEntradaHistorica = func(id int, consecutivo *models.Consecutivo) map[string]interface{} {
+	getConsecutivoByIDEntradaHistorica = func(_ context.Context, id int, consecutivo *models.Consecutivo) map[string]interface{} {
 		consecutivo.Id = id
 		consecutivo.Consecutivo = 1
 		return nil
 	}
-	getTransaccionActaRecibidoEntradaHistorica = func(id int, elementos bool, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+	getTransaccionActaRecibidoEntradaHistorica = func(_ context.Context, id int, elementos bool, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
 		transaccion.UltimoEstado = &models.HistoricoActa{
 			EstadoActaId: &models.EstadoActa{CodigoAbreviacion: "Aceptada"},
 		}
 		transaccion.Elementos = []*models.Elemento{{Id: 1}}
 		return nil
 	}
-	putTransaccionActaRecibidoEntradaHistorica = func(id int, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+	putTransaccionActaRecibidoEntradaHistorica = func(_ context.Context, id int, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
 		return nil
 	}
-	postMovimientoEntradaHistorica = func(movimiento *models.Movimiento) map[string]interface{} {
+	postMovimientoEntradaHistorica = func(_ context.Context, movimiento *models.Movimiento) map[string]interface{} {
 		if movimiento == nil {
 			t.Fatal("expected movimiento payload")
 		}
@@ -212,13 +213,13 @@ func TestRegistrarEntradaHistoricaEnviaFechasAntesDelPost(t *testing.T) {
 		movimiento.Id = 99
 		return nil
 	}
-	putMovimientoEntradaHistorica = func(movimiento *models.Movimiento, id int) map[string]interface{} {
+	putMovimientoEntradaHistorica = func(_ context.Context, movimiento *models.Movimiento, id int) map[string]interface{} {
 		return nil
 	}
-	postSoporteMovimientoEntradaHistorica = func(soporte *models.SoporteMovimiento) map[string]interface{} {
+	postSoporteMovimientoEntradaHistorica = func(_ context.Context, soporte *models.SoporteMovimiento) map[string]interface{} {
 		return nil
 	}
-	aprobarEntradaHistoricaFn = func(entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) map[string]interface{} {
+	aprobarEntradaHistoricaFn = func(_ context.Context, entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) map[string]interface{} {
 		return nil
 	}
 
@@ -250,7 +251,7 @@ func TestRegistrarEntradaHistoricaEnviaFechasAntesDelPost(t *testing.T) {
 	}
 
 	resultado := &models.ResultadoMovimiento{}
-	err := RegistrarEntradaHistorica(data, resultado)
+	err := RegistrarEntradaHistorica(t.Context(), data, resultado)
 	if err != nil {
 		t.Fatalf("unexpected error: %#v", err)
 	}
@@ -267,20 +268,20 @@ func TestRegistrarEntradaHistoricaConsultaActaConElementos(t *testing.T) {
 	originalPostSoporte := postSoporteMovimientoEntradaHistorica
 	originalAprobar := aprobarEntradaHistoricaFn
 
-	getEstadoMovimientoIdByNombreEntradaHistorica = func(id *int, nombre string) map[string]interface{} {
+	getEstadoMovimientoIdByNombreEntradaHistorica = func(_ context.Context, id *int, nombre string) map[string]interface{} {
 		*id = 2
 		return nil
 	}
-	getFormatoTipoMovimientoIdByCodigoEntradaHistorica = func(id *int, codigo string) map[string]interface{} {
+	getFormatoTipoMovimientoIdByCodigoEntradaHistorica = func(_ context.Context, id *int, codigo string) map[string]interface{} {
 		*id = 1
 		return nil
 	}
-	getConsecutivoByIDEntradaHistorica = func(id int, consecutivo *models.Consecutivo) map[string]interface{} {
+	getConsecutivoByIDEntradaHistorica = func(_ context.Context, id int, consecutivo *models.Consecutivo) map[string]interface{} {
 		consecutivo.Id = id
 		consecutivo.Consecutivo = 1
 		return nil
 	}
-	getTransaccionActaRecibidoEntradaHistorica = func(id int, elementos bool, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+	getTransaccionActaRecibidoEntradaHistorica = func(_ context.Context, id int, elementos bool, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
 		if !elementos {
 			t.Fatal("expected consultar acta histórica con elementos=true")
 		}
@@ -290,20 +291,20 @@ func TestRegistrarEntradaHistoricaConsultaActaConElementos(t *testing.T) {
 		transaccion.Elementos = []*models.Elemento{{Id: 1}}
 		return nil
 	}
-	putTransaccionActaRecibidoEntradaHistorica = func(id int, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
+	putTransaccionActaRecibidoEntradaHistorica = func(_ context.Context, id int, transaccion *models.TransaccionActaRecibido) map[string]interface{} {
 		return nil
 	}
-	postMovimientoEntradaHistorica = func(movimiento *models.Movimiento) map[string]interface{} {
+	postMovimientoEntradaHistorica = func(_ context.Context, movimiento *models.Movimiento) map[string]interface{} {
 		movimiento.Id = 99
 		return nil
 	}
-	putMovimientoEntradaHistorica = func(movimiento *models.Movimiento, id int) map[string]interface{} {
+	putMovimientoEntradaHistorica = func(_ context.Context, movimiento *models.Movimiento, id int) map[string]interface{} {
 		return nil
 	}
-	postSoporteMovimientoEntradaHistorica = func(soporte *models.SoporteMovimiento) map[string]interface{} {
+	postSoporteMovimientoEntradaHistorica = func(_ context.Context, soporte *models.SoporteMovimiento) map[string]interface{} {
 		return nil
 	}
-	aprobarEntradaHistoricaFn = func(entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) map[string]interface{} {
+	aprobarEntradaHistoricaFn = func(_ context.Context, entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) map[string]interface{} {
 		return nil
 	}
 
@@ -334,7 +335,7 @@ func TestRegistrarEntradaHistoricaConsultaActaConElementos(t *testing.T) {
 	}
 
 	resultado := &models.ResultadoMovimiento{}
-	if err := RegistrarEntradaHistorica(data, resultado); err != nil {
+	if err := RegistrarEntradaHistorica(t.Context(), data, resultado); err != nil {
 		t.Fatalf("unexpected error: %#v", err)
 	}
 }

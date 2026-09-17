@@ -1,21 +1,22 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError map[string]interface{}) {
+func GetElementosSinAsignar(ctx context.Context) (Elementos []map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetElementosSinAsignar - Unhandled Error", "500")
 
 	payload := "limit=-1&query=Activo:true,MovimientoId__FormatoTipoMovimientoId__CodigoAbreviacion:SAL_CONS" +
 		",MovimientoId__EstadoMovimientoId__Nombre:Salida%20Aprobada"
-	elementos, err := movimientosArka.GetAllElementosMovimiento(payload)
+	elementos, err := movimientosArka.GetAllElementosMovimiento(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -26,14 +27,14 @@ func GetElementosSinAsignar() (Elementos []map[string]interface{}, outputError m
 	for _, el := range elementos {
 
 		var el_ models.Elemento
-		outputError = actaRecibido.GetElementoById(*el.ElementoActaId, &el_)
+		outputError = actaRecibido.GetElementoById(ctx, *el.ElementoActaId, &el_)
 		if outputError != nil {
 			return
 		}
 
 		_, ok := subgruposBuffer[el_.SubgrupoCatalogoId]
 		if !ok {
-			sg, err := catalogoElementos.GetSubgrupoById(el_.SubgrupoCatalogoId)
+			sg, err := catalogoElementos.GetSubgrupoById(ctx, el_.SubgrupoCatalogoId)
 			if err != nil {
 				return nil, err
 			}

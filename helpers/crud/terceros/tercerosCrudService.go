@@ -1,6 +1,7 @@
 package terceros
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -8,14 +9,14 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var basePath, _ = beego.AppConfig.String("tercerosService")
 
 // GetCorreo Consulta el correo de un tercero
-func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, outputError map[string]interface{}) {
+func GetCorreo(ctx context.Context, id int) (DetalleFuncionario []*models.InfoComplementariaTercero, outputError map[string]interface{}) {
 
 	funcion := "GetCorreo"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -28,9 +29,9 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 	// Consulta correo
 	urlcrud = basePath + "info_complementaria_tercero?limit=1&fields=Dato&sortby=Id&order=desc"
 	urlcrud += "&query=Activo%3Atrue,InfoComplementariaId__Nombre__icontains%3Acorreo,TerceroId__Id%3A" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &correo); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &correo); err != nil {
 		logs.Error(err)
-		eval := " - request.GetJson(urlcrud, &correo)"
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &correo)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -38,7 +39,7 @@ func GetCorreo(id int) (DetalleFuncionario []*models.InfoComplementariaTercero, 
 }
 
 // GetAllDatosIdentificacion get controlador datos_identificacion de api terceros_crud
-func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificacion, outputError map[string]interface{}) {
+func GetAllDatosIdentificacion(ctx context.Context, query string) (datosId []models.DatosIdentificacion, outputError map[string]interface{}) {
 
 	funcion := "GetAllDatosIdentificacion"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -46,10 +47,10 @@ func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificaci
 	// Consulta correo
 	query = strings.TrimPrefix(query, "?")
 	urlcrud := basePath + "datos_identificacion?" + query
-	if err := request.GetJson(urlcrud, &datosId); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &datosId); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetCorreo - request.GetJson(urlcrud, &response2)",
+			"funcion": "GetAllDatosIdentificacion - requestV2.GetWithContext(ctx, urlcrud, &datosId)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -60,30 +61,30 @@ func GetAllDatosIdentificacion(query string) (datosId []models.DatosIdentificaci
 }
 
 // GetTerceroById get controlador tercero/{id} del api terceros_crud
-func GetTerceroById(id int) (tercero *models.Tercero, outputError map[string]interface{}) {
+func GetTerceroById(ctx context.Context, id int) (tercero *models.Tercero, outputError map[string]interface{}) {
 
 	funcion := "GetTerceroById"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "tercero/" + strconv.Itoa(id)
-	if err := request.GetJson(urlcrud, &tercero); err != nil {
-		eval := " - request.GetJson(urlcrud, &tercero)"
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &tercero); err != nil {
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &tercero)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 	return tercero, nil
 }
 
 // GetTrTerceroIdentificacionById get controlador tercero/{id} del api terceros_crud
-func GetTrTerceroIdentificacionById(id int) (tercero models.DetalleTercero, outputError map[string]interface{}) {
+func GetTrTerceroIdentificacionById(ctx context.Context, id int) (tercero models.DetalleTercero, outputError map[string]interface{}) {
 
 	funcion := "GetTrTerceroIdentificacionById"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	urlcrud := basePath + "tercero/identificacion/" + strconv.Itoa(id)
-	err := request.GetJson(urlcrud, &tercero)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, &tercero)
 	if err != nil {
 		logs.Error(err, urlcrud)
-		eval := " - request.GetJson(urlcrud, &tercero)"
+		eval := " - requestV2.GetWithContext(ctx, urlcrud, &tercero)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -91,16 +92,16 @@ func GetTrTerceroIdentificacionById(id int) (tercero models.DetalleTercero, outp
 }
 
 // GetAllTrTerceroIdentificacion get controlador tercero/identificacion del api terceros_crud
-func GetAllTrTerceroIdentificacion(payload string) (terceros []models.DetalleTercero, outputError map[string]interface{}) {
+func GetAllTrTerceroIdentificacion(ctx context.Context, payload string) (terceros []models.DetalleTercero, outputError map[string]interface{}) {
 
 	funcion := "GetAllTrTerceroIdentificacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := basePath + "tercero/identificacion?" + payload
-	err := request.GetJson(urlcrud, &terceros)
+	_, err := requestV2.GetWithContext(ctx, urlcrud, &terceros)
 	if err != nil {
 		logs.Error(err, urlcrud)
-		eval := "request.GetJson(urlcrud, &terceros)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &terceros)"
 		outputError = errorCtrl.Error(funcion+eval, err, "502")
 	}
 

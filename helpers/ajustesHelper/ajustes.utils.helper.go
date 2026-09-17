@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"math"
 	"net/url"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // generaTrContable Dado un valor, subgrupo nuevo y original genera la transacción contable.
@@ -73,7 +74,7 @@ func generaTrContable(vInicial, vNuevo float64,
 }
 
 // getCuentasByMovimientoSubgrupos Retorna las cuentas de cada subgrupo en una estructura para fácil acceso
-func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
+func getCuentasByMovimientoSubgrupos(ctx context.Context, movimientoId int, subgrupos []int) (
 	cuentasSubgrupo map[int]*models.CuentasSubgrupo, outputError map[string]interface{}) {
 
 	funcion := "getCuentasByMovimientoSubgrupos"
@@ -84,7 +85,7 @@ func getCuentasByMovimientoSubgrupos(movimientoId int, subgrupos []int) (
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + strconv.Itoa(movimientoId) + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(subgrupos, "|"))
-	if cuentas_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
+	if cuentas_, err := catalogoElementos.GetAllCuentasSubgrupo(ctx, query); err != nil {
 		return nil, err
 	} else {
 		for _, cuenta := range cuentas_ {
@@ -115,14 +116,14 @@ func joinMaps(map1, map2 map[int]*models.CuentasSubgrupo) map[int]*models.Cuenta
 }
 
 // fillCuentas Consulta el detalle de una serie de cuentas
-func fillCuentas(cuentas map[string]*models.CuentaContable, cuentas_ []string) (cuentasCompletas map[string]*models.CuentaContable, outputError map[string]interface{}) {
+func fillCuentas(ctx context.Context, cuentas map[string]*models.CuentaContable, cuentas_ []string) (cuentasCompletas map[string]*models.CuentaContable, outputError map[string]interface{}) {
 
 	funcion := "fillCuentas"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	for _, id := range cuentas_ {
 		if _, ok := cuentas[id]; !ok {
-			if cta_, err := cuentasContables.GetCuentaContable(id); err != nil {
+			if cta_, err := cuentasContables.GetCuentaContable(ctx, id); err != nil {
 				return nil, err
 			} else {
 				cuentas[id] = cta_

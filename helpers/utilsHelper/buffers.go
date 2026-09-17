@@ -1,12 +1,13 @@
 package utilsHelper
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"github.com/beego/beego/v2/core/logs"
 
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 // BufferGeneric actúa como proxy para evitar consultas repetidas a un helper
@@ -56,7 +57,7 @@ func BufferGeneric(id int, diccionario map[int]interface{}, callback func() (int
 // siempre y cuando la URL y id especificados tengan una relación directa y bidireccional
 //
 // Es un caso particular de BufferGeneric
-func BufferGetStat(id int, diccionario map[int]interface{}, url string,
+func BufferGetStat(ctx context.Context, id int, diccionario map[int]interface{}, url string,
 	consultasNecesarias *int, consultasEvitadas *int) (elemento map[string]interface{}, outputError map[string]interface{}) {
 
 	defer func() {
@@ -71,7 +72,7 @@ func BufferGetStat(id int, diccionario map[int]interface{}, url string,
 
 	makeRequest := func() (interface{}, map[string]interface{}) {
 		var data []map[string]interface{}
-		if res, err := request.GetJsonTest(url, &data); err == nil && res.StatusCode == 200 {
+		if status, err := requestV2.GetWithContext(ctx, url, &data); err == nil && status == 200 {
 			if len(data) == 1 && len(data[0]) > 0 {
 				diccionario[id] = data[0]
 				return data[0], nil
@@ -79,11 +80,11 @@ func BufferGetStat(id int, diccionario map[int]interface{}, url string,
 			return nil, nil
 		} else {
 			if err == nil {
-				err = fmt.Errorf("undesired Status Code: %d != 200", res.StatusCode)
+				err = fmt.Errorf("undesired Status Code: %d != 200", status)
 			}
 			logs.Error(err)
 			return nil, map[string]interface{}{
-				"funcion": "BufferGet/makeRequest - request.GetJsonTest(url, &data)",
+				"funcion": "BufferGet/makeRequest - requestV2.GetWithContext(ctx, url, &data)",
 				"err":     err,
 				"status":  "502",
 			}
@@ -108,6 +109,6 @@ func BufferGetStat(id int, diccionario map[int]interface{}, url string,
 }
 
 // BufferGet es igual que BufferGetStat pero sin estadísticas
-func BufferGet(id int, diccionario map[int]interface{}, url string) (elemento map[string]interface{}, outputError map[string]interface{}) {
-	return BufferGetStat(id, diccionario, url, nil, nil)
+func BufferGet(ctx context.Context, id int, diccionario map[int]interface{}, url string) (elemento map[string]interface{}, outputError map[string]interface{}) {
+	return BufferGetStat(ctx, id, diccionario, url, nil, nil)
 }

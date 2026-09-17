@@ -1,15 +1,17 @@
 package depreciacionHelper
 
 import (
+	"context"
+
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // RechazarCierre Verifica el estado de las cuentas contables y actualiza el estado del cierre.
-func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func RechazarCierre(ctx context.Context, info *models.InfoDepreciacion, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("RechazarCierre - Unhandled Error!", "500")
 
@@ -18,19 +20,19 @@ func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMo
 		parametros []models.ParametroConfiguracion
 	)
 
-	if err := configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros); err != nil {
+	if err := configuracion.GetAllParametro(ctx, "Nombre:cierreEnCurso", &parametros); err != nil {
 		return err
 	} else if len(parametros) != 1 || parametros[0].Valor != "true" {
 		return
 	}
 
-	mov_, outputError := movimientosArka.GetMovimientoById(info.Id)
+	mov_, outputError := movimientosArka.GetMovimientoById(ctx, info.Id)
 	if outputError != nil || mov_.EstadoMovimientoId.Nombre != "Cierre En Curso" {
 		return
 	}
 
 	resultado.Movimiento = *mov_
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&resultado.Movimiento.EstadoMovimientoId.Id, "Cierre Rechazado"); err != nil {
+	if err := movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &resultado.Movimiento.EstadoMovimientoId.Id, "Cierre Rechazado"); err != nil {
 		return err
 	}
 
@@ -43,13 +45,13 @@ func RechazarCierre(info *models.InfoDepreciacion, resultado *models.ResultadoMo
 		return err
 	}
 
-	outputError = movimientosArka.PutMovimiento(&resultado.Movimiento, info.Id)
+	outputError = movimientosArka.PutMovimiento(ctx, &resultado.Movimiento, info.Id)
 	if outputError != nil {
 		return
 	}
 
 	parametros[0].Valor = "false"
-	if err := configuracion.PutParametro(parametros[0].Id, &parametros[0]); err != nil {
+	if err := configuracion.PutParametro(ctx, parametros[0].Id, &parametros[0]); err != nil {
 		return err
 	}
 

@@ -11,7 +11,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/inventarioHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // BajaController
@@ -45,7 +45,7 @@ func (c *BajaController) Post() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorCtrl.Error("Post - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
-		if respuesta, err := bajasHelper.Post(v); err == nil && respuesta != nil {
+		if respuesta, err := bajasHelper.Post(c.Ctx.Request.Context(), v); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 			c.ServeJSON()
@@ -87,7 +87,7 @@ func (c *BajaController) Put() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err != nil {
 		panic(errorCtrl.Error("Put - json.Unmarshal(c.Ctx.Input.RequestBody, &v)", err, "400"))
 	} else {
-		if respuesta, err := bajasHelper.Put(v, id); err == nil && respuesta != nil {
+		if respuesta, err := bajasHelper.Put(c.Ctx.Request.Context(), v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 			c.ServeJSON()
@@ -134,7 +134,7 @@ func (c *BajaController) GetSolicitud() {
 		id = v
 	}
 
-	if err := bajasHelper.GetOne(id, &baja); err == nil {
+	if err := bajasHelper.GetOne(c.Ctx.Request.Context(), id, &baja); err == nil {
 		c.Data["json"] = baja
 	} else {
 		panic(err)
@@ -181,7 +181,7 @@ func (c *BajaController) GetAll() {
 	}
 
 	var bajas = make([]models.DetalleBaja, 0)
-	if err := bajasHelper.GetAll(terceroId, revComite, revAlmacen, &bajas); err != nil {
+	if err := bajasHelper.GetAll(c.Ctx.Request.Context(), terceroId, revComite, revAlmacen, &bajas); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = bajas
@@ -217,7 +217,7 @@ func (c *BajaController) GetDetalleElemento() {
 	}
 
 	var elemento models.DetalleElementoBaja
-	err := inventarioHelper.GetDetalleElemento(id, &elemento)
+	err := inventarioHelper.GetDetalleElemento(c.Ctx.Request.Context(), id, &elemento)
 	if err != nil {
 		panic(err)
 	}
@@ -243,14 +243,14 @@ func (c *BajaController) PutRevision() {
 	}
 
 	if !trBaja.Aprobacion {
-		if ids, err := movimientosArka.PutRevision(trBaja); err != nil {
+		if ids, err := movimientosArka.PutRevision(c.Ctx.Request.Context(), trBaja); err != nil {
 			panic(errorCtrl.Error("PutRevision - movimientosArkaHelper.PutRevision(trBaja)", err, "404"))
 		} else {
 			c.Data["json"] = ids
 		}
 	} else {
 		var response models.ResultadoMovimiento
-		if err := bajasHelper.AprobarBajas(trBaja, &response); err != nil {
+		if err := bajasHelper.AprobarBajas(c.Ctx.Request.Context(), trBaja, &response); err != nil {
 			panic(errorCtrl.Error("PutRevision - bajasHelper.AprobarBajas(trBaja)", err, "404"))
 		} else {
 			c.Data["json"] = response

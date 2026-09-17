@@ -1,6 +1,7 @@
 package asientoContable
 
 import (
+	"context"
 	"net/url"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuenta *models.CuentaContable, tipo int) (movimiento *models.MovimientoTransaccion) {
@@ -34,7 +35,7 @@ func CreaMovimiento(valor float64, descripcionMovto string, idTercero int, cuent
 }
 
 // AsientoContable realiza el asiento contable. totales tiene los valores por clase, tipomvto el tipo de mvto
-func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero, consecutivoId int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
+func AsientoContable(ctx context.Context, totales map[int]float64, comprobante, tipomvto, descripcionMovto, descripcionAsiento string, idTercero, consecutivoId int, submit bool) (response map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "AsientoContable"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -51,7 +52,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	res = make(map[string]interface{})
 	res["errorTransaccion"] = ""
 
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		return nil, err
 	} else {
 		parametroTipoDebito = db_
@@ -59,7 +60,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	}
 
 	if comprobante != "" {
-		if err := cuentasContables.GetComprobante(comprobante, &comprobanteID); err != nil {
+		if err := cuentasContables.GetComprobante(ctx, comprobante, &comprobanteID); err != nil {
 			return nil, err
 		}
 	}
@@ -91,7 +92,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	query := "limit=-1&fields=CuentaDebitoId,CuentaCreditoId,SubgrupoId&sortby=Id&order=desc&"
 	query += "query=SubtipoMovimientoId:" + tipomvto + ",Activo:true,SubgrupoId__Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(idsSubgrupos, "|"))
-	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(query); err != nil {
+	if elementos_, err := catalogoElementos.GetAllCuentasSubgrupo(ctx, query); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = elementos_
@@ -101,10 +102,10 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	for id := range totales {
 		if idx := FindInArray(cuentasSubgrupo, id); idx > -1 {
 
-			if ctaCr_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
+			if ctaCr_, err := cuentasContables.GetCuentaContable(ctx, cuentasSubgrupo[idx].CuentaCreditoId); err != nil {
 				return nil, err
 			} else if ctaCr_ == nil {
-				subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+				subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, id)
 				if err != nil {
 					return nil, err
 				} else {
@@ -115,10 +116,10 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 				infoCuentas[cuentasSubgrupo[idx].CuentaCreditoId] = ctaCr_
 			}
 
-			if ctaDb_, err := cuentasContables.GetCuentaContable(cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
+			if ctaDb_, err := cuentasContables.GetCuentaContable(ctx, cuentasSubgrupo[idx].CuentaDebitoId); err != nil {
 				return nil, err
 			} else if ctaDb_ == nil {
-				subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+				subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, id)
 				if err != nil {
 					return nil, err
 				} else {
@@ -135,7 +136,7 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 			transaccion.Movimientos = append(transaccion.Movimientos, movimientoCredito)
 
 		} else {
-			subgrupo, err := catalogoElementos.GetSubgrupoById(id)
+			subgrupo, err := catalogoElementos.GetSubgrupoById(ctx, id)
 			if err != nil {
 				return nil, err
 			} else {
@@ -146,17 +147,17 @@ func AsientoContable(totales map[int]float64, comprobante, tipomvto, descripcion
 	}
 
 	if submit {
-		if tr, err := movimientosContables.PostTrContable(&transaccion); err != nil {
+		if tr, err := movimientosContables.PostTrContable(ctx, &transaccion); err != nil {
 			return nil, err
 		} else {
-			if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
+			if tercero, err := crudTerceros.GetNombreTerceroById(ctx, idTercero); err != nil {
 				return nil, err
 			} else {
 				res["resultadoTransaccion"] = fillDetalle(infoCuentas, tr, tercero.Numero)
 			}
 		}
 	} else {
-		if tercero, err := crudTerceros.GetNombreTerceroById(idTercero); err != nil {
+		if tercero, err := crudTerceros.GetNombreTerceroById(ctx, idTercero); err != nil {
 			return nil, err
 		} else {
 			res["simulacro"] = fillDetalle(infoCuentas, &transaccion, tercero.Numero)

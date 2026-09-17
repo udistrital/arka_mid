@@ -1,6 +1,7 @@
 package bajasHelper
 
 import (
+	"context"
 	"net/url"
 	"strconv"
 
@@ -13,11 +14,11 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetOne Consulta el detalle de la baja: elementos, revisor, solicitante, soporte, tipo
-func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
+func GetOne(ctx context.Context, id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
@@ -28,7 +29,7 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 	)
 
 	// Se consulta el movimiento
-	movimiento, outputError = movimientosArka.GetMovimientoById(id)
+	movimiento, outputError = movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	}
@@ -39,7 +40,7 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	// Se consulta el detalle del funcionario solicitante
 	if detalle.Funcionario > 0 {
-		Baja.Funcionario, outputError = terceros.GetInfoTerceroById(detalle.Funcionario)
+		Baja.Funcionario, outputError = terceros.GetInfoTerceroById(ctx, detalle.Funcionario)
 		if outputError != nil {
 			return
 		}
@@ -47,7 +48,7 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	// Se consulta el detalle del revisor si lo hay
 	if detalle.Revisor > 0 {
-		Baja.Revisor, outputError = terceros.GetInfoTerceroById(detalle.Revisor)
+		Baja.Revisor, outputError = terceros.GetInfoTerceroById(ctx, detalle.Revisor)
 		if outputError != nil {
 			return
 		}
@@ -55,7 +56,7 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	if len(detalle.Elementos) > 0 {
-		Baja.Elementos, outputError = getDetalleElementos(detalle.Elementos)
+		Baja.Elementos, outputError = getDetalleElementos(ctx, detalle.Elementos)
 		if outputError != nil {
 			return
 		}
@@ -63,14 +64,14 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 
 	// Se consulta el detalle de los elementos relacionados en la solicitud
 	query := "query=MovimientoId__Id:" + strconv.Itoa(id)
-	if soportes, err := movimientosArka.GetAllSoporteMovimiento(query); err != nil {
+	if soportes, err := movimientosArka.GetAllSoporteMovimiento(ctx, query); err != nil {
 		return err
 	} else if len(soportes) > 0 {
 		Baja.Soporte = soportes[0].DocumentoId
 	}
 
 	if detalle.DependenciaId > 0 {
-		if err := parametros.GetParametroById(detalle.DependenciaId, &dependencia); err != nil {
+		if err := parametros.GetParametroById(ctx, detalle.DependenciaId, &dependencia); err != nil {
 			return err
 		}
 	}
@@ -89,13 +90,13 @@ func GetOne(id int, Baja *models.TrBaja) (outputError map[string]interface{}) {
 		return
 	}
 
-	*Baja.TrContable, outputError = asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
+	*Baja.TrContable, outputError = asientoContable.GetFullDetalleContable(ctx, *movimiento.ConsecutivoId)
 
 	return
 }
 
 // getDetalleElementos consulta el historial de una serie de elementos dados los ids en el api movimientos_arka_crud
-func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
+func getDetalleElementos(ctx context.Context, ids []int) (Elementos []*models.DetalleElementoBaja, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("getDetalleElementos - Unhandled Error!", "500")
 
@@ -108,7 +109,7 @@ func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 	// Consulta asignación de los elementos
 	query := "sortby=ElementoActaId&order=desc&limit=-1&query=Id__in:"
 	query += url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
+	if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(ctx, query); err != nil {
 		return nil, err
 	} else {
 		elementosMovimiento = elementoMovimiento_
@@ -120,7 +121,7 @@ func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 	}
 
 	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
-	if elemento_, err := actaRecibido.GetElementos(0, ids); err != nil {
+	if elemento_, err := actaRecibido.GetElementos(ctx, 0, ids); err != nil {
 		return nil, err
 	} else {
 		elementosActa = elemento_
@@ -131,7 +132,7 @@ func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 		for i := 0; i < len(elementosActa); i++ {
 
 			elemento := new(models.DetalleElementoBaja)
-			elemento.Historial, outputError = movimientosArka.GetHistorialElemento(elementosMovimiento[i].Id, true)
+			elemento.Historial, outputError = movimientosArka.GetHistorialElemento(ctx, elementosMovimiento[i].Id, true)
 			if outputError != nil {
 				return
 			}
@@ -142,14 +143,14 @@ func getDetalleElementos(ids []int) (Elementos []*models.DetalleElementoBaja, ou
 			}
 
 			if ubicacion > 0 {
-				elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ubicacion)
+				elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ctx, ubicacion)
 				if outputError != nil {
 					return
 				}
 			}
 
 			if funcionario > 0 {
-				elemento.Funcionario, outputError = terceros.GetInfoTerceroById(funcionario)
+				elemento.Funcionario, outputError = terceros.GetInfoTerceroById(ctx, funcionario)
 				if outputError != nil {
 					return
 				}

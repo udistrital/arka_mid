@@ -1,6 +1,7 @@
 package actaRecibido
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -9,12 +10,12 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/crud/parametros"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 // GetAllParametrosActa Consulta diferentes valores paramétricos
-func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map[string]interface{}) {
+func GetAllParametrosActa(ctx context.Context) (parametros_ map[string]interface{}, outputError map[string]interface{}) {
 
 	funcion := "GetAllParametrosActa - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -27,10 +28,10 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 
 	var path, _ = beego.AppConfig.String("actaRecibidoService")
 	urlActasEstadoActa := path + "estado_acta?limit=-1"
-	if _, err := request.GetJsonTest(urlActasEstadoActa, &EstadoActa); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlActasEstadoActa, &EstadoActa); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlActasEstadoActa, &EstadoActa)",
+			"funcion": "GetAllParametrosActa - requestV2.GetWithContext(ctx, urlActasEstadoActa, &EstadoActa)",
 			"err":     err,
 			"status":  "502",
 		}
@@ -38,17 +39,17 @@ func GetAllParametrosActa() (parametros_ map[string]interface{}, outputError map
 	}
 
 	urlACtasEstadoElem := path + "estado_elemento?limit=-1"
-	if _, err := request.GetJsonTest(urlACtasEstadoElem, &EstadoElemento); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlACtasEstadoElem, &EstadoElemento); err != nil {
 		logs.Error(err)
 		outputError = map[string]interface{}{
-			"funcion": "GetAllParametrosActa - request.GetJsonTest(urlACtasEstadoElem, &EstadoElemento)",
+			"funcion": "GetAllParametrosActa - requestV2.GetWithContext(ctx, urlACtasEstadoElem, &EstadoElemento)",
 			"err":     err,
 			"status":  "502",
 		}
 		return nil, outputError
 	}
 
-	if err := parametros.GetAllIVAByPeriodo(strconv.Itoa(time.Now().Year()), &Ivas); err != nil {
+	if err := parametros.GetAllIVAByPeriodo(ctx, strconv.Itoa(time.Now().Year()), &Ivas); err != nil {
 		return nil, err
 	}
 

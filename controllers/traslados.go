@@ -8,7 +8,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 	trasladoshelper "github.com/udistrital/arka_mid/helpers/trasladosHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 type TrasladosController struct {
@@ -46,7 +46,7 @@ func (c *TrasladosController) Post() {
 		})
 	}
 
-	err := trasladoshelper.Post(&v)
+	err := trasladoshelper.Post(c.Ctx.Request.Context(), &v)
 	if err != nil {
 		panic(err)
 	} else {
@@ -78,7 +78,7 @@ func (c *TrasladosController) PostInterno() {
 		})
 	}
 
-	err := trasladoshelper.PostInterno(&v)
+	err := trasladoshelper.PostInterno(c.Ctx.Request.Context(), &v)
 	if err != nil {
 		panic(err)
 	} else {
@@ -115,7 +115,7 @@ func (c *TrasladosController) GetTraslado() {
 		id = v
 	}
 
-	if respuesta, err := trasladoshelper.GetOne(id); err == nil || respuesta != nil {
+	if respuesta, err := trasladoshelper.GetOne(c.Ctx.Request.Context(), id); err == nil || respuesta != nil {
 		c.Data["json"] = respuesta
 	} else {
 		if err != nil {
@@ -158,7 +158,7 @@ func (c *TrasladosController) GetElementosFuncionario() {
 		id = v
 	}
 
-	if err := trasladoshelper.GetElementosTercero(id, &inventario); err != nil {
+	if err := trasladoshelper.GetElementosTercero(c.Ctx.Request.Context(), id, &inventario); err != nil {
 		panic(errorCtrl.Error("GetElementosFuncionario - trasladoshelper.GetElementosTercero(id, &inventario)", err, "404"))
 	} else {
 		c.Data["json"] = inventario
@@ -206,7 +206,7 @@ func (c *TrasladosController) GetAll() {
 		aprobar = v
 	}
 
-	if err := trasladoshelper.GetAll(terceroId, confirmar, aprobar, &traslados); err != nil {
+	if err := trasladoshelper.GetAll(c.Ctx.Request.Context(), terceroId, confirmar, aprobar, &traslados); err != nil {
 		panic(err)
 	}
 
@@ -241,7 +241,7 @@ func (c *TrasladosController) Put() {
 	}
 
 	var res models.ResultadoMovimiento
-	if err := trasladoshelper.AprobarTraslado(id, &res); err == nil {
+	if err := trasladoshelper.AprobarTraslado(c.Ctx.Request.Context(), id, &res); err == nil {
 		c.Ctx.Output.SetStatus(201)
 		c.Data["json"] = res
 	} else {

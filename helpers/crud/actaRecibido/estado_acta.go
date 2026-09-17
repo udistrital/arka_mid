@@ -1,23 +1,24 @@
 package actaRecibido
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 // GetAllEstadoActa consulta controlador estado_acta del api acta_recibido_crud
-func GetAllEstadoActa(query string) (estados []models.EstadoActa, outputError map[string]interface{}) {
+func GetAllEstadoActa(ctx context.Context, query string) (estados []models.EstadoActa, outputError map[string]interface{}) {
 	funcion := "GetAllEstadoActa - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	urlcrud := path + "estado_acta?" + query
-	if err := request.GetJson(urlcrud, &estados); err != nil {
+	if _, err := requestV2.GetWithContext(ctx, urlcrud, &estados); err != nil {
 		logs.Error(urlcrud+", ", err)
-		eval := "request.GetJson(urlcrud, &estados)"
+		eval := "requestV2.GetWithContext(ctx, urlcrud, &estados)"
 		return nil, errorCtrl.Error(funcion+eval, err, "502")
 	}
 
@@ -25,12 +26,12 @@ func GetAllEstadoActa(query string) (estados []models.EstadoActa, outputError ma
 }
 
 // GetEstadoActaIdByCodigoAbreviacion consulta el Id de un EstadoActa según su código abreviación
-func GetEstadoActaIdByCodigoAbreviacion(id *int, codigo string) (outputError map[string]interface{}) {
+func GetEstadoActaIdByCodigoAbreviacion(ctx context.Context, id *int, codigo string) (outputError map[string]interface{}) {
 	funcion := "GetEstadoActaIdByCodigoAbreviacion - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
 
 	query := "query=CodigoAbreviacion:" + url.QueryEscape(codigo)
-	if estados, err := GetAllEstadoActa(query); err != nil {
+	if estados, err := GetAllEstadoActa(ctx, query); err != nil {
 		return err
 	} else if len(estados) == 0 {
 		errMsg := "No se encuentra el estado acta: " + codigo

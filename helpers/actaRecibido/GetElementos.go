@@ -1,6 +1,7 @@
 package actaRecibido
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -9,11 +10,11 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetElementos Consulta una lista de elementos así como el tipo de bien y el subgrupo
-func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElemento, outputError map[string]interface{}) {
+func GetElementos(ctx context.Context, actaId int, ids []int) (elementosActa []*models.DetalleElemento, outputError map[string]interface{}) {
 
 	funcion := "GetElementos - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -33,7 +34,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 		query += "Id__in:" + utilsHelper.ArrayToString(ids, "|")
 	}
 
-	elementos, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1")
+	elementos, err := actaRecibido.GetAllElemento(ctx, query, "", "Id", "desc", "", "-1")
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 
 		if elemento.SubgrupoCatalogoId > 0 {
 			if val, ok := subgrupos[elemento.SubgrupoCatalogoId]; !ok || val == nil {
-				if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(elemento.SubgrupoCatalogoId)); err != nil {
+				if detalleSubgrupo_, err := catalogoElementos.GetAllDetalleSubgrupo(ctx, payload+strconv.Itoa(elemento.SubgrupoCatalogoId)); err != nil {
 					return nil, err
 				} else if len(detalleSubgrupo_) == 1 {
 					subgrupos[elemento.SubgrupoCatalogoId] = detalleSubgrupo_[0]
@@ -60,7 +61,7 @@ func GetElementos(actaId int, ids []int) (elementosActa []*models.DetalleElement
 		if elemento.TipoBienId > 0 {
 			if val, ok := tiposBien[elemento.TipoBienId]; !ok || val == nil {
 				var tipoBien_ models.TipoBien
-				if err := catalogoElementos.GetTipoBienById(elemento.TipoBienId, &tipoBien_); err != nil {
+				if err := catalogoElementos.GetTipoBienById(ctx, elemento.TipoBienId, &tipoBien_); err != nil {
 					return nil, err
 				} else if tipoBien_.Id > 0 {
 					tiposBien[elemento.TipoBienId] = &tipoBien_

@@ -1,6 +1,7 @@
 package actaRecibido
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -10,11 +11,11 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetAllActasRecibidoActivas ...
-func GetAllActasRecibidoActivas(usrWSO2 string,
+func GetAllActasRecibidoActivas(ctx context.Context, usrWSO2 string,
 	id_, tipos string, estados []string, fechaCreacion_, fechaModificacion_, fechaAprobacion_ string, unidadEjecutora string,
 	sortby, order string, limit int64, offset int64) (
 	historicoActa []map[string]interface{}, count string, outputError map[string]interface{}) {
@@ -23,7 +24,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 
 	// PARTE 1 - Identificar los tipos de actas que hay que traer
 
-	verTodasLasActas, algunosEstados, user, outputError := getEstados(estados, usrWSO2)
+	verTodasLasActas, algunosEstados, user, outputError := getEstados(ctx, estados, usrWSO2)
 	if outputError != nil {
 		return nil, "", outputError
 	}
@@ -32,7 +33,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 		return
 	}
 
-	proveedor, contratista, idTercero, outputError := getTereroId(verTodasLasActas, algunosEstados, user)
+	proveedor, contratista, idTercero, outputError := getTereroId(ctx, verTodasLasActas, algunosEstados, user)
 	if outputError != nil {
 		return nil, "", outputError
 	}
@@ -100,7 +101,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 		order = "desc"
 	}
 
-	historicos, count, err := actaRecibido.GetAllHistoricoActas(query, "", sortby, order, fmt.Sprint(offset), fmt.Sprint(limit))
+	historicos, count, err := actaRecibido.GetAllHistoricoActas(ctx, query, "", sortby, order, fmt.Sprint(offset), fmt.Sprint(limit))
 	if err != nil {
 		return nil, "", err
 	}
@@ -116,7 +117,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 
 		if historico.RevisorId > 0 {
 			if val, ok := Terceros[historico.RevisorId]; !ok {
-				if revisor, err := terceros.GetTerceroById(historico.RevisorId); err != nil {
+				if revisor, err := terceros.GetTerceroById(ctx, historico.RevisorId); err != nil {
 					return nil, "", err
 				} else if revisor != nil {
 					editor = *revisor
@@ -130,7 +131,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 		if historico.UbicacionId > 0 {
 			if _, ok := centrosCosto[historico.UbicacionId]; !ok {
 				id_ := strconv.Itoa(historico.UbicacionId)
-				if centroCosto, err := movimientosArka.GetAllCentroCostos("query=Id:" + id_); err != nil {
+				if centroCosto, err := movimientosArka.GetAllCentroCostos(ctx, "query=Id:"+id_); err != nil {
 					return nil, "", err
 				} else if len(centroCosto) == 1 {
 					centrosCosto[historico.UbicacionId] = centroCosto[0]
@@ -140,7 +141,7 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 
 		if historico.PersonaAsignadaId > 0 {
 			if val, ok := Terceros[historico.PersonaAsignadaId]; !ok {
-				if revisor, err := terceros.GetTerceroById(historico.PersonaAsignadaId); err != nil {
+				if revisor, err := terceros.GetTerceroById(ctx, historico.PersonaAsignadaId); err != nil {
 					return nil, "", err
 				} else if revisor != nil {
 					asignado = *revisor
@@ -178,13 +179,13 @@ func GetAllActasRecibidoActivas(usrWSO2 string,
 
 }
 
-func getEstados(estados []string, user string) (verTodas bool, estados_ []string, usr models.UsuarioAutenticacion, outputError map[string]interface{}) {
+func getEstados(ctx context.Context, estados []string, user string) (verTodas bool, estados_ []string, usr models.UsuarioAutenticacion, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("getEstados - Unhandled Error!", "500")
 
 	if user != "" {
 		// Consulta de roles
-		usr, outputError = autenticacion.DataUsuario(user)
+		usr, outputError = autenticacion.DataUsuario(ctx, user)
 		if outputError != nil || usr.Role == nil || len(usr.Role) == 0 {
 			return
 		}
@@ -244,7 +245,7 @@ func getEstados(estados []string, user string) (verTodas bool, estados_ []string
 	return
 }
 
-func getTereroId(verTodas bool, estados []string, usr models.UsuarioAutenticacion) (proveedor, contratista bool, tercero int, outputError map[string]interface{}) {
+func getTereroId(ctx context.Context, verTodas bool, estados []string, usr models.UsuarioAutenticacion) (proveedor, contratista bool, tercero int, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("getTereroId - Unhandled Error!", "500")
 
@@ -263,7 +264,7 @@ func getTereroId(verTodas bool, estados []string, usr models.UsuarioAutenticacio
 	}
 
 	if proveedor || contratista {
-		outputError = autenticacion.GetTerceroUser(usr, &tercero)
+		outputError = autenticacion.GetTerceroUser(ctx, usr, &tercero)
 		if outputError != nil {
 			return
 		} else if tercero == 0 {

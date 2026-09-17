@@ -6,7 +6,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/helpers/catalogoElementosHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // CatalogoElementosController operations for Catalogo
@@ -47,7 +47,7 @@ func (c *CatalogoElementosController) GetOne() {
 	}
 
 	var cuentas = make([]models.DetalleCuentasSubgrupo, 0)
-	if err := catalogoElementosHelper.GetCuentasContablesSubgrupo(id, movimientoId, &cuentas); err != nil {
+	if err := catalogoElementosHelper.GetCuentasContablesSubgrupo(c.Ctx.Request.Context(), id, movimientoId, &cuentas); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = cuentas

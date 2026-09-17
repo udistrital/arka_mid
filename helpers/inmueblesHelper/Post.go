@@ -1,6 +1,7 @@
 package inmuebleshelper
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -8,10 +9,10 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outputError map[string]interface{}) {
+func Post(ctx context.Context, inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("Post - Unhandled Error!", "500")
 
@@ -32,7 +33,7 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 	}
 
 	payload := "limit=1&sortby=Id&order=desc&query=TipoActaId__CodigoAbreviacion:INM,Activo:true"
-	actas, outputError := actaRecibido.GetAllActaRecibido(payload)
+	actas, outputError := actaRecibido.GetAllActaRecibido(ctx, payload)
 	if outputError != nil {
 		return
 	}
@@ -46,7 +47,7 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 			TipoActaId: &models.TipoActa{Id: 3},
 		}
 
-		outputError = actaRecibido.PostActaRecibido(&acta)
+		outputError = actaRecibido.PostActaRecibido(ctx, &acta)
 		if outputError != nil {
 			return
 		}
@@ -58,12 +59,12 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 	inmueble.Elemento.SubgrupoCatalogoId = inmueble.SubgrupoId.Id
 	inmueble.Elemento.Activo = true
 
-	outputError = actaRecibido.PostElemento(&inmueble.Elemento)
+	outputError = actaRecibido.PostElemento(ctx, &inmueble.Elemento)
 	if outputError != nil {
 		return
 	}
 
-	resultado.Error, outputError = registrarCuentas(*inmueble)
+	resultado.Error, outputError = registrarCuentas(ctx, *inmueble)
 	if resultado.Error != "" && outputError != nil {
 		return
 	}
@@ -77,7 +78,7 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 		fechaCorte = inmueble.ElementoMovimiento.MovimientoId.FechaCorte
 	}
 
-	movimientos, _, outputError := movimientosArka.GetAllMovimiento(payload)
+	movimientos, _, outputError := movimientosArka.GetAllMovimiento(ctx, payload)
 	if outputError != nil {
 		return
 	}
@@ -87,12 +88,12 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 		movimiento = *movimientos[0]
 	} else {
 		var formato, estado int
-		outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formato, "INM_REG")
+		outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &formato, "INM_REG")
 		if outputError != nil {
 			return
 		}
 
-		outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estado, "Bienes inmuebles registrados")
+		outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &estado, "Bienes inmuebles registrados")
 		if outputError != nil {
 			return
 		}
@@ -105,7 +106,7 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 			EstadoMovimientoId:      &models.EstadoMovimiento{Id: estado},
 		}
 
-		outputError = movimientosArka.PostMovimiento(&movimiento)
+		outputError = movimientosArka.PostMovimiento(ctx, &movimiento)
 		if outputError != nil {
 			return
 		}
@@ -115,31 +116,31 @@ func Post(inmueble *models.Inmueble) (resultado models.ResultadoMovimiento, outp
 	inmueble.ElementoMovimiento.ElementoActaId = utilsHelper.Int(inmueble.Elemento.Id)
 	inmueble.ElementoMovimiento.Activo = true
 
-	outputError = movimientosArka.PostElementosMovimiento(&inmueble.ElementoMovimiento)
+	outputError = movimientosArka.PostElementosMovimiento(ctx, &inmueble.ElementoMovimiento)
 
 	return
 }
 
-func registrarCuentas(inmueble models.Inmueble) (mensaje string, outputError map[string]interface{}) {
+func registrarCuentas(ctx context.Context, inmueble models.Inmueble) (mensaje string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("registrarCuentas - Unhandled Error!", "500")
 
-	mensaje, outputError = registrarCuentas_(inmueble.Elemento.Id, inmueble.Cuentas, "CC_ENT")
+	mensaje, outputError = registrarCuentas_(ctx, inmueble.Elemento.Id, inmueble.Cuentas, "CC_ENT")
 	if mensaje != "" || outputError != nil || inmueble.CuentasMediciones.CuentaCreditoId.Id == "" {
 		return
 	}
 
-	mensaje, outputError = registrarCuentas_(inmueble.Elemento.Id, inmueble.Cuentas, "CC_MED")
+	mensaje, outputError = registrarCuentas_(ctx, inmueble.Elemento.Id, inmueble.Cuentas, "CC_MED")
 
 	return
 }
 
-func registrarCuentas_(elementoId int, cuentas_ models.ParametrizacionContable_, tipoCuentas string) (mensaje string, outputError map[string]interface{}) {
+func registrarCuentas_(ctx context.Context, elementoId int, cuentas_ models.ParametrizacionContable_, tipoCuentas string) (mensaje string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("registrarCuentas_ - Unhandled Error!", "500")
 
 	payload := "limit=1&sortby=Id&order=desc&query=Activo:true,CampoId__Sigla:" + tipoCuentas + ",ElementoId__Id:" + strconv.Itoa(elementoId)
-	cuentas, outputError := actaRecibido.GetAllElementoCampo(payload)
+	cuentas, outputError := actaRecibido.GetAllElementoCampo(ctx, payload)
 	if outputError != nil {
 		return
 	}
@@ -162,14 +163,14 @@ func registrarCuentas_(elementoId int, cuentas_ models.ParametrizacionContable_,
 		}
 
 		cuentas[0].Activo = false
-		outputError = actaRecibido.PutElementoCampo(&cuentas[0], cuentas[0].Id)
+		outputError = actaRecibido.PutElementoCampo(ctx, &cuentas[0], cuentas[0].Id)
 		if outputError != nil {
 			return
 		}
 
 	} else {
 		payload := "query=Sigla:" + tipoCuentas
-		campo, outputError_ := actaRecibido.GetAllCampo(payload)
+		campo, outputError_ := actaRecibido.GetAllCampo(ctx, payload)
 		if outputError_ != nil {
 			outputError = outputError_
 			return
@@ -197,7 +198,7 @@ func registrarCuentas_(elementoId int, cuentas_ models.ParametrizacionContable_,
 		return
 	}
 
-	outputError = actaRecibido.PostElementoCampo(&elementoCampo)
+	outputError = actaRecibido.PostElementoCampo(ctx, &elementoCampo)
 
 	return
 

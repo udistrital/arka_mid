@@ -1,6 +1,7 @@
 package asientoContable
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -12,6 +13,7 @@ import (
 
 // CalcularMovimientosContables Calcula los movimientos contables dados los valores y parametrización correspondiente de cada elemento.
 func CalcularMovimientosContables(
+	ctx context.Context,
 	elementos []*models.Elemento,
 	dsc string,
 	movId, sMovId, terceroCr, terceroDb int,
@@ -45,7 +47,7 @@ func CalcularMovimientosContables(
 
 	payloadDetalleSubgrupoBase := "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		logs.Error("CalcularMovimientosContables -> GetParametrosDebitoCredito err=%v", err)
 		return "", err
 	} else {
@@ -81,7 +83,7 @@ func CalcularMovimientosContables(
 			payloadDetalleSubgrupo := payloadDetalleSubgrupoBase + strconv.Itoa(el.SubgrupoCatalogoId)
 			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetAllDetalleSubgrupo payload=%s", payloadDetalleSubgrupo)
 
-			sg, outputError := catalogoElementos.GetAllDetalleSubgrupo(payloadDetalleSubgrupo)
+			sg, outputError := catalogoElementos.GetAllDetalleSubgrupo(ctx, payloadDetalleSubgrupo)
 			logs.Info("CalcularMovimientosContables -> DEBUG GetAllDetalleSubgrupo outputError=%v len=%d", outputError, len(sg))
 			if outputError != nil {
 				return "", outputError
@@ -113,7 +115,7 @@ func CalcularMovimientosContables(
 			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetTipoBienIdByValor tipoBienPadre=%d valorUnitario=%v uvt=%v",
 				detalleSg.TipoBienId.Id, el.ValorUnitario, uvt)
 
-			tb, outputError := catalogoElementos.GetTipoBienIdByValor(detalleSg.TipoBienId.Id, el.ValorUnitario/uvt, tiposBien)
+			tb, outputError := catalogoElementos.GetTipoBienIdByValor(ctx, detalleSg.TipoBienId.Id, el.ValorUnitario/uvt, tiposBien)
 			logs.Info("CalcularMovimientosContables -> DEBUG GetTipoBienIdByValor tb=%d outputError=%v", tb, outputError)
 			if outputError != nil {
 				return "", outputError
@@ -130,7 +132,7 @@ func CalcularMovimientosContables(
 				var tipoBien models.TipoBien
 				logs.Info("CalcularMovimientosContables -> DEBUG helper=GetTipoBienById TipoBienId=%d", el.TipoBienId)
 
-				outputError = catalogoElementos.GetTipoBienById(el.TipoBienId, &tipoBien)
+				outputError = catalogoElementos.GetTipoBienById(ctx, el.TipoBienId, &tipoBien)
 				logs.Info("CalcularMovimientosContables -> DEBUG GetTipoBienById outputError=%v tipoBien=%+v",
 					outputError, tipoBien)
 				if outputError != nil {
@@ -156,7 +158,7 @@ func CalcularMovimientosContables(
 			logs.Info("CalcularMovimientosContables -> DEBUG criterios parametrizacion: SubgrupoCatalogoId=%d", el.SubgrupoCatalogoId)
 			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetAllCuentasSubgrupo payload=%s", payloadCtas)
 
-			cst, outputError := catalogoElementos.GetAllCuentasSubgrupo(payloadCtas)
+			cst, outputError := catalogoElementos.GetAllCuentasSubgrupo(ctx, payloadCtas)
 			logs.Info("CalcularMovimientosContables -> DEBUG GetAllCuentasSubgrupo outputError=%v len=%d", outputError, len(cst))
 			if outputError != nil {
 				return "", outputError
@@ -205,7 +207,7 @@ func CalcularMovimientosContables(
 		if _, ok := cuentas[cuentaCfg.CuentaCreditoId]; !ok {
 			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetCuentaContable tipo=credito id=%s", cuentaCfg.CuentaCreditoId)
 
-			cr, outputError := cuentasContables.GetCuentaContable(cuentaCfg.CuentaCreditoId)
+			cr, outputError := cuentasContables.GetCuentaContable(ctx, cuentaCfg.CuentaCreditoId)
 			logs.Info("CalcularMovimientosContables -> DEBUG GetCuentaContable credito outputError=%v cuenta=%+v", outputError, cr)
 			if outputError != nil {
 				return "", outputError
@@ -221,7 +223,7 @@ func CalcularMovimientosContables(
 		if _, ok := cuentas[cuentaCfg.CuentaDebitoId]; !ok {
 			logs.Info("CalcularMovimientosContables -> DEBUG helper=GetCuentaContable tipo=debito id=%s", cuentaCfg.CuentaDebitoId)
 
-			db, outputError := cuentasContables.GetCuentaContable(cuentaCfg.CuentaDebitoId)
+			db, outputError := cuentasContables.GetCuentaContable(ctx, cuentaCfg.CuentaDebitoId)
 			logs.Info("CalcularMovimientosContables -> DEBUG GetCuentaContable debito outputError=%v cuenta=%+v", outputError, db)
 			if outputError != nil {
 				return "", outputError

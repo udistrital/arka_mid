@@ -1,6 +1,7 @@
 package inventarioHelper
 
 import (
+	"context"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
@@ -9,11 +10,11 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetDetalleElemento Consulta historial de un elemento dado el id del elemento en el api acta_recibido_crud
-func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputError map[string]interface{}) {
+func GetDetalleElemento(ctx context.Context, id int, Elemento *models.DetalleElementoBaja) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetDetalleElemento - Unhandled Error!", "500")
 
@@ -22,19 +23,19 @@ func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputErr
 		elementoMovimiento models.ElementosMovimiento
 	)
 
-	outputError = movimientosArka.GetElementosMovimientoById(id, &elementoMovimiento)
+	outputError = movimientosArka.GetElementosMovimientoById(ctx, id, &elementoMovimiento)
 	if outputError != nil || elementoMovimiento.Id == 0 {
 		return
 	}
 
-	Elemento.Historial, outputError = movimientosArka.GetHistorialElemento(elementoMovimiento.Id, true)
+	Elemento.Historial, outputError = movimientosArka.GetHistorialElemento(ctx, elementoMovimiento.Id, true)
 	if outputError != nil {
 		return
 	}
 
 	// Consulta de Marca, Nombre, Serie y Subgrupo se hace mediante el actaRecibidoHelper
 	ids := []int{*elementoMovimiento.ElementoActaId}
-	if elementos, err := actaRecibido.GetElementos(0, ids); err != nil || len(elementos) != 1 {
+	if elementos, err := actaRecibido.GetElementos(ctx, 0, ids); err != nil || len(elementos) != 1 {
 		return err
 	} else {
 		elemento = *elementos[0]
@@ -45,12 +46,12 @@ func GetDetalleElemento(id int, Elemento *models.DetalleElementoBaja) (outputErr
 		return
 	}
 
-	Elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ub)
+	Elemento.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ctx, ub)
 	if outputError != nil {
 		return
 	}
 
-	Elemento.Funcionario, outputError = terceros.GetInfoTerceroById(fc)
+	Elemento.Funcionario, outputError = terceros.GetInfoTerceroById(ctx, fc)
 	if outputError != nil {
 		return
 	}

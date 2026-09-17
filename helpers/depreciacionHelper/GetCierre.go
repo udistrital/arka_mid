@@ -1,21 +1,22 @@
 package depreciacionHelper
 
 import (
+	"context"
 	"strings"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetCierre Consulta la infomación de un cierre y la transacción contable correspondiente
-func GetCierre(id int, detalle_ *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func GetCierre(ctx context.Context, id int, detalle_ *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetCierre - Unhandled Error!", "500")
 
-	mov, outputError := movimientosArka.GetMovimientoById(id)
+	mov, outputError := movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil || mov.FormatoTipoMovimientoId.CodigoAbreviacion != "CRR" || !strings.HasPrefix(mov.EstadoMovimientoId.Nombre, "Cierre ") {
 		return
 	}
@@ -32,7 +33,7 @@ func GetCierre(id int, detalle_ *models.ResultadoMovimiento) (outputError map[st
 	detalle_.Error = detalle.CalculoError
 
 	if detalle_.Movimiento.EstadoMovimientoId.Nombre == "Cierre Aprobado" && detalle_.Movimiento.ConsecutivoId != nil && *detalle_.Movimiento.ConsecutivoId > 0 {
-		transaccion, outputError = movimientosContables.GetTransaccion(*detalle_.Movimiento.ConsecutivoId, "consecutivo", true)
+		transaccion, outputError = movimientosContables.GetTransaccion(ctx, *detalle_.Movimiento.ConsecutivoId, "consecutivo", true)
 		if outputError != nil {
 			return
 		}

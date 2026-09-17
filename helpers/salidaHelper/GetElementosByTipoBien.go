@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -9,7 +10,7 @@ import (
 )
 
 // GetElementosByTipoBien Consulta la lista de elementos para asociar en una salida determinada agrupando por si son asignables a bodega de consumo.
-func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, outputError map[string]interface{}) {
+func GetElementosByTipoBien(ctx context.Context, entradaId, salidaId int) (elementos_ interface{}, outputError map[string]interface{}) {
 
 	var uvt float64 = 1
 	// if uvt_, err := parametros.GetUVTByVigencia(time.Now().Year()); err != nil {
@@ -31,7 +32,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 		var consumo = make([]*models.DetalleElemento, 0)
 		var devolutivo = make([]*models.DetalleElemento, 0)
 
-		if mov, err := movimientosArka.GetMovimientoById(entradaId); err != nil {
+		if mov, err := movimientosArka.GetMovimientoById(ctx, entradaId); err != nil {
 			return nil, err
 		} else {
 			movimiento = *mov
@@ -46,7 +47,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 			return
 		}
 
-		if el, err := actaRecibido.GetElementos(detalle.ActaRecibidoId, []int{}); err != nil {
+		if el, err := actaRecibido.GetElementos(ctx, detalle.ActaRecibidoId, []int{}); err != nil {
 			return nil, err
 		} else {
 			elementos = el
@@ -54,7 +55,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 		for _, el := range elementos {
 
-			if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
+			if bodega, msg, err := checkBodegaConsumo(ctx, el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
 				return nil, err
 			} else if msg != "" {
 				return map[string]interface{}{
@@ -76,7 +77,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 	} else if salidaId > 0 {
 
-		if salida, err := GetOne(salidaId); err != nil {
+		if salida, err := GetOne(ctx, salidaId); err != nil {
 			return nil, err
 		} else {
 			var elementos []models.DetalleElementoSalida = salida["Elementos"].([]models.DetalleElementoSalida)
@@ -85,7 +86,7 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 			for _, el := range elementos {
 
-				if bodega, msg, err := checkBodegaConsumo(el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
+				if bodega, msg, err := checkBodegaConsumo(ctx, el.TipoBienId, el.SubgrupoCatalogoId, el.ValorUnitario/uvt, bufferTiposBien); err != nil {
 					return nil, err
 				} else if msg != "" {
 					return map[string]interface{}{
@@ -111,11 +112,11 @@ func GetElementosByTipoBien(entradaId, salidaId int) (elementos_ interface{}, ou
 
 }
 
-func checkBodegaConsumo(tipoBienId *models.TipoBien, subgrupo *models.DetalleSubgrupo, valor float64, tiposBien map[int]models.TipoBien) (
+func checkBodegaConsumo(ctx context.Context, tipoBienId *models.TipoBien, subgrupo *models.DetalleSubgrupo, valor float64, tiposBien map[int]models.TipoBien) (
 	bodega bool, msg string, outputError map[string]interface{}) {
 
 	if (tipoBienId == nil || tipoBienId.Id == 0) && (subgrupo != nil && subgrupo.TipoBienId.Id > 0) {
-		if tb, err := catalogoElementos.GetTipoBienIdByValor(subgrupo.TipoBienId.Id, valor, tiposBien); err != nil {
+		if tb, err := catalogoElementos.GetTipoBienIdByValor(ctx, subgrupo.TipoBienId.Id, valor, tiposBien); err != nil {
 			return false, "", err
 		} else if tb == 0 {
 			return false, "No se pudo determinar el tipo de bien de los elementos. Revise la parametriazación o contacte soporte.", nil

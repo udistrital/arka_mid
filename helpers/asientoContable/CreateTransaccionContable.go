@@ -1,18 +1,19 @@
 package asientoContable
 
 import (
+	"context"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/crud/cuentasContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 var getComprobanteCreateTransaccionContable = cuentasContables.GetComprobante
 
 // CreateTransaccionContable Consulta el tipo de comprobante y completa otros datos de la transacción contable
-func CreateTransaccionContable(tipoComprobante, dsc string, transaccion *models.TransaccionMovimientos) (msg string, outputError map[string]interface{}) {
+func CreateTransaccionContable(ctx context.Context, tipoComprobante, dsc string, transaccion *models.TransaccionMovimientos) (msg string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("CreateTransaccionContable - Unhandled Error!", "500")
 
@@ -22,7 +23,7 @@ func CreateTransaccionContable(tipoComprobante, dsc string, transaccion *models.
 		return "No se pudo consultar el comprobante contable. Contacte soporte.", nil
 	}
 
-	if err := getComprobanteCreateTransaccionContable(tipoComprobante, &comprobanteID); err != nil {
+	if err := getComprobanteCreateTransaccionContable(ctx, tipoComprobante, &comprobanteID); err != nil {
 		return "", err
 	}
 

@@ -1,16 +1,17 @@
 package consecutivos
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // Genera un consecutivo con el año actual y para un contextoId determinado
-func Get(contexto string, descripcion string, data *models.Consecutivo) (outputError map[string]interface{}) {
+func Get(ctx context.Context, contexto string, descripcion string, data *models.Consecutivo) (outputError map[string]interface{}) {
 
 	funcion := "Get - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -29,7 +30,7 @@ func Get(contexto string, descripcion string, data *models.Consecutivo) (outputE
 		Activo:      true,
 	}
 
-	if err := Post(data); err != nil {
+	if err := Post(ctx, data); err != nil {
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
@@ -12,11 +13,11 @@ import (
 	administrativaAMAZON "github.com/udistrital/arka_mid/helpers/mid/administrativa"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // DetalleEntrada Consulta el detalle de una entrada incluyendo la transaccion contable (si aplica)
-func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
+func DetalleEntrada(ctx context.Context, entradaId int) (result map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("DetalleEntrada - Unhandled Error!", "500")
 
@@ -28,7 +29,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	resultado := make(map[string]interface{})
 
-	movimiento, outputError := movimientosArka.GetMovimientoById(entradaId)
+	movimiento, outputError := movimientosArka.GetMovimientoById(ctx, entradaId)
 	if outputError != nil {
 		return
 	}
@@ -41,14 +42,14 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	if detalle.ActaRecibidoId > 0 {
 		query = "ActaRecibidoId__Id:" + strconv.Itoa(detalle.ActaRecibidoId)
 		var acta models.HistoricoActa
-		if tr, err := actaRecibido.GetAllHistoricoActa(query, "", "Id", "desc", "", "1"); err != nil {
+		if tr, err := actaRecibido.GetAllHistoricoActa(ctx, query, "", "Id", "desc", "", "1"); err != nil {
 			return nil, err
 		} else {
 			acta = tr[0]
 		}
 
 		if acta.ProveedorId > 0 {
-			if tercero, err := tercerosCRUD.GetNombreTerceroById(acta.ProveedorId); err != nil {
+			if tercero, err := tercerosCRUD.GetNombreTerceroById(ctx, acta.ProveedorId); err != nil {
 				return nil, err
 			} else {
 				resultado["proveedor"] = tercero
@@ -56,7 +57,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		}
 
 		if acta.ActaRecibidoId.UnidadEjecutoraId > 0 {
-			if err := parametros.GetParametroById(acta.ActaRecibidoId.UnidadEjecutoraId, &unidadEjecutora); err != nil {
+			if err := parametros.GetParametroById(ctx, acta.ActaRecibidoId.UnidadEjecutoraId, &unidadEjecutora); err != nil {
 				return nil, err
 			}
 			resultado["unidadEjecutora"] = unidadEjecutora
@@ -66,7 +67,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	if detalle.ContratoId > 0 && detalle.VigenciaContrato != "" {
 		var contrato models.InformacionContrato
 		if unidadEjecutora.CodigoAbreviacion == "UD" {
-			outputError = administrativa.GetContrato(detalle.ContratoId, detalle.VigenciaContrato, &contrato)
+			outputError = administrativa.GetContrato(ctx, detalle.ContratoId, detalle.VigenciaContrato, &contrato)
 			if outputError != nil {
 				return
 			}
@@ -75,7 +76,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 				resultado["contrato"] = contrato.Contrato
 				if contrato.Contrato.TipoContrato != "" {
 					var tipoContrato models.TipoContrato
-					outputError = administrativa.GetTipoContratoById(contrato.Contrato.TipoContrato, &tipoContrato)
+					outputError = administrativa.GetTipoContratoById(ctx, contrato.Contrato.TipoContrato, &tipoContrato)
 					if outputError != nil {
 						return
 					}
@@ -92,7 +93,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 	if (movimiento.EstadoMovimientoId.Nombre == "Entrada Aprobada" || movimiento.EstadoMovimientoId.Nombre == "Entrada Con Salida") && movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
 		resultado["TransaccionContable"] = models.InfoTransaccionContable{}
 
-		resultado["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(*movimiento.ConsecutivoId)
+		resultado["TransaccionContable"], outputError = asientoContable.GetFullDetalleContable(ctx, *movimiento.ConsecutivoId)
 		if outputError != nil {
 			return
 		}
@@ -100,7 +101,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if detalle.Factura > 0 {
 		soporte := *new(models.SoporteActa)
-		if err := actaRecibido.GetSoporteById(detalle.Factura, &soporte); err != nil {
+		if err := actaRecibido.GetSoporteById(ctx, detalle.Factura, &soporte); err != nil {
 			return nil, err
 		}
 		resultado["factura"] = soporte
@@ -108,7 +109,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if detalle.SupervisorId > 0 {
 		supervisor := make(map[string]interface{})
-		if err := administrativaAMAZON.GetSupervisor(detalle.SupervisorId, &supervisor); err != nil {
+		if err := administrativaAMAZON.GetSupervisor(ctx, detalle.SupervisorId, &supervisor); err != nil {
 			return nil, err
 		} else if len(supervisor) > 0 {
 			resultado["supervisor"] = supervisor
@@ -116,7 +117,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 		if val, ok := supervisor["DependenciaSupervisor"]; ok && val != nil && val.(string) != "" {
 			var dependencia []interface{}
-			if err := administrativaAMAZON.GetAllDependenciaSIC("query=ESFCODIGODEP:"+val.(string), &dependencia); err != nil {
+			if err := administrativaAMAZON.GetAllDependenciaSIC(ctx, "query=ESFCODIGODEP:"+val.(string), &dependencia); err != nil {
 				return nil, err
 			}
 
@@ -130,7 +131,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 	if detalle.OrdenadorGastoId > 0 {
 		ordenadores := make(map[string]interface{})
-		if err := administrativaAMAZON.GetOrdenadores(detalle.OrdenadorGastoId, &ordenadores); err != nil {
+		if err := administrativaAMAZON.GetOrdenadores(ctx, detalle.OrdenadorGastoId, &ordenadores); err != nil {
 			return nil, err
 		} else if len(ordenadores) > 0 {
 			resultado["ordenador"] = ordenadores
@@ -141,7 +142,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		var detalleElementos = make([]map[string]interface{}, 0)
 		for _, el := range detalle.Elementos {
 			query = "limit=1&query=Id:" + strconv.Itoa(el.Id)
-			detalleMov, err := movimientosArka.GetAllElementosMovimiento(query)
+			detalleMov, err := movimientosArka.GetAllElementosMovimiento(ctx, query)
 			if err != nil {
 				return nil, err
 			} else if len(detalleMov) != 1 {
@@ -155,7 +156,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 			}
 
 			var elemento_ models.Elemento
-			outputError = actaRecibido.GetElementoById(*detalleMov[0].ElementoActaId, &elemento_)
+			outputError = actaRecibido.GetElementoById(ctx, *detalleMov[0].ElementoActaId, &elemento_)
 			if outputError != nil {
 				return
 			}
@@ -172,7 +173,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 
 			if el.AprovechadoId != nil && *el.AprovechadoId > 0 {
 				var elemento__ models.Elemento
-				outputError = actaRecibido.GetElementoById(*el.AprovechadoId, &elemento__)
+				outputError = actaRecibido.GetElementoById(ctx, *el.AprovechadoId, &elemento__)
 				if outputError != nil {
 					return
 				}
@@ -186,7 +187,7 @@ func DetalleEntrada(entradaId int) (result map[string]interface{}, outputError m
 		resultado["elementos"] = detalleElementos
 	}
 
-	if soporte, err := movimientosArka.GetAllSoporteMovimiento("fields=DocumentoId&query=MovimientoId__Id:" + strconv.Itoa(entradaId)); err != nil {
+	if soporte, err := movimientosArka.GetAllSoporteMovimiento(ctx, "fields=DocumentoId&query=MovimientoId__Id:"+strconv.Itoa(entradaId)); err != nil {
 		return nil, err
 	} else if len(soporte) > 0 {
 		resultado["documentoId"] = soporte[0].DocumentoId

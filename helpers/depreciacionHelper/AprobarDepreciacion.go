@@ -1,16 +1,18 @@
 package depreciacionHelper
 
 import (
+	"context"
+
 	"github.com/udistrital/arka_mid/helpers/crud/configuracion"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // AprobarDepreciacion Registra las novedades para los elementos depreciados y realiza la transaccion contable
-func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func AprobarDepreciacion(ctx context.Context, id int, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("AprobarDepreciacion - Unhandled Error!", "500")
 
@@ -19,7 +21,7 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		detalle    models.FormatoDepreciacion
 	)
 
-	outputError = configuracion.GetAllParametro("Nombre:cierreEnCurso", &parametros)
+	outputError = configuracion.GetAllParametro(ctx, "Nombre:cierreEnCurso", &parametros)
 	if outputError != nil {
 		return
 	}
@@ -28,7 +30,7 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 		return
 	}
 
-	mov_, outputError := movimientosArka.GetMovimientoById(id)
+	mov_, outputError := movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	} else if mov_.EstadoMovimientoId.Nombre != "Cierre En Curso" {
@@ -58,19 +60,19 @@ func AprobarDepreciacion(id int, resultado *models.ResultadoMovimiento) (outputE
 	if detalle.PreviewContable != nil {
 		resultado.TransaccionContable = *detalle.PreviewContable
 	}
-	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	_, outputError = movimientosContables.PostTrContable(ctx, &transaccion)
 	if outputError != nil {
 		resultado.Error = "Error al registrar la transacción contable. Contacte soporte"
 		return
 	}
 
-	outputError = movimientosArka.AprobarCierre(&resultado.Movimiento)
+	outputError = movimientosArka.AprobarCierre(ctx, &resultado.Movimiento)
 	if outputError != nil {
 		resultado.Error = "Se registró la transacción contable pero no se pudo aprobar el cierre correctamente. Contacte soporte"
 		return
 	}
 
-	desbloquearSistema(parametros[0], *resultado)
+	desbloquearSistema(ctx, parametros[0], *resultado)
 
 	return
 }

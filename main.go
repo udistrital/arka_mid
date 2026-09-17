@@ -5,9 +5,9 @@ import (
 
 	"github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/server/web/filter/cors"
-	"github.com/udistrital/arka_mid/utils_oas/customErrorv2"
 	apiStatus "github.com/udistrital/utils_oas/v2/apiStatusLib"
 	"github.com/udistrital/utils_oas/v2/auditoria"
+	customerror "github.com/udistrital/utils_oas/v2/customerror"
 	"github.com/udistrital/utils_oas/v2/security"
 	"github.com/udistrital/utils_oas/v2/xray"
 )
@@ -30,9 +30,9 @@ func main() {
 
 	apiStatus.Init()
 	xray.Init()
-	auditoria.InitMiddleware()
+	auditoria.InitWithAuthEnforcer()
 	security.SetSecurityHeaders()
 
-	web.ErrorController(&customErrorv2.CustomErrorController{})
+	web.ErrorController(&customerror.CustomErrorController{})
 	web.Run()
 }

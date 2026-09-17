@@ -7,7 +7,7 @@ import (
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 	polizasHelper "github.com/udistrital/arka_mid/helpers/polizasHelper"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // PolizasController operations for Polizas
@@ -91,7 +91,7 @@ func (c *PolizasController) GetAllElementosPoliza() {
 		}
 	}
 
-	if l, err := polizasHelper.GetElementosPoliza(offset, limit, fields, order, query, sortby); err != nil {
+	if l, err := polizasHelper.GetElementosPoliza(c.Ctx.Request.Context(), offset, limit, fields, order, query, sortby); err != nil {
 		panic(err)
 	} else {
 		if l == nil {

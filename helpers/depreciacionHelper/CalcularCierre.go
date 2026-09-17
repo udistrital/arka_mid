@@ -1,6 +1,7 @@
 package depreciacionHelper
 
 import (
+	"context"
 	"strconv"
 	"sync"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 const (
@@ -38,7 +39,7 @@ type resultadoLoteElementosCierre struct {
 }
 
 // calcularCierre Calcula la transacción contable que se generará una vez se liquide el cierre a una fecha determinada
-func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable, transaccion *models.TransaccionMovimientos, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func calcularCierre(ctx context.Context, fechaCorte string, cuentas map[string]models.CuentaContable, transaccion *models.TransaccionMovimientos, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("calcularCierre - Unhandled Error!", "500")
 
@@ -48,12 +49,12 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 		payload     string
 	)
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formtatoCrr, "CRR")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &formtatoCrr, "CRR")
 	if outputError != nil {
 		return
 	}
 
-	infoCorte, outputError := movimientosArka.GetCorteDepreciacion(fechaCorte)
+	infoCorte, outputError := movimientosArka.GetCorteDepreciacion(ctx, fechaCorte)
 	if outputError != nil {
 		return
 	}
@@ -62,7 +63,7 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 		return
 	}
 
-	terceroUD, outputError := terceros.GetTerceroUD()
+	terceroUD, outputError := terceros.GetTerceroUD(ctx)
 	if outputError != nil {
 		return
 	} else if terceroUD == 0 {
@@ -70,7 +71,7 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 		return
 	}
 
-	detallesElementos, errMsg, outputError := consultarElementosParaCierre(infoCorte)
+	detallesElementos, errMsg, outputError := consultarElementosParaCierre(ctx, infoCorte)
 	if outputError != nil {
 		return outputError
 	}
@@ -88,7 +89,7 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 
 		payload = "limit=1&fields=TipoBienId,Amortizacion,Depreciacion,SubgrupoId&sortby=Id&order=desc&query=Activo:true,SubgrupoId__Id:"
 		if _, ok := subgrupos[elemento.SubgrupoCatalogoId]; !ok {
-			if sg, err := catalogoElementos.GetAllDetalleSubgrupo(payload + strconv.Itoa(elemento.SubgrupoCatalogoId)); err != nil {
+			if sg, err := catalogoElementos.GetAllDetalleSubgrupo(ctx, payload+strconv.Itoa(elemento.SubgrupoCatalogoId)); err != nil {
 				return err
 			} else if len(sg) == 1 {
 				subgrupos[elemento.SubgrupoCatalogoId] = *sg[0]
@@ -108,12 +109,12 @@ func calcularCierre(fechaCorte string, cuentas map[string]models.CuentaContable,
 		return
 	}
 
-	resultado.Error, outputError = asientoContable.CalcularMovimientosContables(elementos_, getDescripcionMovmientoCierre(), 0, formtatoCrr, terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos)
+	resultado.Error, outputError = asientoContable.CalcularMovimientosContables(ctx, elementos_, getDescripcionMovmientoCierre(), 0, formtatoCrr, terceroUD, terceroUD, cuentas, subgrupos, &transaccion.Movimientos)
 
 	return
 }
 
-func consultarElementosParaCierre(infoCorte []models.DepreciacionElemento) (detalles []elementoCierreDetalle, errMsg string, outputError map[string]interface{}) {
+func consultarElementosParaCierre(ctx context.Context, infoCorte []models.DepreciacionElemento) (detalles []elementoCierreDetalle, errMsg string, outputError map[string]interface{}) {
 	pendientes := make([]models.DepreciacionElemento, 0, len(infoCorte))
 	idsElementoActa := make([]int, 0, len(infoCorte))
 	for _, val := range infoCorte {
@@ -132,7 +133,7 @@ func consultarElementosParaCierre(infoCorte []models.DepreciacionElemento) (deta
 		return nil, "No se pudo consultar el detalle de los elementos. Contacte soporte.", nil
 	}
 
-	elementosPorID, outputError := consultarElementosCierrePorLotes(idsElementoActa)
+	elementosPorID, outputError := consultarElementosCierrePorLotes(ctx, idsElementoActa)
 	if outputError != nil {
 		return nil, "", outputError
 	}
@@ -157,7 +158,7 @@ func consultarElementosParaCierre(infoCorte []models.DepreciacionElemento) (deta
 	return detalles, errMsg, nil
 }
 
-func consultarElementosCierrePorLotes(ids []int) (map[int]*models.Elemento, map[string]interface{}) {
+func consultarElementosCierrePorLotes(ctx context.Context, ids []int) (map[int]*models.Elemento, map[string]interface{}) {
 	ids = utilsHelper.RemoveDuplicateInt(ids)
 	if len(ids) == 0 {
 		return map[int]*models.Elemento{}, nil
@@ -179,7 +180,7 @@ func consultarElementosCierrePorLotes(ids []int) (map[int]*models.Elemento, map[
 			defer wg.Done()
 			for lote := range jobs {
 				payload := "Id__in:" + utilsHelper.ArrayToString(lote, "|")
-				elementos, err := getAllElementoDepreciacionCierre(payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId,Activo", "", "", "", "-1")
+				elementos, err := getAllElementoDepreciacionCierre(ctx, payload, "Id,ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId,Activo", "", "", "", "-1")
 				results <- resultadoLoteElementosCierre{
 					elementos:   elementos,
 					outputError: err,

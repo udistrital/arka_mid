@@ -1,6 +1,7 @@
 package inmuebleshelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -10,29 +11,29 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/oikos"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}) {
+func GetOne(ctx context.Context, id int) (detalle models.Inmueble, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
-	outputError = actaRecibido.GetElementoById(id, &detalle.Elemento)
+	outputError = actaRecibido.GetElementoById(ctx, id, &detalle.Elemento)
 	if outputError != nil {
 		return
 	}
 
-	detalle.SubgrupoId, outputError = catalogoElementos.GetSubgrupoById(detalle.Elemento.SubgrupoCatalogoId)
+	detalle.SubgrupoId, outputError = catalogoElementos.GetSubgrupoById(ctx, detalle.Elemento.SubgrupoCatalogoId)
 	if outputError != nil {
 		return
 	}
 
-	elementoMovimiento, outputError := movimientosArka.GetAllElementosMovimiento(getPayloadElementosMovimiento(id))
+	elementoMovimiento, outputError := movimientosArka.GetAllElementosMovimiento(ctx, getPayloadElementosMovimiento(id))
 	if len(elementoMovimiento) == 1 {
 		detalle.ElementoMovimiento = *elementoMovimiento[0]
 	}
 
-	elementosCampo, outputError := actaRecibido.GetAllElementoCampo(getPayloadElementoCampo(id))
+	elementosCampo, outputError := actaRecibido.GetAllElementoCampo(ctx, getPayloadElementoCampo(id))
 	if outputError != nil {
 		return
 	}
@@ -45,7 +46,7 @@ func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}
 		}
 
 		var cuentas_ models.ParametrizacionContable_
-		cuentaCredito, err := cuentasContables.GetCuentaContable(cuentas.CuentaCreditoId)
+		cuentaCredito, err := cuentasContables.GetCuentaContable(ctx, cuentas.CuentaCreditoId)
 		if err != nil {
 			outputError = err
 			return
@@ -53,7 +54,7 @@ func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}
 			cuentas_.CuentaCreditoId = *cuentaCredito
 		}
 
-		cuentaDebito, err := cuentasContables.GetCuentaContable(cuentas.CuentaDebitoId)
+		cuentaDebito, err := cuentasContables.GetCuentaContable(ctx, cuentas.CuentaDebitoId)
 		if err != nil {
 			outputError = err
 			return
@@ -69,20 +70,20 @@ func GetOne(id int) (detalle models.Inmueble, outputError map[string]interface{}
 	}
 
 	if detalle.Elemento.EspacioFisicoId > 0 {
-		espacioFisico_, err := oikos.GetAllEspacioFisico(getPayloadEspacioFisico(detalle.Elemento.EspacioFisicoId))
+		espacioFisico_, err := oikos.GetAllEspacioFisico(ctx, getPayloadEspacioFisico(detalle.Elemento.EspacioFisicoId))
 		if err != nil {
 			return detalle, err
 		}
 
 		if len(espacioFisico_) == 1 {
 			detalle.EspacioFisico = espacioFisico_[0]
-			detalle.Sede, outputError = oikos.GetSedeEspacioFisico(espacioFisico_[0])
+			detalle.Sede, outputError = oikos.GetSedeEspacioFisico(ctx, espacioFisico_[0])
 			if outputError != nil {
 				return
 			}
 		}
 
-		detalle.Otros, outputError = oikos.GetAllEspacioFisicoCampo(getPayloadEspacioFisico(id))
+		detalle.Otros, outputError = oikos.GetAllEspacioFisicoCampo(ctx, getPayloadEspacioFisico(id))
 	}
 
 	return

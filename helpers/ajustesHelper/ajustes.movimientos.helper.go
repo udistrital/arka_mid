@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"errors"
 	"net/url"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // separarElementosPorModificacion Separa los elementos según se deba modificar Subgrupo, Valores, Misceláneos o Mediciones posteriores
@@ -20,7 +21,7 @@ import (
 // vls: Cambios a valores, elementos a los que se les debe cambiar el valor total.
 // sg: Cambia el subgrupo del elemento. Se ajusta la placa de acuerdo al nuevo subgrupo.
 // mp: Cambian los parametros de las mediciones posteriores. vida util o valor residual.
-func separarElementosPorModificacion(originales []*models.Elemento,
+func separarElementosPorModificacion(ctx context.Context, originales []*models.Elemento,
 	actualizados []*models.DetalleElemento_,
 	mediciones bool) (
 	msc, vls, sg, mp []*models.DetalleElemento_,
@@ -36,7 +37,7 @@ func separarElementosPorModificacion(originales []*models.Elemento,
 
 	for _, el_ := range originales {
 		if idx := findElementoInArrayD(actualizados, el_.Id); idx > -1 {
-			if msc_, vls_, sg_, err := determinarDeltaActa(el_, actualizados[idx]); err != nil {
+			if msc_, vls_, sg_, err := determinarDeltaActa(ctx, el_, actualizados[idx]); err != nil {
 				return nil, nil, nil, nil, err
 			} else if msc_ {
 				msc = append(msc, actualizados[idx])
@@ -57,7 +58,7 @@ func separarElementosPorModificacion(originales []*models.Elemento,
 // calcularAjusteMovimiento Calcula la transacción contable generada a partir de los elementos y el cambio de cada uno.
 // actualizarVl: Elementos para actualizar los montos de las transacciones contables.
 // actualizarSg: Elementos para actualizar el subgrupo y por tanto, pueden cambiar las cuentas.
-func calcularAjusteMovimiento(originales []*models.Elemento,
+func calcularAjusteMovimiento(ctx context.Context, originales []*models.Elemento,
 	actualizarVl, actualizarSg []*models.DetalleElemento_,
 	movimientoId, proveedorId int,
 	consecutivo, tipoMovimiento string) (movimientos []*models.MovimientoTransaccion,
@@ -75,7 +76,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 	)
 
 	detalleCuenta = make(map[string]*models.CuentaContable)
-	if db_, cr_, err := parametros.GetParametrosDebitoCredito(); err != nil {
+	if db_, cr_, err := parametros.GetParametrosDebitoCredito(ctx); err != nil {
 		return nil, err
 	} else {
 		movDebito = db_
@@ -90,7 +91,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 		ids = append(ids, el.SubgrupoCatalogoId)
 	}
 
-	if cuentasSg, err := getCuentasByMovimientoSubgrupos(movimientoId, ids); err != nil {
+	if cuentasSg, err := getCuentasByMovimientoSubgrupos(ctx, movimientoId, ids); err != nil {
 		return nil, err
 	} else {
 		cuentasSubgrupo = cuentasSg
@@ -106,7 +107,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 				return
 			}
 
-			if detalleCuenta_, err := fillCuentas(detalleCuenta,
+			if detalleCuenta_, err := fillCuentas(ctx, detalleCuenta,
 				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId,
@@ -134,7 +135,7 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 	for _, el := range actualizarVl {
 		if idx := findElementoInArrayE(originales, el.Id); idx > -1 {
 
-			if detalleCuenta_, err := fillCuentas(detalleCuenta,
+			if detalleCuenta_, err := fillCuentas(ctx, detalleCuenta,
 				[]string{cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[el.SubgrupoCatalogoId].CuentaCreditoId,
 					cuentasSubgrupo[originales[idx].SubgrupoCatalogoId].CuentaDebitoId,
@@ -164,24 +165,24 @@ func calcularAjusteMovimiento(originales []*models.Elemento,
 }
 
 // submitUpdates Actualiza los registros relacionados a las novedades y elementos
-func submitUpdates(elementosActa []*models.Elemento,
+func submitUpdates(ctx context.Context, elementosActa []*models.Elemento,
 	elementosMovimiento []*models.ElementosMovimiento,
 	novedades []*models.NovedadElemento) (outputError map[string]interface{}) {
 
 	for _, el := range elementosActa {
-		if err := crudActas.PutElemento(el, el.Id); err != nil {
+		if err := crudActas.PutElemento(ctx, el, el.Id); err != nil {
 			return err
 		}
 	}
 
 	for _, el := range elementosMovimiento {
-		if _, err := movimientosArka.PutElementosMovimiento(el, el.Id); err != nil {
+		if _, err := movimientosArka.PutElementosMovimiento(ctx, el, el.Id); err != nil {
 			return err
 		}
 	}
 
 	for _, nv := range novedades {
-		if _, err := movimientosArka.PutNovedadElemento(nv, nv.Id); err != nil {
+		if _, err := movimientosArka.PutNovedadElemento(ctx, nv, nv.Id); err != nil {
 			return err
 		}
 	}
@@ -251,7 +252,7 @@ func separarElementosPorSalida(elementos []*models.ElementosMovimiento,
 }
 
 // generarMovimientoAjuste Crea el registro del movimiento de inventario y contable resultantes del ajuste
-func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (
+func generarMovimientoAjuste(ctx context.Context, sg, vls, msc, mp []*models.DetalleElemento_, movContables []*models.MovimientoTransaccion) (
 	movimiento *models.Movimiento, trContable *models.TransaccionMovimientos, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("generarMovimientoAjuste - Unhandled Error!", "500")
@@ -260,13 +261,13 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 	detalle := new(models.FormatoAjusteAutomatico)
 
 	query := "query=Nombre:" + url.QueryEscape("Ajuste Automático")
-	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(query); err != nil {
+	if fm, err := movimientosArka.GetAllFormatoTipoMovimiento(ctx, query); err != nil {
 		return nil, nil, err
 	} else {
 		movimiento.FormatoTipoMovimientoId = fm[0]
 	}
 
-	if sm, err := movimientosArka.GetAllEstadoMovimiento("query=Nombre:" + url.QueryEscape("Ajuste Aprobado")); err != nil {
+	if sm, err := movimientosArka.GetAllEstadoMovimiento(ctx, "query=Nombre:"+url.QueryEscape("Ajuste Aprobado")); err != nil {
 		return nil, nil, err
 	} else {
 		movimiento.EstadoMovimientoId = sm[0]
@@ -284,7 +285,7 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 	}
 
 	var consecutivo models.Consecutivo
-	if err := consecutivos.Get("contxtAjusteCons", "Ajuste automático Arka", &consecutivo); err != nil {
+	if err := consecutivos.Get(ctx, "contxtAjusteCons", "Ajuste automático Arka", &consecutivo); err != nil {
 		return nil, nil, err
 	}
 
@@ -300,14 +301,14 @@ func generarMovimientoAjuste(sg, vls, msc, mp []*models.DetalleElemento_, movCon
 		trContable.Etiquetas = ""
 		trContable.Descripcion = "Ajuste contable almacén"
 
-		_, outputError = movimientosContables.PostTrContable(trContable)
+		_, outputError = movimientosContables.PostTrContable(ctx, trContable)
 		if outputError != nil {
 			return
 		}
 	}
 
 	movimiento.Activo = true
-	outputError = movimientosArka.PostMovimiento(movimiento)
+	outputError = movimientosArka.PostMovimiento(ctx, movimiento)
 
 	return
 }

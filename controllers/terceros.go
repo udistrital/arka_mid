@@ -7,7 +7,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // TercerosController operations for Terceros
@@ -46,7 +46,7 @@ func (c *TercerosController) GetOne() {
 		id = v
 	}
 
-	if v, err := terceros.GetNombreTerceroById(id); err != nil {
+	if v, err := terceros.GetNombreTerceroById(c.Ctx.Request.Context(), id); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v

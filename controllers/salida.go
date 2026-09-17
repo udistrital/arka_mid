@@ -11,7 +11,7 @@ import (
 
 	"github.com/udistrital/arka_mid/helpers/salidaHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // SalidaController operations for Salida
@@ -62,7 +62,7 @@ func (c *SalidaController) Post() {
 
 	if salidaId > 0 {
 		var res models.ResultadoMovimiento
-		if err := salidaHelper.AprobarSalida(salidaId, &res); err == nil {
+		if err := salidaHelper.AprobarSalida(c.Ctx.Request.Context(), salidaId, &res); err == nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = res
 		} else {
@@ -78,7 +78,7 @@ func (c *SalidaController) Post() {
 	} else {
 		var v models.SalidaGeneral
 		if err := decodeSalidaGeneralRequest(c.Ctx.Input.RequestBody, &v); err == nil {
-			if respuesta, err := salidaHelper.Post(&v, etl); err == nil && respuesta != nil {
+			if respuesta, err := salidaHelper.Post(c.Ctx.Request.Context(), &v, etl); err == nil && respuesta != nil {
 				c.Ctx.Output.SetStatus(201)
 				c.Data["json"] = respuesta
 			} else {
@@ -131,7 +131,7 @@ func (c *SalidaController) PostHistorico() {
 	}
 
 	var resultado models.ResultadoMovimiento
-	if err := salidaHelper.RegistrarSalidaHistorica(&payload, &resultado); err != nil {
+	if err := salidaHelper.RegistrarSalidaHistorica(c.Ctx.Request.Context(), &payload, &resultado); err != nil {
 		panic(err)
 	}
 
@@ -217,7 +217,7 @@ func (c *SalidaController) GetSalida() {
 			"status":  "400",
 		})
 	}
-	if v, err := salidaHelper.GetOne(id); err != nil {
+	if v, err := salidaHelper.GetOne(c.Ctx.Request.Context(), id); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
@@ -263,7 +263,7 @@ func (c *SalidaController) GetElementos() {
 		panic(errorCtrl.Error(`GetElementos - entradaId == 0 && salidaId == 0`, err, "400"))
 	}
 
-	if elementos, err := salidaHelper.GetElementosByTipoBien(entradaId, salidaId); err != nil {
+	if elementos, err := salidaHelper.GetElementosByTipoBien(c.Ctx.Request.Context(), entradaId, salidaId); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = elementos
@@ -307,7 +307,7 @@ func (c *SalidaController) GetSalidas() {
 		estados = strings.Split(estados_, ",")
 	}
 
-	if v, t, err := salidaHelper.GetAll(estados, creacion, aprobacion, consecutivo, entrada, sortby, order, limit, page); err == nil {
+	if v, t, err := salidaHelper.GetAll(c.Ctx.Request.Context(), estados, creacion, aprobacion, consecutivo, entrada, sortby, order, limit, page); err == nil {
 		c.Ctx.Output.Header("x-total-count", t)
 		c.Data["json"] = v
 	} else {
@@ -363,7 +363,7 @@ func (c *SalidaController) Put() {
 	}
 
 	if !rechazar && v.Salidas != nil {
-		if respuesta, err := salidaHelper.Put(&v, id); err == nil && respuesta != nil {
+		if respuesta, err := salidaHelper.Put(c.Ctx.Request.Context(), &v, id); err == nil && respuesta != nil {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = respuesta
 		} else {
@@ -378,7 +378,7 @@ func (c *SalidaController) Put() {
 			})
 		}
 	} else if rechazar {
-		if salida, err := salidaHelper.RechazarSalida(id); err != nil {
+		if salida, err := salidaHelper.RechazarSalida(c.Ctx.Request.Context(), id); err != nil {
 			panic(err)
 		} else {
 			c.Data["json"] = salida
@@ -425,7 +425,7 @@ func (c *SalidaController) PutAnular() {
 	}
 
 	var resultado models.ResultadoAnulacionSalida
-	if err := salidaHelper.AnularSalida(id, &request, &resultado); err != nil {
+	if err := salidaHelper.AnularSalida(c.Ctx.Request.Context(), id, &request, &resultado); err != nil {
 		panic(err)
 	}
 

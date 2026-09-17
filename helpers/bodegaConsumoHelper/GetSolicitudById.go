@@ -1,6 +1,7 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -8,18 +9,18 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetSolicitudById trae el nombre de un encargado por su id
-func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
+func GetSolicitudById(ctx context.Context, id int) (Solicitud map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetSolicitudById - Unhandled Error", "500")
 
 	var solicitud_ = make(map[string]interface{})
 	var elementos___ []map[string]interface{}
 
-	mov, outputError := movimientosArka.GetMovimientoById(id)
+	mov, outputError := movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	}
@@ -35,13 +36,13 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 		return
 	}
 
-	tercero, outputError := terceros.GetNombreTerceroById(detalle.Funcionario)
+	tercero, outputError := terceros.GetNombreTerceroById(ctx, detalle.Funcionario)
 	if outputError != nil {
 		return
 	}
 
 	for _, elementos := range detalle.Elementos {
-		Elemento__, err := traerElementoSolicitud(elementos)
+		Elemento__, err := traerElementoSolicitud(ctx, elementos)
 		if err != nil {
 			return nil, err
 		}
@@ -61,16 +62,16 @@ func GetSolicitudById(id int) (Solicitud map[string]interface{}, outputError map
 
 }
 
-func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
+func traerElementoSolicitud(ctx context.Context, Elemento models.ElementoSolicitud_) (Elemento_ map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("traerElementoSolicitud - Unhandled Error", "500")
 
-	ubicacionInfo, outputError := oikos.GetSedeDependenciaUbicacion(Elemento.Ubicacion)
+	ubicacionInfo, outputError := oikos.GetSedeDependenciaUbicacion(ctx, Elemento.Ubicacion)
 	if outputError != nil {
 		return
 	}
 
-	ultimo, outputError := ultimoMovimientoKardex(Elemento.ElementoCatalogoId)
+	ultimo, outputError := ultimoMovimientoKardex(ctx, Elemento.ElementoCatalogoId)
 	if outputError != nil {
 		return
 	}
@@ -80,7 +81,7 @@ func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[s
 		return
 	}
 
-	catalogo, outputError := detalleElementoCatalogo(Elemento.ElementoCatalogoId)
+	catalogo, outputError := detalleElementoCatalogo(ctx, Elemento.ElementoCatalogoId)
 	if outputError != nil {
 		return
 	}
@@ -98,12 +99,12 @@ func traerElementoSolicitud(Elemento models.ElementoSolicitud_) (Elemento_ map[s
 	return
 }
 
-func ultimoMovimientoKardex(elementoId int) (ultimo models.ElementosMovimiento, outputError map[string]interface{}) {
+func ultimoMovimientoKardex(ctx context.Context, elementoId int) (ultimo models.ElementosMovimiento, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("ultimoMovimientoKardex - Unhandled Error!", "500")
 
 	payload := "limit=1&sortby=FechaCreacion&order=desc&fields=ElementoCatalogoId,Id,SaldoCantidad,SaldoValor&query=ElementoCatalogoId:"
-	elemento, err := movimientosArka.GetAllElementosMovimiento(payload + strconv.Itoa(elementoId))
+	elemento, err := movimientosArka.GetAllElementosMovimiento(ctx, payload+strconv.Itoa(elementoId))
 	if err != nil || len(elemento) != 1 {
 		return ultimo, err
 	}

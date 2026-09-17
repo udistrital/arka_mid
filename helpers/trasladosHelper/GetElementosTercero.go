@@ -1,6 +1,7 @@
 package trasladoshelper
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
@@ -8,10 +9,10 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func GetElementosTercero(terceroId int, inventario *models.InventarioTercero) (outputError map[string]interface{}) {
+func GetElementosTercero(ctx context.Context, terceroId int, inventario *models.InventarioTercero) (outputError map[string]interface{}) {
 
 	funcion := "GetElementosTercero - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -24,14 +25,14 @@ func GetElementosTercero(terceroId int, inventario *models.InventarioTercero) (o
 
 	inventario.Elementos = make([]models.DetalleElementoPlaca, 0)
 
-	if tercero, err := terceros.GetDetalleFuncionario(terceroId); err != nil {
+	if tercero, err := terceros.GetDetalleFuncionario(ctx, terceroId); err != nil {
 		return err
 	} else {
 		inventario.Tercero = *tercero
 	}
 
 	// Consulta lista de elementos asignados al tercero
-	if elemento_, err := movimientosArka.GetElementosFuncionario(terceroId); err != nil {
+	if elemento_, err := movimientosArka.GetElementosFuncionario(ctx, terceroId); err != nil {
 		return err
 	} else {
 		elementosF = elemento_
@@ -41,7 +42,7 @@ func GetElementosTercero(terceroId int, inventario *models.InventarioTercero) (o
 	if len(elementosF) > 0 {
 		query := "limit=-1&sortby=ElementoActaId&order=desc&query=Id__in:"
 		query += url.QueryEscape(utilsHelper.ArrayToString(elementosF, "|"))
-		if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(query); err != nil {
+		if elementoMovimiento_, err := movimientosArka.GetAllElementosMovimiento(ctx, query); err != nil {
 			return err
 		} else {
 			elementosM = elementoMovimiento_
@@ -57,7 +58,7 @@ func GetElementosTercero(terceroId int, inventario *models.InventarioTercero) (o
 
 	// Consulta de Nombre, Placa, Marca, Serie se hace al api acta_recibido_crud
 	query := "Id__in:" + utilsHelper.ArrayToString(ids, "|")
-	if elemento_, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
+	if elemento_, err := actaRecibido.GetAllElemento(ctx, query, "", "Id", "desc", "", "-1"); err != nil {
 		return err
 	} else {
 		elementosActa = elemento_

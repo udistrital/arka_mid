@@ -1,22 +1,27 @@
 package salidaHelper
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/crud/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 var consultarCentroCostosSalida = movimientosArka.GetAllCentroCostos
 
 const mensajeCentroCostosNoEncontrado = "Error en la búsqueda, consultar a soporte"
 
-func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCostos,
+func traerDetalle(
+	ctx context.Context,
+	movimiento *models.Movimiento,
+	salida models.FormatoSalidaCostos,
 	centrosCostos map[string]models.CentroCostos,
-	funcionarios map[int]models.Tercero) (salida_ map[string]interface{}, outputError map[string]interface{}) {
+	funcionarios map[int]models.Tercero,
+) (salida_ map[string]interface{}, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("TraerDetalle - Unhandled Error!", "500")
 
@@ -39,7 +44,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		key := "id:" + strconv.Itoa(salida.Ubicacion)
 		if val, ok := centrosCostos[key]; !ok {
 			payload := "query=Id:" + strconv.Itoa(salida.Ubicacion)
-			if centrosCostos_, err := consultarCentroCostosSalida(payload); err != nil {
+			if centrosCostos_, err := consultarCentroCostosSalida(ctx, payload); err != nil {
 				return nil, err
 			} else if len(centrosCostos_) == 1 {
 				centroCostos = centrosCostos_[0]
@@ -52,7 +57,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 		key := "codigo:" + salida.CentroCostos
 		if val, ok := centrosCostos[key]; !ok {
 			payload := "query=Codigo:" + salida.CentroCostos
-			centroCostos_, err := consultarCentroCostosSalida(payload)
+			centroCostos_, err := consultarCentroCostosSalida(ctx, payload)
 			if err != nil {
 				return nil, err
 			} else if len(centroCostos_) == 1 {
@@ -86,7 +91,7 @@ func traerDetalle(movimiento *models.Movimiento, salida models.FormatoSalidaCost
 	if salida.Funcionario > 0 {
 
 		if val, ok := funcionarios[salida.Funcionario]; !ok {
-			if funcionario_, err := terceros.GetTerceroById(salida.Funcionario); err != nil {
+			if funcionario_, err := terceros.GetTerceroById(ctx, salida.Funcionario); err != nil {
 				return nil, err
 			} else {
 				funcionario = *funcionario_

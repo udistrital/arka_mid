@@ -1,19 +1,20 @@
 package consecutivos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	"github.com/udistrital/arka_mid/utils_oas/request"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
+	requestV2 "github.com/udistrital/utils_oas/v2/request"
 )
 
 var ConsecutivosCRUD, _ = beego.AppConfig.String("consecutivosService")
 
 // Post post controlador consecutivo del api consecutivos_crud
-func Post(consecutivo interface{}) (outputError map[string]interface{}) {
+func Post(ctx context.Context, consecutivo interface{}) (outputError map[string]interface{}) {
 
 	funcion := "Post"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
@@ -21,14 +22,14 @@ func Post(consecutivo interface{}) (outputError map[string]interface{}) {
 	urlcrud := ConsecutivosCRUD + "consecutivo"
 	response := new(models.RespuestaAPI1Interface)
 
-	if err := request.SendJson(urlcrud, "POST", response, consecutivo); err != nil {
-		eval := ` - request.SendJson(urlcrud, "POST", response, consecutivo)`
+	if _, err := requestV2.PostWithContext(ctx, urlcrud, consecutivo, response); err != nil {
+		eval := " - requestV2.PostWithContext(ctx, urlcrud, consecutivo, response)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 
 	if !response.Success {
 		err := fmt.Errorf("%v", response.Message)
-		eval := ` - request.SendJson(urlcrud, "POST", response, consecutivo)`
+		eval := " - requestV2.PostWithContext(ctx, urlcrud, consecutivo, response)"
 		return errorCtrl.Error(funcion+eval, err, "502")
 	}
 

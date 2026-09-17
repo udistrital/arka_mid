@@ -1,6 +1,7 @@
 package trasladoshelper
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
@@ -10,11 +11,11 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/terceros"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // GetOne Consulta los funcionarios, ubicación y elementos asociados a un traslado
-func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
+func GetOne(ctx context.Context, id int) (Traslado *models.TrTraslado, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetOne - Unhandled Error!", "500")
 
@@ -22,7 +23,7 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 	Traslado = new(models.TrTraslado)
 
 	// Se consulta el movimiento
-	movimientoA, outputError := movimientosArka.GetMovimientoById(id)
+	movimientoA, outputError := movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	}
@@ -34,32 +35,32 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 	}
 
 	// Se consulta el detalle del funcionario origen
-	Traslado.FuncionarioOrigen, outputError = terceros.GetDetalleFuncionario(detalle.FuncionarioOrigen)
+	Traslado.FuncionarioOrigen, outputError = terceros.GetDetalleFuncionario(ctx, detalle.FuncionarioOrigen)
 	if outputError != nil {
 		return
 	}
 
 	// Se consulta el detalle del funcionario destino
-	Traslado.FuncionarioDestino, outputError = terceros.GetDetalleFuncionario(detalle.FuncionarioDestino)
+	Traslado.FuncionarioDestino, outputError = terceros.GetDetalleFuncionario(ctx, detalle.FuncionarioDestino)
 	if outputError != nil {
 		return
 	}
 
 	// Se consulta la sede, dependencia correspondiente a la ubicacion
-	Traslado.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(detalle.Ubicacion)
+	Traslado.Ubicacion, outputError = oikos.GetSedeDependenciaUbicacion(ctx, detalle.Ubicacion)
 	if outputError != nil {
 		return
 	}
 
 	// Se consultan los detalles de los elementos del traslado
-	Traslado.Elementos, outputError = getElementosTraslado(detalle.Elementos)
+	Traslado.Elementos, outputError = getElementosTraslado(ctx, detalle.Elementos)
 	if outputError != nil {
 		return
 	}
 
 	if Traslado.Movimiento.EstadoMovimientoId.Nombre == "Traslado Aprobado" && Traslado.Movimiento.ConsecutivoId != nil && *Traslado.Movimiento.ConsecutivoId > 0 {
 		Traslado.TrContable = &models.InfoTransaccionContable{}
-		*Traslado.TrContable, outputError = asientoContable.GetFullDetalleContable(*Traslado.Movimiento.ConsecutivoId)
+		*Traslado.TrContable, outputError = asientoContable.GetFullDetalleContable(ctx, *Traslado.Movimiento.ConsecutivoId)
 		if outputError != nil {
 			return
 		}
@@ -70,14 +71,14 @@ func GetOne(id int) (Traslado *models.TrTraslado, outputError map[string]interfa
 	return
 }
 
-func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
+func getElementosTraslado(ctx context.Context, ids []int) (Elementos []*models.DetalleElementoPlaca, outputError map[string]interface{}) {
 
 	funcion := "getElementosTraslado"
 	defer errorCtrl.ErrorControlFunction(funcion+" - Unhandled Error!", "500")
 
 	query := "limit=-1&fields=Id,ElementoActaId&sortby=ElementoActaId&order=desc"
 	query += "&query=Id__in:" + url.QueryEscape(utilsHelper.ArrayToString(ids, "|"))
-	elementos, outputError := movimientosArka.GetAllElementosMovimiento(query)
+	elementos, outputError := movimientosArka.GetAllElementosMovimiento(ctx, query)
 	if outputError != nil {
 		return
 	}
@@ -88,7 +89,7 @@ func getElementosTraslado(ids []int) (Elementos []*models.DetalleElementoPlaca, 
 	}
 
 	query = "Id__in:" + utilsHelper.ArrayToString(idsActa, "|")
-	if response, err := actaRecibido.GetAllElemento(query, "", "Id", "desc", "", "-1"); err != nil {
+	if response, err := actaRecibido.GetAllElemento(ctx, query, "", "Id", "desc", "", "-1"); err != nil {
 		return nil, err
 	} else {
 		if len(response) == len(elementos) {

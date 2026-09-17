@@ -1,6 +1,7 @@
 package trasladoshelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
@@ -8,12 +9,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	timebogota "github.com/udistrital/arka_mid/utils_oas/timeBogota"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
+	timebogota "github.com/udistrital/utils_oas/v2/time_bogota"
 )
 
 // AprobarTraslado Actualiza el estado del traslado y genera la transaccion contable correspondiente
-func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func AprobarTraslado(ctx context.Context, id int, response *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("AprobarTraslado - Unhandled Error!", "500")
 
@@ -23,7 +24,7 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		transaccion models.TransaccionMovimientos
 	)
 
-	movimiento_, outputError := movimientosArka.GetMovimientoById(id)
+	movimiento_, outputError := movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil || movimiento_.EstadoMovimientoId.Nombre != "Traslado Confirmado" {
 		return
 	}
@@ -33,11 +34,11 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		return err
 	}
 
-	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoSalida, "SAL"); err != nil {
+	if err := movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &tipoSalida, "SAL"); err != nil {
 		return err
 	}
 
-	if err := movimientosArka.GetEstadoMovimientoIdByNombre(&response.Movimiento.EstadoMovimientoId.Id, "Traslado Aprobado"); err != nil {
+	if err := movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &response.Movimiento.EstadoMovimientoId.Id, "Traslado Aprobado"); err != nil {
 		return err
 	}
 
@@ -45,7 +46,7 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 	bufferSubgrupos := make(map[int]models.DetalleSubgrupo)
 	for _, el := range detalle.Elementos {
 
-		historial, err := movimientosArka.GetHistorialElemento(el, true)
+		historial, err := movimientosArka.GetHistorialElemento(ctx, el, true)
 		if err != nil {
 			return err
 		} else if historial == nil {
@@ -63,7 +64,7 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		}
 
 		var elementoActa models.Elemento
-		outputError = actaRecibido.GetElementoById(*historial.Elemento.ElementoActaId, &elementoActa)
+		outputError = actaRecibido.GetElementoById(ctx, *historial.Elemento.ElementoActaId, &elementoActa)
 		if outputError != nil {
 			return
 		}
@@ -72,32 +73,32 @@ func AprobarTraslado(id int, response *models.ResultadoMovimiento) (outputError 
 		elementosActa := []*models.Elemento{&elementoActa}
 		tipoEntrada := historial.Salida.MovimientoPadreId.FormatoTipoMovimientoId.Id
 
-		response.Error, outputError = asientoContable.CalcularMovimientosContables(elementosActa, descMovDestino(), tipoEntrada, tipoSalida, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas, bufferSubgrupos, &transaccion.Movimientos)
+		response.Error, outputError = asientoContable.CalcularMovimientosContables(ctx, elementosActa, descMovDestino(), tipoEntrada, tipoSalida, detalle.FuncionarioDestino, detalle.FuncionarioOrigen, bufferCuentas, bufferSubgrupos, &transaccion.Movimientos)
 		if outputError != nil || response.Error != "" {
 			return
 		}
 	}
 
 	transaccion.ConsecutivoId = *response.Movimiento.ConsecutivoId
-	response.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteTraslados(), "Traslado de elementos", &transaccion)
+	response.Error, outputError = asientoContable.CreateTransaccionContable(ctx, getTipoComprobanteTraslados(), "Traslado de elementos", &transaccion)
 	if outputError != nil || response.Error != "" {
 		return
 	}
 
 	response.TransaccionContable.Concepto = transaccion.Descripcion
 	response.TransaccionContable.Fecha = transaccion.FechaTransaccion
-	response.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	response.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(ctx, transaccion.Movimientos, bufferCuentas)
 	if outputError != nil {
 		return
 	}
 
-	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	_, outputError = movimientosContables.PostTrContable(ctx, &transaccion)
 	if outputError != nil {
 		return
 	}
 
 	response.Movimiento.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
-	outputError = movimientosArka.PutMovimiento(&response.Movimiento, response.Movimiento.Id)
+	outputError = movimientosArka.PutMovimiento(ctx, &response.Movimiento, response.Movimiento.Id)
 
 	return
 }

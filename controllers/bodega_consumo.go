@@ -9,7 +9,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/bodegaConsumoHelper"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 // BodegaConsumoController operations for Bodega-Consumo
@@ -47,7 +47,7 @@ func (c *BodegaConsumoController) Post() {
 		panic(errorCtrl.Error("Post - utilsHelper.Unmarshal(string(c.Ctx.Input.RequestBody), &v)", err, "400"))
 	}
 
-	if err := bodegaConsumoHelper.PostSolicitud(&v, &solicitud); err != nil {
+	if err := bodegaConsumoHelper.PostSolicitud(c.Ctx.Request.Context(), &v, &solicitud); err != nil {
 		panic(err)
 	}
 
@@ -85,7 +85,7 @@ func (c *BodegaConsumoController) GetOneSolicitud() {
 		})
 	}
 
-	if v, err := bodegaConsumoHelper.GetSolicitudById(id); err == nil {
+	if v, err := bodegaConsumoHelper.GetSolicitudById(c.Ctx.Request.Context(), id); err == nil {
 		c.Data["json"] = v
 	} else {
 		panic(err)
@@ -120,7 +120,7 @@ func (c *BodegaConsumoController) GetAllSolicitud() {
 	}
 
 	solicitudes := make([]models.DetalleSolicitudBodega, 0)
-	if err := bodegaConsumoHelper.GetAllSolicitudes(user, tramiteOnly, &solicitudes); err != nil {
+	if err := bodegaConsumoHelper.GetAllSolicitudes(c.Ctx.Request.Context(), user, tramiteOnly, &solicitudes); err != nil {
 		panic(err)
 	}
 
@@ -143,7 +143,7 @@ func (c *BodegaConsumoController) GetElementos() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
-	if v, err := bodegaConsumoHelper.GetElementosSinAsignar(); err != nil {
+	if v, err := bodegaConsumoHelper.GetElementosSinAsignar(c.Ctx.Request.Context()); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
@@ -161,7 +161,7 @@ func (c *BodegaConsumoController) GetAperturasKardex() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
-	if v, err := bodegaConsumoHelper.GetAperturasKardex(); err != nil {
+	if v, err := bodegaConsumoHelper.GetAperturasKardex(c.Ctx.Request.Context()); err != nil {
 		panic(err)
 	} else {
 		c.Data["json"] = v
@@ -180,7 +180,7 @@ func (c *BodegaConsumoController) GetAllExistencias() {
 
 	defer errorCtrl.ErrorControlController(c.Controller, "BodegaConsumoController")
 
-	if v, err := bodegaConsumoHelper.GetExistenciasKardex(); err != nil {
+	if v, err := bodegaConsumoHelper.GetExistenciasKardex(c.Ctx.Request.Context()); err != nil {
 		panic(err)
 	} else {
 		if v == nil {

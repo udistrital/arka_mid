@@ -1,6 +1,7 @@
 package tercerosHelper_test
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -36,7 +37,7 @@ func TestMain(m *testing.M) {
 // TestGetFuncionariosPlanta ...
 func TestGetNombreTerceroById(t *testing.T) {
 
-	if valor, err := terceros.GetNombreTerceroById(81); err != nil {
+	if valor, err := terceros.GetNombreTerceroById(context.Background(), 81); err != nil {
 		t.Error("No se pudo consultar el tercero", err)
 		t.Fail()
 	} else {
@@ -48,7 +49,7 @@ func TestGetNombreTerceroById(t *testing.T) {
 // TestGetFuncionariosPlanta ...
 func TestGetTerceroByUsuarioWSO2(t *testing.T) {
 
-	if valor, err := terceros.GetTerceroByUsuarioWSO2("utest01"); err != nil {
+	if valor, err := terceros.GetTerceroByUsuarioWSO2(context.Background(), "utest01"); err != nil {
 		t.Error("No se pudo consultar el tercero", err)
 		t.Fail()
 	} else {

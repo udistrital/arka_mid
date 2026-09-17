@@ -1,14 +1,15 @@
 package parametros
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func GetUVTByVigencia(vigencia int) (uvt float64, outputError map[string]interface{}) {
+func GetUVTByVigencia(ctx context.Context, vigencia int) (uvt float64, outputError map[string]interface{}) {
 
 	funcion := "GetUVTByVigencia - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -16,7 +17,7 @@ func GetUVTByVigencia(vigencia int) (uvt float64, outputError map[string]interfa
 	var parametros__ []models.ParametroPeriodo
 	payload := "fields=Valor&limit=1&sortby=Id&order=desc&query=Activo:true,ParametroId__CodigoAbreviacion:UVT," +
 		"PeriodoId__Nombre:" + strconv.Itoa(vigencia)
-	if err := GetAllParametroPeriodo(payload, &parametros__); err != nil {
+	if err := GetAllParametroPeriodo(ctx, payload, &parametros__); err != nil {
 		return 0, err
 	}
 

@@ -1,6 +1,7 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"strconv"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -8,22 +9,22 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func PostSolicitud(solicitud *models.FormatoSolicitudBodega, movimiento *models.Movimiento) (outputError map[string]interface{}) {
+func PostSolicitud(ctx context.Context, solicitud *models.FormatoSolicitudBodega, movimiento *models.Movimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("PostSolicitud - Unhandled Error!", "500")
 
 	movimiento.EstadoMovimientoId = &models.EstadoMovimiento{}
 	movimiento.FormatoTipoMovimientoId = &models.FormatoTipoMovimiento{}
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movimiento.FormatoTipoMovimientoId.Id, "SOL_BOD")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &movimiento.FormatoTipoMovimientoId.Id, "SOL_BOD")
 	if outputError != nil {
 		return
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&movimiento.EstadoMovimientoId.Id, estadoSolicitudPendiente)
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &movimiento.EstadoMovimientoId.Id, estadoSolicitudPendiente)
 	if outputError != nil {
 		return
 	}
@@ -46,7 +47,7 @@ func PostSolicitud(solicitud *models.FormatoSolicitudBodega, movimiento *models.
 		Activo:      true,
 	}
 
-	outputError = consecutivos.Post(&consecutivo)
+	outputError = consecutivos.Post(ctx, &consecutivo)
 	if outputError != nil {
 		return
 	}
@@ -55,7 +56,7 @@ func PostSolicitud(solicitud *models.FormatoSolicitudBodega, movimiento *models.
 	movimiento.ConsecutivoId = &consecutivo.Id
 	movimiento.Consecutivo = utilsHelper.String(strconv.Itoa(consecutivo.Consecutivo))
 
-	outputError = movimientosArka.PostMovimiento(movimiento)
+	outputError = movimientosArka.PostMovimiento(ctx, movimiento)
 
 	return
 }

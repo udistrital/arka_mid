@@ -1,6 +1,7 @@
 package ajustesHelper
 
 import (
+	"context"
 	"time"
 
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
@@ -11,10 +12,10 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, outputError map[string]interface{}) {
+func PostAjuste(ctx context.Context, trContable *models.PreTrAjuste) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("PostAjuste - Unhandled Error!", "500")
 
@@ -29,18 +30,18 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 		return
 	}
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&movimiento.FormatoTipoMovimientoId.Id, "AJ_CBE")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &movimiento.FormatoTipoMovimientoId.Id, "AJ_CBE")
 	if outputError != nil {
 		return
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&movimiento.EstadoMovimientoId.Id, "Ajuste En Trámite")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &movimiento.EstadoMovimientoId.Id, "Ajuste En Trámite")
 	if outputError != nil {
 		return
 	}
 
 	var consecutivo models.Consecutivo
-	outputError = consecutivos.Get("contxtAjusteCons", "Ajuste Contable Arka", &consecutivo)
+	outputError = consecutivos.Get(ctx, "contxtAjusteCons", "Ajuste Contable Arka", &consecutivo)
 	if outputError != nil {
 		return
 	}
@@ -49,13 +50,13 @@ func PostAjuste(trContable *models.PreTrAjuste) (movimiento *models.Movimiento, 
 	movimiento.ConsecutivoId = &consecutivo.Id
 	movimiento.Activo = true
 
-	outputError = movimientosArka.PostMovimiento(movimiento)
+	outputError = movimientosArka.PostMovimiento(ctx, movimiento)
 
 	return
 }
 
 // GetDetalleAjuste Consulta los detalles de un ajuste contable
-func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[string]interface{}) {
+func GetDetalleAjuste(ctx context.Context, id int) (Ajuste *models.DetalleAjuste, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetDetalleAjuste - Unhandled Error!", "500")
 
@@ -66,7 +67,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 
 	Ajuste = new(models.DetalleAjuste)
 
-	movimiento, outputError := movimientosArka.GetMovimientoById(id)
+	movimiento, outputError := movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	}
@@ -76,7 +77,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		return
 	}
 
-	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito()
+	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito(ctx)
 	if outputError != nil {
 		return
 	}
@@ -84,7 +85,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 	if detalle.PreTrAjuste != nil && movimiento.EstadoMovimientoId.Nombre != "Ajuste Aprobado" {
 		movimientos = detalle.PreTrAjuste.Movimientos
 	} else if movimiento.EstadoMovimientoId.Nombre == "Ajuste Aprobado" && movimiento.ConsecutivoId != nil && *movimiento.ConsecutivoId > 0 {
-		if tr, err := movimientosContables.GetTransaccion(*movimiento.ConsecutivoId, "consecutivo", true); err != nil {
+		if tr, err := movimientosContables.GetTransaccion(ctx, *movimiento.ConsecutivoId, "consecutivo", true); err != nil {
 			return nil, err
 		} else {
 			for _, mov := range tr.Movimientos {
@@ -110,7 +111,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 	for _, mov := range movimientos {
 		mov_ := new(models.DetalleMovimientoContable)
 
-		if cta, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
+		if cta, err := cuentasContables.GetCuentaContable(ctx, mov.Cuenta); err != nil {
 			return nil, err
 		} else {
 			mov_.Cuenta = &models.DetalleCuenta{
@@ -122,7 +123,7 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 		}
 
 		if mov.TerceroId > 0 {
-			if tercero, err := terceros.GetNombreTerceroById(mov.TerceroId); err != nil {
+			if tercero, err := terceros.GetNombreTerceroById(ctx, mov.TerceroId); err != nil {
 				return nil, err
 			} else {
 				mov_.TerceroId = tercero
@@ -142,16 +143,16 @@ func GetDetalleAjuste(id int) (Ajuste *models.DetalleAjuste, outputError map[str
 }
 
 // AprobarAjuste Realiza la transacción contable correspondiente
-func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
+func AprobarAjuste(ctx context.Context, id int) (movimiento *models.Movimiento, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("AprobarAjuste - Unhandled Error!", "500")
 
-	movimiento, outputError = movimientosArka.GetMovimientoById(id)
+	movimiento, outputError = movimientosArka.GetMovimientoById(ctx, id)
 	if outputError != nil {
 		return
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&movimiento.EstadoMovimientoId.Id, "Ajuste Aprobado")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &movimiento.EstadoMovimientoId.Id, "Ajuste Aprobado")
 	if outputError != nil {
 		return
 	}
@@ -161,7 +162,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		return nil, err
 	}
 
-	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito()
+	parametroDebitoId, parametroCreditoId, outputError := parametros.GetParametrosDebitoCredito(ctx)
 	if outputError != nil {
 		return
 	}
@@ -171,7 +172,7 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 		mov_ := new(models.MovimientoTransaccion)
 		var cta *models.DetalleCuenta
 
-		if ctaCr_, err := cuentasContables.GetCuentaContable(mov.Cuenta); err != nil {
+		if ctaCr_, err := cuentasContables.GetCuentaContable(ctx, mov.Cuenta); err != nil {
 			return nil, err
 		} else {
 			outputError = utilsHelper.FillStruct(ctaCr_, &cta)
@@ -207,12 +208,12 @@ func AprobarAjuste(id int) (movimiento *models.Movimiento, outputError map[strin
 	transaccion.Etiquetas = ""
 	transaccion.Descripcion = ""
 
-	if _, err := movimientosContables.PostTrContable(transaccion); err != nil {
+	if _, err := movimientosContables.PostTrContable(ctx, transaccion); err != nil {
 		return nil, err
 	}
 
 	movimiento.Detalle = "{}"
-	outputError = movimientosArka.PutMovimiento(movimiento, movimiento.Id)
+	outputError = movimientosArka.PutMovimiento(ctx, movimiento, movimiento.Id)
 
 	return
 }

@@ -1,6 +1,7 @@
 package bodegaConsumoHelper
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
@@ -10,12 +11,12 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/autenticacion"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 const estadoSolicitudPendiente = "Solicitud Pendiente"
 
-func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.DetalleSolicitudBodega) (outputError map[string]interface{}) {
+func GetAllSolicitudes(ctx context.Context, user string, revision bool, solictudes_ *[]models.DetalleSolicitudBodega) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetAllSolicitudes - Unhandled Error!", "500")
 
@@ -24,7 +25,7 @@ func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.Detalle
 		terceros    map[int]models.IdentificacionTercero
 	)
 
-	if err := loadSolicitudes(user, revision, &solicitudes); err != nil {
+	if err := loadSolicitudes(ctx, user, revision, &solicitudes); err != nil {
 		return err
 	}
 
@@ -46,7 +47,7 @@ func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.Detalle
 			if val, ok := terceros[detalle.Funcionario]; ok {
 				solicitud.Solicitante = val
 			} else {
-				if tercero, err := crudTerceros.GetNombreTerceroById(detalle.Funcionario); err != nil {
+				if tercero, err := crudTerceros.GetNombreTerceroById(ctx, detalle.Funcionario); err != nil {
 					return err
 				} else if tercero != nil {
 					terceros[detalle.Funcionario] = *tercero
@@ -62,7 +63,7 @@ func GetAllSolicitudes(user string, revision bool, solictudes_ *[]models.Detalle
 	return
 }
 
-func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
+func loadSolicitudes(ctx context.Context, user string, revision bool, solicitudes *[]*models.Movimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("loadSolicitudes - Unhandled Error!", "500")
 
@@ -78,7 +79,7 @@ func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimien
 
 		payload += ",EstadoMovimientoId__Nombre:" + url.QueryEscape(estadoSolicitudPendiente)
 
-		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if solicitudes_, _, err := movimientosArka.GetAllMovimiento(ctx, payload); err != nil {
 			return err
 		} else {
 			*solicitudes = solicitudes_
@@ -88,7 +89,7 @@ func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimien
 
 	}
 
-	if err := autenticacion.GetInfoUser(user, &terceroId, &roles); err != nil {
+	if err := autenticacion.GetInfoUser(ctx, user, &terceroId, &roles); err != nil {
 		return err
 	}
 
@@ -97,18 +98,18 @@ func loadSolicitudes(user string, revision bool, solicitudes *[]*models.Movimien
 	}
 
 	query := "limit=-1&query=Opcion__Nombre:bodegaVerTodasLasSolicitudes,Perfil__Nombre__in:" + strings.Join(roles, "|")
-	if err := configuracion.GetAllPerfilXMenuOpcion(query, &opciones); err != nil {
+	if err := configuracion.GetAllPerfilXMenuOpcion(ctx, query, &opciones); err != nil {
 		return err
 	}
 
 	if len(opciones) > 0 {
-		if sol_, _, err := movimientosArka.GetAllMovimiento(payload); err != nil {
+		if sol_, _, err := movimientosArka.GetAllMovimiento(ctx, payload); err != nil {
 			return err
 		} else {
 			*solicitudes = sol_
 		}
 	} else {
-		if err := movimientosArka.GetBodegaByTerceroId(terceroId, solicitudes); err != nil {
+		if err := movimientosArka.GetBodegaByTerceroId(ctx, terceroId, solicitudes); err != nil {
 			return err
 		}
 	}

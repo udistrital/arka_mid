@@ -1,6 +1,7 @@
 package salidaHelper
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -8,10 +9,10 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entrada,
+func GetAll(ctx context.Context, estados []string, fechaCreacion, fechaAprobacion, consecutivo, entrada,
 	sortby, order string, limit, page int) (Salidas []map[string]interface{}, total string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("GetAll - Unhandled Error!", "500")
@@ -58,7 +59,7 @@ func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entra
 		payload += ",MovimientoPadreId__Consecutivo__icontains:" + entrada
 	}
 
-	salidas_, total, outputError := movimientosArka.GetAllMovimiento(payload)
+	salidas_, total, outputError := movimientosArka.GetAllMovimiento(ctx, payload)
 	if outputError != nil {
 		return
 	}
@@ -74,7 +75,8 @@ func GetAll(estados []string, fechaCreacion, fechaAprobacion, consecutivo, entra
 			return
 		}
 
-		salida_, err := traerDetalle(salida, formato, centrosCostos, funcionarios)
+		salida_, err := traerDetalle(ctx, salida, formato, centrosCostos, funcionarios)
+
 		if err != nil {
 			outputError = err
 			return

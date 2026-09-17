@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -9,15 +10,15 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/catalogoElementos"
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
-func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
+func asignarPlacas(ctx context.Context, actaRecibidoId int, elementos *[]*models.Elemento) (errMsg string, outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("asignarPlacas - Unhandled Error!", "500")
 
 	var detalle_ []*models.DetalleElemento
-	if detalleElementos, err := actaRecibido.GetElementos(actaRecibidoId, nil); err != nil {
+	if detalleElementos, err := actaRecibido.GetElementos(ctx, actaRecibidoId, nil); err != nil {
 		return "", err
 	} else {
 		detalle_ = detalleElementos
@@ -41,15 +42,15 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 			tipoBien = el.TipoBienId.Id
 			bufferTiposBien[el.TipoBienId.Id] = el.TipoBienId
 			if el.TipoBienId.NecesitaPlaca {
-				if err := generarPlaca(&placa); err != nil {
+				if err := generarPlaca(ctx, &placa); err != nil {
 					return "", err
 				}
 			}
 		} else {
-			if placa_, msj, err := checkPlacaElemento(el.SubgrupoCatalogoId.TipoBienId.Id, el.ValorUnitario/uvt, bufferTiposBien); err != nil || msj != "" {
+			if placa_, msj, err := checkPlacaElemento(ctx, el.SubgrupoCatalogoId.TipoBienId.Id, el.ValorUnitario/uvt, bufferTiposBien); err != nil || msj != "" {
 				return msj, err
 			} else if placa_ {
-				if err := generarPlaca(&placa); err != nil {
+				if err := generarPlaca(ctx, &placa); err != nil {
 					return "", err
 				}
 			}
@@ -83,7 +84,7 @@ func asignarPlacas(actaRecibidoId int, elementos *[]*models.Elemento) (errMsg st
 
 }
 
-func checkPlacaElemento(tbPadreId int, normalizado float64, bufferTiposBien map[int]*models.TipoBien) (placa bool, errMsg string, outputError map[string]interface{}) {
+func checkPlacaElemento(ctx context.Context, tbPadreId int, normalizado float64, bufferTiposBien map[int]*models.TipoBien) (placa bool, errMsg string, outputError map[string]interface{}) {
 
 	funcion := "checkPlacaElemento - "
 	defer errorCtrl.ErrorControlFunction(funcion+"Unhandled Error!", "500")
@@ -102,7 +103,7 @@ func checkPlacaElemento(tbPadreId int, normalizado float64, bufferTiposBien map[
 	var tb__ []models.TipoBien
 	payload := "limit=1&query=Activo:true,TipoBienPadreId__Id:" + strconv.Itoa(tbPadreId) + ",LimiteInferior__lte:" + fmt.Sprintf("%f", normalizado) +
 		",LimiteSuperior__gt:" + fmt.Sprintf("%f", normalizado)
-	if err := catalogoElementos.GetAllTipoBien(payload, &tb__); err != nil {
+	if err := catalogoElementos.GetAllTipoBien(ctx, payload, &tb__); err != nil {
 		return false, "", err
 	} else if len(tb__) != 1 {
 		errMsg = "La asignación de la clase a los elementos no es correcta."
@@ -113,12 +114,12 @@ func checkPlacaElemento(tbPadreId int, normalizado float64, bufferTiposBien map[
 	return tb__[0].NecesitaPlaca, "", nil
 }
 
-func generarPlaca(placa *string) (outputError map[string]interface{}) {
+func generarPlaca(ctx context.Context, placa *string) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("generarPlaca - Unhandled Error!", "500")
 
 	var consecutivo models.Consecutivo
-	if err := consecutivos.Get("contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {
+	if err := consecutivos.Get(ctx, "contxtPlaca", "Registro Placa Arka", &consecutivo); err != nil {
 		return err
 	}
 

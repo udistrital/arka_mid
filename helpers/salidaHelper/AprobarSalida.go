@@ -1,18 +1,19 @@
 package salidaHelper
 
 import (
+	"context"
 	"github.com/udistrital/arka_mid/helpers/asientoContable"
 	"github.com/udistrital/arka_mid/helpers/crud/actaRecibido"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
-	timebogota "github.com/udistrital/arka_mid/utils_oas/timeBogota"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
+	timebogota "github.com/udistrital/utils_oas/v2/time_bogota"
 )
 
 // AprobarSalida Aprobacion de una salida
-func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func AprobarSalida(ctx context.Context, salidaId int, res *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 
 	defer errorCtrl.ErrorControlFunction("AprobarSalida - Unhandled Error!", "500")
 
@@ -21,7 +22,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 		tipoMovimiento int
 	)
 
-	trSalida, outputError := movimientosArka.GetTrSalida(salidaId)
+	trSalida, outputError := movimientosArka.GetTrSalida(ctx, salidaId)
 	if outputError != nil || trSalida.Salida.EstadoMovimientoId.Nombre != "Salida En Trámite" {
 		return
 	} else if len(trSalida.Elementos) == 0 || trSalida.Salida.ConsecutivoId == nil || *trSalida.Salida.ConsecutivoId == 0 {
@@ -40,12 +41,12 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 		return
 	}
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&tipoMovimiento, "SAL")
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &tipoMovimiento, "SAL")
 	if outputError != nil {
 		return
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&trSalida.Salida.EstadoMovimientoId.Id, "Salida Aprobada")
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &trSalida.Salida.EstadoMovimientoId.Id, "Salida Aprobada")
 	if outputError != nil {
 		return
 	}
@@ -56,7 +57,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	}
 
 	query := "Id__in:" + utilsHelper.ArrayToString(idsElementos, "|")
-	elementosActa, outputError := actaRecibido.GetAllElemento(query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
+	elementosActa, outputError := actaRecibido.GetAllElemento(ctx, query, "ValorUnitario,ValorTotal,SubgrupoCatalogoId,TipoBienId", "SubgrupoCatalogoId", "desc", "", "-1")
 	if outputError != nil {
 		return
 	}
@@ -71,22 +72,22 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	if trSalida.Salida.FechaCorte != nil && !trSalida.Salida.FechaCorte.IsZero() {
 		transaccion.FechaTransaccion = *trSalida.Salida.FechaCorte
 	}
-	res.Error, outputError = asientoContable.CalcularMovimientosContables(elementosActa, dsc, res.Movimiento.MovimientoPadreId.FormatoTipoMovimientoId.Id, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas, nil, &transaccion.Movimientos)
+	res.Error, outputError = asientoContable.CalcularMovimientosContables(ctx, elementosActa, dsc, res.Movimiento.MovimientoPadreId.FormatoTipoMovimientoId.Id, tipoMovimiento, salida.Funcionario, salida.Funcionario, bufferCuentas, nil, &transaccion.Movimientos)
 	if outputError != nil || res.Error != "" {
 		return
 	}
 
-	res.Error, outputError = asientoContable.CreateTransaccionContable(getTipoComprobanteSalidas(), "Salida de Almacén", &transaccion)
+	res.Error, outputError = asientoContable.CreateTransaccionContable(ctx, getTipoComprobanteSalidas(), "Salida de Almacén", &transaccion)
 	if outputError != nil || res.Error != "" {
 		return
 	}
 
-	res.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccion.Movimientos, bufferCuentas)
+	res.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(ctx, transaccion.Movimientos, bufferCuentas)
 	if outputError != nil {
 		return
 	}
 
-	_, outputError = movimientosContables.PostTrContable(&transaccion)
+	_, outputError = movimientosContables.PostTrContable(ctx, &transaccion)
 	if outputError != nil {
 		return
 	}
@@ -96,7 +97,7 @@ func AprobarSalida(salidaId int, res *models.ResultadoMovimiento) (outputError m
 	if trSalida.Salida.FechaCorte == nil || trSalida.Salida.FechaCorte.IsZero() {
 		trSalida.Salida.FechaCorte = utilsHelper.Time(timebogota.TiempoBogota())
 	}
-	outputError = movimientosArka.PutMovimiento(trSalida.Salida, trSalida.Salida.Id)
+	outputError = movimientosArka.PutMovimiento(ctx, trSalida.Salida, trSalida.Salida.Id)
 
 	return
 }

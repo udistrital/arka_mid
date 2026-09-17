@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/mid/movimientosContables"
 	"github.com/udistrital/arka_mid/helpers/utilsHelper"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 const (
@@ -27,7 +28,7 @@ const (
 )
 
 // AnularEntrada anula una entrada, devuelve el acta a verificación y registra la reversa contable.
-func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resultado *models.ResultadoAnulacionEntrada) (outputError map[string]interface{}) {
+func AnularEntrada(ctx context.Context, entradaID int, request *models.AnulacionEntradaRequest, resultado *models.ResultadoAnulacionEntrada) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("AnularEntrada - Unhandled Error!", "500")
 
 	if resultado == nil {
@@ -42,7 +43,7 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 		request = &models.AnulacionEntradaRequest{}
 	}
 
-	entrada, outputError := movimientosArka.GetMovimientoById(entradaID)
+	entrada, outputError := movimientosArka.GetMovimientoById(ctx, entradaID)
 	if outputError != nil {
 		return outputError
 	}
@@ -54,7 +55,7 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 		}
 	}
 
-	salidas, outputError := consultarSalidasAsociadasEntrada(entradaID)
+	salidas, outputError := consultarSalidasAsociadasEntrada(ctx, entradaID)
 	if outputError != nil {
 		return outputError
 	}
@@ -73,7 +74,7 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 	}
 
 	actaTransaccion := new(models.TransaccionActaRecibido)
-	outputError = crudActaRecibido.GetTransaccionActaRecibidoById(formato.ActaRecibidoId, false, actaTransaccion)
+	outputError = crudActaRecibido.GetTransaccionActaRecibidoById(ctx, formato.ActaRecibidoId, false, actaTransaccion)
 	if outputError != nil {
 		return outputError
 	}
@@ -91,7 +92,7 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 		return nil
 	}
 
-	transaccionOriginal, outputError := movimientosContables.GetTransaccion(*entrada.ConsecutivoId, "consecutivo", true)
+	transaccionOriginal, outputError := movimientosContables.GetTransaccion(ctx, *entrada.ConsecutivoId, "consecutivo", true)
 	if outputError != nil {
 		return outputError
 	}
@@ -103,7 +104,7 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 	entradaOriginal := cloneMovimiento(entrada)
 	actaOriginal := cloneTransaccionActa(actaTransaccion)
 
-	movimientoReversion, transaccionReversion, outputError := construirReversionEntrada(entrada, formato, transaccionOriginal, request.Observacion)
+	movimientoReversion, transaccionReversion, outputError := construirReversionEntrada(ctx, entrada, formato, transaccionOriginal, request.Observacion)
 	if outputError != nil {
 		return outputError
 	}
@@ -114,37 +115,37 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 
 	resultado.TransaccionContable.Concepto = transaccionReversion.Descripcion
 	resultado.TransaccionContable.Fecha = transaccionReversion.FechaTransaccion
-	resultado.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(transaccionReversion.Movimientos, nil)
+	resultado.TransaccionContable.Movimientos, outputError = asientoContable.GetDetalleContable(ctx, transaccionReversion.Movimientos, nil)
 	if outputError != nil {
 		return outputError
 	}
 
-	if outputError = aplicarEstadoEntradaAnulada(entrada, request.Observacion); outputError != nil {
+	if outputError = aplicarEstadoEntradaAnulada(ctx, entrada, request.Observacion); outputError != nil {
 		return outputError
 	}
-	if outputError = movimientosArka.PutMovimiento(entrada, entradaID); outputError != nil {
-		return outputError
-	}
-
-	if outputError = aplicarEstadoActaEnVerificacion(actaTransaccion); outputError != nil {
-		rollbackEntradaAnulada(entradaOriginal, resultado)
-		return outputError
-	}
-	if outputError = crudActaRecibido.PutTransaccionActaRecibido(formato.ActaRecibidoId, actaTransaccion); outputError != nil {
-		rollbackEntradaAnulada(entradaOriginal, resultado)
+	if outputError = movimientosArka.PutMovimiento(ctx, entrada, entradaID); outputError != nil {
 		return outputError
 	}
 
-	if outputError = movimientosArka.PostMovimiento(movimientoReversion); outputError != nil {
-		rollbackActaAnulada(formato.ActaRecibidoId, actaOriginal, resultado)
-		rollbackEntradaAnulada(entradaOriginal, resultado)
+	if outputError = aplicarEstadoActaEnVerificacion(ctx, actaTransaccion); outputError != nil {
+		rollbackEntradaAnulada(ctx, entradaOriginal, resultado)
+		return outputError
+	}
+	if outputError = crudActaRecibido.PutTransaccionActaRecibido(ctx, formato.ActaRecibidoId, actaTransaccion); outputError != nil {
+		rollbackEntradaAnulada(ctx, entradaOriginal, resultado)
 		return outputError
 	}
 
-	if _, outputError = movimientosContables.PostTrContable(transaccionReversion); outputError != nil {
-		desactivarMovimientoReversion(movimientoReversion, resultado)
-		rollbackActaAnulada(formato.ActaRecibidoId, actaOriginal, resultado)
-		rollbackEntradaAnulada(entradaOriginal, resultado)
+	if outputError = movimientosArka.PostMovimiento(ctx, movimientoReversion); outputError != nil {
+		rollbackActaAnulada(ctx, formato.ActaRecibidoId, actaOriginal, resultado)
+		rollbackEntradaAnulada(ctx, entradaOriginal, resultado)
+		return outputError
+	}
+
+	if _, outputError = movimientosContables.PostTrContable(ctx, transaccionReversion); outputError != nil {
+		desactivarMovimientoReversion(ctx, movimientoReversion, resultado)
+		rollbackActaAnulada(ctx, formato.ActaRecibidoId, actaOriginal, resultado)
+		rollbackEntradaAnulada(ctx, entradaOriginal, resultado)
 		return outputError
 	}
 
@@ -153,12 +154,12 @@ func AnularEntrada(entradaID int, request *models.AnulacionEntradaRequest, resul
 	return nil
 }
 
-func consultarSalidasAsociadasEntrada(entradaID int) (salidas []*models.Movimiento, outputError map[string]interface{}) {
+func consultarSalidasAsociadasEntrada(ctx context.Context, entradaID int) (salidas []*models.Movimiento, outputError map[string]interface{}) {
 	payload := "limit=-1&query=Activo:true,MovimientoPadreId__Id:" +
 		fmt.Sprint(entradaID) +
 		",FormatoTipoMovimientoId__CodigoAbreviacion__in:SAL|SAL_CONS"
 
-	salidas, _, outputError = movimientosArka.GetAllMovimiento(payload)
+	salidas, _, outputError = movimientosArka.GetAllMovimiento(ctx, payload)
 	return
 }
 
@@ -188,6 +189,7 @@ func validarEntradaAnulable(entrada *models.Movimiento, salidas []*models.Movimi
 }
 
 func construirReversionEntrada(
+	ctx context.Context,
 	entrada *models.Movimiento,
 	formato models.FormatoBaseEntrada,
 	transaccionOriginal *models.TransaccionMovimientos,
@@ -200,24 +202,24 @@ func construirReversionEntrada(
 		elementosAjuste     []int
 	)
 
-	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(&formatoMovimientoID, formatoAjusteAutomatico)
+	outputError = movimientosArka.GetFormatoTipoMovimientoIdByCodigoAbreviacion(ctx, &formatoMovimientoID, formatoAjusteAutomatico)
 	if outputError != nil {
 		return nil, nil, outputError
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&estadoMovimientoID, estadoAjusteAprobado)
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &estadoMovimientoID, estadoAjusteAprobado)
 	if outputError != nil {
 		return nil, nil, outputError
 	}
 
-	outputError = consecutivos.Get("contxtAjusteCons", "Anulación entrada Arka", &consecutivo)
+	outputError = consecutivos.Get(ctx, "contxtAjusteCons", "Anulación entrada Arka", &consecutivo)
 	if outputError != nil {
 		return nil, nil, outputError
 	}
 
 	if formato.ActaRecibidoId > 0 {
 		query := "Activo:true,ActaRecibidoId__Id:" + fmt.Sprint(formato.ActaRecibidoId)
-		if elementos, err := crudActaRecibido.GetAllElemento(query, "Id", "Id", "asc", "", "-1"); err != nil {
+		if elementos, err := crudActaRecibido.GetAllElemento(ctx, query, "Id", "Id", "asc", "", "-1"); err != nil {
 			return nil, nil, err
 		} else {
 			for _, elemento := range elementos {
@@ -252,12 +254,12 @@ func construirReversionEntrada(
 		ConsecutivoId: consecutivo.Id,
 		Activo:        true,
 	}
-	transaccion.Movimientos, outputError = invertirMovimientosContables(transaccionOriginal, descripcionReversionEntrada(entrada, observacion))
+	transaccion.Movimientos, outputError = invertirMovimientosContables(ctx, transaccionOriginal, descripcionReversionEntrada(entrada, observacion))
 	if outputError != nil {
 		return nil, nil, outputError
 	}
 
-	msg, outputError := asientoContable.CreateTransaccionContable(getTipoComprobanteAnulacionEntrada(), "Reversa contable anulación entrada", transaccion)
+	msg, outputError := asientoContable.CreateTransaccionContable(ctx, getTipoComprobanteAnulacionEntrada(), "Reversa contable anulación entrada", transaccion)
 	if outputError != nil {
 		return nil, nil, outputError
 	}
@@ -272,7 +274,7 @@ func construirReversionEntrada(
 	return movimiento, transaccion, nil
 }
 
-func invertirMovimientosContables(original *models.TransaccionMovimientos, descripcion string) (movimientos []*models.MovimientoTransaccion, outputError map[string]interface{}) {
+func invertirMovimientosContables(ctx context.Context, original *models.TransaccionMovimientos, descripcion string) (movimientos []*models.MovimientoTransaccion, outputError map[string]interface{}) {
 	if original == nil || len(original.Movimientos) == 0 {
 		return nil, map[string]interface{}{
 			"funcion": "invertirMovimientosContables - original",
@@ -281,7 +283,7 @@ func invertirMovimientosContables(original *models.TransaccionMovimientos, descr
 		}
 	}
 
-	dbID, crID, outputError := parametros.GetParametrosDebitoCredito()
+	dbID, crID, outputError := parametros.GetParametrosDebitoCredito(ctx)
 	if outputError != nil {
 		return nil, outputError
 	}
@@ -331,7 +333,7 @@ func normalizarTerceroId(terceroId *int) *int {
 	return &tercero
 }
 
-func aplicarEstadoEntradaAnulada(entrada *models.Movimiento, observacion string) (outputError map[string]interface{}) {
+func aplicarEstadoEntradaAnulada(ctx context.Context, entrada *models.Movimiento, observacion string) (outputError map[string]interface{}) {
 	if entrada == nil || entrada.EstadoMovimientoId == nil {
 		return map[string]interface{}{
 			"funcion": "aplicarEstadoEntradaAnulada - entrada.EstadoMovimientoId",
@@ -340,7 +342,7 @@ func aplicarEstadoEntradaAnulada(entrada *models.Movimiento, observacion string)
 		}
 	}
 
-	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(&entrada.EstadoMovimientoId.Id, estadoEntradaAnulada)
+	outputError = movimientosArka.GetEstadoMovimientoIdByNombre(ctx, &entrada.EstadoMovimientoId.Id, estadoEntradaAnulada)
 	if outputError != nil {
 		return outputError
 	}
@@ -353,7 +355,7 @@ func aplicarEstadoEntradaAnulada(entrada *models.Movimiento, observacion string)
 	return nil
 }
 
-func aplicarEstadoActaEnVerificacion(transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
+func aplicarEstadoActaEnVerificacion(ctx context.Context, transaccion *models.TransaccionActaRecibido) (outputError map[string]interface{}) {
 	if transaccion == nil || transaccion.UltimoEstado == nil || transaccion.UltimoEstado.EstadoActaId == nil {
 		return map[string]interface{}{
 			"funcion": "aplicarEstadoActaEnVerificacion - transaccion.UltimoEstado.EstadoActaId",
@@ -367,7 +369,7 @@ func aplicarEstadoActaEnVerificacion(transaccion *models.TransaccionActaRecibido
 	}
 
 	estadoID := 0
-	outputError = crudActaRecibido.GetEstadoActaIdByCodigoAbreviacion(&estadoID, estadoActaEnVerificacion)
+	outputError = crudActaRecibido.GetEstadoActaIdByCodigoAbreviacion(ctx, &estadoID, estadoActaEnVerificacion)
 	if outputError != nil {
 		return outputError
 	}
@@ -381,30 +383,30 @@ func estadoActaPermiteAnulacion(codigo string) bool {
 	return codigo == estadoActaAsociadaEntrada || codigo == estadoActaEnVerificacion
 }
 
-func rollbackEntradaAnulada(original *models.Movimiento, resultado *models.ResultadoAnulacionEntrada) {
+func rollbackEntradaAnulada(ctx context.Context, original *models.Movimiento, resultado *models.ResultadoAnulacionEntrada) {
 	if original == nil {
 		return
 	}
-	if err := movimientosArka.PutMovimiento(original, original.Id); err != nil {
+	if err := movimientosArka.PutMovimiento(ctx, original, original.Id); err != nil {
 		appendAnulacionError(resultado, "No se pudo revertir el estado original de la entrada.")
 	}
 }
 
-func rollbackActaAnulada(actaID int, original *models.TransaccionActaRecibido, resultado *models.ResultadoAnulacionEntrada) {
+func rollbackActaAnulada(ctx context.Context, actaID int, original *models.TransaccionActaRecibido, resultado *models.ResultadoAnulacionEntrada) {
 	if original == nil || actaID <= 0 {
 		return
 	}
-	if err := crudActaRecibido.PutTransaccionActaRecibido(actaID, original); err != nil {
+	if err := crudActaRecibido.PutTransaccionActaRecibido(ctx, actaID, original); err != nil {
 		appendAnulacionError(resultado, "No se pudo revertir el estado original del acta.")
 	}
 }
 
-func desactivarMovimientoReversion(movimiento *models.Movimiento, resultado *models.ResultadoAnulacionEntrada) {
+func desactivarMovimientoReversion(ctx context.Context, movimiento *models.Movimiento, resultado *models.ResultadoAnulacionEntrada) {
 	if movimiento == nil || movimiento.Id <= 0 {
 		return
 	}
 	movimiento.Activo = false
-	if err := movimientosArka.PutMovimiento(movimiento, movimiento.Id); err != nil {
+	if err := movimientosArka.PutMovimiento(ctx, movimiento, movimiento.Id); err != nil {
 		appendAnulacionError(resultado, "No se pudo desactivar el movimiento de reversión generado.")
 	}
 }

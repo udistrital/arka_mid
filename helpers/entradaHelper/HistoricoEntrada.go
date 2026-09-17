@@ -1,6 +1,7 @@
 package entradaHelper
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 	"github.com/udistrital/arka_mid/helpers/crud/consecutivos"
 	"github.com/udistrital/arka_mid/helpers/crud/movimientosArka"
 	"github.com/udistrital/arka_mid/models"
-	"github.com/udistrital/arka_mid/utils_oas/errorCtrl"
+	errorCtrl "github.com/udistrital/utils_oas/v2/errorctrl"
 )
 
 var getConsecutivoByIDEntradaHistorica = consecutivos.GetById
@@ -25,7 +26,7 @@ var postSoporteMovimientoEntradaHistorica = movimientosArka.PostSoporteMovimient
 var aprobarEntradaHistoricaFn = aprobarEntradaHistorica
 
 // RegistrarEntradaHistorica crea y aprueba una entrada histórica usando un consecutivo y año específicos.
-func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func RegistrarEntradaHistorica(ctx context.Context, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("RegistrarEntradaHistorica - Unhandled Error!", "500")
 
 	if data == nil {
@@ -45,7 +46,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		EstadoMovimientoId:      &models.EstadoMovimiento{},
 	}
 
-	outputError = getEstadoMovimientoIdByNombreEntradaHistorica(&resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
+	outputError = getEstadoMovimientoIdByNombreEntradaHistorica(ctx, &resultado.Movimiento.EstadoMovimientoId.Id, "Entrada En Trámite")
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"resolver estado inicial",
@@ -56,7 +57,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		)
 	}
 
-	outputError = getFormatoTipoMovimientoIdByCodigoEntradaHistorica(&resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
+	outputError = getFormatoTipoMovimientoIdByCodigoEntradaHistorica(ctx, &resultado.Movimiento.FormatoTipoMovimientoId.Id, data.FormatoTipoMovimientoId)
 	if outputError != nil {
 		return buildHistoricoPasoError(
 			"resolver tipo de movimiento",
@@ -80,7 +81,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 
 	var acta models.TransaccionActaRecibido
 	if data.Detalle.ActaRecibidoId > 0 {
-		outputError = getTransaccionActaRecibidoEntradaHistorica(data.Detalle.ActaRecibidoId, true, &acta)
+		outputError = getTransaccionActaRecibidoEntradaHistorica(ctx, data.Detalle.ActaRecibidoId, true, &acta)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
 				"consultar acta asociada",
@@ -101,7 +102,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		}
 	}
 
-	if outputError = aplicarConsecutivoHistoricoEntrada(&resultado.Movimiento, data.ConsecutivoId, data.Year); outputError != nil {
+	if outputError = aplicarConsecutivoHistoricoEntrada(ctx, &resultado.Movimiento, data.ConsecutivoId, data.Year); outputError != nil {
 		return
 	}
 
@@ -123,7 +124,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		resultado.Movimiento.FechaCorte = &fechaCorte
 	}
 
-	outputError = postMovimientoEntradaHistorica(&resultado.Movimiento)
+	outputError = postMovimientoEntradaHistorica(ctx, &resultado.Movimiento)
 	if outputError != nil {
 		payloadMovimiento, marshalErr := serializarMovimientoHistorico(resultado.Movimiento)
 		if marshalErr != nil {
@@ -140,7 +141,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		)
 	}
 
-	outputError = putMovimientoEntradaHistorica(&resultado.Movimiento, resultado.Movimiento.Id)
+	outputError = putMovimientoEntradaHistorica(ctx, &resultado.Movimiento, resultado.Movimiento.Id)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"actualizar fechas históricas del movimiento",
@@ -158,7 +159,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 			MovimientoId: &models.Movimiento{Id: resultado.Movimiento.Id},
 		}
 
-		outputError = postSoporteMovimientoEntradaHistorica(&soporte)
+		outputError = postSoporteMovimientoEntradaHistorica(ctx, &soporte)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
 				"asociar soporte al movimiento",
@@ -173,7 +174,7 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 	if data.Detalle.ActaRecibidoId > 0 {
 		acta.UltimoEstado.EstadoActaId.Id = 6
 		acta.UltimoEstado.Id = 0
-		outputError = putTransaccionActaRecibidoEntradaHistorica(data.Detalle.ActaRecibidoId, &acta)
+		outputError = putTransaccionActaRecibidoEntradaHistorica(ctx, data.Detalle.ActaRecibidoId, &acta)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
 				"actualizar estado del acta después del registro",
@@ -185,14 +186,14 @@ func RegistrarEntradaHistorica(data *models.TransaccionEntradaHistorica, resulta
 		}
 	}
 
-	outputError = aprobarEntradaHistoricaFn(resultado.Movimiento.Id, data, resultado)
+	outputError = aprobarEntradaHistoricaFn(ctx, resultado.Movimiento.Id, data, resultado)
 	return
 }
 
-func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
+func aprobarEntradaHistorica(ctx context.Context, entradaId int, data *models.TransaccionEntradaHistorica, resultado *models.ResultadoMovimiento) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("aprobarEntradaHistorica - Unhandled Error!", "500")
 
-	formato, outputError := getFormato(entradaId, resultado)
+	formato, outputError := getFormato(ctx, entradaId, resultado)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"consultar movimiento recién registrado",
@@ -220,7 +221,7 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 		resultado.Movimiento.FechaCorte = nil
 	}
 
-	terceroId, outputError := getTerceroEntrada(formato, resultado)
+	terceroId, outputError := getTerceroEntrada(ctx, formato, resultado)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"resolver tercero contable de la entrada",
@@ -240,7 +241,7 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 		)
 	}
 
-	elementos, novedades, outputError := getElementosEntrada(formato, entradaId, resultado)
+	elementos, novedades, outputError := getElementosEntrada(ctx, formato, entradaId, resultado)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"resolver elementos y novedades de la entrada",
@@ -260,7 +261,7 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 		)
 	}
 
-	outputError = contabilidadEntrada(resultado, formato, elementos, terceroId)
+	outputError = contabilidadEntrada(ctx, resultado, formato, elementos, terceroId)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"generar transacción contable de la entrada",
@@ -281,7 +282,7 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 	}
 
 	for _, nov := range novedades {
-		outputError = movimientosArka.PostNovedadElemento(&nov)
+		outputError = movimientosArka.PostNovedadElemento(ctx, &nov)
 		if outputError != nil {
 			return wrapHistoricoDependencyError(
 				"registrar novedades de los elementos",
@@ -293,7 +294,7 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 		}
 	}
 
-	outputError = putMovimientoEntradaHistorica(&resultado.Movimiento, resultado.Movimiento.Id)
+	outputError = putMovimientoEntradaHistorica(ctx, &resultado.Movimiento, resultado.Movimiento.Id)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"persistir aprobación histórica del movimiento",
@@ -307,7 +308,7 @@ func aprobarEntradaHistorica(entradaId int, data *models.TransaccionEntradaHisto
 	return nil
 }
 
-func aplicarConsecutivoHistoricoEntrada(entrada *models.Movimiento, consecutivoID, year int) (outputError map[string]interface{}) {
+func aplicarConsecutivoHistoricoEntrada(ctx context.Context, entrada *models.Movimiento, consecutivoID, year int) (outputError map[string]interface{}) {
 	defer errorCtrl.ErrorControlFunction("aplicarConsecutivoHistoricoEntrada - Unhandled Error!", "500")
 
 	if entrada == nil {
@@ -315,7 +316,7 @@ func aplicarConsecutivoHistoricoEntrada(entrada *models.Movimiento, consecutivoI
 	}
 
 	var consecutivo models.Consecutivo
-	outputError = getConsecutivoByIDEntradaHistorica(consecutivoID, &consecutivo)
+	outputError = getConsecutivoByIDEntradaHistorica(ctx, consecutivoID, &consecutivo)
 	if outputError != nil {
 		return wrapHistoricoDependencyError(
 			"consultar consecutivo histórico",
